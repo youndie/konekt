@@ -6,6 +6,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
@@ -41,6 +42,29 @@ fun Application.configureStatusPages() {
                 call.response.header(HttpHeaders.RetryAfter, cause.retryAfterSeconds.toString())
             }
             call.respond(cause.httpStatus(), ApiError(cause.code, cause.message ?: cause.code))
+        }
+
+        // THE ONE REFUSAL THAT IS NOT OURS, and leaving it out cost every route a 500.
+        //
+        // `call.receive<T>()` throws Ktor's BadRequestException when the body will not deserialise
+        // — a missing field, a wrong type, a body shaped for a different endpoint — and so does a
+        // typed @Resource parameter that will not parse. None of those is KonektException, so all of
+        // them fell through to the handler below and answered "something went wrong on our side" for
+        // a request that was wrong on the client's side.
+        //
+        // Found by pointing the kompot conformance kit at the running stand (B-24): it logs in with a
+        // submit envelope, konekt's OTP verify takes a plain DTO, and the answer to that mismatch was
+        // a 500. Every route that receives a body had it; nothing below the stand asked, because a
+        // test sends a body its own code built.
+        //
+        // The cause's message names the Kotlin class it failed to build, so it is logged and not
+        // returned: which internal type backs an endpoint is not the caller's business.
+        exception<BadRequestException> { call, cause ->
+            logger.info("rejected a malformed request on {}: {}", call.request.local.uri, cause.message)
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiError("bad_request", "the request could not be read"),
+            )
         }
 
         exception<Throwable> { call, cause ->

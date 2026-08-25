@@ -1,6 +1,7 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
+import io.github.youndie.kompot.standard.KompotPageResponse
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
 import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
@@ -15,11 +16,13 @@ import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.http.subscriberId
 import io.konekt.money.MoneyFormat
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.resources.get
 import io.ktor.server.resources.post
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.inject
@@ -66,7 +69,20 @@ fun Route.purchaseRoutes() {
         val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = params.cursor)).getOrThrow()
         // A page response and not a component tree: the client appends items to a list it already
         // has, and sending it a screen would replace one.
-        call.respond(HistoryScreen.page(page))
+        //
+        // ENCODED WITH THE APPLICATION'S `json`, and a plain `call.respond` here answered 500. A page
+        // carries components too — `items` is a list of `KompotComponent` — and plain respond
+        // serialises through ContentNegotiation's Json, which has none of this build's dictionary in
+        // its polymorphic scope. There is no `respondKompotComponent` for a page in the toolkit, so
+        // the encoding is spelled out.
+        //
+        // The screen beside it was right and this was wrong for the same reason nothing noticed:
+        // `CallRespondUsageTest` asked whether the FILE mentions respondKompotComponent, and this
+        // file does — for the two routes above. It now asks per call site.
+        call.respondText(
+            json.encodeToString(KompotPageResponse.serializer(), HistoryScreen.page(page)),
+            ContentType.Application.Json,
+        )
     }
 
     get<OrderScreen> { params ->

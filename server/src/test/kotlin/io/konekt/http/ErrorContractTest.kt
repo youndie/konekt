@@ -5,16 +5,24 @@ import io.konekt.domain.Currency
 import io.konekt.domain.KonektException
 import io.konekt.domain.Money
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.receive
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -99,4 +107,44 @@ class ErrorContractTest {
             assertEquals("internal_error", Json.decodeFromString(ApiError.serializer(), text).code)
         }
     }
+
+    @Test
+    fun `a body this endpoint cannot read is the caller's fault, not ours`() =
+        testApplication {
+            // A REAL receive, not a thrown BadRequestException. Throwing one directly would prove the
+            // handler catches that class and say nothing about whether `call.receive` produces it —
+            // and that second half is the whole finding: every route that receives a body answered
+            // 500 for a malformed one until the conformance walk sent a shape of its own (B-24).
+            application {
+                install(ContentNegotiation) { json() }
+                configureStatusPages()
+                routing {
+                    post("/probe") {
+                        call.receive<VerifyProbe>()
+                        call.respondText("unreachable")
+                    }
+                }
+            }
+
+            val response =
+                client.post("/probe") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"formId":"login","values":{"msisdn":"1555","code":"000000"}}""")
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+
+            val text = response.bodyAsText()
+            assertEquals("bad_request", Json.decodeFromString(ApiError.serializer(), text).code)
+            // The cause names the Kotlin class it failed to build. Which internal type backs an
+            // endpoint is not the caller's business, and it is the kind of thing that goes into a
+            // client's error log and stays there.
+            assertTrue("VerifyProbe" !in text, "the refusal named the type it could not build: $text")
+        }
+
+    @Serializable
+    private data class VerifyProbe(
+        val msisdn: String,
+        val code: String,
+    )
 }
