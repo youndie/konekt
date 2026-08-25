@@ -27,6 +27,7 @@ import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
+import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.screens.homeRoutes
@@ -51,6 +52,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -146,6 +148,10 @@ fun Application.module(config: KonektConfig) {
             // reachable from nothing: five imports of this feature sat in this file with no use
             // beneath them.
             usageModule(database),
+            module {
+                single { ComponentBroadcaster(get(), get()) }
+                single { TrafficChain(get(), get(), get(), get(), get(), get()) }
+            },
             petichModule(database, config),
         ),
     )
@@ -160,6 +166,15 @@ fun Application.module(config: KonektConfig) {
         koin.get<SuspendedPetichSweeper>().start(workers)
         koin.get<OutboxRelayWorker>().start(workers)
         koin.get<KompotUpdateBroadcaster>().start(workers)
+
+        // OFF unless asked for. It publishes fictional usage against real counters, so a deployment
+        // that forgot the switch must not be one that quietly spends its subscribers' allowances.
+        //
+        // Started HERE and nowhere else, which is the point: both halves of this chain existed and
+        // were covered end to end for a week while nothing constructed either of them.
+        if (config.simulateTraffic) {
+            workers.launch { koin.get<TrafficChain>().start(workers) }
+        }
     }
     monitor.subscribe(ApplicationStopping) {
         workers.cancel()

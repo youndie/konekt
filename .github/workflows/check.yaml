@@ -67,6 +67,49 @@ jobs:
       - if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: python3 scripts/docs_check.py --on-main
 
+  # The BUILD, and it is a separate job from the documentation gate on purpose: the two fail for
+  # unrelated reasons and a contributor who broke a link should not be reading a Gradle log.
+  #
+  # `ubuntu-latest` because this repository is PUBLIC, and GitHub-hosted runners are free for public
+  # repositories. A private one needs a self-hosted label here, and the difference is a bill rather
+  # than a setting.
+  build:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          # Java 25 is mandatory rather than chosen: kompot and petich publish variants tagged
+          # `org.gradle.jvm.version = 25`, and Gradle refuses to build a module on anything lower
+          # against them — with a message that names the dependency, not the rule.
+          java-version: "25"
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # DECLARED RATHER THAN DISCOVERED. Half the test suite runs against a real Postgres 18 in a
+      # Testcontainer — not H2, because the defects those tests exist for live in the SQL — and a
+      # runner without a working Docker daemon fails somewhere inside Testcontainers with a message
+      # about a socket. Asking here costs a second and names the actual requirement.
+      - name: Docker is required by the container-backed tests
+        run: |
+          docker info > /dev/null 2>&1 || {
+            echo "::error::this job runs Testcontainers and needs a working Docker daemon"
+            exit 1
+          }
+
+      # NO iOS TESTS ARE CLAIMED HERE, and saying so is one of B-37's acceptance criteria.
+      #
+      # On Linux, Kotlin/Native cross-compiles the Apple klibs and the simulator test tasks are
+      # SKIPPED inside a green `BUILD SUCCESSFUL`. Gradle warns, and the advice attached to that
+      # warning is a setting that silences it. So a green run of this job means the Apple code
+      # COMPILES and nothing more; running the tests needs a Mac with a simulator runtime installed,
+      # and no runner here has one.
+      - name: Build and test (Apple targets are compiled, not tested)
+        run: ./gradlew build --no-daemon
+
   # Separate from the gate, and on a schedule rather than on a pull request, because an anchor rots
   # when somebody refactors a **different** repository. A pull request here is the least likely
   # moment for one to break, and running it there trains people to ignore a red build they did not

@@ -20,7 +20,11 @@ class BrokerConnection(
     port: Int,
 ) : Closeable {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val connection = BooblikConnection(InetSocketAddress(host, port), scope)
+
+    // Exposed because a CONSUMER needs it: `Producer` wraps the connection for publishing, and
+    // reading a topic goes through the connection itself. Private until the traffic chain was
+    // actually started, which is how a hole like that stays unnoticed — nothing needed it.
+    val connection = BooblikConnection(InetSocketAddress(host, port), scope)
 
     val producer: Producer = Producer(connection, scope)
 

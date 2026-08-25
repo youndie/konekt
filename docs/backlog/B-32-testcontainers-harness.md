@@ -1,7 +1,7 @@
 ---
 id: B-32
 title: "Repository tests run against a real Postgres, and use cases against MockK"
-status: wip
+status: done
 priority: P0
 size: S
 stage: stage-m0-wire
@@ -43,8 +43,13 @@ feature rather than by whoever writes it. Two seams, two tools, and the split is
 
 - AC: a repository test creates its schema through the real migrations in a container and passes.
 - AC: the Koin graph test fails when a binding is removed, naming the missing type.
-- AC: CI runs the container-backed tests, so the job declares its Docker requirement rather than
-  discovering it.
+- AC OK: CI runs the container-backed tests in a `build` job of its own, and **asks for Docker
+  before Gradle does**. Without that step a runner with no daemon fails somewhere inside
+  Testcontainers with a message about a socket; with it the job says what it needs. `ubuntu-latest`
+  because this repository is public and GitHub-hosted runners are free for public repositories — a
+  private one needs a self-hosted label, and that difference is a bill rather than a setting.
+- Also: the build job is separate from the documentation gate, because the two fail for unrelated
+  reasons and a contributor who broke a link should not be reading a Gradle log.
 - Anchors: `server/src/test/kotlin/io/konekt/testing/PostgresHarness.kt`,
   `server/src/test/kotlin/io/konekt/di/KoinGraphTest.kt`.
 

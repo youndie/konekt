@@ -41,6 +41,17 @@ class ExposedUsageCounters(
                 .sortedBy { it.kind.ordinal }
         }
 
+    override suspend fun subscribersWithCounters(): List<String> =
+        dbQuery {
+            UsageCounterTable
+                .selectAll()
+                .map { row -> row[UsageCounterTable.subscriberId] }
+                // Distinct in Kotlin rather than in SQL: a subscriber has at most three rows here,
+                // so the set is the same size either way and a `withDistinct()` would be a query
+                // shape to maintain for nothing.
+                .distinct()
+        }
+
     override suspend fun find(
         subscriberId: String,
         kind: UsageCounter.Kind,

@@ -86,6 +86,11 @@ interface UsageAddOns {
 interface UsageCounters {
     suspend fun of(subscriberId: String): List<UsageCounter>
 
+    // Who has anything to spend. The traffic simulator asks, because publishing usage for a
+    // subscriber who has bought nothing is an event the consumer correctly ignores — and a simulator
+    // that produced only ignored events would look identical to one that was not running.
+    suspend fun subscribersWithCounters(): List<String>
+
     suspend fun find(
         subscriberId: String,
         kind: UsageCounter.Kind,

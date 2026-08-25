@@ -22,6 +22,10 @@ data class KonektConfig(
     // to set it cannot be one that declines everything.
     val paymentMode: MockPaymentGateway.Mode,
     val paymentDelay: Duration,
+    // Whether the traffic simulator runs. OFF unless an explicit "true", like every other switch
+    // here: it publishes fictional usage against real counters, and a deployment that forgot to set
+    // it must not be one that quietly spends its subscribers' allowances.
+    val simulateTraffic: Boolean,
     // Apply the migrations and exit, without serving. The deploy runs the same image this way before
     // the application pods roll.
     val migrateOnly: Boolean,
@@ -53,6 +57,7 @@ data class KonektConfig(
                         else -> MockPaymentGateway.Mode.APPROVE
                     },
                 paymentDelay = (System.getenv("PAYMENT_MOCK_DELAY_MS")?.toLongOrNull() ?: 0L).milliseconds,
+                simulateTraffic = System.getenv("SIMULATE_TRAFFIC") == "true",
                 migrateOnly = System.getenv("MIGRATE_ONLY") == "true",
             )
 

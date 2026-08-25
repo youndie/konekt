@@ -241,12 +241,21 @@ circular dependency inside `:server` naming neither module.
   A refusal thrown as an exception is a wizard that is neither here nor there.
 - **Anything that reads a generated directory must declare the dependency**, ktlint included —
   excluding generated files from the *check* does not remove the directory from the task's *inputs*.
+- **CI is two jobs: the documentation gate and the build.** The build asks for Docker before Gradle
+  does — half the suite is Testcontainers, and a runner without a daemon otherwise fails inside
+  Testcontainers with a message about a socket. `ubuntu-latest` because the repository is public;
+  a private one would need a self-hosted label, which is a bill rather than a setting.
+- **No CI job may name an Apple test task.** On Linux those tasks are SKIPPED inside a green
+  `BUILD SUCCESSFUL`, so a job that named one would go green forever having tested nothing.
+  `AppleTestsAreNotClaimedTest` refuses it. Note that a guard reading a file outside the module is
+  not a Gradle input: changing only that file leaves `:server:test` UP-TO-DATE, and locally it needs
+  `--rerun-tasks` to be believed.
 - **A feature that is built is not a feature that runs.** The usage feature shipped complete and
   tested and was installed by nothing: five imports in `Application.kt` with no use beneath them, so
   a completed purchase granted no allowance and no route could read a counter. `KoinGraphTest`
   cannot see this — it verifies the modules it is GIVEN. `FeatureModulesReachTheGraphTest` reads the
-  composition root as text instead. A worker nobody starts is the same defect and is still open
-  (`B-16`).
+  composition root as text instead, and `WorkersAreStartedTest` does the same for a worker nobody
+  starts: a binding is data and can be verified, a `start(scope)` call is control flow and cannot.
 - **Never `call.respond` a component tree, and there is now a test that says so.**
   `CallRespondUsageTest` reads the sources, because `call.respond(anything)` compiles. It was proved
   to bite by rewriting a real route.

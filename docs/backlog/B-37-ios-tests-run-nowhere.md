@@ -1,7 +1,7 @@
 ---
 id: B-37
 title: "No iOS test is executed by anything, and the build says nothing about it"
-status: wip
+status: done
 priority: P1
 size: S
 stage: stage-m0-wire
@@ -42,7 +42,16 @@ itself: a skipped task and a passing task look the same in a summary line.
   them fails.
 - AC: `CLAUDE.md` states that a green `wsl-run ./gradlew build` covers Apple compilation and not
   Apple tests.
-- AC: while no runner has a simulator runtime, no CI job claims to run these tests.
+- AC OK: while no runner has a simulator runtime, no CI job claims to run these tests — and that is
+  ENFORCED rather than promised. `AppleTestsAreNotClaimedTest` reads the workflows and fails on any
+  Apple test task named without a macOS runner, because on Linux those tasks are SKIPPED inside a
+  green `BUILD SUCCESSFUL` and the badge would say otherwise forever. Proved to bite by adding
+  `iosSimulatorArm64Test` to the Linux job.
+- **One thing about every guard of this shape**, learned here: the file it reads is not a Gradle
+  input, so changing only the workflow leaves `:server:test` UP-TO-DATE and the guard does not run.
+  Right in CI, where the checkout is fresh; locally it needs `--rerun-tasks` to be believed. The same
+  is true of `ClockUsageTest` and its siblings, and it is why the first attempt at this mutation
+  looked like a guard that did not work.
 - Anchors: `CLAUDE.md`, `.github/workflows/`, `build-logic/src/main/kotlin/konekt.multiplatform.gradle.kts`.
 
 Background: [research-stack](../research/research-stack.md) §1.7,
