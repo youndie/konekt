@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+
     // api: the routing function's signature names the use cases, so whatever installs the routes
     // needs them.
     api(project(":feature:purchase-server-domain"))

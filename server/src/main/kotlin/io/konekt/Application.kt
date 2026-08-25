@@ -34,10 +34,14 @@ import io.konekt.feature.purchase.server.domain.topUpInterceptors
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
 import io.konekt.mocks.traffic.TrafficChain
+import io.konekt.observability.KonektTrace
+import io.konekt.observability.ObservabilityConfig
+import io.konekt.observability.configureObservability
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.screens.homeRoutes
 import io.konekt.time.KonektClock
+import io.konekt.time.SystemClock
 import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
 import io.ktor.serialization.kotlinx.json.json
@@ -211,6 +215,17 @@ fun Route.mountKonektRoutes(groups: List<RouteGroup>) {
 
 // The composition root. A feature contributes bindings and routes; plugins are installed once, here.
 fun Application.module(config: KonektConfig) {
+    // BEFORE THE ROUTES, because metrik's plugin measures a call and tracy's opens a span around it:
+    // installed later they would observe whatever was registered after them, which is nothing.
+    // Whether any of the three runs at all is decided by the environment, not here.
+    //
+    // The agent is built BEFORE the container rather than loaded into it afterwards, so that
+    // `KonektTrace` is bound by the application's own `modules()`. A binding added later is one
+    // `RoutesResolveWhatTheyInjectTest` cannot see, and that guard exists because Koin resolves
+    // lazily: the process starts, the health check passes, and the route answers 500 to its first
+    // caller.
+    val tracy = configureObservability(ObservabilityConfig.fromEnv(), SystemClock)
+
     val dataSource = DatabaseFactory.dataSource(config.database)
     val database = DatabaseFactory.connect(dataSource)
 
@@ -227,7 +242,7 @@ fun Application.module(config: KonektConfig) {
             // reachable from nothing: five imports of this feature sat in this file with no use
             // beneath them.
             usageModule(database),
-            serverModule(),
+            serverModule(KonektTrace(tracy)),
             petichModule(database, config),
         ),
     )
@@ -277,7 +292,7 @@ fun Application.module(config: KonektConfig) {
 // A NAMED FUNCTION rather than an inline `module { }`, so a test can install exactly what the
 // application installs. An inline one is invisible from outside, and every binding in it is a binding
 // only a running process has ever resolved.
-fun serverModule() =
+fun serverModule(trace: KonektTrace) =
     module {
         // THE SERVER COULD NOT START WITHOUT THIS LINE, and nothing said so until a stand tried.
         // `Application.kt` resolved a broadcaster on startup and `realtimeRoutes` injected one, and
@@ -286,6 +301,9 @@ fun serverModule() =
         //
         // The in-memory bus is the default and is right for one instance; `kompot-realtime-redis` is
         // the multi-instance backend and this product has one.
+        // Bound ALWAYS, holding whatever there is: a feature that logs must compile and run in a
+        // deployment with no tracy, and Koin cannot bind a null.
+        single { trace }
         single { KompotUpdateBroadcaster() }
         single { ComponentBroadcaster(get(), get()) }
         single { TrafficChain(get(), get(), get(), get(), get(), get()) }

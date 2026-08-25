@@ -112,6 +112,13 @@ dependencies {
     // though the code that opens it lives in :shared:db.
     runtimeOnly(libs.postgresql)
 
+    // THE OBSERVABILITY TRIO. All three rather than one plus stdout for the rest: what this build
+    // demonstrates is one purchase visible in all three at once, and two of them make that half a
+    // demonstration.
+    implementation(libs.metrik.agent)
+    implementation(libs.tracy.agent)
+    implementation(libs.katcher.client)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
     runtimeOnly(libs.logback.classic)

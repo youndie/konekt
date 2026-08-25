@@ -7,6 +7,7 @@ import io.konekt.feature.esim.server.domain.SmDpPlus
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.feature.usage.server.domain.UsageCounters
+import io.konekt.observability.KonektTrace
 import io.konekt.time.KonektClock
 import io.konekt.time.timeModule
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -54,7 +55,7 @@ class KoinGraphTest {
                 purchaseModule(NO_DATABASE),
                 esimModule(NO_DATABASE),
                 usageModule(NO_DATABASE),
-                io.konekt.serverModule(),
+                io.konekt.serverModule(KonektTrace(agent = null)),
                 org.koin.dsl.module { single { kotlinx.serialization.json.Json } },
             )
 
@@ -92,6 +93,11 @@ class KoinGraphTest {
         listOf(
             // timeModule
             KonektClock::class,
+            // The tracy agent inside KonektTrace. It is never a BINDING — the composition root builds
+            // it before the container and hands over the wrapper, precisely so that a deployment
+            // without tracy has a `KonektTrace` holding null rather than a missing definition. Koin's
+            // `verify` reflects on the constructor and cannot see that, so it is named here.
+            ru.workinprogress.tracy.agent.TracyAgent::class,
             // the application's single Json, assembled in Application.kt
             kotlinx.serialization.json.Json::class,
             // petichModule, which needs a live Database and so is not verified here

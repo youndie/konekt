@@ -105,8 +105,68 @@ services:
       # waiting for a subscriber to browse. Off by default everywhere else; on here because a stand
       # that cannot show the update cannot test it.
       SIMULATE_TRAFFIC: ${SIMULATE_TRAFFIC:-true}
+      # THE THREE AGENTS. Each is `<NAME>_ENDPOINT` plus `<NAME>_KEY`, together or not at all — the
+      # server refuses to start on one without the other, because a deployment that believes it is
+      # observed and is not is the failure all three of these libraries make easy.
+      #
+      # metrik takes `host:port` and speaks UDP; the other two take a URL. Service names rather than
+      # addresses, so the stand carries no host-dependent value.
+      #
+      # Overridable to EMPTY on purpose, and that is not a convenience. Setting both variables of a
+      # pair to nothing is how the stand is asked to run with an agent switched off, which is the only
+      # way to check that the e2e assertion about absent data can fail at all.
+      METRIK_ENDPOINT: ${METRIK_ENDPOINT-metrik:9999}
+      METRIK_KEY: ${METRIK_KEY-${METRIK_INGEST_KEY:-dev-metrik-key}}
+      TRACY_ENDPOINT: ${TRACY_ENDPOINT-http://tracy:8080}
+      TRACY_KEY: ${TRACY_KEY-${TRACY_INGEST_KEY:-dev-tracy-key}}
+      KATCHER_ENDPOINT: http://katcher:8080
+      KATCHER_KEY: ${KATCHER_APP_KEY:-konekt-server}
+      RELEASE: ${RELEASE:-stand}
+      ENVIRONMENT: stand
     ports:
       - "${SERVER_PORT:-8080}:8080"
+
+  # ── THE OBSERVABILITY TRIO ──────────────────────────────────────────────────────────────────────
+  #
+  # Three self-hosted binaries beside the server, and all three rather than one plus stdout for the
+  # rest: the value being demonstrated is ONE purchase visible in all three at once — in tracy by its
+  # `orderId`, in metrik as latency on the route it went through, in katcher if it fell over. Two of
+  # them make that half a demonstration.
+  #
+  # They deliberately have no `depends_on` on the server and the server has none on them. An agent
+  # that cannot reach its collector must not stop the product from serving, and wiring the dependency
+  # the other way round would hide exactly that: the stand would refuse to start instead of showing
+  # what a running system does when its observability is down.
+
+  metrik:
+    image: ghcr.io/youndie/metrik:latest
+    environment:
+      # One key per INSTALLATION rather than per service — metrik has no registration step, so the
+      # service name IS the identifier and a typo creates a phantom service rather than an error.
+      METRIK_INGEST_KEY: ${METRIK_INGEST_KEY:-dev-metrik-key}
+      METRIK_HTTP_PORT: "8080"
+      METRIK_UDP_PORT: "9999"
+      METRIK_DB_PATH: /data/metrik.db
+    volumes:
+      - metrik-data:/data
+    ports:
+      - "${METRIK_PORT:-8090}:8080"
+
+  tracy:
+    image: ghcr.io/youndie/tracy:latest
+    environment:
+      TRACY_INGEST_KEY: ${TRACY_INGEST_KEY:-dev-tracy-key}
+    volumes:
+      - tracy-data:/data
+    ports:
+      - "${TRACY_PORT:-8091}:8080"
+
+  katcher:
+    image: ghcr.io/youndie/katcher:latest
+    volumes:
+      - katcher-data:/data
+    ports:
+      - "${KATCHER_PORT:-8092}:8080"
 
   # THE SAME SERVER WITH THE PAYMENT MOCK SET TO REFUSE, and it is a second service rather than a
   # switch on the first because the mode is read once at startup. The compensated branch is one of
@@ -144,3 +204,6 @@ services:
 volumes:
   postgres-data:
   broker-data:
+  metrik-data:
+  tracy-data:
+  katcher-data:

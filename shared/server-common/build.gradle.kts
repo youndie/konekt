@@ -3,6 +3,11 @@ plugins {
 }
 
 dependencies {
+    // The tracy agent, so a feature can be handed a trace logger without depending on :server. `api`
+    // rather than `implementation`: KonektTrace exposes the agent in its signature, and a feature
+    // calling `logger(...)` needs the type.
+    api(libs.tracy.agent)
+
     // The refusals every route can raise, and the error body they become.
     api(project(":shared:domain"))
 

@@ -47,7 +47,7 @@ so re-prioritising must never move a file.
 |---|---|---|---|---|
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
-| [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
+| [B-26](docs/backlog/B-26-observability-wiring.md) `[~]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[~]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[ ]` | A @Test whose return type is not void is silently ignored, and three of them were | P1 | S | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |

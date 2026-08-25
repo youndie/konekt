@@ -16,6 +16,7 @@ import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.http.subscriberId
 import io.konekt.money.MoneyFormat
+import io.konekt.observability.KonektTrace
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -38,12 +39,28 @@ fun Route.purchaseRoutes() {
     val loadHistory by inject<LoadHistoryUseCase>()
     val json by inject<Json>()
 
+    // OPTIONAL BY RESOLUTION rather than by a no-op double. A deployment with no tracy has no binding
+    // and this is null; one with tracy logs. A no-op implementation would be indistinguishable from a
+    // working one at exactly the moment somebody goes looking for a trace that was never written.
+    val trace by inject<KonektTrace>()
+
     post<Purchases> {
         val body = call.receive<CreatePurchaseRequest>()
         val order =
             startPurchase(
                 StartPurchaseUseCase.Params(subscriberId = call.subscriberId(), planId = body.planId),
             ).getOrThrow()
+
+        // INDEXED, and that is the whole point of writing it here rather than beside it. tracy turns
+        // an indexed field into an entity key, so "show me everything that happened to this order" is
+        // answerable — and it is only answerable if the field was indexed when it was WRITTEN. A
+        // trace carrying the order id as ordinary text is a trace nobody can find by it.
+        trace.logger("PurchaseRouting")?.info("purchase started") {
+            field("orderId", order.orderId, indexed = true)
+            field("subscriberId", order.payload.subscriberId, indexed = true)
+            field("planId", order.payload.planId)
+            field("status", order.status.wireName)
+        }
 
         // 202 rather than 201: the usual answer is a saga waiting for a confirmation, and telling a
         // client the resource is created when the money has only been held would be a lie it would
