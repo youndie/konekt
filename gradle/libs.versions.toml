@@ -44,20 +44,19 @@ ktlint = "1.8.0"
 # The tail digit of a kompot version is the CI run number, so kompot-core:0.30.0.71 beside
 # kompot-client:0.30.0.72 resolves into a combination nobody ever built. Through the BOM that
 # combination cannot be written down — which is why no kompot library below carries a version.
-kompot = "0.30.0.72"
+kompot = "0.31.0.74"
 
-petich = "0.1.0.4"
+petich = "0.1.0.6"
 booblik = "0.3.0"
 
-# katcher is THREE version lines, not one, and they move independently. A single `katcher = ...`
-# resolves nothing and fails with a message naming an artefact rather than the mistake.
-#   - the server/container image, which this repository only deploys;
-katcherServer = "0.6.2"
-#   - the Kotlin (JVM) client the server reports through;
-katcherClient = "0.5.1"
-#   - the Android client and the Gradle plugin that uploads the R8 mapping, released together.
-#     There is no Apple variant at all — see docs/research/research-architecture.md §1.9 and
-#     youndie/katcher#25. The iOS build reports no crashes, deliberately and in writing.
+# katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
+# for one of them and fails naming an artefact rather than the mistake.
+#   - the server image and the Kotlin client, which share the repository's own version. As of
+#     0.6.2 the client publishes all three iOS targets (youndie/katcher#25 closed it), so the
+#     host-picked `native` target is gone and an iOS build can report a crash;
+katcher = "0.6.2"
+#   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
+#     still on their own line.
 katcherAndroid = "0.4.92"
 
 metrikAgent = "0.1.13"
@@ -179,7 +178,7 @@ booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.
 
 # --- observability -----------------------------------------------------------------------------
 
-katcher-client = { module = "ru.workinprogress.katcher:client", version.ref = "katcherClient" }
+katcher-client = { module = "ru.workinprogress.katcher:client", version.ref = "katcher" }
 katcher-clientAndroid = { module = "ru.workinprogress.katcher:client-android", version.ref = "katcherAndroid" }
 metrik-agent = { module = "ru.workinprogress.metrik:agent", version.ref = "metrikAgent" }
 tracy-agent = { module = "ru.workinprogress.tracy:agent", version.ref = "tracyAgent" }

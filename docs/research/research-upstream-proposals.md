@@ -16,16 +16,21 @@ The rule this project works under: **nothing is forked.** A gap goes upstream as
 works around it in its own code, and the workaround carries a comment naming the issue so it can be
 removed rather than inherited. See [research-architecture](research-architecture.md) D9.
 
-The bodies below are what was filed, verbatim. **Reply** is the maintainer's answer, filled in as it
-arrives; an em dash means the issue is open and unanswered.
+The bodies below are what was filed, verbatim. **Reply** records what actually landed — read in the
+source and in the published artefact, not taken from the issue's state, because "closed" and "fixed"
+are different claims and only one of them is checkable.
+
+**All five closed as completed on 2026-08-25, and all five landed as code.** Four of them changed
+konekt's own plan; the amendments are in [research-architecture](research-architecture.md) §1.3, §1.4,
+§1.5 and §1.9, written at the point of divergence rather than by deleting what was there.
 
 | | Repository | Ask | Blocks konekt | Filed | Reply |
 |---|---|---|---|---|---|
-| [U1](#u1) | kompot | `RemoteThemeDesignSystem` must forward `resolveSurface` to its fallback | no — worked around | [kompot#80](https://github.com/youndie/kompot/issues/80) | — |
-| [U2](#u2) | kompot | An unknown component is reported through `println` and reaches no log | no — worked around | [kompot#81](https://github.com/youndie/kompot/issues/81) | — |
-| [U3](#u3) | kompot | `checkbox_input` has no variant, so a switch cannot be drawn as one | no — degraded | [kompot#82](https://github.com/youndie/kompot/issues/82) | — |
-| [U4](#u4) | petich | Dropping events on a non-outbox repository is silent and uncounted | no — guarded locally | [petich#3](https://github.com/youndie/petich/issues/3) | — |
-| [U5](#u5) | katcher | The client publishes no Apple target, so an iOS build cannot report | yes — iOS uncovered | [katcher#25](https://github.com/youndie/katcher/issues/25) | — |
+| [U1](#u1) | kompot | `RemoteThemeDesignSystem` must forward `resolveSurface` to its fallback | no — worked around | [kompot#80](https://github.com/youndie/kompot/issues/80) | closed, `resolveSurface` now delegates to `fallback` — kompot `0.31.0.74` |
+| [U2](#u2) | kompot | An unknown component is reported through `println` and reaches no log | no — worked around | [kompot#81](https://github.com/youndie/kompot/issues/81) | closed, `KompotDegradationSink` with three kinds — kompot `0.31.0.74` |
+| [U3](#u3) | kompot | `checkbox_input` has no variant, so a switch cannot be drawn as one | no — degraded | [kompot#82](https://github.com/youndie/kompot/issues/82) | closed, `CheckboxInputComponent.variant` + `KompotCheckboxVariants.SWITCH` |
+| [U4](#u4) | petich | Dropping events on a non-outbox repository is silent and uncounted | no — guarded locally | [petich#3](https://github.com/youndie/petich/issues/3) | closed, `onDroppedEvents` + `requireOutbox` — petich `0.1.0.6` |
+| [U5](#u5) | katcher | The client publishes no Apple target, so an iOS build cannot report | yes — iOS uncovered | [katcher#25](https://github.com/youndie/katcher/issues/25) | closed, all three iOS targets published — katcher `client:0.6.2` |
 
 ---
 
@@ -295,3 +300,47 @@ arrives; an em dash means the issue is open and unanswered.
 > than adding a different vendor's SDK to a build whose purpose is to exercise this stack. An empty
 > answer that names itself is worth more than a full one from somewhere else — but it is still empty,
 > and iOS is half the installs.
+
+
+---
+
+## What came back
+
+Filed on 2026-08-25, all five closed the same day, and each verified in the source and in the
+published artefact rather than in the issue's state.
+
+**[U1](#u1) → [kompot#80](https://github.com/youndie/kompot/issues/80).** `RemoteThemeDesignSystem`
+now carries `override fun resolveSurface(role) = fallback.resolveSurface(role)`. konekt no longer
+needs the inverted wrapping of D3 — the composition root can be written the way every example in the
+readme writes it. The screenshot test that guarded the workaround is still worth having, and it now
+guards the toolkit's behaviour instead of ours.
+
+**[U2](#u2) → [kompot#81](https://github.com/youndie/kompot/issues/81).** Closed wider than it was
+asked. `KompotDegradationSink` reports three kinds, not one: `UNKNOWN_COMPONENT`,
+`UNKNOWN_ACTION` — which was mentioned in the issue as an aside — and `UNRENDERABLE_COMPONENT`, a
+case the issue did not name at all: the type decodes and this build's registry has no renderer for it.
+`drawnAsFallback` distinguishes a hole from a placeholder, which is the fact a staged rollout is
+decided on. The default is still the `println`, so nothing changes for a deployment that does not set
+one. konekt provides a sink into tracy and a katcher breadcrumb, and keeps its own renderer for the
+*drawing*, which was never the ask.
+
+**[U3](#u3) → [kompot#82](https://github.com/youndie/kompot/issues/82).**
+`CheckboxInputComponent.variant: String?`, an open string like a button's variant, with
+`KompotCheckboxVariants.SWITCH` as the one word the standard renderer acts on and anything else
+degrading to a checkbox. The constant lives in `kompot-forms` rather than in the client, because the
+server is the side that has to spell it. konekt's component dictionary therefore loses `switch_input`
+before it was written — nine own components rather than ten.
+
+**[U4](#u4) → [petich#3](https://github.com/youndie/petich/issues/3).** Both halves, and the second
+is the one that matters here: `PetichEngineMetrics.onDroppedEvents` fires per event lost, and
+`PetichEngineConfig(requireOutbox = true)` refuses to build an engine whose repository cannot store
+them. Both off by default, so an application that wants no events is unaffected. konekt sets
+`requireOutbox = true`, which replaces the hand-written startup assertion of `B-09` with a
+configuration flag — the committed-outbox-row test stays, because it checks a different thing.
+
+**[U5](#u5) → [katcher#25](https://github.com/youndie/katcher/issues/25).** `client:0.6.2` publishes
+`ios_arm64`, `ios_simulator_arm64`, `ios_x64`, both macOS, both Linux, `mingw_x64` and `jvm`. The
+host-picked native target is gone, which was the second, smaller ask in the same issue. So the iOS
+build **can** report a crash, and `B-27` changes from "write the gap down" to "wire it up". The
+client and the server also now share one version line, so the three katcher entries in the version
+catalogue became two.

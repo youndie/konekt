@@ -109,9 +109,16 @@ Verified against kompot `0.30.0` sources.
 **Consequence.** An application that customises `resolveSurface` on its own design system and then
 wraps it in `rememberKompotDesignSystem(theme, fallback)` loses that customisation **the moment the
 theme arrives** — buttons return to Material's pill, fields get their borders back. Nothing throws
-and nothing logs; the first frame is right and the second is wrong. This is the single highest-value
-finding in this document, because konekt does exactly that on every launch, and it is
-[U1](research-upstream-proposals.md#u1) upstream.
+and nothing logs; the first frame is right and the second is wrong.
+
+**Fixed upstream, 2026-08-25 — [kompot#80](https://github.com/youndie/kompot/issues/80), released in
+`0.31.0.74`.** `RemoteThemeDesignSystem` now carries
+`override fun resolveSurface(role) = fallback.resolveSurface(role)`, verified in source. The facts
+above are left standing because they are what was true of `0.30.0`, and because the shape of the bug
+is worth keeping: an overlay that forwards two of three hooks is a class of mistake, not an incident.
+What changes for konekt is D3 — the inverted wrapping is no longer needed, and the composition root is
+written the ordinary way. The screenshot test survives the workaround it was written for and now
+guards the toolkit.
 
 ### 1.4 An unknown component is invisible from both sides
 
@@ -131,8 +138,16 @@ point, so this is not a blocker.
 
 **Consequence 2.** `println` is: it reaches neither tracy nor a katcher breadcrumb, and on a phone it
 reaches nobody at all. A deployment that ships a newer server against an older client learns about it
-from store reviews. Raised upstream as [U2](research-upstream-proposals.md#u2) — the ask is a
-pluggable sink, not a different default drawing.
+from store reviews.
+
+**Fixed upstream and wider than asked, 2026-08-25 — [kompot#81](https://github.com/youndie/kompot/issues/81),
+released in `0.31.0.74`.** `KompotDegradationSink` reports three kinds — `UNKNOWN_COMPONENT`,
+`UNKNOWN_ACTION` and `UNRENDERABLE_COMPONENT` (a type that decodes but has no renderer in this
+build's registry, a case konekt had not thought to name) — with a `drawnAsFallback` flag separating a
+hole from a placeholder. The default is still the `println`, so nothing moves for a deployment that
+sets no sink. The *drawing* half of Consequence 1 is unchanged and stays konekt's: the toolkit still
+draws nothing without a server-named fallback, which is the right default and the wrong one for this
+product.
 
 ### 1.5 What kompot's component dictionary already contains, and what konekt has to own
 
@@ -146,8 +161,13 @@ Verified by reading every `@SerialName` in the published protocol modules.
 | `kompot-auth` | one action: `update_session` |
 
 **Consequence 1.** Every form frame in the canvas maps onto an existing `kompot-forms` type — except
-the `switch`, which has no wire type. See [U3](research-upstream-proposals.md#u3); until then it is a
-`checkbox_input` and looks like one.
+the `switch`, which had no wire type.
+
+**Closed upstream, 2026-08-25 — [kompot#82](https://github.com/youndie/kompot/issues/82).**
+`CheckboxInputComponent` gained `variant: String?`, an open string like a button's, with
+`KompotCheckboxVariants.SWITCH` the one word the standard renderer acts on and anything else degrading
+to a checkbox. So a switch is a toolkit component after all, and konekt's own dictionary is **nine**
+components rather than ten.
 
 **Consequence 2.** The canvas's dictionary section names nine things the toolkit does not have:
 counter card with progress, plan card, QR block, eSIM card, order row, banner (info / low / error),
@@ -223,11 +243,19 @@ reference build and is stated rather than assumed.
 | Android is a separate coordinate, `client-android:0.4.92`, plus `android-gradle-plugin:0.4.92` which uploads the R8 mapping | registry listing, `katcher/README.md` §Android integration |
 | the `client` module declares `jvm()` and one host-dependent native target; no Apple target is declared | `katcher/client/build.gradle.kts:21-41` |
 
-**Consequence.** konekt's iOS build has no crash reporting from this stack. The brief's §5 says
-*"katcher: server errors + Android client"* and is accurate; what has to be said out loud is the
-other half — an iOS crash in the reference build is invisible. Named as a gap in D8 and raised as
-[U5](research-upstream-proposals.md#u5) rather than papered over with a third-party SDK, which would
-defeat the point of the exercise.
+**Consequence, as of `client:0.5.1`.** konekt's iOS build had no crash reporting from this stack, and
+that was named as a gap in D8 rather than papered over with a third-party SDK.
+
+**Fixed upstream, 2026-08-25 — [katcher#25](https://github.com/youndie/katcher/issues/25),
+released as `client:0.6.2`.** The published module metadata now names `ios_arm64`,
+`ios_simulator_arm64`, `ios_x64`, both macOS targets, both Linux targets, `mingw_x64` and `jvm`; the
+host-picked native target is gone, which was the second and smaller ask in the same issue. D8 is
+therefore withdrawn — the gap it described no longer exists — and `B-27` changes from writing the gap
+down to wiring the client up. One consequence for the build files: the client and the server now share
+the repository's own version, so the three katcher entries in the version catalogue are two.
+
+Kept as a fact rather than deleted, because it is the reason `B-27` exists at all and because "the
+published targets are whichever host built them" is a shape worth recognising again.
 
 ### 1.10 Conformance needs an OpenAPI document, and a clean report can mean nothing was checked
 
@@ -301,7 +329,12 @@ Brief: unstated. Decision: replace the toolkit's entry for `UnknownComponent::cl
 drawing the canvas's two densities, and route the event to tracy and to a katcher breadcrumb.
 
 Why: §1.4 — the default draws nothing and reports through `println`. The registry is open, so this
-costs one map entry and no fork. The upstream ask is narrower than the local fix, on purpose.
+costs one map entry and no fork. The upstream ask was narrower than the local fix, on purpose.
+
+**Amended 2026-08-25.** The reporting half is now the toolkit's: konekt supplies a
+`KompotDegradationSink` into tracy and a katcher breadcrumb instead of writing its own reporting into
+its own renderer, and gets `UNRENDERABLE_COMPONENT` and `UNKNOWN_ACTION` for free. The drawing half is
+unchanged and still ours.
 
 ### D4. Authentication is konekt's, not the toolkit's *(deviation from the brief)*
 
@@ -345,7 +378,7 @@ that mishandle upgrades, and reconnection with `Last-Event-ID` is in the protoco
 code. One server process means the in-memory bus is the whole requirement. The price: no client→server
 channel, which the product does not need — every subscriber action is already an HTTP action.
 
-### D8. iOS crash reporting is a stated gap, not a third-party SDK
+### D8. iOS crash reporting is a stated gap, not a third-party SDK *(withdrawn 2026-08-25)*
 
 Decision: v1 collects no crashes from the iOS build. It is written in the service document and in the
 README, and raised upstream ([U5](research-upstream-proposals.md#u5)).
@@ -353,6 +386,12 @@ README, and raised upstream ([U5](research-upstream-proposals.md#u5)).
 Why: §1.9. Adding Sentry or Crashlytics to a build whose purpose is to exercise this stack would
 answer the wrong question and hide the finding. An empty answer that names itself is worth more here
 than a full one from somewhere else.
+
+**Withdrawn.** katcher `client:0.6.2` publishes all three iOS targets, so the gap this decision was
+managing is gone and there is nothing left to state. Kept rather than deleted because the reasoning
+outlives the case: refusing to hide a gap behind another vendor's SDK is what made the gap legible
+enough to file, and filing it is what closed it in one day. `B-27` becomes wiring rather than
+documentation.
 
 ### D9. Upstream gaps go out as issues; konekt never forks a toolkit module
 
@@ -396,11 +435,11 @@ zero targets — the assertion is on coverage, not on the verdict.
 `kompot-bom` for kompot; for the other five, a milestone closes only after a clean resolve from an
 empty Gradle cache, run after the upstream CI finished rather than after the first artefact appeared.
 
-**Risk 4. Surface customisation vanishes when the theme arrives** (§1.3). Mitigation until
-[U1](research-upstream-proposals.md#u1) lands: konekt's design system wraps `RemoteThemeDesignSystem`
-rather than being wrapped by it, forwarding `resolveSurface` to its own implementation. A screenshot
-test takes the same screen before and after the theme arrives and fails on any difference outside
-colour and type.
+**Risk 4 — retired 2026-08-25. Surface customisation vanishes when the theme arrives** (§1.3). Closed
+by [kompot#80](https://github.com/youndie/kompot/issues/80) in `0.31.0.74`, so the planned mitigation —
+inverting the wrapping — is not built. **The screenshot test is still built**: it takes the same screen
+before and after the theme arrives and fails on any difference outside colour and type. A guard written
+for a fixed bug is what notices the regression, and this one costs a golden pair.
 
 **Risk 5. The forward-compatibility frame in the canvas cannot be demonstrated by the build that
 draws it.** `esim_transfer_widget` is unknown only to a client that does not register it, and the

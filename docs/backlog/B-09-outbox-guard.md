@@ -15,18 +15,27 @@ back to a plain update and drops the events"*. The saga still completes, its sta
 and every assertion anyone naturally writes still passes. The consumer on the other end simply never
 runs. This is the single failure mode in the build that is invisible from every direction.
 
-- **The decision and its reason.** Two guards, both cheap, both placed before the damage. A startup
-  assertion that the configured repository implements the outbox interface and refuses to construct
-  the engine otherwise — construction time, not fallback time, because by fallback time the process
-  is serving traffic. And a test that reads the **outbox row** inside the committed transaction of a
-  saga.
+**The first half is now a configuration flag.** petich#3 closed on 2026-08-25 and `0.1.0.6` carries
+`PetichEngineConfig(requireOutbox = true)`, which refuses to build an engine whose repository cannot
+store events, plus `PetichEngineMetrics.onDroppedEvents` for the case where a deployment wants the
+fallback and wants to see it. Both are off by default, so nothing changes for an application that
+wants no events.
+
+- **The decision and its reason.** Set `requireOutbox = true` instead of hand-writing the startup
+  assertion — a guard in the library is one the next project inherits, and one written here is one
+  the next project writes again from scratch, or more likely does not.
+- **The second guard stays and is not redundant**: a test that reads the **outbox row** inside the
+  committed transaction of a saga. `requireOutbox` proves the repository *can* store an event; the
+  test proves that a real saga actually *did*. Those are different claims, and the interesting
+  failures live in the second.
 - The rejected alternative is an end-to-end test that waits for a message on the topic. It is slower,
   it is flaky, and it fails for a dozen reasons that are not this one — so when it goes red nobody
   looks here.
-- Not covered: the upstream counter, raised as [U4](../research/research-upstream-proposals.md#u4).
+- Also wired: `onDroppedEvents` into metrik, so a deployment that ever does take the fallback sees a
+  non-zero line rather than nothing.
 
-- AC: wiring an in-memory repository without outbox support fails at startup with a message naming
-  the repository class and the consequence.
+- AC: wiring an in-memory repository without outbox support fails at engine construction, with
+  `requireOutbox = true` set in the configuration and asserted by a test.
 - AC: a committed four-step saga leaves exactly one outbox row, asserted against the table.
 - Anchors: `server/src/main/kotlin/io/konekt/saga/EngineWiring.kt`,
   `server/src/test/kotlin/io/konekt/saga/OutboxWiringTest.kt`.

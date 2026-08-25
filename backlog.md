@@ -41,13 +41,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (36)
+## Open (35)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and the Exposed plugin, including the tables petich does not create | P0 | M | B-01 |
 | [B-03](docs/backlog/B-03-component-dictionary.md) `[ ]` | Fix the component dictionary: nine own wire types in one KSP module | P0 | L | B-01 |
-| [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | The design system must keep its surface roles after the theme arrives | P0 | S | B-01 |
+| [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | Guard that the design system keeps its surface roles after the theme arrives | P0 | S | B-01 |
 | [B-06](docs/backlog/B-06-otp-login.md) `[ ]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
 | [B-07](docs/backlog/B-07-home-screen.md) `[ ]` | Home: balance and counters, drawn from the server | P0 | M | B-03, B-04, B-06 |
 | [B-08](docs/backlog/B-08-purchase-saga.md) `[ ]` | The purchase saga: four interceptors, with the confirmation as a suspend | P0 | L | B-02 |
@@ -67,8 +67,7 @@ so re-prioritising must never move a file.
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
-| [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Write down that the iOS build reports no crashes | P1 | XS | B-26 |
-| [B-29](docs/backlog/B-29-file-upstream-issues.md) `[~]` | File U1–U5 upstream and record what came back | P1 | S | - |
+| [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[ ]` | Time is injected, because four different deadlines depend on it | P1 | XS | B-01 |
 | [B-34](docs/backlog/B-34-error-contract.md) `[ ]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[ ]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
@@ -82,11 +81,15 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (1)
+## Closed (2)
 
 **The wire and the shell**
 
 - [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[x]` - Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately
+
+**Upstream and the box**
+
+- [B-29](docs/backlog/B-29-file-upstream-issues.md) `[x]` - File U1–U5 upstream and record what came back
 
 <!-- END INDEX -->
 
