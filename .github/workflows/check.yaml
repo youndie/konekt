@@ -100,6 +100,19 @@ jobs:
             exit 1
           }
 
+      # THE CONFORMANCE GATE, and it is a step of its own rather than a line inside the Gradle log
+      # below. It runs on every pull request and on every push to the default branch, because this
+      # job does — `on:` above carries no branch filter, deliberately.
+      #
+      # WHAT IT ASSERTS IS COVERAGE, and it asserts it before anything reads a verdict. A
+      # conformance run that finds nothing to check passes silently: `check(report.isClean)` is what
+      # the kit's readme shows and what everybody writes, and it is green on a server whose screens
+      # the walk never reached. So the assertion is per check and per endpoint, never a sum — a
+      # total is satisfied by the checks that walk every screen while the rest see nothing at all.
+      # B-24; the sibling disease and the sibling gate are B-09.
+      - name: The conformance gate asserts coverage, before any verdict
+        run: ./gradlew :server:test --tests 'io.konekt.conformance.*' --no-daemon
+
       # NO iOS TESTS ARE CLAIMED HERE, and saying so is one of B-37's acceptance criteria.
       #
       # On Linux, Kotlin/Native cross-compiles the Apple klibs and the simulator test tasks are

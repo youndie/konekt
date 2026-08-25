@@ -42,6 +42,38 @@ fix:
 	$(PY) scripts/backlog_index.py --docs $(DOCS) --backlog $(BACKLOG)
 	$(PY) scripts/coverage_map.py --fix --docs $(DOCS)
 
+# ── the OpenAPI document ────────────────────────────────────────────────────────────────────────
+#
+# `docs/api/openapi.json` is a build artefact: the conformance kit reads endpoint kinds out of it and
+# assumes no addresses, so without it there is no walk at all. It is GENERATED from the routing tree
+# and committed, and every build compares the two — a hand-edit fails the build until the next
+# recording overwrites it.
+#
+# ON THE MAC, and that is not a preference. This repository is a one-way mutagen replica: a file
+# written on the Linux box is reverted on the next sync, so a recording there looks like it did
+# nothing at all. `LOCAL=1` is what gets the command past the hook that otherwise sends Gradle to WSL.
+
+.PHONY: openapi
+
+openapi:
+	LOCAL=1 ./gradlew :server:openApi
+
+# ── the conformance gate ────────────────────────────────────────────────────────────────────────
+#
+# THE ASSERTION IS ON COVERAGE AND IT COMES FIRST. `kompot-tck` says it about itself: a check that
+# found no matching endpoint passes silently, which is the commonest way to end up with a
+# conformance kit that proves nothing. `check(report.isClean)` — the readme's example — is green on
+# a server whose screens the walk never reached, so the gate asks what would be visited, per check
+# and per endpoint, before anything reads a verdict.
+#
+# The same command CI runs, as its own step. It needs no stand: the subject is the committed
+# `docs/api/openapi.json`, which is the file the kit is handed as `TckConfig.openApi`.
+
+.PHONY: tck
+
+tck:
+	./gradlew :server:test --tests 'io.konekt.conformance.*'
+
 # ── the end-to-end stand ────────────────────────────────────────────────────────────────────────
 #
 # One command, the same one locally and in CI. A stand only CI knows how to start is a stand nobody

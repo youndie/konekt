@@ -10,6 +10,7 @@ import io.konekt.db.DatabaseFactory
 import io.konekt.events.BooblikOutboxPublisher
 import io.konekt.events.BrokerConnection
 import io.konekt.feature.auth.server.data.AUTH_JWT
+import io.konekt.feature.auth.server.data.RevealedCodes
 import io.konekt.feature.auth.server.data.authModule
 import io.konekt.feature.auth.server.data.authRoutes
 import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
@@ -45,6 +46,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.resources.Resources
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.ktor.server.sse.SSE
@@ -130,6 +132,76 @@ fun Application.baseModule(extraModules: List<org.koin.core.module.Module> = emp
     }
 }
 
+// THE AUTH TIER OF A ROUTE, as a value rather than as indentation.
+//
+// Until this existed the tier was readable only from the shape of the `routing { }` block below: a
+// route inside `authenticate { }` is the user tier and a route outside it is public. That is a real
+// answer and an unquotable one — nothing outside this file could ask it, and "public because nobody
+// decided" is exactly the tier that is discovered during an incident. As a value it travels: into
+// the OpenAPI document, where every operation carries `security`, and out of that into the
+// conformance walk, which asks a secured endpoint for a 401.
+enum class AuthTier {
+    PUBLIC,
+    USER,
+}
+
+// One entry of the route table: a tier, and the routes that sit at it.
+class RouteGroup(
+    val tier: AuthTier,
+    val mount: Route.() -> Unit,
+)
+
+// THE ROUTE TABLE, and it is read twice: `module` mounts it into the running server, and
+// `io.konekt.openapi` mounts it into an application with no database in order to walk the routing
+// tree it produces.
+//
+// One list rather than two, because a generator carrying a route list of its own is a second copy of
+// this contract — the thing this repository refuses everywhere else — and the document would then
+// describe the generator's idea of the server rather than the server. What the document says about
+// paths, methods and tiers is therefore not asserted anywhere: it is read out of the tree Ktor
+// actually built.
+val konektRoutes: List<RouteGroup> =
+    listOf(
+        // The way in. Neither of these can sit behind a session; what protects them is the lockout
+        // in the use cases, and refresh is public because the refresh token IS the credential.
+        RouteGroup(AuthTier.PUBLIC) {
+            authRoutes()
+            sessionRoutes()
+        },
+        // The user tier. Decided here, in the composition root, while the shape of a token is the
+        // auth feature's business.
+        RouteGroup(AuthTier.USER) {
+            authenticatedSessionRoutes()
+            purchaseRoutes()
+            esimWizardRoutes()
+            homeRoutes()
+            realtimeRoutes()
+        },
+    )
+
+// The development route that reads back a one-time code, in an entry of its own because it is THE
+// ONE route whose existence is a configuration decision rather than a fact about the build.
+//
+// `RevealedCodes` arrives as a function rather than as a value so that mounting the table needs no
+// container: the composition root passes `{ getKoin().get() }` and the document generator passes a
+// plain instance. A parameter here would have made the whole table need a Koin, and a Koin needs a
+// database.
+fun devOtpRouteGroup(revealed: () -> RevealedCodes): RouteGroup =
+    RouteGroup(AuthTier.PUBLIC) { devOtpRoutes(revealed()) }
+
+// The one place where a tier becomes an `authenticate { }`. It is a function rather than four lines
+// inside `routing { }` because the document generator needs the same translation: a tier that meant
+// one thing when the server mounted it and another when the document was written would be a
+// document that is wrong about the only thing it is uniquely able to say.
+fun Route.mountKonektRoutes(groups: List<RouteGroup>) {
+    groups.forEach { group ->
+        when (group.tier) {
+            AuthTier.PUBLIC -> group.mount(this)
+            AuthTier.USER -> authenticate(AUTH_JWT) { group.mount(this) }
+        }
+    }
+}
+
 // The composition root. A feature contributes bindings and routes; plugins are installed once, here.
 fun Application.module(config: KonektConfig) {
     val dataSource = DatabaseFactory.dataSource(config.database)
@@ -180,23 +252,16 @@ fun Application.module(config: KonektConfig) {
         getKoin().get<BrokerConnection>().close()
     }
 
+    // THE WHOLE OF THE ROUTING, and deliberately nothing beside it. What is mounted and at which
+    // tier is `konektRoutes`; this block only hands it a Route. A route registered here directly
+    // would be a route the OpenAPI document never sees — and `CompositionRootRoutesTest` reads this
+    // file and refuses that shape, because a call is control flow and cannot be verified any other
+    // way.
     routing {
-        authRoutes()
-        sessionRoutes()
-
-        // The user tier. What is inside `authenticate` is decided here, in the composition root,
-        // while the shape of a token is the feature's business.
-        authenticate(AUTH_JWT) {
-            authenticatedSessionRoutes()
-            purchaseRoutes()
-            esimWizardRoutes()
-            homeRoutes()
-            realtimeRoutes()
-        }
-
-        if (config.revealOtpCodes) {
-            devOtpRoutes(getKoin().get())
-        }
+        mountKonektRoutes(
+            konektRoutes +
+                if (config.revealOtpCodes) listOf(devOtpRouteGroup { getKoin().get() }) else emptyList(),
+        )
     }
 }
 

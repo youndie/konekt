@@ -122,3 +122,33 @@ dependencies {
     testImplementation(testFixtures(project(":shared:db")))
     testImplementation(libs.testcontainers.junit)
 }
+
+// ── the OpenAPI document ────────────────────────────────────────────────────────────────────────
+//
+// `docs/api/openapi.json` is generated from the routing tree and committed; `:server:test` compares
+// the two on every run, so a hand-edit fails the build. This task is the recorder — the only thing
+// that writes it — and it exists as a named Gradle task rather than only as a `make` target because
+// B-23's acceptance is stated in terms of one.
+//
+// It is a `Test` task and not a `JavaExec`: the generator walks a routing tree, which means building
+// the application, which is what the test source set already knows how to do.
+//
+// ON THE MAC. This repository is a one-way mutagen replica, so a file written on the Linux box is
+// reverted by the next sync and the recording looks like it did nothing at all. `make openapi` is
+// the wrapper that adds `LOCAL=1` to get past the hook that otherwise sends Gradle to WSL.
+//
+// Never up to date, deliberately: its output is a file outside the build directory that Gradle is
+// not tracking, so an "UP-TO-DATE" here would mean "not recorded" while reading as success.
+tasks.register<Test>("openApi") {
+    group = "documentation"
+    description = "Records docs/api/openapi.json from the routing tree. Run it as `make openapi`."
+
+    val testTask = tasks.test.get()
+    testClassesDirs = testTask.testClassesDirs
+    classpath = testTask.classpath
+    useJUnitPlatform()
+
+    filter { includeTestsMatching("io.konekt.openapi.OpenApiDocumentTest") }
+    environment("KONEKT_OPENAPI_RECORD", "true")
+    outputs.upToDateWhen { false }
+}
