@@ -3,6 +3,7 @@ package io.konekt.realtime
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.realtime.UpdateComponentMessage
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
+import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.http.subscriberId
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -21,18 +22,14 @@ import org.koin.ktor.ext.inject
 // carries `Last-Event-ID` in the protocol rather than in our code.
 //
 // kompot ships the frame contract and refuses to choose a transport. This is the choice.
-private const val SUBSCRIBER_TOPIC_PREFIX = "subscriber:"
-
-fun topicOf(subscriberId: String): String = "$SUBSCRIBER_TOPIC_PREFIX$subscriberId"
-
 // AUTH TIER: user token. A stream is per subscriber and carries their counters, so the topic name is
 // taken from the VERIFIED TOKEN and never from a query parameter — a stream addressed by a parameter
 // is every subscriber's screen for anybody who asks.
 fun Route.realtimeRoutes() {
     val broadcaster by inject<KompotUpdateBroadcaster>()
 
-    sse("/api/v1/realtime") {
-        val topic = topicOf(call.subscriberId())
+    sse(RealtimeStream.PATH) {
+        val topic = RealtimeStream.topicOf(call.subscriberId())
 
         // Unlimited rather than a fixed buffer: the broadcaster offers into this channel and drops on
         // a full one, so a bound here would silently lose updates for a client that is merely slow.
@@ -65,7 +62,7 @@ class ComponentBroadcaster(
         component: KompotComponent,
     ) {
         broadcaster.broadcast(
-            topicOf(subscriberId),
+            RealtimeStream.topicOf(subscriberId),
             json.encodeToString(UpdateComponentMessage.serializer(), UpdateComponentMessage(componentId, component)),
         )
     }

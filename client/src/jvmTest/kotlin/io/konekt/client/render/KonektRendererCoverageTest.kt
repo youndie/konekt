@@ -35,14 +35,13 @@ import kotlin.test.assertTrue
 // that would be right on the day it was written.
 class KonektRendererCoverageTest {
     // Every wire type this build can draw. One entry, and the list grows one screen at a time.
-    private val rendered = setOf("usage_counter_card")
+    private val rendered = setOf("usage_counter_card", "esim_qr")
 
     // The rest, each waiting for the screen that needs it. B-05 is the block a client draws instead.
     private val notYetRendered =
         setOf(
             "plan_card",
             "esim_card",
-            "esim_qr",
             "order_row",
             "banner",
             "snackbar",

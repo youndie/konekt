@@ -1,7 +1,7 @@
 ---
 id: B-17
 title: "The eSIM order wizard, and an SM-DP+ mock that can be out of slots"
-status: wip
+status: done
 priority: P1
 size: L
 stage: stage-m2-live
@@ -32,9 +32,16 @@ to refuse for that reason specifically rather than merely fail.
 - AC OK: a successful order ends with a QR whose payload is the issued activation code. Asserted from
   the two ends separately — the `esim_qr` on the screen against the `activation_code` column — so a
   screen that composed its own string would fail.
-- AC PENDING, **client half**: drawing that payload as a scannable code needs
-  `client/src/commonMain/kotlin/io/konekt/render/EsimQrRenderer.kt`, and there is no client module.
-  `B-04`/`B-07`.
+- AC OK (client half): `EsimQrRenderer` encodes the activation code and draws it. The library is an
+  **encoder** rather than a QR widget — it answers a matrix and draws nothing — so the card around the
+  code is the design system's while the code itself stays black on white, which is the one place this
+  renderer refuses the theme: a camera reads through a contrast threshold, and a tasteful
+  low-contrast pair is a code that scans on a designer's screen and not in a hotel corridor.
+- Also: the encoding is asserted structurally rather than by looking at it — the size is a real QR
+  version, the three finder patterns are in their corners, and the timing pattern alternates. A grid
+  of the right dimensions that encodes the wrong thing looks exactly like one that does not.
+- Also: a payload too large answers an empty matrix rather than throwing, and the screen then shows
+  the caption and the typed code. That is what `manualCodeText` is carried for.
 
 **Deviation from this item as written.** It said `kompot-wizard`, and the flow uses `wizard-core`
 alone. `WizardScreenComponent` requires a `formId` that must name a real `FormSchema`, because a

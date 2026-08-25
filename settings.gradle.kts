@@ -109,6 +109,9 @@ include(":feature:esim-server-data")
 
 // The home screen's path. A shared-api with no server-domain beside it, because the screen it names
 // is assembled in the composition root out of two features rather than owned by one.
+// The update stream's path and topic. A module for one object, because SSE takes a plain string on
+// both sides and the rule that a path exists once has to be kept somewhere both can see.
+include(":feature:realtime-shared-api")
 include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")

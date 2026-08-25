@@ -1,7 +1,7 @@
 ---
 id: B-15
 title: "The realtime transport: an SSE endpoint and a client source"
-status: wip
+status: done
 priority: P1
 size: M
 stage: stage-m2-live
@@ -35,8 +35,26 @@ the broadcaster and an in-memory bus, which is the whole requirement for one pro
 - AC OK: a stream carries only its own subscriber's updates. The topic comes from the verified token
   and never from a request parameter; a stream addressed by a parameter is every subscriber's screen
   for anybody who asks.
-- AC PENDING, **client half**: reconnection with `Last-Event-ID` and a `KompotRealtimeSource` need a
-  client module. `B-04`/`B-07`.
+- AC OK (client half), **in a different form than written**: `SseRealtimeSource` reconnects with a
+  capped doubling backoff and announces the gap — and it does **not** send `Last-Event-ID`.
+  That header resumes a stream by replaying what was missed, which needs the server to number its
+  frames and keep them; this server does neither, deliberately, and this item's own "not covered" says
+  why: an update is losable by design because the client gets current state with its next screen
+  request. So there is nothing to resume against, and a client sending the header would be asking a
+  question this protocol cannot answer. What a screen needs after a gap is not the frames it missed
+  but the state it is in now, which is what `streamRestarted` is for.
+- Also, corrected by its own test: a frame naming a component this build has never heard of is
+  **delivered**, not dropped — it decodes to `UnknownComponent` and the screen draws the unknown
+  block. The first version of the source dropped it and the first version of the test asserted that,
+  which would have written the weaker behaviour into the contract. What is dropped is a line that is
+  not JSON at all.
+- Also: the path is in `feature/realtime-shared-api` and not a string on either side. A `@Resource`
+  cannot describe it — both `sse(path)` and `serverSentEvents(urlString =)` take plain strings and
+  `ktor-client-resources` has no SSE builder — so the rule is kept the only way it can be: one
+  constant, named by both. Sharing it also removed the test that would have compared them.
+- Also: **MockEngine and the client's SSE plugin do not meet.** The frames never arrive and the
+  collector waits, so every assertion times out and none of them says why. The tests run an embedded
+  CIO server on an ephemeral port — the transport itself, and the same engine the product runs.
 - Also: a client that goes away is forgotten. The unsubscribe is in a `finally` because the ordinary
   end of a stream is a closed laptop rather than a graceful close, and a subscriber set that only
   shrinks on a clean exit is a set that only grows.

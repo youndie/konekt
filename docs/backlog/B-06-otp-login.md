@@ -1,7 +1,7 @@
 ---
 id: B-06
 title: "Number and OTP sign-in, written from scratch because kompot-auth is one action"
-status: wip
+status: done
 priority: P0
 size: L
 stage: stage-m0-wire
@@ -36,8 +36,20 @@ refresh and logout are all konekt's, behind a Ktor `Authentication` provider.
 - AC OK: a correct code answers `update_session` through `respondKompotAction`, asserted on the
   `"type"` discriminator in the body. A plain `call.respond` drops it at the root while nested children
   serialise perfectly, so the client receives an unknown action and does nothing — with a 200.
-- AC PENDING, **client half**: "and the client stores it" needs a client module, which does not exist.
-  It arrives with `B-04`/`B-07`.
+- AC OK (client half): the session is stored, attached and refreshed — behind ktor's bearer plugin
+  rather than an interceptor of ours, because the plugin already knows when to attach and when to
+  ask, and what it lacks is somewhere to keep them. Driven through the real client with the server
+  replaced by a mock engine, so what is under test is the seam rather than the logic.
+- **Two things the tests corrected, both of which had been written down as fact.** A stored session is
+  attached to the VERY FIRST request; the widely repeated "the first request goes out bare and gets a
+  401" belongs to a session with no tokens yet, which is a different case. And the refresh call
+  re-enters the Auth plugin unless it is marked: without `attributes.put(AuthCircuitBreaker, Unit)`
+  the refresh went out carrying the token that had just failed — measured, `Bearer stale` on
+  `/auth/session/refresh`. `markAsRefreshTokenRequest()` does not exist in Ktor 3.5; the attribute is
+  the mechanism.
+- Also: a refused refresh ends the session rather than retrying. The server rotates refresh tokens and
+  detects reuse, so a second attempt with the same token ends the family — retrying is the one
+  response guaranteed to make it worse.
 - Also done, carried from `B-34`: `ownedOr404` in `:shared:server-http` — 404 and not 403 for another
   subscriber's resource, because a 403 confirms the resource exists and hands out an enumeration
   oracle. The rule lives in one place now; the first owner-scoped route uses it.

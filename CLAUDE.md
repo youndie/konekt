@@ -250,6 +250,17 @@ circular dependency inside `:server` naming neither module.
 - **Never `call.respond` a component tree, and there is now a test that says so.**
   `CallRespondUsageTest` reads the sources, because `call.respond(anything)` compiles. It was proved
   to bite by rewriting a real route.
+- **The client's session lives behind ktor's bearer plugin, not an interceptor.** Two things were
+  believed and are false: a stored session IS attached to the very first request (the bare-first-401
+  shape belongs to a session with no tokens yet), and the refresh call re-enters the plugin carrying
+  the token that just failed unless it sets `attributes.put(AuthCircuitBreaker, Unit)` —
+  `markAsRefreshTokenRequest()` does not exist in Ktor 3.5.
+- **`Last-Event-ID` is deliberately not used.** It resumes a stream by replaying, which needs the
+  server to number and keep frames; this one does neither, because an update is losable by design.
+  The client reconnects and announces the gap instead, and the screen refetches.
+- **MockEngine and the client's SSE plugin do not meet.** No frame ever arrives and the collector
+  waits, so the failure is a timeout that names the test rather than the cause. Stream tests run an
+  embedded CIO server on an ephemeral port.
 - **A green check that visited nothing is the failure mode here**, twice over: the conformance kit
   passes silently when it finds no targets, and petich completes sagas silently when it is dropping
   their events. Both have their own backlog item and both assert on coverage rather than on a verdict.

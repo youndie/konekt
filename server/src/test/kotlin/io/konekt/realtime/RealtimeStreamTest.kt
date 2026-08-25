@@ -5,6 +5,7 @@ import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.UpdateComponentMessage
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.konekt.components.UsageCounterCardComponent
+import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.http.SubscriberPrincipal
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.header
@@ -132,8 +133,8 @@ class RealtimeStreamTest {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             local.start(scope)
 
-            local.subscribe(topicOf("sub-1"), channel)
-            local.unsubscribe(topicOf("sub-1"), channel)
+            local.subscribe(RealtimeStream.topicOf("sub-1"), channel)
+            local.unsubscribe(RealtimeStream.topicOf("sub-1"), channel)
             ComponentBroadcaster(local, json).push("sub-1", "counter-data", card("x"))
 
             // The one assertion here about an ABSENCE, so it is bounded rather than awaited: waiting

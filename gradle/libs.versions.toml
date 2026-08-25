@@ -79,6 +79,9 @@ metrikAgent = "0.1.13"
 tracyAgent = "0.1.12"
 viddik = "0.1.2.13"
 
+# The QR encoder behind esim_qr. See the coordinate below for why an encoder rather than a widget.
+qrcode = "4.5.0"
+
 # --- persistence -------------------------------------------------------------------------------
 
 # exposed-core publishes no common metadata variant (only jvm), which is why every module that
@@ -143,6 +146,11 @@ ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref 
 # feature's -shared-api module so a path exists in exactly one place.
 ktor-resources = { module = "io.ktor:ktor-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+# The bearer plugin: it holds the tokens and refreshes them on a 401. There is no `ktor-client-sse`
+# artefact — the client's SSE plugin lives in ktor-client-core, which is easy to assume otherwise
+# from the server side, where `ktor-server-sse` IS one.
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
 # --- kompot ------------------------------------------------------------------------------------
 #
@@ -192,6 +200,12 @@ compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.re
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
+
+# A QR ENCODER and not a QR widget, which is the whole reason it is this one. It answers a matrix of
+# dark and light modules; the drawing is ours, so the code comes out in the design system's colours
+# and shapes instead of a library's idea of them. Published for jvm, android and the three iOS
+# targets, so it survives the client growing. Read from repo1.maven.org on 2026-08-25.
+qrcode = { module = "io.github.g0dkar:qrcode-kotlin", version.ref = "qrcode" }
 # Named by coordinate rather than taken from the plugin's `compose.material3` accessor, because that
 # accessor is pinned to a version of its own and loses to whatever the toolkit asks for — which is
 # how foundation 1.12.0 came to sit beside material3 1.11.0-alpha07 and throw at render time.

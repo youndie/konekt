@@ -5,6 +5,7 @@ import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotRegistry
 import io.github.youndie.kompot.kompotCoreRenderers
 import io.github.youndie.kompot.kompotStandardRenderers
+import io.konekt.components.EsimQrComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.reflect.KClass
 
@@ -18,6 +19,7 @@ import kotlin.reflect.KClass
 val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<out KompotComponent>> =
     mapOf(
         UsageCounterCardComponent::class to UsageCounterCardRenderer(),
+        EsimQrComponent::class to EsimQrRenderer(),
     )
 
 // The registry an application hands to `LocalKompotRegistry`: the toolkit's own renderers plus ours.

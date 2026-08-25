@@ -9,6 +9,7 @@ import io.konekt.components.UsageCounterCardComponent
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.events.BrokerHarness
 import io.konekt.events.EventTopics
+import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
@@ -17,7 +18,6 @@ import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.mocks.traffic.TrafficSimulator
 import io.konekt.mocks.traffic.UsageConsumer
 import io.konekt.realtime.ComponentBroadcaster
-import io.konekt.realtime.topicOf
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
@@ -100,7 +100,7 @@ class TrafficChainTest {
             val connection = BrokerHarness.connect(scope)
             try {
                 val listener = Channel<String>(Channel.UNLIMITED)
-                broadcaster.subscribe(topicOf(subscriberId), listener)
+                broadcaster.subscribe(RealtimeStream.topicOf(subscriberId), listener)
 
                 counters.grant(subscriberId, UsageCounter.Kind.DATA, 10_000)
 

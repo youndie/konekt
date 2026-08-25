@@ -46,6 +46,28 @@ kotlin {
             api(libs.kompot.themeClient)
 
             api(project(":shared:components"))
+            // The wire this client speaks to, so a path is never written as a string here either.
+            api(project(":feature:auth-shared-api"))
+            api(project(":feature:realtime-shared-api"))
+            api(project(":feature:usage-shared-api"))
+            api(project(":feature:esim-shared-api"))
+
+            // The session lives behind ktor's bearer plugin: it holds the tokens and refreshes them
+            // on a 401, which is why `KonektSession` is a store rather than an interceptor.
+            api(libs.ktor.client.core)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.resources)
+            implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktor.serialization.json)
+
+            // The realtime channel and its frame contract. The transport is the application's, which
+            // is the whole reason this module exists rather than the toolkit shipping one.
+            api(libs.kompot.realtime)
+            api(libs.kompot.auth)
+
+            // A QR encoder, not a widget: it answers a matrix and the drawing stays ours.
+            implementation(libs.qrcode)
 
             api(libs.compose.runtime)
             api(libs.compose.ui)
@@ -65,6 +87,19 @@ kotlin {
             // which would make the coverage guard agree with whatever it found.
             implementation(kotlin("reflect"))
             implementation(compose.desktop.currentOs)
+            // A real engine for the session and stream tests, plus MockEngine to drive them without
+            // a server. Both: the mock proves the logic, and CIO proves the wiring compiles against
+            // an engine that exists.
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.mock)
+            // A REAL SERVER for the stream tests. MockEngine and the SSE plugin do not meet: the
+            // frames never arrive and the collector simply waits, which is a test measuring the mock.
+            // An embedded CIO server on an ephemeral port is the transport itself, and it is the same
+            // engine the product runs.
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.sse)
+            implementation(libs.kotlinx.coroutines.test)
             implementation(libs.compose.uiTest)
 
             // A TEST dependency and not a main one, and the reason is the whole point of the fixture

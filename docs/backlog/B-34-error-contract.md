@@ -1,7 +1,7 @@
 ---
 id: B-34
 title: "One error contract: Result out of use cases, StatusPages into status codes"
-status: wip
+status: done
 priority: P1
 size: S
 stage: stage-m0-wire
@@ -37,9 +37,12 @@ the auth tier and the error codes of an endpoint are columns rather than prose.
 - AC ✅: `SuspendRunCatchingTest` cancels a real job and asserts the line after the block never ran.
   A test that merely throws `CancellationException` and catches it would pass against plain
   `runCatching`; this one does not, which is the whole difference.
-- AC ⏳ **carried to `B-06`**: "another subscriber's order answers 404" needs a session and an
+- AC ✅ **was carried to `B-06`, and is now met**: "another subscriber's order answers 404" needs a session and an
   owner-scoped resource, and neither exists yet. It is an auth-tier rule and it belongs to the first
   feature that has an owner — written down here rather than quietly dropped.
+  Met through a real authenticated route in `EsimWizardRoutingTest`: another subscriber's
+  wizard run answers **404 and not 403**, because a 403 would confirm the run exists and hand an
+  enumeration oracle to anyone who wants one.
 - Also done: the `when` in `httpStatus()` has no `else`, so a refusal added to the sealed hierarchy
   and not mapped **fails to compile**. A lookup table would have let it fall through to 500, which is
   the shape of failure a client reports as "it just errors".
