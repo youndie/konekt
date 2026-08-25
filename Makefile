@@ -41,3 +41,31 @@ report:
 fix:
 	$(PY) scripts/backlog_index.py --docs $(DOCS) --backlog $(BACKLOG)
 	$(PY) scripts/coverage_map.py --fix --docs $(DOCS)
+
+# ── the end-to-end stand ────────────────────────────────────────────────────────────────────────
+#
+# One command, the same one locally and in CI. A stand only CI knows how to start is a stand nobody
+# debugs, and the failures worth catching here are the ones that only appear between processes.
+
+COMPOSE := docker compose -f deploy/compose.yaml
+
+.PHONY: stand-up stand-down stand-logs e2e
+
+# The distribution is built OUTSIDE the image — see deploy/Dockerfile for why — so it has to exist
+# before the image does. Forgetting that step gives a container running whatever was built last time,
+# which is the most confusing failure this stand can produce.
+stand-up:
+	./gradlew :server:installDist
+	$(COMPOSE) up -d --build --wait
+
+stand-down:
+	$(COMPOSE) down -v
+
+stand-logs:
+	$(COMPOSE) logs --tail=200
+
+# Needs a stand already up. Deliberately not part of `check`: wired in, it would fail every ordinary
+# build on a machine that has not started one, and a suite that fails for reasons unrelated to the
+# change is a suite people learn to ignore.
+e2e:
+	./gradlew :e2e:e2e

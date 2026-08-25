@@ -258,6 +258,16 @@ circular dependency inside `:server` naming neither module.
   `AppleTestsAreNotClaimedTest` refuses it. Note that a guard reading a file outside the module is
   not a Gradle input: changing only that file leaves `:server:test` UP-TO-DATE, and locally it needs
   `--rerun-tasks` to be believed.
+- **The stand is the only thing that asks the application.** Four defects fatal to the running server
+  survived 191 green tests, because every test below that level builds its own object graph and
+  supplies what it needs: a broadcaster nothing bound (the server could not start), a `Json` missing
+  petich's payloads (no purchase could be created), two use cases injected and never bound (two
+  screens 500), and a healthcheck running `/dev/tcp` under dash (permanently unhealthy). Run it:
+  `make stand-up && make e2e`.
+- **`by inject<T>()` needs a binding and Koin will not say so until the request arrives.**
+  `RoutesResolveWhatTheyInjectTest` reads what the routes inject and checks the application's own
+  modules bind it — by inspecting definitions rather than resolving them, because one of the bindings
+  opens a socket in its constructor.
 - **A feature that is built is not a feature that runs.** The usage feature shipped complete and
   tested and was installed by nothing: five imports in `Application.kt` with no use beneath them, so
   a completed purchase granted no allowance and no route could read a counter. `KoinGraphTest`

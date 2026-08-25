@@ -148,10 +148,7 @@ fun Application.module(config: KonektConfig) {
             // reachable from nothing: five imports of this feature sat in this file with no use
             // beneath them.
             usageModule(database),
-            module {
-                single { ComponentBroadcaster(get(), get()) }
-                single { TrafficChain(get(), get(), get(), get(), get(), get()) }
-            },
+            serverModule(),
             petichModule(database, config),
         ),
     )
@@ -203,6 +200,25 @@ fun Application.module(config: KonektConfig) {
     }
 }
 
+// What the composition root itself provides: the things that belong to no feature.
+//
+// A NAMED FUNCTION rather than an inline `module { }`, so a test can install exactly what the
+// application installs. An inline one is invisible from outside, and every binding in it is a binding
+// only a running process has ever resolved.
+fun serverModule() =
+    module {
+        // THE SERVER COULD NOT START WITHOUT THIS LINE, and nothing said so until a stand tried.
+        // `Application.kt` resolved a broadcaster on startup and `realtimeRoutes` injected one, and
+        // no module ever bound it — every route test and the smoke test build their own graph, so
+        // each supplied its own and none asked whether the application does.
+        //
+        // The in-memory bus is the default and is right for one instance; `kompot-realtime-redis` is
+        // the multi-instance backend and this product has one.
+        single { KompotUpdateBroadcaster() }
+        single { ComponentBroadcaster(get(), get()) }
+        single { TrafficChain(get(), get(), get(), get(), get(), get()) }
+    }
+
 // The saga engine and its storage.
 //
 // ONE ENGINE PER SAGA TYPE, sharing one table. The sweeper resolves the owning engine per saga rather
@@ -212,7 +228,7 @@ fun Application.module(config: KonektConfig) {
 // requireOutbox is on. petich degrades quietly to a plain update when handed a repository that cannot
 // store events, and the saga still completes with correct state while nobody downstream is ever told.
 // Nothing about that is visible from a test that asserts the saga finished.
-private fun Application.petichModule(
+fun petichModule(
     database: Database,
     config: KonektConfig,
 ) = module {
@@ -279,9 +295,18 @@ private fun Application.petichModule(
     }
 }
 
-// The application's Json: the toolkit's actions and components plus konekt's own dictionary. One
-// instance, bound in the graph, because two Json configurations that differ by one module produce a
-// wire nobody can debug.
+// What petich needs to write a saga down. Separate from the wire modules above it because it is not
+// a wire at all — these types never leave the process, they go into a column.
+private val petichSerializersModule =
+    SerializersModule {
+        polymorphic(PetichPayload::class) { subclass(PurchasePayload::class) }
+        polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
+        polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
+    }
+
+// The application's Json: the toolkit's actions and components, konekt's own dictionary, and the
+// saga's payloads. One instance, bound in the graph, because two Json configurations that differ by
+// one module produce a wire nobody can debug.
 private val kompotJson: Json =
     Json {
         ignoreUnknownKeys = true
@@ -292,6 +317,15 @@ private val kompotJson: Json =
             generatedStandardSerializersModule +
             generatedKonektSerializersModule +
             kompotAuthSerializersModule +
+            // THE SAGA'S OWN TYPES, and without them no purchase can be created at all: petich
+            // writes its payload polymorphically into the saga row, and an unregistered subclass is
+            // a 500 on the first POST. Every saga test builds this by hand, which is exactly why
+            // nothing noticed the application did not — a stand was the first thing to try.
+            //
+            // Note what this makes true: the STORAGE format of a saga now depends on this Json's
+            // `classDiscriminator`. Changing it would make already-persisted sagas unreadable, which
+            // is the reason @SerialName is on those payloads rather than the class name being used.
+            petichSerializersModule +
             // Hand-written, because actions are not generated: @KompotComponentMarker covers
             // components and the KompotAction hierarchy is registered by hand. Omitting it
             // fails nothing at build time and fails every wizard step at runtime.

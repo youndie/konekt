@@ -62,4 +62,11 @@ fun purchaseModule(
     factory { StartPurchaseUseCase(get(), get(), get(), get()) }
     factory { ConfirmPurchaseUseCase(get(), get(), get()) }
     factory { FindOrderUseCase(get(), get()) }
+    // Both were injected by `purchaseRoutes` and bound by nothing, so the history screen and the
+    // order screen answered 500 in the running server. Every route test builds its own graph and
+    // supplies what it needs, which is why 191 green tests said nothing about it — a stand was the
+    // first thing to ask the application.
+    single<HistoryRepository> { ExposedHistoryRepository(database) }
+    factory { LoadHistoryUseCase(get()) }
+    factory { LoadOrderScreenUseCase(get(), get()) }
 }

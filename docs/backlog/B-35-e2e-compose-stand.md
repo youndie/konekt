@@ -1,7 +1,7 @@
 ---
 id: B-35
 title: "An end-to-end stand on docker-compose, driven by one command in both places"
-status: open
+status: wip
 priority: P0
 size: M
 stage: stage-m2-live
@@ -33,15 +33,41 @@ thing that owns the whole.
 - Not covered: the mobile clients. The stand drives HTTP; the client is covered by screenshots
   (`B-28`) and by the client conformance corpus.
 
-- AC: `docker compose up` plus one Gradle task runs the three scenarios green from a clean checkout.
-- AC: killing the broker mid-scenario fails the run with a message naming the broker, not a timeout.
-- AC: the same command runs in CI, and the CI job declares its Docker requirement.
-- AC, **moved here from `B-36`**: the stand runs the **previous** release's server image against the
-  **new** schema and passes, which is the state a rolling deploy actually passes through and the one
-  no unit test can reach. `ExpandAndContractTest` refuses a destructive migration by reading the file;
-  only this can tell whether the code still running reads what was removed. It needs two things this
-  repository does not have yet — the stand itself and a previous release to point at — which is why
-  it belongs to the item that builds the first of them.
+- AC OK: `make stand-up && make e2e` runs the scenarios green from a clean checkout — four of them:
+  the confirmed purchase with the allowance landing on the home screen, the refused one rolled back
+  and stated in money, the order reaching its history, and a counter moving through a real broker onto
+  an already-open SSE stream.
+- AC OK: an expired wait says what the stand looks like rather than that it waited. `Stand.awaitOrExplain`
+  asks `docker compose ps` before giving up and names anything not running — the broker publishes no
+  port and cannot be probed directly, and it is the process whose death is quietest.
+- AC OK: the same two commands run in CI, in a job of their own that asks for Docker before Gradle
+  does, and prints the stand's logs on failure. A stand whose logs are not in the job that failed
+  sends somebody to reproduce it locally.
+- AC PENDING, moved here from `B-36`: the stand runs the **previous release's image** against the new
+  schema. The stand exists now; the previous release does not — nothing has ever been tagged or
+  published, so there is no image to point at and a run against the previous COMMIT would compare two
+  schemas that are identical. It becomes real with the first release, and it is written here rather
+  than left implicit because that is the only place it can be done.
+
+**FOUR DEFECTS, EVERY ONE OF THEM FATAL TO THE RUNNING SERVER, found the first time this stand came
+up — with 191 unit and integration tests green.** They are listed because the pattern matters more
+than the fixes:
+
+| what | why nothing below this level saw it |
+| --- | --- |
+| `KompotUpdateBroadcaster` bound by nothing — **the server could not start** | every route test builds its own graph and supplies its own |
+| the application's `Json` registered none of petich's payloads — **no purchase could be created** | every saga test assembles that module by hand |
+| `LoadHistoryUseCase` and `LoadOrderScreenUseCase` injected and never bound — two screens answered 500 | Koin resolves lazily, so the process starts and the health check passes |
+| the container healthcheck ran `/dev/tcp` under `sh`, which is dash — **permanently unhealthy** | nothing waited on the healthcheck until `depends_on: service_healthy` did |
+
+Three of the four are now caught below the stand as well: `RoutesResolveWhatTheyInjectTest` reads what
+the routes inject and checks the application binds it, and it was proved to bite by removing one of
+the two bindings above. The fourth — a healthcheck that cannot pass — is caught by `--wait` and by
+nothing else, which is an argument for the stand rather than against it.
+
+Also found and fixed on the way up: the Postgres volume was mounted at `/var/lib/postgresql/data`,
+the pre-18 convention. The 18 image refuses to start on it and says why — `pg_upgrade --link` would
+cross a mount-point boundary.
 
 - Anchors: `deploy/compose.yaml`, `e2e/src/test/kotlin/io/konekt/e2e/`.
 

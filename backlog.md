@@ -41,17 +41,18 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (15)
+## Open (16)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
-| [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
+| [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
+| [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[ ]` | A subscriber is created with nothing and there is no way to add any | P1 | M | - |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |

@@ -59,6 +59,11 @@ include(":client")
 // The server: Ktor on CIO, the sagas, the mocks, the screens.
 include(":server")
 
+// The end-to-end suite. It drives a RUNNING stand over HTTP and is deliberately outside `check`: the
+// scenario this build exists to show crosses five processes, and every test below this level can pass
+// while the chain is broken at a seam, because each of them owns one end of it.
+include(":e2e")
+
 // The domain shared by both sides — Money first. Multiplatform, because the client renders types it
 // must be able to name; JVM plus the three iOS targets, with Android joining when the client module
 // does.

@@ -110,6 +110,51 @@ jobs:
       - name: Build and test (Apple targets are compiled, not tested)
         run: ./gradlew build --no-daemon
 
+  # THE STAND, and it is a job of its own because it fails for reasons the other two cannot see: a
+  # container that did not come up, an image built from a distribution nobody rebuilt, a binding
+  # nothing supplies. Four of those were found the first time this ran, and every one of them left
+  # the unit suite green.
+  #
+  # The same command a person runs — `make stand-up && make e2e` — because a stand only CI knows how
+  # to start is a stand nobody debugs.
+  e2e:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Declared rather than discovered, like the build job: this one runs five containers.
+      - name: Docker is required by the stand
+        run: |
+          docker info > /dev/null 2>&1 || {
+            echo "::error::this job brings up a docker compose stand and needs a working Docker daemon"
+            exit 1
+          }
+
+      - name: Bring the stand up
+        run: make stand-up
+
+      - name: Drive it
+        run: make e2e
+
+      # The logs of a stand that failed are the only thing that explains it, and a job that ends
+      # without them sends somebody to reproduce it locally. `always()` because the useful case is
+      # precisely the failing one.
+      - name: The stand's logs
+        if: always()
+        run: make stand-logs
+
+      - name: Take it down
+        if: always()
+        run: make stand-down
+
   # Separate from the gate, and on a schedule rather than on a pull request, because an anchor rots
   # when somebody refactors a **different** repository. A pull request here is the least likely
   # moment for one to break, and running it there trains people to ignore a red build they did not

@@ -26,23 +26,60 @@ class KoinGraphTest {
     // `verify()` never opens a connection, and the definitions that capture this never run. Naming it
     // rather than passing a mock is the honest form: a mock here would suggest the graph is being
     // exercised, and it is not — only its constructors are.
-    private companion object {
+    // Not private: RoutesResolveWhatTheyInjectTest asks a different question of the same graph —
+    // this file checks that every definition CAN be built, and that one checks that everything a
+    // route asks for HAS one.
+    companion object {
         val NO_DATABASE: org.jetbrains.exposed.v1.jdbc.Database =
             org.jetbrains.exposed.v1.jdbc.Database
                 .connect({ error("the graph verifier never opens a connection") })
+
+        fun applicationGraph() = koinApplication { modules(Modules.all) }.koin
     }
 
     // Every module the composition root installs, not just the small one. `verify()` inspects
     // constructors rather than building anything, so a module needing a Database can be verified
     // without one — which is what makes covering the features here cheap enough to be worth doing.
-    private val modules =
-        listOf(
-            timeModule,
-            authModule(NO_DATABASE, JwtConfig("s", "i", "a"), revealCodes = false),
-            purchaseModule(NO_DATABASE),
-            esimModule(NO_DATABASE),
-            usageModule(NO_DATABASE),
-        )
+    private val modules get() = Modules.all
+
+    // In an object so both this test and the injection guard install exactly what the application
+    // installs, including the composition root's own module — an inline `module { }` in
+    // Application.kt is invisible from here, and every binding inside one is a binding only a running
+    // process has ever resolved.
+    object Modules {
+        val all =
+            listOf(
+                timeModule,
+                authModule(NO_DATABASE, JwtConfig("s", "i", "a"), revealCodes = false),
+                purchaseModule(NO_DATABASE),
+                esimModule(NO_DATABASE),
+                usageModule(NO_DATABASE),
+                io.konekt.serverModule(),
+                org.koin.dsl.module { single { kotlinx.serialization.json.Json } },
+            )
+
+        // Everything the application installs, petich's included. That one is left out of `verify()`
+        // because it needs a live Database, and it is needed HERE because the injection guard reads
+        // definitions rather than building them — a saga engine and a broker connection are bindings
+        // whether or not anything ever resolves them.
+        val everything =
+            all +
+                io.konekt.petichModule(
+                    NO_DATABASE,
+                    io.konekt.KonektConfig(
+                        port = 0,
+                        database = io.konekt.db.DatabaseConfig("", "", ""),
+                        jwt = JwtConfig("s", "i", "a"),
+                        revealOtpCodes = false,
+                        brokerHost = "broker",
+                        brokerPort = 9092,
+                        paymentMode = io.konekt.feature.purchase.server.data.MockPaymentGateway.Mode.APPROVE,
+                        paymentDelay = kotlin.time.Duration.ZERO,
+                        simulateTraffic = false,
+                        migrateOnly = false,
+                    ),
+                )
+    }
 
     // Types a module takes and a DIFFERENT module provides. `verify()` inspects one module at a time,
     // so without this list every cross-module dependency reads as missing — and with it, a
@@ -60,6 +97,16 @@ class KoinGraphTest {
             // petichModule, which needs a live Database and so is not verified here
             ru.workinprogress.petich.PetichEngine::class,
             ru.workinprogress.petich.PetichRepository::class,
+            // The composition root's own module composes across features: TrafficChain names the
+            // broker, the counters and the card builder, and each of those is another module's. This
+            // is the list growing for the reason it was meant to — a feature genuinely reaching
+            // across, which is worth noticing rather than waving through.
+            io.konekt.events.BrokerConnection::class,
+            io.konekt.feature.usage.server.domain.UsageCounters::class,
+            io.konekt.feature.usage.server.domain.ConsumeUsageUseCase::class,
+            io.konekt.feature.usage.server.data.UsageCounterCards::class,
+            io.konekt.realtime.ComponentBroadcaster::class,
+            io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster::class,
             // NOT provided by anything, and the entry is still honest. Every feature module CAPTURES
             // its Database in the closure that builds a repository rather than resolving one from
             // the graph — `usageModule(database)` — and `verify()` cannot tell a captured value from

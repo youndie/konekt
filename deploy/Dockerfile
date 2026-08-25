@@ -28,7 +28,13 @@ EXPOSE 8080
 
 # The health route exists so this can ask the process a question rather than ask the kernel whether a
 # port accepts — the kernel accepts into the backlog with no help from a hung process.
+#
+# `bash` AND NOT `sh`, and this was wrong until a stand tried to wait on it. `/bin/sh` here is dash,
+# which has no `/dev/tcp` — the check answered "cannot create /dev/tcp/127.0.0.1/8080: Directory
+# nonexistent" on every run, so the container was permanently unhealthy while the process inside it
+# was serving. Nothing depended on the healthcheck until `depends_on: service_healthy` did, which is
+# why it went unnoticed: an unhealthy container that nobody waits for looks exactly like a healthy one.
 HEALTHCHECK --interval=5s --timeout=3s --start-period=20s --retries=10 \
-    CMD ["sh", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ok <&3"]
+    CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ok <&3"]
 
 ENTRYPOINT ["./bin/server"]

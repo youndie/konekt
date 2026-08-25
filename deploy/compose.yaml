@@ -21,7 +21,12 @@ services:
       timeout: 3s
       retries: 30
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # `/var/lib/postgresql` and NOT `/var/lib/postgresql/data`, which is the pre-18 convention and
+      # what this file first said. The 18 image places its cluster in a subdirectory of the former so
+      # that `pg_upgrade --link` has both versions inside one mount; with the old path the upgrade
+      # crosses a mount-point boundary and cannot link. The image says so itself, at the moment it
+      # refuses to start on a volume laid out the other way — which is how this was found.
+      - postgres-data:/var/lib/postgresql
     ports:
       # Overridable because 5432 is contested on any machine that has ever run Postgres, and the
       # stand should not be the thing that refuses to start.
@@ -48,6 +53,27 @@ services:
     # reachable from outside this network. That is the whole of its security model, and it is one
     # line of YAML away from not being true.
 
+  # MIGRATIONS RUN BEFORE ANY SERVER, from the same image with a switch, and the servers wait for it
+  # to EXIT SUCCESSFULLY rather than to start. During a rolling deploy this is a job that finishes
+  # before the new pods roll; here it is the same thing in one file. Two processes racing to migrate
+  # is the failure it removes, and Flyway's own lock turns that race into a hang rather than an error.
+  migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/konekt
+      DB_USER: konekt
+      DB_PASSWORD: konekt
+      MIGRATE_ONLY: "true"
+      # Read at startup and required, even though this process will never serve. A config that is
+      # only half-validated in the migrate path is a config whose mistake is found by the server.
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+    restart: "no"
+
   # Needs the distribution built first — see deploy/Dockerfile for why it is not built inside the
   # image:
   #
@@ -61,6 +87,8 @@ services:
         condition: service_healthy
       broker:
         condition: service_started
+      migrate:
+        condition: service_completed_successfully
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/konekt
       DB_USER: konekt
@@ -73,8 +101,45 @@ services:
       DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
       PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
       PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
+      # Fictional usage against real counters, which is what makes a live update visible without
+      # waiting for a subscriber to browse. Off by default everywhere else; on here because a stand
+      # that cannot show the update cannot test it.
+      SIMULATE_TRAFFIC: ${SIMULATE_TRAFFIC:-true}
     ports:
       - "${SERVER_PORT:-8080}:8080"
+
+  # THE SAME SERVER WITH THE PAYMENT MOCK SET TO REFUSE, and it is a second service rather than a
+  # switch on the first because the mode is read once at startup. The compensated branch is one of
+  # the three scenarios this stand exists for, and the only other way to reach it is to abandon a
+  # confirmation and wait out its five-minute deadline — which is a test nobody runs twice.
+  #
+  # It shares the database and the broker on purpose: a rollback that only works in isolation is not
+  # the thing being demonstrated.
+  server-declining:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/konekt
+      DB_USER: konekt
+      DB_PASSWORD: konekt
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      BROKER_HOST: broker
+      BROKER_PORT: "9092"
+      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      PAYMENT_MOCK_MODE: decline
+      # No traffic from this one: two simulators against one set of counters would each be spending
+      # what the other measured.
+      SIMULATE_TRAFFIC: "false"
+    ports:
+      - "${DECLINING_SERVER_PORT:-8081}:8080"
 
 volumes:
   postgres-data:
