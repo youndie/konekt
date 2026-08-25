@@ -20,6 +20,13 @@ class Purchases {
     }
 }
 
+// The screen for one order, as a component tree. A separate resource from the order itself because
+// the two answer different questions: one is the order's state as data, the other is what to draw.
+@Resource("/api/v1/screens/orders/{orderId}")
+class OrderScreen(
+    val orderId: String,
+)
+
 @Serializable
 data class CreatePurchaseRequest(
     val planId: String,

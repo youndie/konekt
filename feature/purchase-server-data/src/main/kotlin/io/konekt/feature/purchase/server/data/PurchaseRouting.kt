@@ -1,11 +1,14 @@
 package io.konekt.feature.purchase.server.data
 
+import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
+import io.konekt.feature.purchase.server.domain.LoadOrderScreenUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
+import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.http.subscriberId
@@ -16,6 +19,7 @@ import io.ktor.server.resources.get
 import io.ktor.server.resources.post
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.inject
 
 // AUTH TIER: user token, all three. Every route here acts on the caller's own money, and the owner
@@ -25,6 +29,8 @@ fun Route.purchaseRoutes() {
     val startPurchase by inject<StartPurchaseUseCase>()
     val confirmPurchase by inject<ConfirmPurchaseUseCase>()
     val findOrder by inject<FindOrderUseCase>()
+    val loadOrderScreen by inject<LoadOrderScreenUseCase>()
+    val json by inject<Json>()
 
     post<Purchases> {
         val body = call.receive<CreatePurchaseRequest>()
@@ -46,6 +52,22 @@ fun Route.purchaseRoutes() {
             ).getOrThrow()
 
         call.respond(order.toResponse())
+    }
+
+    get<OrderScreen> { params ->
+        val screen =
+            loadOrderScreen(
+                FindOrderUseCase.Params(orderId = params.orderId, subscriberId = call.subscriberId()),
+            ).getOrThrow()
+
+        // respondKompotComponent, never call.respond. A plain respond resolves the serialiser from
+        // the concrete runtime class and drops the "type" discriminator on the ROOT of the tree —
+        // nested children are unaffected, which is what makes it easy to miss — and the client then
+        // receives an unknown component for the whole screen and, by design, draws nothing.
+        call.respondKompotComponent(
+            json,
+            PurchaseResultScreen.build(screen.order, screen.reversal, screen.balance),
+        )
     }
 
     get<Purchases.ById> { params ->

@@ -1,6 +1,7 @@
 package io.konekt.feature.purchase.server.domain
 
 import io.konekt.domain.KonektException
+import io.konekt.domain.Money
 import io.konekt.domain.suspendRunCatching
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -103,6 +104,33 @@ class ConfirmPurchaseUseCase(
         val orderId: String,
         val subscriberId: String,
     )
+}
+
+// Everything one screen needs, gathered in one call.
+//
+// A screen that made three lookups of its own would be a screen deciding what a purchase is, and the
+// second screen to want the same thing would decide it again — slightly differently.
+data class OrderScreenData(
+    val order: OrderView,
+    val reversal: Reversal?,
+    val balance: Money?,
+)
+
+class LoadOrderScreenUseCase(
+    private val orders: PetichRepository,
+    private val balances: AccountBalances,
+) {
+    suspend operator fun invoke(params: FindOrderUseCase.Params): Result<OrderScreenData> =
+        suspendRunCatching {
+            val order = orders.findById(params.orderId).ownedByOr404(params.subscriberId).toView()
+            OrderScreenData(
+                order = order.copy(declineReason = balances.declineReason(params.orderId)),
+                reversal = balances.reversalOf(params.orderId),
+                // Read now, and labelled on the screen as a current fact rather than as a claim that
+                // it is back where it was — see PurchaseResultScreen.
+                balance = balances.balanceOf(order.payload.accountId),
+            )
+        }
 }
 
 class FindOrderUseCase(

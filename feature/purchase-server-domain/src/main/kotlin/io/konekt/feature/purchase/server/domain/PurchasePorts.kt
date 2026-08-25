@@ -1,6 +1,7 @@
 package io.konekt.feature.purchase.server.domain
 
 import io.konekt.domain.Money
+import kotlin.time.Instant
 
 // The catalogue. In-memory for now: the BSS is outside this system's boundary, and a real catalogue
 // with prices that move is B-19's business. What a purchase needs from it is two questions.
@@ -52,7 +53,20 @@ interface AccountBalances {
     )
 
     suspend fun declineReason(orderId: String): String?
+
+    // What was actually returned, and when. Read from the ledger rather than recomputed from the
+    // order's price: they agree today, and the ledger is the record of what happened while the price
+    // is the record of what was asked for. When a partial reversal exists one day, only one of the
+    // two will still be right.
+    suspend fun reversalOf(orderId: String): Reversal?
+
+    suspend fun balanceOf(accountId: String): Money?
 }
+
+data class Reversal(
+    val amount: Money,
+    val at: Instant,
+)
 
 data class AccountSnapshot(
     val id: String,

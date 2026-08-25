@@ -7,6 +7,7 @@ import io.konekt.feature.purchase.server.domain.AccountBalances
 import io.konekt.feature.purchase.server.domain.AccountSnapshot
 import io.konekt.feature.purchase.server.domain.Entitlement
 import io.konekt.feature.purchase.server.domain.Entitlements
+import io.konekt.feature.purchase.server.domain.Reversal
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,6 +21,7 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -115,6 +117,33 @@ class ExposedAccountBalances(
                 .where { (LedgerEntryTable.orderId eq orderId) and (LedgerEntryTable.kind eq LedgerEntryTable.DECLINE) }
                 .singleOrNull()
                 ?.get(LedgerEntryTable.note)
+        }
+
+    override suspend fun reversalOf(orderId: String): Reversal? =
+        dbQuery {
+            LedgerEntryTable
+                .selectAll()
+                .where { (LedgerEntryTable.orderId eq orderId) and (LedgerEntryTable.kind eq LedgerEntryTable.RELEASE) }
+                .singleOrNull()
+                ?.let {
+                    Reversal(
+                        amount =
+                            Money(
+                                it[LedgerEntryTable.amountMinor],
+                                Currency.valueOf(it[LedgerEntryTable.currency].trim()),
+                            ),
+                        at = Instant.fromEpochMilliseconds(it[LedgerEntryTable.createdAt]),
+                    )
+                }
+        }
+
+    override suspend fun balanceOf(accountId: String): Money? =
+        dbQuery {
+            AccountTable
+                .selectAll()
+                .where { AccountTable.id eq accountId }
+                .singleOrNull()
+                ?.let { Money(it[AccountTable.balanceMinor], Currency.valueOf(it[AccountTable.currency].trim())) }
         }
 
     private fun entry(

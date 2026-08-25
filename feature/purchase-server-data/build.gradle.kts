@@ -12,6 +12,8 @@ dependencies {
 
     implementation(platform(libs.kompot.bom))
     implementation(libs.kompot.core)
+    implementation(libs.kompot.standard)
+    implementation(project(":shared:components"))
     implementation(libs.kompot.ktor)
 
     implementation(libs.ktor.server.core)
