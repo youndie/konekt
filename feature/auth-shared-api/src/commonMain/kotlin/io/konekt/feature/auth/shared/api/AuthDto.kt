@@ -34,3 +34,8 @@ data class DevOtpResponse(
     val code: String,
     val expiresAtEpochMs: Long,
 )
+
+@Serializable
+data class RefreshSessionRequest(
+    val refreshToken: String,
+)

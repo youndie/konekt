@@ -115,6 +115,10 @@ needs lives in a shared module instead:
   apart resolve into a combination nobody ever built.
 - **katcher is three version lines**, not one: server, `client`, and `client-android` plus the Gradle
   plugin. They are separate entries in the catalogue and the catalogue says why.
+- **A session is a family, not a token.** The access token carries its family id and the
+  authentication provider refuses a revoked one, so logout and a detected theft take effect at once —
+  at the cost of one indexed read per authenticated request. A refresh token exchanged twice ends the
+  family; the arbitration is a conditional `UPDATE`, never a read-then-write.
 - **`authenticate { }` proves the caller is somebody, not that the thing is theirs.** The owner check
   lives in the use case beside the principal, through `ownedOr404` — which answers **404 and not
   403**, because a 403 confirms the resource exists and hands out an enumeration oracle.

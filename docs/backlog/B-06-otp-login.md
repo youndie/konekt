@@ -41,9 +41,8 @@ refresh and logout are all konekt's, behind a Ktor `Authentication` provider.
 - Also done, carried from `B-34`: `ownedOr404` in `:shared:server-http` — 404 and not 403 for another
   subscriber's resource, because a 403 confirms the resource exists and hands out an enumeration
   oracle. The rule lives in one place now; the first owner-scoped route uses it.
-- Not covered: refresh and logout. Tokens are issued as a pair with a `typ` claim, so a refresh token
-  is refused where an access token is required — but there is no refresh endpoint, no rotation and no
-  revocation. `B-38`.
+- Refresh and logout were carried to [B-38](B-38-refresh-and-logout.md) and are **done**: rotation
+  with reuse detection, and a logout that ends the access token before it expires.
 - Anchors: `feature/auth-shared-api/`, `feature/auth-server-domain/`, `feature/auth-server-data/`,
   `shared/server-http/src/main/kotlin/io/konekt/http/Principal.kt`.
 

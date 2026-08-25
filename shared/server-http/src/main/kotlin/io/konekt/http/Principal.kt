@@ -14,6 +14,9 @@ import io.ktor.server.auth.principal
 // is why this is a plain data class.
 data class SubscriberPrincipal(
     val subscriberId: String,
+    // Which run of sessions this token belongs to. Carried on the principal so that logout has
+    // something to end, and read from the verified token rather than from anything the caller sent.
+    val sessionFamilyId: String,
 )
 
 // Throws rather than returning null. A route that reached this without a principal is a route that

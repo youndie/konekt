@@ -26,6 +26,23 @@ class AuthOtp {
     )
 }
 
+@Resource("/api/v1/auth/session")
+class AuthSession {
+    // Exchanges a refresh token for a new pair and invalidates the one presented. Public tier: the
+    // refresh token IS the credential, so requiring an access token here would defeat the purpose —
+    // the whole point is to be usable once the access token has expired.
+    @Resource("refresh")
+    class Refresh(
+        val parent: AuthSession = AuthSession(),
+    )
+
+    // Ends the session family. Authenticated tier, because it acts on whoever is calling.
+    @Resource("logout")
+    class Logout(
+        val parent: AuthSession = AuthSession(),
+    )
+}
+
 // Development only, and mounted only when the SMSC mock is configured to reveal codes. It exists
 // because the boundary of this system stops at the SMSC: no message is ever sent, so without this
 // there is no way to sign in at all.

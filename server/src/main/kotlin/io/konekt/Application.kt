@@ -6,15 +6,19 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.db.DatabaseFactory
+import io.konekt.feature.auth.server.data.AUTH_JWT
 import io.konekt.feature.auth.server.data.authModule
 import io.konekt.feature.auth.server.data.authRoutes
+import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.feature.auth.server.data.devOtpRoutes
+import io.konekt.feature.auth.server.data.sessionRoutes
 import io.konekt.http.configureStatusPages
 import io.konekt.time.timeModule
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.auth.authenticate
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -96,6 +100,14 @@ fun Application.module(config: KonektConfig) {
 
     routing {
         authRoutes()
+        sessionRoutes()
+
+        // The user tier. What is inside `authenticate` is decided here, in the composition root,
+        // while the shape of a token is the feature's business.
+        authenticate(AUTH_JWT) {
+            authenticatedSessionRoutes()
+        }
+
         if (config.revealOtpCodes) {
             devOtpRoutes(getKoin().get())
         }

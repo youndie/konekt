@@ -59,8 +59,11 @@ data class Session(
     val refreshToken: String,
 )
 
+// Suspending, because issuing a session writes: a family is opened and a refresh token is recorded,
+// so that logout and rotation have something to act on. A stateless pair would need none of this and
+// could not be ended.
 fun interface SessionIssuer {
-    fun issue(subscriber: Subscriber): Session
+    suspend fun issue(subscriber: Subscriber): Session
 }
 
 // Where the code goes instead of to a phone. The boundary of this system stops at the SMSC.

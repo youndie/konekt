@@ -2,15 +2,20 @@ package io.konekt.feature.auth.server.data
 
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.ktor.respondKompotAction
+import io.konekt.feature.auth.server.domain.LogoutUseCase
 import io.konekt.feature.auth.server.domain.Msisdn
 import io.konekt.feature.auth.server.domain.OtpRepository
+import io.konekt.feature.auth.server.domain.RefreshSessionUseCase
 import io.konekt.feature.auth.server.domain.RequestOtpUseCase
 import io.konekt.feature.auth.server.domain.VerifyOtpUseCase
 import io.konekt.feature.auth.shared.api.AuthOtp
+import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
+import io.konekt.feature.auth.shared.api.RefreshSessionRequest
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.http.sessionFamilyId
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.resources.get
@@ -50,6 +55,37 @@ fun Route.authRoutes() {
             json,
             UpdateSessionAction(accessToken = session.accessToken, refreshToken = session.refreshToken),
         )
+    }
+}
+
+// AUTH TIER, per route and written down rather than read off the indentation:
+//   refresh — PUBLIC. The refresh token IS the credential, and the whole point is to work once the
+//             access token has expired, so requiring one here would defeat it.
+//   logout  — USER TOKEN. It acts on whoever is calling, and the family it ends comes from the token
+//             rather than from the request body: a body-supplied family id is a route that ends
+//             anybody's session for anybody who asks.
+fun Route.sessionRoutes() {
+    val refreshSession by inject<RefreshSessionUseCase>()
+    val json by inject<Json>()
+
+    post<AuthSession.Refresh> {
+        val body = call.receive<RefreshSessionRequest>()
+        val session = refreshSession(body.refreshToken).getOrThrow()
+
+        call.respondKompotAction(
+            json,
+            UpdateSessionAction(accessToken = session.accessToken, refreshToken = session.refreshToken),
+        )
+    }
+}
+
+fun Route.authenticatedSessionRoutes() {
+    val logout by inject<LogoutUseCase>()
+
+    post<AuthSession.Logout> {
+        // The family comes from the verified token, never from the body.
+        logout(call.sessionFamilyId()).getOrThrow()
+        call.respond(HttpStatusCode.NoContent)
     }
 }
 

@@ -2,12 +2,17 @@ package io.konekt.feature.auth.server.data
 
 import io.konekt.feature.auth.server.domain.CodeGenerator
 import io.konekt.feature.auth.server.domain.CodeHasher
+import io.konekt.feature.auth.server.domain.IssueSessionUseCase
+import io.konekt.feature.auth.server.domain.LogoutUseCase
 import io.konekt.feature.auth.server.domain.OtpDelivery
 import io.konekt.feature.auth.server.domain.OtpPolicy
 import io.konekt.feature.auth.server.domain.OtpRepository
+import io.konekt.feature.auth.server.domain.RefreshSessionUseCase
 import io.konekt.feature.auth.server.domain.RequestOtpUseCase
 import io.konekt.feature.auth.server.domain.SessionIssuer
+import io.konekt.feature.auth.server.domain.SessionRepository
 import io.konekt.feature.auth.server.domain.SubscriberRepository
+import io.konekt.feature.auth.server.domain.TokenMinter
 import io.konekt.feature.auth.server.domain.VerifyOtpUseCase
 import io.konekt.http.SubscriberPrincipal
 import io.ktor.server.application.Application
@@ -16,6 +21,7 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.jwt
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.dsl.module
+import org.koin.ktor.ext.getKoin
 
 const val AUTH_JWT = "auth-jwt"
 
@@ -41,7 +47,13 @@ fun authModule(
     // with a key-management story gives them separate keys, and that is a row in the operator
     // material rather than a change here.
     single<CodeHasher> { Hmac256CodeHasher(jwt.secret) }
-    single<SessionIssuer> { JwtSessionIssuer(jwt, get()) }
+    single<SessionRepository> { ExposedSessionRepository(database) }
+    single<TokenMinter> { JwtTokenMinter(jwt, get()) }
+    // One instance under two types: SessionIssuer for signing in, and the concrete class for the
+    // second half of a rotation. Bound by `get()` rather than constructed twice, so there is one
+    // object and no chance of two clocks.
+    single { IssueSessionUseCase(get(), get(), get()) }
+    single<SessionIssuer> { get<IssueSessionUseCase>() }
 
     single { RevealedCodes() }
     single<OtpDelivery> {
@@ -55,6 +67,8 @@ fun authModule(
 
     factory { RequestOtpUseCase(get(), get(), get(), get(), get(), get()) }
     factory { VerifyOtpUseCase(get(), get(), get(), get(), get(), get()) }
+    factory { RefreshSessionUseCase(get(), get(), get(), get()) }
+    factory { LogoutUseCase(get(), get()) }
 }
 
 // The session tier. Installed here rather than in the composition root because the shape of a token
@@ -63,12 +77,23 @@ fun Application.configureAuthentication(jwt: JwtConfig) {
     install(Authentication) {
         jwt(AUTH_JWT) {
             realm = jwt.issuer
-            verifier(JwtSessionIssuer.verifier(jwt))
+            verifier(JwtTokenMinter.accessVerifier(jwt))
             validate { credential ->
                 // The verifier already refused a refresh token, an expired one, a wrong issuer and a
-                // wrong audience. What is left is the subject, and a token without one is a token
-                // this server did not issue.
-                credential.payload.subject?.let(::SubscriberPrincipal)
+                // wrong audience. What it cannot know is whether the session still exists — a JWT is
+                // valid until it expires, so logout and a detected theft mean nothing without this
+                // lookup.
+                //
+                // THE COST IS ONE INDEXED READ PER AUTHENTICATED REQUEST, and it is the price of
+                // logout working at all. The alternative is a short access lifetime and a logout that
+                // takes effect when it expires, which is what "stateless logout" always means.
+                val subject = credential.payload.subject ?: return@validate null
+                val family = credential.payload.getClaim(FAMILY_CLAIM).asString() ?: return@validate null
+
+                val sessions = getKoin().get<SessionRepository>()
+                if (sessions.findFamily(family)?.isActive != true) return@validate null
+
+                SubscriberPrincipal(subscriberId = subject, sessionFamilyId = family)
             }
         }
     }
