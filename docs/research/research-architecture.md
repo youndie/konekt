@@ -337,10 +337,17 @@ no amount of code here changes that — the renderers are the toolkit's. What ex
 `kompot-swift-interop`, which is a bridge for a **native SwiftUI** client rather than a Compose one,
 and that is a different product with a different client codebase.
 
-So `:client` is a **JVM-only module today** and says so in its build file. Reported as
-[youndie/kompot#84](https://github.com/youndie/kompot/issues/84). Even when it closes, the reachable
-set is two iOS targets and not three: Compose dropped `iosX64`, so `konekt.multiplatform`'s target
-list — which every other multiplatform module here uses — cannot be the client's.
+**Closed and released, 2026-08-25.** [youndie/kompot#84](https://github.com/youndie/kompot/issues/84)
+was fixed in `0.31.0.76`, and the fix was checked here rather than read off the issue: at `0.32.0.77`
+the module metadata of `kompot-client`, `kompot-theme-client` and `kompot-ds-material-compose` each
+declares `ios_arm64` and `ios_simulator_arm64`. `:client` now compiles for both.
+
+The second half of the paragraph above outlived the first exactly as predicted: the reachable set is
+**two** iOS targets, not three. Compose dropped `iosX64`, the toolkit's Compose half shows the same
+pair, and its protocol half (`kompot-core`, `kompot-realtime`, `kompot-auth`) still ships all three.
+So `konekt.multiplatform` — which every other multiplatform module here uses — still cannot be the
+client's, and `:client` names its own targets. The reason it is not the convention plugin has changed
+completely while the conclusion has not, which is why the build file now says which reason it is.
 
 ### 1.15 A live update is an overlay that nothing ever clears, and the cache cannot tell anyone it refreshed
 

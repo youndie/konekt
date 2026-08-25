@@ -11,18 +11,20 @@ plugins {
     alias(libs.plugins.viddik)
 }
 
-// NOT `konekt.multiplatform`, and this is the one module where that is right rather than lazy.
+// NOT `konekt.multiplatform`, and it is still right rather than lazy — for the second reason now
+// that the first has gone.
 //
-// That convention plugin declares the JVM target and all three iOS ones, and **kompot's Compose half
-// publishes no iOS artefact at all**: `kompot-client`, `kompot-theme-client` and
-// `kompot-ds-material-compose` ship `-android`, `-desktop` and `-wasm-js` and nothing else, while the
-// protocol half — `kompot-core`, `kompot-standard` — ships the three iOS targets like everything
-// else. The toolkit's README promises otherwise. See research-architecture §1.14 and
-// youndie/kompot#84; until that closes, a Compose client for iOS cannot be built on this toolkit.
+// The first was youndie/kompot#84: the toolkit's Compose half published no iOS artefact at all, so a
+// Compose client for iOS could not be built on it. **Closed, and released in `0.31.0.76`.** Measured
+// at the version this build pins rather than taken from the issue: `kompot-client`,
+// `kompot-theme-client` and `kompot-ds-material-compose` each declare `ios_arm64` and
+// `ios_simulator_arm64` in their module metadata at `0.32.0.77`.
 //
-// The second constraint outlives the first: Compose Multiplatform stopped publishing **iosX64** after
-// `1.11.0-alpha01`, so even a fixed toolkit reaches two iOS targets and not three. Whatever this
-// module grows to, `iosX64()` is not part of it.
+// The second constraint is the one that outlives it, and it is why the convention plugin still does
+// not fit: it declares all THREE iOS targets, and the Compose half has two. Compose Multiplatform
+// stopped publishing **iosX64** after `1.11.0-alpha01` — the toolkit's own artefacts show the same
+// pair, while its protocol half (`kompot-core`, `kompot-realtime`, `kompot-auth`) still ships all
+// three. So this module names its targets, and `iosX64()` is not among them.
 kotlin {
     jvmToolchain(
         libs.versions.jvmToolchain
@@ -30,9 +32,10 @@ kotlin {
             .toInt(),
     )
 
-    // One target today. Android joins with the item that first needs an .aar (B-26/B-27), and iOS
-    // when the toolkit can be asked for it.
+    // Android joins with the item that first needs an .aar.
     jvm()
+    iosArm64()
+    iosSimulatorArm64()
 
     compilerOptions {
         allWarningsAsErrors.set(true)
@@ -81,6 +84,14 @@ kotlin {
             implementation(libs.compose.material3)
         }
 
+        // THE APPLE HALF'S CRASH REPORTER. `iosMain` rather than `commonMain` because the JVM half of
+        // this module is a desktop preview and the server has its own reporter to come (B-26) — and
+        // because katcher publishes the platform hook as an `actual` in its `nativeMain`, so what is
+        // wired here is genuinely a native concern.
+        iosMain.dependencies {
+            implementation(libs.katcher.client)
+        }
+
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
@@ -118,6 +129,47 @@ kotlin {
             implementation(libs.kompot.forms)
             implementation(libs.kompot.formsClient)
         }
+    }
+}
+
+// WHERE `-Werror` ACTUALLY APPLIES IN THIS MODULE, WHICH IS NOT WHERE THE BLOCK ABOVE SUGGESTS.
+//
+// Measured rather than assumed: `allWarningsAsErrors` in `kotlin { compilerOptions { } }` does NOT
+// reach the Kotlin/Native platform compilations. `compileKotlinIosArm64` was handed a warning on
+// purpose and came back BUILD SUCCESSFUL. It DOES reach the metadata compilations. So for this
+// module's Apple sources the flag was enforced in exactly one place — and that place is the one that
+// has to give it up.
+//
+// The iosMain metadata compilation is where every transformed dependency klib lands on one classpath,
+// and Compose Multiplatform puts BOTH coordinates of the same library there: ten `unique_name`
+// collisions between `org.jetbrains.androidx.lifecycle` and `androidx.lifecycle`,
+// `org.jetbrains.compose.runtime` and `androidx.compose.runtime`, and so on down the graph. They are
+// the redirected artefacts beside the originals, and no line in this repository changes either.
+//
+// So the flag MOVES rather than being dropped: off for that one task, and on explicitly everywhere
+// else — including the native platform compilations, where it was never on to begin with. Without
+// the second half, turning it off in the first would have left this module's iOS sources with no
+// `-Werror` at all, which is how a narrow suppression quietly becomes a wide one.
+//
+// AN ELEVENTH COLLISION WAS OURS. `:client` and `ru.workinprogress.katcher:client` both answered to
+// `unique_name=client_commonMain`, because a klib takes its unique name from the module and "client"
+// is the most generic name there is — it went unnoticed until a dependency happened to share it.
+// `-module-name` on the COMMON metadata compilation is what renames ours; on any other compilation it
+// is redundant, because the Kotlin plugin already passes one and the compiler then says so.
+//
+// `configureEach` and not `named`: these tasks do not exist yet while this file is being evaluated,
+// and asking for one by name fails the build with "task not found".
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    when (name) {
+        // The klib whose `unique_name` collided. Only this one: every other compilation is already
+        // given a `-module-name` by the Kotlin plugin, and passing a second makes the compiler say
+        // "'-module-name' is passed multiple times".
+        "compileCommonMainKotlinMetadata" -> compilerOptions.freeCompilerArgs.addAll("-module-name", "konekt-client")
+
+        // The one place the third-party klibs meet, and therefore the one place `-Werror` comes off.
+        "compileIosMainKotlinMetadata" -> compilerOptions.allWarningsAsErrors.set(false)
+
+        else -> compilerOptions.allWarningsAsErrors.set(true)
     }
 }
 
