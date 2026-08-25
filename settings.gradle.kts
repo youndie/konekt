@@ -86,6 +86,13 @@ include(":feature:purchase-server-data")
 
 // Counters: what a subscriber has left. Two modules rather than four — nothing here crosses the wire
 // as a DTO, because a counter reaches the client as a COMPONENT and not as data.
+// The eSIM order wizard. The step machine is wizard-core's; the chrome is konekt's own step_meter,
+// because kompot-wizard's WizardScreenComponent presupposes a FormSchema this flow does not have.
+// See docs/research/research-architecture.md §1.12.
+include(":feature:esim-shared-api")
+include(":feature:esim-server-domain")
+include(":feature:esim-server-data")
+
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")
 

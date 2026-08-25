@@ -48,6 +48,7 @@ dependencies {
     // The feature vertical. :server composes features; a feature never sees :server.
     implementation(project(":feature:auth-server-data"))
     implementation(project(":feature:purchase-server-data"))
+    implementation(project(":feature:esim-server-data"))
     implementation(project(":feature:usage-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.

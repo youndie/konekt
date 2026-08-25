@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (23)
+## Open (24)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -54,7 +54,7 @@ so re-prioritising must never move a file.
 | [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[ ]` | Expand and contract: a migration is compatible with the code already running | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-15](docs/backlog/B-15-sse-realtime.md) `[~]` | The realtime transport: an SSE endpoint and a client source | P1 | M | B-07 |
-| [B-17](docs/backlog/B-17-esim-order-wizard.md) `[ ]` | The eSIM order wizard, and an SM-DP+ mock that can be out of slots | P1 | L | B-08 |
+| [B-17](docs/backlog/B-17-esim-order-wizard.md) `[~]` | The eSIM order wizard, and an SM-DP+ mock that can be out of slots | P1 | L | B-08 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
@@ -68,6 +68,7 @@ so re-prioritising must never move a file.
 | [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[ ]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
+| [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[ ]` | The feature, screen and API layers are empty, and the reason they were empty has expired | P2 | M | - |
 
 ## Closed (15)
 

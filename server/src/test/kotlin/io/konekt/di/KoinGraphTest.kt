@@ -2,6 +2,8 @@ package io.konekt.di
 
 import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.auth.server.data.authModule
+import io.konekt.feature.esim.server.data.esimModule
+import io.konekt.feature.esim.server.domain.SmDpPlus
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.time.KonektClock
 import io.konekt.time.timeModule
@@ -36,6 +38,7 @@ class KoinGraphTest {
             timeModule,
             authModule(NO_DATABASE, JwtConfig("s", "i", "a"), revealCodes = false),
             purchaseModule(NO_DATABASE),
+            esimModule(NO_DATABASE),
         )
 
     // Types a module takes and a DIFFERENT module provides. `verify()` inspects one module at a time,
@@ -70,5 +73,9 @@ class KoinGraphTest {
         val koin = koinApplication { modules(modules) }.koin
 
         assertNotNull(koin.get<KonektClock>(), "the clock is not in the graph")
+        // The eSIM feature binds the manager behind an interface, and the mock has three
+        // defaulted constructor parameters — exactly the shape `verify()` alone would pass and a
+        // resolution would not.
+        assertNotNull(koin.get<SmDpPlus>(), "the profile manager is not in the graph")
     }
 }

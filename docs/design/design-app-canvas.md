@@ -92,6 +92,12 @@ takes a refuse switch (research D10).
 *"the failure this flow actually hits in the field"*. The SM-DP+ mock therefore has to be able to
 refuse for that reason specifically, not merely to fail.
 
+The canvas names the failure and does not supply the sentence, so **the copy in that frame is ours**,
+written in `MockSmDpPlus` and asserted in `MockSmDpPlusTest`: it states the limit as a fact about the
+device and says what to do next, because "could not add eSIM" is what sends somebody to support. It
+is recorded here rather than left implicit for the same reason as the currency below — a reviewer
+comparing the frame with the running application should know which of the two is the source.
+
 **The unknown-component block.** *"The server sent a component this build does not know. Everything
 around it still works — update to see it."* Two densities: a full card when the block is the screen's
 subject, one line when it sits among known rows. The canvas labels the example

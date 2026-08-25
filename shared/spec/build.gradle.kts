@@ -7,6 +7,12 @@ dependencies {
     // konektSpecModule() hands out a SerializersModule built from these types.
     api(project(":shared:components"))
 
+    // The eSIM feature's one action. A feature module named from here looks like a layering
+    // mistake and is not: this module is the wire of THIS BUILD, so it has to see everything that
+    // travels on it. An action left out is an action a second implementation is never told about,
+    // while the conformance kit reports a clean run.
+    api(project(":feature:esim-shared-api"))
+
     implementation(platform(libs.kompot.bom))
     // kompot-spec depends on every protocol module of the toolkit, which is what lets
     // KompotToolkitSpec.modules exist at all.

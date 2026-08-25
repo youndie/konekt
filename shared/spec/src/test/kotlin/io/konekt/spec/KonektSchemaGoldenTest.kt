@@ -25,7 +25,7 @@ class KonektSchemaGoldenTest {
         // modules of its own and that must not fail this repository's build.
         assertTrue(generated.size > 1, "the toolkit's modules did not reach the generator")
 
-        // ONLY konekt's own file is committed, and the toolkit's thirteen are not.
+        // ONLY konekt's own files are committed, and the toolkit's thirteen are not.
         //
         // They come out byte-identical to the ones kompot commits in its own repository, so a copy
         // here is a second source of truth that churns on every kompot bump and produces a diff
@@ -33,7 +33,11 @@ class KonektSchemaGoldenTest {
         // index is built by walking the modules in order and konekt's file refers to types the
         // toolkit defines — dropping them would change our own schema, not just skip theirs.
         val ours = generated.filter { it.fileName.startsWith("konekt-") }
-        assertEquals(1, ours.size, "expected exactly one konekt schema file, got ${ours.map { it.fileName }}")
+        // Two: the component dictionary and the eSIM feature's action. An exact number rather than a
+        // floor, because the failure worth catching here is a spec module that stopped being
+        // assembled — which shrinks this set silently and takes a whole vocabulary off the wire
+        // specification while every test about the remaining one still passes.
+        assertEquals(2, ours.size, "expected two konekt schema files, got ${ours.map { it.fileName }}")
 
         if (SchemaFiles.recordMode) {
             ours.forEach { SchemaFiles.write(it.fileName, it.document) }
@@ -72,6 +76,25 @@ class KonektSchemaGoldenTest {
                 "$wireName is missing from this build's profile",
             )
         }
+    }
+
+    @Test
+    fun `the profile names the action this build owns`() {
+        // The same check as above, on the other hierarchy. It is separate because the two are
+        // populated by different mechanisms — components by KSP, actions by hand — and a single
+        // assertion over both would be satisfied by whichever half still worked.
+        val actions =
+            KonektSpec
+                .profile()["\$defs"]
+                ?.jsonObject
+                ?.get("KompotAction")
+                ?.jsonObject
+                ?: error("the profile carries no closed KompotAction hierarchy")
+
+        assertTrue(
+            describes(actions, "esim_wizard_step"),
+            "esim_wizard_step is missing from this build's profile",
+        )
     }
 
     private fun describes(

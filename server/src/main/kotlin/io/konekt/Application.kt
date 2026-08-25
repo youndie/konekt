@@ -16,6 +16,9 @@ import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.feature.auth.server.data.devOtpRoutes
 import io.konekt.feature.auth.server.data.sessionRoutes
+import io.konekt.feature.esim.server.data.esimModule
+import io.konekt.feature.esim.server.data.esimWizardRoutes
+import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
@@ -141,6 +144,7 @@ fun Application.module(config: KonektConfig) {
             module { single { kompotJson } },
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
             purchaseModule(database, config.paymentMode, config.paymentDelay),
+            esimModule(database),
             petichModule(database, config),
         ),
     )
@@ -172,6 +176,7 @@ fun Application.module(config: KonektConfig) {
         authenticate(AUTH_JWT) {
             authenticatedSessionRoutes()
             purchaseRoutes()
+            esimWizardRoutes()
             realtimeRoutes()
         }
 
@@ -268,5 +273,9 @@ private val kompotJson: Json =
             kompotStandardSerializersModule +
             generatedStandardSerializersModule +
             generatedKonektSerializersModule +
-            kompotAuthSerializersModule
+            kompotAuthSerializersModule +
+            // Hand-written, because actions are not generated: @KompotComponentMarker covers
+            // components and the KompotAction hierarchy is registered by hand. Omitting it
+            // fails nothing at build time and fails every wizard step at runtime.
+            esimActionsSerializersModule
     }

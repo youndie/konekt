@@ -67,3 +67,18 @@ object SkeletonShapes {
     const val ROW = "row"
     const val CARD = "card"
 }
+
+// How much a button matters. kompot deliberately fixes no set of emphases — `button.variant` is an
+// open string named by the design system, exactly like a colour token — so the set is the
+// application's to name, and this is where konekt names it.
+//
+// It is not a component and so it is not in `konektWireNames`: that list is the nine types the canvas
+// defines, and this is a word one of kompot's own types carries.
+object ButtonEmphasis {
+    const val PRIMARY = "primary"
+
+    // The one beside it that should not compete: Back, Cancel, Not now. A client that does not know
+    // the word draws its ordinary button, which is wrong but harmless — the reverse default, drawing
+    // everything as primary, gives a screen two equal answers to one question.
+    const val QUIET = "quiet"
+}

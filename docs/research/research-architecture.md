@@ -283,6 +283,44 @@ nothing — a blank screen from one wrong call, with children that would have se
 konekt forbids `call.respond` on a `KompotComponent` by convention and catches it in review; the TCK
 walk catches it in CI, since an empty root fails the walk.
 
+### 1.12 The wizard is two modules, and only one of them fits a flow without forms
+
+| Fact | Where verified |
+|---|---|
+| `wizard-core` is the step machine: `WizardEngine.transition(session, transition, draft)` is a pure function and the module depends on nothing else in the toolkit | `kompot/wizard-core/src/commonMain/.../WizardEngine.kt` |
+| `WizardScreenComponent` requires a non-null `formId`, and its own comment says it is "the same id as the FormSchema of the content inside" — a renderer needs it to build `NextStepAction(formId)` | `kompot/kompot-wizard/src/commonMain/.../Components.kt` |
+| `WizardResumeRequest.values` is a `Map<String, FieldValue>`, `FieldValue` being form-core's field contract | `kompot/kompot-wizard/src/commonMain/.../WizardResumeRequest.kt` |
+| the engine has no notion of a refused transition: `Next` either moves to the resolver's answer or, on `null`, stays put | `WizardEngine.kt`, verified again in `EsimWizardGraphTest` |
+
+**Consequence, and it splits the module in two.** The step machine is usable by anything; the wire
+half of `kompot-wizard` presupposes a form. An install flow whose steps are "read this and continue"
+has no `FormSchema` to name, so `formId` would be a value invented to satisfy a field — and the
+client's wizard renderer would then build its Back and Next actions from it. konekt therefore takes
+`wizard-core` for the graph and draws the chrome itself, out of `step_meter`, which the design canvas
+already asked for ("the wizard's own progress, not a generic progress bar"). When a genuinely
+form-shaped flow arrives — `B-20`, the package builder — the wire half becomes the right tool and
+nothing here blocks using it there.
+
+**Second consequence, larger.** Because the engine cannot refuse, every rule of the shape "not from
+here, not yet" lives *outside* the transition, in the use case, and runs before it. That is what makes
+the canvas's slot-limit frame reachable at all: a refusal expressed as an exception is a status code
+with no screen behind it, and the wizard is then neither on the step it refused nor on the next one.
+`AdvanceEsimWizardUseCase` gates first and answers with the same step plus a reason.
+
+### 1.13 kompot actions are registered by hand, and nothing notices when they are not
+
+| Fact | Where verified |
+|---|---|
+| `@KompotComponentMarker` plus the KSP processor generate the polymorphic registration for **components** | `kompot/kompot-registry-processor`, and `KonektRegistrationTest` |
+| the `KompotAction` hierarchy has no generator: `:kompot-wizard` registers its three subclasses by hand in `kompotWizardSerializersModule` | `kompot/kompot-wizard/src/commonMain/.../Serializers.kt` |
+
+**Consequence.** An application that adds an action of its own and forgets to add its module to the
+application's `Json` compiles, starts, and draws every screen correctly — the encode side is fine.
+The failure is on the way back in, at runtime, on the one request the action exists for, and it
+arrives as a 400 or a 500 on a body the server itself wrote. konekt's one action, `esim_wizard_step`,
+is covered by `EsimWizardActionTest` for the round trip and by `EsimWizardRoutingTest`, which drives
+the whole wizard by posting back the buttons the server drew rather than by composing requests.
+
 ---
 
 ## 2. Decisions

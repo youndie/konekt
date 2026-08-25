@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kompot.workinprogress.ru/schema/konekt-esim.schema.json",
+  "title": "konekt-esim",
+  "description": "The eSIM install wizard's one action: which run to move, and which way.",
+  "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
+  "x-kompot-contributes": {
+    "KompotAction": {
+      "esim_wizard_step": "#/$defs/KompotActionEsimWizardStep"
+    }
+  },
+  "$defs": {
+    "KompotActionEsimWizardStep": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "esim_wizard_step",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "esim_wizard_step"
+        },
+        "wizardId": {
+          "type": "string"
+        },
+        "transition": {
+          "$ref": "wizard-core.schema.json#/$defs/WizardTransition"
+        }
+      },
+      "required": [
+        "type",
+        "wizardId",
+        "transition"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

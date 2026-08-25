@@ -5,6 +5,7 @@ import io.github.youndie.kompot.spec.GeneratedSchema
 import io.github.youndie.kompot.spec.KompotSpec
 import io.github.youndie.kompot.spec.KompotSpecModule
 import io.github.youndie.kompot.spec.KompotToolkitSpec
+import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import kotlinx.serialization.json.JsonObject
 
 // konekt's own contribution to the wire specification: the nine component types of
@@ -24,11 +25,24 @@ fun konektSpecModule(): KompotSpecModule =
         serializersModule = generatedKonektSerializersModule,
     )
 
+// The eSIM feature's contribution: one action, which is konekt's whole application-level verb set.
+//
+// A module of its own rather than a line in the one above, because the toolkit's rule is one spec
+// module per Gradle module and these are two — and because "konekt-components" describing an action
+// would be a name that lies. It is also the module that would be easiest to forget: actions are
+// registered by hand (research-architecture §1.13), so nothing generates a reminder.
+fun konektEsimSpecModule(): KompotSpecModule =
+    KompotSpecModule(
+        name = "konekt-esim",
+        description = "The eSIM install wizard's one action: which run to move, and which way.",
+        serializersModule = esimActionsSerializersModule,
+    )
+
 // The spec of THIS build. The order matters — whoever comes first owns a shared definition — and
-// konekt's module goes last because it defines nothing the toolkit also defines and refers to plenty
+// konekt's modules go last because they define nothing the toolkit also defines and refer to plenty
 // that it does.
 object KonektSpec {
-    val modules: List<KompotSpecModule> get() = KompotToolkitSpec.modules + konektSpecModule()
+    val modules: List<KompotSpecModule> get() = KompotToolkitSpec.modules + konektSpecModule() + konektEsimSpecModule()
 
     fun generateAll(): List<GeneratedSchema> = KompotSpec.generateAll(modules)
 
