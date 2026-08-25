@@ -168,6 +168,34 @@ a deadline of its own, shorter than the deploy's, and the deadline exists to con
 failure that names itself.
 
 
+### 1.7 Nothing runs the iOS tests today, and both halves of that are silent
+
+Measured on this repository's own skeleton, with a throwaway source file in `shared/domain` so the
+tasks had something to do.
+
+| Fact | Where verified |
+|---|---|
+| on the Linux box `compileKotlinIosArm64`, `compileKotlinIosSimulatorArm64` and `compileKotlinIosX64` **run** — Kotlin/Native cross-compiles the Apple klibs there | `wsl-run ./gradlew :shared:domain:build` |
+| on the same run `linkDebugTestIosX64`, `iosX64Test`, `linkDebugTestIosSimulatorArm64` and `iosSimulatorArm64Test` report **SKIPPED**, and the build is `BUILD SUCCESSFUL` | same |
+| on the Mac `iosSimulatorArm64Test` fails with *"Xcode does not support simulator tests for ios_simulator_arm64. Check that requested SDK is installed."* | `LOCAL=1 ./gradlew :shared:domain:iosSimulatorArm64Test` |
+| `xcrun simctl list runtimes` prints an empty list; `xcode-select -p` points at `Xcode-beta.app` | the Mac |
+
+**Consequence 1.** A green `wsl-run ./gradlew build` means *the Apple code compiles*. It does not mean
+any Apple test passed, because the test tasks are skipped rather than absent, and a skipped task is
+indistinguishable from a passing one in the summary line. The iOS test run is therefore a **separate,
+named command**, not something anybody may assume `build` covered.
+
+**Consequence 2.** Right now that separate command fails on the missing simulator runtime, so **no
+iOS test in this repository is executed by anything** — not by CI, not locally. The code is compiled
+and unrun. The fix is a several-gigabyte `xcodebuild -downloadPlatform iOS`, which is the machine
+owner's call rather than a build step, and until it happens the gap is `B-37` rather than an
+assumption.
+
+This is worth separating from [research-architecture](research-architecture.md) §1.9, which says the
+iOS build reports no *crashes*. That is about production. This is about the tests, and the two gaps
+compound: an iOS defect is neither caught before release nor reported after it.
+
+
 ---
 
 ## 2. Decisions

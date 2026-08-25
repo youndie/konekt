@@ -1,0 +1,228 @@
+# One line per version, and the comment above a line says what makes it non-obvious.
+#
+# Read docs/research/research-stack.md §1.1 before changing anything here: every version below was
+# read from `repo1.maven.org`'s own maven-metadata.xml on 2026-08-25, not from the search API, which
+# answers four of them stale.
+
+[versions]
+
+# --- the language and its plugins -------------------------------------------------------------
+
+kotlin = "2.4.10"
+# Matched to the Kotlin version, not chosen: KSP is the compiler's symbol API and a mismatch fails
+# at the processor rather than at the plugin.
+ksp = "2.3.11"
+# The Kotlin Multiplatform Android plugin (com.android.kotlin.multiplatform.library), not the old
+# `com.android.library`. See docs/research/research-stack.md §1.1.
+agp = "9.3.1"
+
+ktor = "3.5.2"
+coroutines = "1.11.0"
+serialization = "1.11.0"
+datetime = "0.8.0"
+
+# --- Java --------------------------------------------------------------------------------------
+#
+# 25 is required, not preferred: kompot and petich publish variants tagged
+# `org.gradle.jvm.version = 25`, and Gradle refuses to build a module on anything lower against
+# them. It lives here so the convention plugin reads it rather than repeating the literal.
+jvmToolchain = "25"
+
+# --- style -------------------------------------------------------------------------------------
+
+ktlintPlugin = "14.2.0"
+# The FORMATTER's version, separate from the plugin's and pinned explicitly — left to the plugin
+# default the style shifts whenever the plugin is bumped, which is exactly when nobody reads the
+# diff. It is a bare version string that nothing resolves, so nothing would update it either:
+# renovate is told about it by hand.
+# renovate: datasource=maven depName=com.pinterest.ktlint:ktlint-cli
+ktlint = "1.8.0"
+
+# --- the toolkits ------------------------------------------------------------------------------
+#
+# kompot is the ONLY thing here declared through a platform, and its version appears exactly once.
+# The tail digit of a kompot version is the CI run number, so kompot-core:0.30.0.71 beside
+# kompot-client:0.30.0.72 resolves into a combination nobody ever built. Through the BOM that
+# combination cannot be written down — which is why no kompot library below carries a version.
+kompot = "0.30.0.72"
+
+petich = "0.1.0.4"
+booblik = "0.3.0"
+
+# katcher is THREE version lines, not one, and they move independently. A single `katcher = ...`
+# resolves nothing and fails with a message naming an artefact rather than the mistake.
+#   - the server/container image, which this repository only deploys;
+katcherServer = "0.6.2"
+#   - the Kotlin (JVM) client the server reports through;
+katcherClient = "0.5.1"
+#   - the Android client and the Gradle plugin that uploads the R8 mapping, released together.
+#     There is no Apple variant at all — see docs/research/research-architecture.md §1.9 and
+#     youndie/katcher#25. The iOS build reports no crashes, deliberately and in writing.
+katcherAndroid = "0.4.92"
+
+metrikAgent = "0.1.13"
+tracyAgent = "0.1.12"
+viddik = "0.1.2.13"
+
+# --- persistence -------------------------------------------------------------------------------
+
+# exposed-core publishes no common metadata variant (only jvm), which is why every module that
+# touches it is kotlin("jvm") and not multiplatform. docs/research/research-stack.md §1.2.
+exposed = "1.4.0"
+# The Gradle plugin shares Exposed's version line and lives on Maven Central rather than the Gradle
+# Plugin Portal — hence mavenCentral() in settings.gradle.kts's pluginManagement.
+exposedPlugin = "1.4.0"
+# One version for flyway-core, flyway-database-postgresql and the Gradle plugin.
+flyway = "13.3.0"
+hikari = "7.1.0"
+postgresql = "42.7.13"
+
+# --- DI ----------------------------------------------------------------------------------------
+
+koin = "4.2.2"
+
+# --- testing -----------------------------------------------------------------------------------
+
+# MockK publishes `common` and `jvm` and nothing else, so it resolves in a jvm()-only module and
+# not in one that also targets iOS or Android. docs/research/research-stack.md §1.3.
+mockk = "1.14.11"
+turbine = "1.2.1"
+# Repository and route tests run against the real Postgres, not H2: the defect they exist for lives
+# in the SQL, and H2's compatibility mode diverges on ON CONFLICT, SELECT ... FOR UPDATE and jsonb —
+# all three load-bearing here. docs/research/research-stack.md D16.
+testcontainers = "1.21.4"
+
+logback = "1.6.3"
+
+[libraries]
+
+# --- kotlin ------------------------------------------------------------------------------------
+
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+
+# --- ktor: server ------------------------------------------------------------------------------
+
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+# CIO, not Netty: the load-bearing endpoint is SSE — many long-lived, mostly idle streams, which is
+# the profile a coroutine-per-connection engine is shaped for. docs/research/research-stack.md D19.
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref = "ktor" }
+ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-statusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-authJwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-sse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
+ktor-server-callLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-testHost = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# --- ktor: client ------------------------------------------------------------------------------
+
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
+ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+
+# --- kompot ------------------------------------------------------------------------------------
+#
+# No version on any of these, on purpose. The platform below constrains every coordinate this
+# toolkit publishes, including the per-target ones a Kotlin Multiplatform module adds beside its
+# root (kompot-core-jvm, kompot-core-iosarm64 ...), so naming one of those directly is covered too.
+kompot-bom = { module = "io.github.youndie:kompot-bom", version.ref = "kompot" }
+kompot-core = { module = "io.github.youndie:kompot-core" }
+kompot-standard = { module = "io.github.youndie:kompot-standard" }
+kompot-ktor = { module = "io.github.youndie:kompot-ktor" }
+kompot-forms = { module = "io.github.youndie:kompot-forms" }
+kompot-formsStandard = { module = "io.github.youndie:kompot-forms-standard" }
+kompot-formCore = { module = "io.github.youndie:form-core" }
+kompot-formStandard = { module = "io.github.youndie:form-standard" }
+kompot-wizard = { module = "io.github.youndie:kompot-wizard" }
+kompot-wizardCore = { module = "io.github.youndie:wizard-core" }
+kompot-theme = { module = "io.github.youndie:kompot-theme" }
+kompot-dsMaterial = { module = "io.github.youndie:kompot-ds-material" }
+kompot-auth = { module = "io.github.youndie:kompot-auth" }
+kompot-navigation = { module = "io.github.youndie:kompot-navigation" }
+kompot-realtime = { module = "io.github.youndie:kompot-realtime" }
+kompot-realtimeServer = { module = "io.github.youndie:kompot-realtime-server" }
+kompot-analytics = { module = "io.github.youndie:kompot-analytics" }
+kompot-registryAnnotations = { module = "io.github.youndie:kompot-registry-annotations" }
+kompot-registryProcessor = { module = "io.github.youndie:kompot-registry-processor" }
+kompot-spec = { module = "io.github.youndie:kompot-spec" }
+kompot-tck = { module = "io.github.youndie:kompot-tck" }
+# The Compose side. Arrives with the client module; listed here so the platform covers it from the
+# start rather than being remembered later.
+kompot-client = { module = "io.github.youndie:kompot-client" }
+kompot-clientCache = { module = "io.github.youndie:kompot-client-cache" }
+kompot-formsClient = { module = "io.github.youndie:kompot-forms-client" }
+kompot-wizardClient = { module = "io.github.youndie:kompot-wizard-client" }
+kompot-themeClient = { module = "io.github.youndie:kompot-theme-client" }
+kompot-dsMaterialCompose = { module = "io.github.youndie:kompot-ds-material-compose" }
+kompot-clientTck = { module = "io.github.youndie:kompot-client-tck" }
+
+# --- petich ------------------------------------------------------------------------------------
+
+petich-core = { module = "io.github.youndie:petich-core", version.ref = "petich" }
+petich-ktor = { module = "io.github.youndie:petich-ktor", version.ref = "petich" }
+petich-postgres = { module = "io.github.youndie:petich-postgres", version.ref = "petich" }
+petich-outboxCore = { module = "io.github.youndie:petich-outbox-core", version.ref = "petich" }
+petich-idempotency = { module = "io.github.youndie:petich-idempotency", version.ref = "petich" }
+petich-scheduler = { module = "io.github.youndie:petich-scheduler", version.ref = "petich" }
+
+# --- booblik -----------------------------------------------------------------------------------
+#
+# JVM only: booblik-client is a src/main/kotlin source set. The broker itself is a container, not a
+# dependency — see deploy/compose.yaml.
+booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.ref = "booblik" }
+
+# --- observability -----------------------------------------------------------------------------
+
+katcher-client = { module = "ru.workinprogress.katcher:client", version.ref = "katcherClient" }
+katcher-clientAndroid = { module = "ru.workinprogress.katcher:client-android", version.ref = "katcherAndroid" }
+metrik-agent = { module = "ru.workinprogress.metrik:agent", version.ref = "metrikAgent" }
+tracy-agent = { module = "ru.workinprogress.tracy:agent", version.ref = "tracyAgent" }
+
+# --- persistence -------------------------------------------------------------------------------
+
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-kotlinDatetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+# A separate coordinate since Flyway 10: without it the Postgres dialect is simply absent and the
+# failure names the URL rather than the missing module.
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+# --- DI ----------------------------------------------------------------------------------------
+
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-ktor = { module = "io.insert-koin:koin-ktor" }
+koin-loggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j" }
+koin-test = { module = "io.insert-koin:koin-test" }
+
+# --- testing -----------------------------------------------------------------------------------
+
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+[plugins]
+
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
+# Published to Maven Central, not to the Gradle Plugin Portal.
+exposedMigrations = { id = "org.jetbrains.exposed.plugin.gradle", version.ref = "exposedPlugin" }

@@ -54,11 +54,24 @@ This repository is a mutagen session (one-way replica, alpha here, beta `konekt`
 **The server and the JVM tests build there**, through the wrapper:
 
 ```bash
-~/.claude/bin/wsl-run ./gradlew :server:test
+~/.claude/bin/wsl-run ./gradlew build
 ```
 
+**What that green result covers, measured rather than assumed** ([research-stack](docs/research/research-stack.md) §1.7):
+
+| On the Linux box | |
+|---|---|
+| `compileKotlinIosArm64` / `IosX64` / `IosSimulatorArm64` | **run** — Kotlin/Native cross-compiles the Apple klibs |
+| `linkDebugTestIos*`, `iosX64Test`, `iosSimulatorArm64Test` | **SKIPPED**, inside `BUILD SUCCESSFUL` |
+
+So a green build means the Apple code *compiles*. It says nothing about any Apple test, because a
+skipped task and a passing one read the same in the summary. The iOS test run is a separate named
+command — and today it fails on this Mac with "Xcode does not support simulator tests", because no
+simulator runtime is installed. **Nothing runs the iOS tests right now**; that is `B-37`, not an
+assumption.
+
 **Everything Apple stays on the Mac** — `iosSimulatorArm64Test`, `xcodebuild`, the simulator, the
-screenshot tasks. So does **`generateMigrations`**, and so does every other task that writes files:
+screenshot tasks (`LOCAL=1 ./gradlew …` gets past the WSL hook). So does **`generateMigrations`**, and so does every other task that writes files:
 one-way replication reverts anything a tool writes on the replica, so a run there looks like it did
 nothing. Edits and `git` happen on the Mac too; the replica has its own `HEAD` and a diff taken there
 proves nothing.

@@ -2,6 +2,8 @@
 build/
 .idea/
 *.iml
-local.properties
 .DS_Store
 __pycache__/
+
+# Machine-local: the Android SDK path differs on the Mac and on the Linux replica.
+local.properties

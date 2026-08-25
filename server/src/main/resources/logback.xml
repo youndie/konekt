@@ -1,0 +1,13 @@
+<configuration>
+    <!-- Console only, and deliberately plain: the structured half of logging is tracy's, and a
+         second formatted copy of every line is how a log file becomes the thing that fills a disk. -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+    <logger name="io.ktor.routing" level="INFO"/>
+</configuration>

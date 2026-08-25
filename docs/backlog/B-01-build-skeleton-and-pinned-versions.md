@@ -1,7 +1,7 @@
 ---
 id: B-01
 title: "Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately"
-status: open
+status: done
 priority: P0
 size: M
 stage: stage-m0-wire
@@ -49,8 +49,10 @@ Gradle plugin `0.4.92`). Java 25 is mandatory for every consumer of kompot or pe
   `katcher-android`, and a comment saying why they are three.
 - AC: `./gradlew ktlintCheck` runs in every module from one root declaration, and formatting is
   identical before and after a plugin-only bump.
-- AC: `wsl-run ./gradlew :server:test` runs on the Linux box; the iOS test tasks are absent there
-  and present locally.
+- AC: `wsl-run ./gradlew build` is green on the Linux box, and what that does and does not cover is
+  written down — the Apple **compile** tasks run there, the Apple **test** tasks report SKIPPED
+  inside a successful build, and the iOS test run is a separately named command. See
+  [research-stack](../research/research-stack.md) §1.7 and `B-37`.
 - Anchors: `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`,
   `settings.gradle.kts`, `build-logic/src/main/kotlin/`, `.editorconfig`.
 

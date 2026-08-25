@@ -1,0 +1,23 @@
+# ktlint reads this file, so it is the style, not a suggestion to an editor.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{kt,kts}]
+max_line_length = 120
+ktlint_standard_function-naming = disabled
+# Composables and Kompot component builders read as nouns; the rule is written for functions that
+# are verbs.
+
+[*.{yml,yaml,json,toml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 100

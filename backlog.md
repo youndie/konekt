@@ -45,7 +45,6 @@ so re-prioritising must never move a file.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[ ]` | Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately | P0 | M | - |
 | [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and the Exposed plugin, including the tables petich does not create | P0 | M | B-01 |
 | [B-03](docs/backlog/B-03-component-dictionary.md) `[ ]` | Fix the component dictionary: nine own wire types in one KSP module | P0 | L | B-01 |
 | [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | The design system must keep its surface roles after the theme arrives | P0 | S | B-01 |
@@ -72,6 +71,7 @@ so re-prioritising must never move a file.
 | [B-29](docs/backlog/B-29-file-upstream-issues.md) `[~]` | File U1–U5 upstream and record what came back | P1 | S | - |
 | [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[ ]` | Time is injected, because four different deadlines depend on it | P1 | XS | B-01 |
 | [B-34](docs/backlog/B-34-error-contract.md) `[ ]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
+| [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[ ]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
 | [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
 | [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
@@ -82,7 +82,11 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (0)
+## Closed (1)
+
+**The wire and the shell**
+
+- [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[x]` - Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately
 
 <!-- END INDEX -->
 
