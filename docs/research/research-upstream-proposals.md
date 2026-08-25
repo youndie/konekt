@@ -351,11 +351,21 @@ experiment that should have been run before the issue was filed.
 
 **U8 is moving upstream.** A contributor offered to take it on 2026-08-25, proposing regression tests
 for the filename collision and the duplicate versions plus a naming change that guarantees uniqueness
-within one run. That direction closes the data loss — verified here, since changing nothing but
-`fileVersionFormat` to `MAJOR_MINOR` already produces all three tables — so konekt has nothing to add
-and is not adding it. What stays ours either way is
-`scripts/generate-migration.sh` and `MigrationFilesTest`: a draft is renumbered by hand and checked,
-whatever the generator learns to do.
+within one run. That direction closes the data loss, and the reply on the issue says so with the
+whole chain measured rather than inferred: the `MAJOR_MINOR` output is not merely complete, Flyway
+13.3.0 applies it to a Postgres 18 and all three tables land.
+
+The reply carries one shape that is **not** in the issue body — an independent table beside the
+parent and its two children. Four tables in, two files out, three tables' DDL, and those two files
+also share a version, so it is the only shape that trips both defects at once. It is there because a
+regression test written over filenames would pass while a table was still missing; what holds is the
+union of `CREATE TABLE` statements across every generated file. The probe is
+[`probes/exposed-2897/`](../../probes/exposed-2897/README.md), committed because the first copy was
+built on the Linux box and did not survive, and because the reply offers to run a candidate fix
+through it.
+
+What stays ours whatever the generator learns to do is `scripts/generate-migration.sh` and
+`MigrationFilesTest`: a draft is renumbered by hand and checked.
 
 **U7 and U8 compound.** petich asks for two indexes in column comments and declares neither, so
 Exposed's view of the schema does not contain them — and Exposed's view is what `generateMigrations`
