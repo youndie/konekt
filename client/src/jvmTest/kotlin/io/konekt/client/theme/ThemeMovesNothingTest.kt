@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onRoot
@@ -55,6 +54,11 @@ import kotlin.test.assertTrue
 //
 // What it cannot catch is a change to konekt's own surfaces — both frames would move together. That
 // is the golden pair's job and it belongs to B-28, which brings the screenshot harness.
+//
+// ONE THING TO READ CAREFULLY BELOW, added by B-22: the fixture's theme is called `brand-b`, and the
+// shape scale is nevertheless held at the default. That is on purpose — this file's property is
+// "colour alone moves nothing", so the shape has to be a constant across the pair. What happens when
+// the brand's NAME reaches a composition root that resolves a scale from it is `BrandSwitchTest`.
 @OptIn(ExperimentalTestApi::class)
 class ThemeMovesNothingTest {
     private val brandB =
@@ -157,40 +161,9 @@ class ThemeMovesNothingTest {
         return image
     }
 
-    private data class Difference(
-        val repainted: Int,
-        val moved: Int,
-    )
-
-    // ALPHA IS THE GEOMETRY and colour is everything else. A pill becoming a rounded rectangle, a
-    // border appearing, a control changing size — every one of those changes which pixels are
-    // covered. Repainting a covered pixel does not.
-    private fun compare(
-        before: ImageBitmap,
-        after: ImageBitmap,
-    ): Difference {
-        assertEquals(before.width to before.height, after.width to after.height, "the frame changed size")
-
-        val plain = before.toPixelMap()
-        val themed = after.toPixelMap()
-        var repainted = 0
-        var moved = 0
-
-        for (y in 0 until before.height) {
-            for (x in 0 until before.width) {
-                val a = plain[x, y]
-                val b = themed[x, y]
-                if (a.alpha != b.alpha) moved++
-                if (a != b) repainted++
-            }
-        }
-
-        return Difference(repainted = repainted, moved = moved)
-    }
-
     @Test
     fun `a brand kit repaints the screen and moves nothing on it`() {
-        val difference = compare(render(theme = null), render(theme = brandB))
+        val difference = compareFrames(render(theme = null), render(theme = brandB))
 
         // The positive control first, and it is not a formality: if the theme silently failed to
         // apply, every pixel would match and the assertion below would pass while proving nothing.
@@ -209,7 +182,7 @@ class ThemeMovesNothingTest {
         // The second positive control, and the one that makes the first assertion mean something. A
         // pixel comparison that reports "nothing moved" is only evidence if it would report movement
         // when a surface genuinely goes missing — and this is the exact way it used to go missing.
-        val difference = compare(render(theme = null), render(theme = brandB, dropSurfaces = true))
+        val difference = compareFrames(render(theme = null), render(theme = brandB, dropSurfaces = true))
 
         assertTrue(
             difference.moved > 0,

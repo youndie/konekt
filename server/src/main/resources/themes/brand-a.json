@@ -1,0 +1,51 @@
+{
+  "id": "brand-a",
+  "light": {
+    "colors": {
+      "primary": "#FF0B6B60",
+      "on_primary": "#FFFFFFFF",
+      "primary_container": "#FFB8EDE4",
+      "on_primary_container": "#FF00201B",
+      "secondary": "#FFB0490E",
+      "on_secondary": "#FFFFFFFF",
+      "secondary_container": "#FFFFDBC8",
+      "on_secondary_container": "#FF351000",
+      "surface": "#FFFFFFFF",
+      "on_surface": "#FF141A19",
+      "surface_variant": "#FFE9F2EF",
+      "on_surface_variant": "#FF3F4A47",
+      "background": "#FFF2F7F5",
+      "on_background": "#FF141A19",
+      "error": "#FFB3261E",
+      "on_error": "#FFFFFFFF",
+      "error_container": "#FFF9DEDC",
+      "on_error_container": "#FF410E0B",
+      "outline": "#FFBDCCC8",
+      "outline_variant": "#FFD7E3E0"
+    }
+  },
+  "dark": {
+    "colors": {
+      "primary": "#FF9CDBD0",
+      "on_primary": "#FF003730",
+      "primary_container": "#FF084A43",
+      "on_primary_container": "#FFB8EDE4",
+      "secondary": "#FFF0B183",
+      "on_secondary": "#FF522300",
+      "secondary_container": "#FF75340B",
+      "on_secondary_container": "#FFFFDBC8",
+      "surface": "#FF131C1A",
+      "on_surface": "#FFE3EEEB",
+      "surface_variant": "#FF18211F",
+      "on_surface_variant": "#FFBDCCC8",
+      "background": "#FF0D1513",
+      "on_background": "#FFE3EEEB",
+      "error": "#FFF2B8B5",
+      "on_error": "#FF601410",
+      "error_container": "#FF8C1D18",
+      "on_error_container": "#FFF9DEDC",
+      "outline": "#FF3D4A47",
+      "outline_variant": "#FF2A3532"
+    }
+  }
+}

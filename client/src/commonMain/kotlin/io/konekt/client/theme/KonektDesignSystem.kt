@@ -1,13 +1,9 @@
 package io.konekt.client.theme
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.ColorToken
 import io.github.youndie.kompot.KompotDesignSystem
 import io.github.youndie.kompot.KompotSurface
@@ -15,34 +11,6 @@ import io.github.youndie.kompot.KompotSurfaceRoles
 import io.github.youndie.kompot.SurfaceRole
 import io.github.youndie.kompot.TypographyToken
 import io.github.youndie.kompot.ds.material.Material3DesignSystem
-
-// The corner radii of one brand.
-//
-// THEY LIVE IN THE CLIENT AND NOT ON THE WIRE, and that is a decision rather than an omission:
-// `kompot-core` declares `ColorToken` and `TypographyToken` and nothing for shape, so a brand's radii
-// are a client build constant (research-architecture §1.2, D2). A server that could name a radius
-// would be a server that can make a control unreachable by rounding it away.
-data class KonektShapeScale(
-    val large: Dp,
-    val medium: Dp,
-    val small: Dp,
-    // A pill is not a radius. `RoundedCornerShape(percent = 50)` follows the height of whatever it
-    // wraps, and writing it as a large Dp gives a shape that is a pill at one size and a rounded
-    // rectangle at another.
-    val pillButtons: Boolean,
-) {
-    val largeShape: Shape get() = RoundedCornerShape(large)
-    val mediumShape: Shape get() = RoundedCornerShape(medium)
-    val smallShape: Shape get() = RoundedCornerShape(small)
-    val buttonShape: Shape get() = if (pillButtons) PILL else largeShape
-
-    companion object {
-        // Brand A, from the design canvas: lg 36 / md 20 / sm 12, with pills.
-        val BrandA = KonektShapeScale(large = 36.dp, medium = 20.dp, small = 12.dp, pillButtons = true)
-
-        private val PILL: Shape = RoundedCornerShape(percent = 50)
-    }
-}
 
 // konekt's design system: Material3 for colour and typography, konekt's own answers for surfaces.
 //

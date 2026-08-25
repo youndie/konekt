@@ -1,8 +1,14 @@
+import org.gradle.api.tasks.PathSensitivity
+
 plugins {
     id("konekt.base")
     id("org.jetbrains.kotlin.multiplatform")
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    // KSP is viddik's requirement rather than a choice of ours: the screenshot cases are GENERATED
+    // from `@ViddikScreenshot` and the plugin fails the build outright if the processor is absent.
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.viddik)
 }
 
 // NOT `konekt.multiplatform`, and this is the one module where that is right rather than lazy.
@@ -115,6 +121,74 @@ kotlin {
     }
 }
 
+// The screenshot harness. Everything below is a deliberate answer to a way this can go green while
+// photographing nothing — see docs/backlog/B-28-screenshot-tests.md.
+viddik {
+    // `check` runs the comparison. Left at the plugin's default (false) the goldens would only be
+    // consulted by somebody who remembered to ask for them, which is the manual review this item
+    // exists to replace.
+    verifyOnCheck.set(true)
+}
+
+// viddik's generated case class is a JUnit 5 `@TestFactory`. In a module wired for JUnit 4 it
+// compiles, KSP runs, the file is on disk — and the runner never picks it up, so the suite is green
+// and executes NOTHING. This line was here before the plugin was, and it is what covers `jvmTest`;
+// `viddikVerify` turns out to pin the platform itself, which is measured in the block below.
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+// THE GOLDENS ARE AN INPUT OF `jvmTest`, AND THEY ARE NOT ONE BY DEFAULT.
+//
+// `GoldenContentTest` reads the committed PNGs out of `src/jvmTest/snapshots`, which is a resource
+// directory of no source set — so Gradle sees no reason to re-run the suite when one changes, and
+// the first attempt to prove that guard bites failed for exactly that reason: a golden was renamed,
+// `:client:jvmTest` reported UP-TO-DATE, and the stale XML from the previous run said everything
+// passed. viddik declares the same directory as an input of its own `viddikVerify`; this does it for
+// the ordinary suite, which is where the content assertions live.
+tasks.named<Test>("jvmTest") {
+    inputs
+        .dir(layout.projectDirectory.dir("src/jvmTest/snapshots"))
+        .withPropertyName("viddikGoldens")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
+// THE CASE COUNT, REPORTED — AND WHY THAT IS ALL THIS IS.
+//
+// `viddikVerify` runs the generated fixtures as JUnit 5 DYNAMIC tests under one class, so a run that
+// executed none of them would be indistinguishable from a run that passed all of them: same exit
+// code, same silence. That is the failure mode this account has shipped before, and the AC asks for a
+// case count, so the count is read back out of the task's own JUnit XML and logged.
+//
+// **The `check` below has never been observed to fire, and two mutations are why.** With viddik
+// 0.1.2.13 the empty run is closed upstream of it:
+//
+//   * `useJUnit()` on this task does not take — `ViddikPlugin` calls `useJUnitPlatform()` on its own
+//     task, so the JUnit-4 trap recorded elsewhere cannot be reproduced here. Measured: the task
+//     still compared 8 cases with `useJUnit()` in this file;
+//   * `viddik { generateTests = false }` makes the plugin fail the task itself, by name, saying there
+//     is nothing to run;
+//   * and Gradle's own `failOnNoMatchingTests` fires for the task's `*GeneratedViddikTests*` include
+//     when nothing matches it.
+//
+// So this is a REPORT rather than a guard, and calling it a guard would be the decoration this
+// repository is careful about. The guarding is done by `ScreenshotCasesTest`, which names the eight
+// cases and both directions of the goldens, and which cannot even COMPILE if KSP generated nothing.
+val viddikResults = layout.buildDirectory.dir("test-results/viddikVerify")
+
+tasks.named<Test>("viddikVerify") {
+    val resultsDir = viddikResults
+    doLast {
+        val files =
+            resultsDir
+                .get()
+                .asFile
+                .listFiles { file -> file.name.endsWith(".xml") }
+                .orEmpty()
+        val cases = files.sumOf { file -> Regex("<testcase ").findAll(file.readText()).count() }
+        logger.lifecycle("viddikVerify compared $cases screenshot case(s)")
+        check(cases > 0) {
+            "viddikVerify executed no screenshot cases. The task is green and photographed nothing."
+        }
+    }
 }

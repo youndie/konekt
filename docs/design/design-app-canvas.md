@@ -130,6 +130,42 @@ would not arrive anyway.
 Spacing 4 · 8 · 12 · 16 · 20 · 24, minimum touch target 48. Shape scale per brand: A is `lg` 36 /
 `md` 20 / `sm` 12 with pills; B is 22 / 12 / 8 with rounded rectangles.
 
+Both scales are built, and what an operator can and cannot change without a client release is
+[design-brand-kit](design-brand-kit.md). It also carries a measured caveat this section cannot: on a
+button at Material's default 40dp height every radius of 20dp or more draws the same pill, so brand
+B's 22 is indistinguishable from brand A's pill until the button is taller than 44dp.
+
+## Which of these frames are photographed, and which cannot be
+
+`B-28` put eight of the canvas's frames under a screenshot harness (viddik, a Gradle plugin). The
+goldens live in `client/src/jvmTest/snapshots/`, `./gradlew :client:viddikVerify` compares them, and
+`:client:check` runs that comparison.
+
+| Frame | Golden |
+|---|---|
+| counter card, normal / low / exhausted (section 01) | `Counter_Normal.png`, `Counter_Low.png`, `Counter_Exhausted.png` |
+| counter card, a state word this build does not know | `Counter_Unknown_state.png` |
+| brand A and brand B, light and dark (section 08) | `Brand_A.png`, `Brand_A_Dark.png`, `Brand_B.png`, `Brand_B_Dark.png` |
+
+The fourth counter frame is not on the canvas and is the most valuable of the four. `state` is an open
+string on the wire (`CounterStates` in `shared/components`), so a server one release ahead can name a
+state this build has never heard of, and the rule is that such a word draws the ORDINARY card. That
+frame therefore carries THE SAME DATA as the normal one and its golden is asserted to be
+pixel-identical to it — a degradation that draws something of its own fails, and so does one that
+draws nothing.
+
+**Two sections of the canvas cannot be photographed yet, and the reason is the same for both.**
+Sections 02 and 03 — the four plan-list states and the four purchase states — are drawn from
+`plan_card`, `order_row`, `banner` and `step_meter`, and this client registers a renderer for two of
+the nine types only (`usage_counter_card` and `esim_qr`; `KonektRendererCoverageTest` holds the two
+lists apart). A golden of a frame made entirely of unknown-component blocks would photograph the
+degradation and call it the purchase flow. They join when their renderers do.
+
+Recording is `LOCAL=1 ./gradlew :client:viddikRecord`, on the Mac: the Linux box is a one-way replica
+and reverts anything a task writes there, so a recording run in the usual place looks like it did
+nothing. The goldens then verify unchanged on Linux — measured, not assumed, and it works because the
+fixtures pin viddik's bundled font rather than the host's.
+
 ## What the canvas does not provide
 
 The app icon is vector sketches, and the canvas says so: not finished artwork. A real icon set is an
