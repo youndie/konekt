@@ -3,9 +3,7 @@ package io.konekt.e2e
 import io.github.youndie.kompot.spec.KompotProtocol
 import io.github.youndie.kompot.tck.RemoteTckTransport
 import io.github.youndie.kompot.tck.TckConfig
-import io.github.youndie.kompot.tck.TckResponse
 import io.github.youndie.kompot.tck.TckRunner
-import io.github.youndie.kompot.tck.TckTransport
 import io.konekt.components.konektWireNames
 import io.konekt.conformance.KONEKT_WALK_PLAN
 import io.konekt.conformance.assertTheWalkVisitedEveryTarget
@@ -51,14 +49,6 @@ import kotlin.test.assertTrue
 class TckWalkTest {
     private val plan = "tr-10gb-30d"
 
-    private companion object {
-        // The kit's login address, taken from the plan so this file spells no address at all.
-        val LOGIN_PATH: String =
-            requireNotNull(KONEKT_WALK_PLAN.loginPath) {
-                "the walk plan declares no login path, so the transport has nothing to adapt"
-            }
-    }
-
     @Test
     fun `the conformance walk visits what this deployment offers, and the verdict is read after that`() =
         runBlocking {
@@ -84,7 +74,7 @@ class TckWalkTest {
                 val endpoints = conformanceEndpoints(document)
 
                 val report =
-                    KonektLoginTransport(RemoteTckTransport(Stand.serverUrl, client), LOGIN_PATH).let { transport ->
+                    RemoteTckTransport(Stand.serverUrl, client).let { transport ->
                         TckRunner(transport, konektTckConfig(document, orderId, topUpId, loginValues)).run()
                     }
 
@@ -147,7 +137,20 @@ class TckWalkTest {
             // direction — a walk that reaches MORE than the plan expects makes the coverage assertion
             // under-claim while staying green.
             loginPath = KONEKT_WALK_PLAN.loginPath,
-            loginValues = loginValues,
+            // THE WHOLE BODY, VERBATIM, because this server's login is not a kompot form. The toolkit
+            // never required it to be one — `kompot-auth` is a single `update_session` action and
+            // everything around it is the application's — so konekt's OTP exchange takes a plain
+            // `VerifyOtpRequest`.
+            //
+            // `loginBody` rather than `bearerToken`, and the difference is a check. Handing the kit a
+            // session skips the exchange entirely: nothing then verifies that the login answers an
+            // `update_session` carrying an `accessToken`, which is the part §12 makes a rule. This way
+            // the kit still performs the login and still holds it to that.
+            //
+            // Both arrived in 0.32.0.77 (youndie/kompot#85), which replaced a `TckTransport` decorator
+            // here that unwrapped the envelope on one path — a rule about a request BODY living in the
+            // layer documented as the only thing the checks know about transport.
+            loginBody = JsonObject(loginValues),
             pathParameters =
                 KONEKT_WALK_PLAN.pathParameters.mapValues { (_, placeholders) ->
                     placeholders.associateWith { name ->
@@ -173,42 +176,4 @@ class TckWalkTest {
             // one.
             allowStateChangingChecks = KONEKT_WALK_PLAN.allowStateChangingChecks,
         )
-}
-
-// THE ONE PLACE WHERE THIS SERVER'S LOGIN IS NOT A KOMPOT FORM, and the adapter that says so.
-//
-// `TckRunner.authenticate` posts a fixed submit envelope — `{formId, fieldId, values}` — to
-// `TckConfig.loginPath`, because it assumes the way in is an ordinary kompot form. konekt's is not:
-// `kompot-auth` is a single `update_session` action and nothing else, so OTP, tokens, refresh and
-// logout are this product's own (research-architecture §1.5), and `POST /api/v1/auth/otp/verify`
-// takes a plain `VerifyOtpRequest`. The kit offers no way to hand it a token instead.
-//
-// So the envelope is unwrapped here, at the seam the kit itself names as the only thing its checks
-// know about transport. What is NOT done here is worth stating: no header is added and no response is
-// touched. `securedEndpointsRejectAnonymous` asks a secured endpoint for a 401 with no token at all,
-// and a transport that quietly carried one would turn that check green while proving the opposite.
-private class KonektLoginTransport(
-    private val delegate: TckTransport,
-    private val loginPath: String,
-) : TckTransport {
-    override suspend fun request(
-        method: String,
-        path: String,
-        headers: Map<String, String>,
-        body: String?,
-    ): TckResponse {
-        val rewritten =
-            if (method == "POST" && path == loginPath && body != null) {
-                Json
-                    .parseToJsonElement(body)
-                    .jsonObject["values"]
-                    ?.jsonObject
-                    ?.toString() ?: body
-            } else {
-                body
-            }
-        return delegate.request(method, path, headers, rewritten)
-    }
-
-    override suspend fun close() = delegate.close()
 }

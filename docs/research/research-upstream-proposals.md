@@ -314,8 +314,8 @@ first five: each one blocked or corrupted something that was being built at the 
 | U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | [petich#8](https://github.com/youndie/petich/issues/8) | closed, packaged in `0.1.0.8`; our reflective bridge deleted |
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
 | U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open; fix proposed in [#2898](https://github.com/JetBrains/Exposed/pull/2898) and verified here |
-| U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | open |
-| U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | open |
+| U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | closed, released in `0.31.0.76`; `:client` builds for iOS |
+| U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | closed, released in `0.32.0.77`; our transport decorator deleted |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -330,12 +330,19 @@ none of those defects: six findings across four endpoints, of which exactly one 
 conformance kit that cannot authenticate does not fail loudly — it produces a page of confident,
 wrong ones.
 
-Worked around locally in a `TckTransport` decorator that unwraps the envelope on the one login path
-([`e2e/.../TckWalkTest.kt`](../../e2e/src/test/kotlin/io/konekt/e2e/TckWalkTest.kt)), which is the seam
-the interface's own comment names. **What the decorator deliberately does not do is add a header**:
-`securedEndpointsRejectAnonymous` asks a secured endpoint for a 401 with no token, and a transport
-quietly carrying one would turn that check green while proving the opposite. That is the trap the
-issue asks upstream not to fall into either.
+It was worked around locally in a `TckTransport` decorator that unwrapped the envelope on the one
+login path — a rule about a request BODY living in the layer documented as the only thing the checks
+know about transport. **That decorator is deleted.** `0.32.0.77` added both of the asks:
+`TckConfig.loginBody`, posted verbatim, and `TckConfig.bearerToken`, which skips the exchange.
+
+konekt takes `loginBody`, and the difference is a check rather than a preference: handing the kit a
+session skips the login entirely, so nothing then verifies that the exchange answers an
+`update_session` carrying an `accessToken` — the part SPEC §12 makes a rule. With `loginBody` the kit
+still performs the login and still holds it to that.
+
+The care asked for came back in the code as well: `bearerToken` does not become a header the transport
+always adds, because `securedEndpointsRejectAnonymous` asks a secured endpoint for a 401 with no token
+at all, and a token applied unconditionally would turn that check green while proving the opposite.
 
 **U8's fix was verified rather than read.** [#2898](https://github.com/JetBrains/Exposed/pull/2898)
 appends an index to the version of every migration after the first, and the contributor asked for a

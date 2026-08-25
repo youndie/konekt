@@ -60,7 +60,14 @@ ktlint = "1.8.0"
 # The tail digit of a kompot version is the CI run number, so kompot-core:0.30.0.71 beside
 # kompot-client:0.30.0.72 resolves into a combination nobody ever built. Through the BOM that
 # combination cannot be written down — which is why no kompot library below carries a version.
-kompot = "0.31.0.74"
+#
+# CHECK THAT EVERY MODULE EXISTS AT THE VERSION BEFORE MOVING THIS LINE. The publication walks the
+# modules alphabetically and fills in each one's pending versions as it goes, so for a while a
+# version is real for `form-core` and absent for `wizard-core` — and the BOM, being early in the
+# alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
+# through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
+# the whole time .77 was being published; the check is one loop over the coordinates below.
+kompot = "0.32.0.77"
 
 petich = "0.1.0.8"
 booblik = "0.3.0"
