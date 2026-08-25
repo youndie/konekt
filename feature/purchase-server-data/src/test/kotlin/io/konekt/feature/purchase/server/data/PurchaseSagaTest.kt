@@ -92,9 +92,11 @@ class PurchaseSagaTest {
 
     private val ttl = 5.minutes
 
+    private val payments = MockPaymentGateway()
+
     private val engine =
         PetichEngine(
-            interceptors = purchaseInterceptors(balances, entitlements, plans, json, ttl),
+            interceptors = purchaseInterceptors(balances, entitlements, plans, payments, json, ttl),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             clock = clock.asPetichClock(),
@@ -108,7 +110,7 @@ class PurchaseSagaTest {
         )
 
     private val start = StartPurchaseUseCase(engine, repository, plans, balances)
-    private val confirm = ConfirmPurchaseUseCase(engine, repository)
+    private val confirm = ConfirmPurchaseUseCase(engine, repository, balances)
 
     private lateinit var subscriberId: String
     private val opening = Money.ofMajor(50, Currency.DEFAULT)

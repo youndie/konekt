@@ -25,6 +25,9 @@ data class OrderView(
     val status: OrderStatus,
     val payload: PurchasePayload,
     val requiredAction: String?,
+    // Only on the compensated branch, and only when a provider said something. A rollback that
+    // happened because the subscriber walked away has no reason to give and does not invent one.
+    val declineReason: String? = null,
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -64,7 +67,8 @@ class StartPurchaseUseCase(
             // Read back rather than inferred from the engine's answer: that answer says what happened
             // on this pass, and what the client needs is where the order now stands. After a Suspend
             // those differ.
-            (orders.findById(orderId) ?: throw KonektException.NotFound("order")).toView()
+            val view = (orders.findById(orderId) ?: throw KonektException.NotFound("order")).toView()
+            view.copy(declineReason = balances.declineReason(orderId))
         }
 
     data class Params(
@@ -76,6 +80,7 @@ class StartPurchaseUseCase(
 class ConfirmPurchaseUseCase(
     private val engine: PetichEngine,
     private val orders: PetichRepository,
+    private val balances: AccountBalances,
 ) {
     suspend operator fun invoke(params: Params): Result<OrderView> =
         suspendRunCatching {
@@ -90,7 +95,8 @@ class ConfirmPurchaseUseCase(
 
             engine.process(order.copy(resumePayload = PurchaseConfirmation()))
 
-            (orders.findById(params.orderId) ?: throw KonektException.NotFound("order")).toView()
+            val view = (orders.findById(params.orderId) ?: throw KonektException.NotFound("order")).toView()
+            view.copy(declineReason = balances.declineReason(params.orderId))
         }
 
     data class Params(
@@ -101,10 +107,12 @@ class ConfirmPurchaseUseCase(
 
 class FindOrderUseCase(
     private val orders: PetichRepository,
+    private val balances: AccountBalances,
 ) {
     suspend operator fun invoke(params: Params): Result<OrderView> =
         suspendRunCatching {
-            orders.findById(params.orderId).ownedByOr404(params.subscriberId).toView()
+            val order = orders.findById(params.orderId).ownedByOr404(params.subscriberId).toView()
+            order.copy(declineReason = balances.declineReason(params.orderId))
         }
 
     data class Params(

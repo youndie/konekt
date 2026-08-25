@@ -30,10 +30,14 @@ object LedgerEntryTable : Table("ledger_entry") {
     val amountMinor = long("amount_minor")
     val currency = char("currency", 3)
     val createdAt = long("created_at")
+    val note = varchar("note", 255).nullable()
 
     override val primaryKey = PrimaryKey(id, name = "pk_ledger_entry")
 
     const val HOLD = "hold"
     const val RELEASE = "release"
     const val CAPTURE = "capture"
+
+    // Zero-sum, and there to carry a sentence rather than an amount.
+    const val DECLINE = "decline"
 }

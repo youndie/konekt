@@ -7,6 +7,7 @@ import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
 import io.konekt.feature.purchase.server.domain.Entitlements
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
 import io.konekt.feature.purchase.server.domain.HoldFundsInterceptor
+import io.konekt.feature.purchase.server.domain.PaymentGateway
 import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.purchase.server.domain.ProvisionInterceptor
 import io.konekt.feature.purchase.server.domain.PurchaseEvents
@@ -24,6 +25,7 @@ fun purchaseInterceptors(
     balances: AccountBalances,
     entitlements: Entitlements,
     plans: PlanCatalog,
+    payments: PaymentGateway,
     json: Json,
     confirmationTtl: Duration = DEFAULT_CONFIRMATION_TTL,
 ): List<PetichInterceptor<*>> {
@@ -31,7 +33,7 @@ fun purchaseInterceptors(
     return listOf(
         ValidatePurchaseInterceptor(plans, balances),
         HoldFundsInterceptor(balances, entitlements, events, confirmationTtl),
-        ProvisionInterceptor(balances, entitlements),
+        ProvisionInterceptor(balances, entitlements, payments),
         AnnouncePurchaseInterceptor(events),
     )
 }
@@ -39,16 +41,20 @@ fun purchaseInterceptors(
 // The engine is NOT built here. It is built by the composition root, because an application usually
 // keeps several — one per saga type, sharing one saga table — and only the root knows the set. A
 // feature that built its own would be a feature deciding how many there are.
-fun purchaseModule(database: Database) =
-    module {
-        single<AccountBalances> { ExposedAccountBalances(database, get()) }
-        single<Entitlements> { ExposedEntitlements(database, get()) }
-        single<PlanCatalog> { StaticPlanCatalog() }
+fun purchaseModule(
+    database: Database,
+    paymentMode: MockPaymentGateway.Mode = MockPaymentGateway.Mode.APPROVE,
+    paymentDelay: Duration = Duration.ZERO,
+) = module {
+    single<AccountBalances> { ExposedAccountBalances(database, get()) }
+    single<Entitlements> { ExposedEntitlements(database, get()) }
+    single<PlanCatalog> { StaticPlanCatalog() }
+    single<PaymentGateway> { MockPaymentGateway(mode = paymentMode, delay = paymentDelay) }
 
-        // Explicit lambdas rather than singleOf/factoryOf: the reflective form resolves every
-        // constructor parameter through the container, including defaulted ones, and both the
-        // interceptor list and the use cases have those.
-        factory { StartPurchaseUseCase(get(), get(), get(), get()) }
-        factory { ConfirmPurchaseUseCase(get(), get()) }
-        factory { FindOrderUseCase(get()) }
-    }
+    // Explicit lambdas rather than singleOf/factoryOf: the reflective form resolves every
+    // constructor parameter through the container, including defaulted ones, and both the
+    // interceptor list and the use cases have those.
+    factory { StartPurchaseUseCase(get(), get(), get(), get()) }
+    factory { ConfirmPurchaseUseCase(get(), get(), get()) }
+    factory { FindOrderUseCase(get(), get()) }
+}

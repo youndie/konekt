@@ -97,12 +97,33 @@ class ExposedAccountBalances(
         }
     }
 
+    override suspend fun recordDecline(
+        accountId: String,
+        orderId: String,
+        amount: Money,
+        reason: String,
+    ) {
+        dbQuery {
+            entry(accountId, orderId, LedgerEntryTable.DECLINE, 0, amount.currency, reason)
+        }
+    }
+
+    override suspend fun declineReason(orderId: String): String? =
+        dbQuery {
+            LedgerEntryTable
+                .selectAll()
+                .where { (LedgerEntryTable.orderId eq orderId) and (LedgerEntryTable.kind eq LedgerEntryTable.DECLINE) }
+                .singleOrNull()
+                ?.get(LedgerEntryTable.note)
+        }
+
     private fun entry(
         accountId: String,
         orderId: String,
         kind: String,
         amountMinor: Long,
         currency: Currency,
+        note: String? = null,
     ) {
         LedgerEntryTable.insert {
             it[id] = Uuid.random().toString()
@@ -111,6 +132,7 @@ class ExposedAccountBalances(
             it[LedgerEntryTable.kind] = kind
             it[LedgerEntryTable.amountMinor] = amountMinor
             it[LedgerEntryTable.currency] = currency.name
+            it[LedgerEntryTable.note] = note
             it[createdAt] = clock.now().toEpochMilliseconds()
         }
     }

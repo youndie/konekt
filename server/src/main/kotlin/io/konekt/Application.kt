@@ -13,6 +13,7 @@ import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.feature.auth.server.data.devOtpRoutes
 import io.konekt.feature.auth.server.data.sessionRoutes
+import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
@@ -49,6 +50,7 @@ import ru.workinprogress.petich.OutboxAwarePetichRepository
 import ru.workinprogress.petich.PetichEngine
 import ru.workinprogress.petich.PetichEngineConfig
 import ru.workinprogress.petich.PetichPayload
+import ru.workinprogress.petich.PetichPhase
 import ru.workinprogress.petich.PetichRepository
 import ru.workinprogress.petich.ResumePayload
 import ru.workinprogress.petich.SimpleEnrichedPayload
@@ -117,7 +119,7 @@ fun Application.module(config: KonektConfig) {
         listOf(
             module { single { kompotJson } },
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
-            purchaseModule(database),
+            purchaseModule(database, config.paymentMode, config.paymentDelay),
             petichModule(database),
         ),
     )
@@ -164,10 +166,29 @@ private fun petichModule(database: Database) =
                         balances = get(),
                         entitlements = get(),
                         plans = get(),
+                        payments = get(),
                         json = get(),
                     ),
                 repository = get<OutboxAwarePetichRepository>(),
-                config = PetichEngineConfig(requireOutbox = true),
+                config =
+                    PetichEngineConfig(
+                        requireOutbox = true,
+                        // The canvas tells the subscriber a settlement "usually takes under 15
+                        // seconds", and petich's default EXECUTION bound is 10 — so the screen
+                        // describes a provider the engine would cancel. Raised rather than the copy
+                        // lowered: a timeout that fires before the provider has answered turns a slow
+                        // approval into a rollback nobody asked for.
+                        // The defaults, with one entry replaced. `PetichPhase.timeoutMs` is not
+                        // visible from outside petich, so the defaults are taken from a default
+                        // config rather than rebuilt — which is also the form that keeps every other
+                        // phase on whatever petich decides next.
+                        phaseTimeoutsMs =
+                            PetichEngineConfig().phaseTimeoutsMs +
+                                (
+                                    PetichPhase.EXECUTION to
+                                        MockPaymentGateway.EXECUTION_PHASE_TIMEOUT.inWholeMilliseconds
+                                ),
+                    ),
                 clock = get<KonektClock>().asPetichClock(),
             )
         }

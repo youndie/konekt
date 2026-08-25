@@ -40,6 +40,18 @@ interface AccountBalances {
         orderId: String,
         amount: Money,
     )
+
+    // A zero-sum ledger entry that exists to carry a sentence: why the provider refused. The screen
+    // that states a rollback in money reads this, and without it the only honest wording is "the
+    // operation did not go through", which is what a subscriber rings support about.
+    suspend fun recordDecline(
+        accountId: String,
+        orderId: String,
+        amount: Money,
+        reason: String,
+    )
+
+    suspend fun declineReason(orderId: String): String?
 }
 
 data class AccountSnapshot(

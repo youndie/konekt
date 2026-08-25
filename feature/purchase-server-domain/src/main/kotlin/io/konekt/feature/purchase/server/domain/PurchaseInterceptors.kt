@@ -119,10 +119,16 @@ class HoldFundsInterceptor(
     }
 }
 
-// 3. EXECUTION — the hold becomes a spend and the package becomes usable.
+// 3. EXECUTION — settle with the provider, and make the package usable.
+//
+// Settling and provisioning are ONE step rather than two, which keeps the saga at four interceptors
+// (D5). They are one thing from the product's side — "make it real" — and splitting them would buy a
+// rollback point between a captured payment and an inactive package, which is a state nobody wants to
+// be able to reach.
 class ProvisionInterceptor(
     private val balances: AccountBalances,
     private val entitlements: Entitlements,
+    private val payments: PaymentGateway,
 ) : PetichInterceptor<PurchasePayload> {
     override val phase = PetichPhase.EXECUTION
 
@@ -132,6 +138,16 @@ class ProvisionInterceptor(
         petich: Petich,
         payload: PurchasePayload,
     ): InterceptorResult {
+        val settlement = payments.settle(petich.id, payload.price)
+        if (settlement is PaymentGateway.Settlement.Declined) {
+            // Recorded HERE, by the step that learned it. petich carries a Compensate reason to its
+            // metrics and does not persist one, and the compensating step — the hold — has no way to
+            // know why it is being undone. So the reason is written where it is known, and the
+            // rollback screen reads it back.
+            balances.recordDecline(payload.accountId, petich.id, payload.price, settlement.reason)
+            return InterceptorResult.Compensate(settlement.reason)
+        }
+
         balances.capture(payload.accountId, petich.id, payload.price)
         entitlements.activate(petich.id)
         return InterceptorResult.Proceed()

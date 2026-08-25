@@ -2,6 +2,9 @@ package io.konekt
 
 import io.konekt.db.DatabaseConfig
 import io.konekt.feature.auth.server.data.JwtConfig
+import io.konekt.feature.purchase.server.data.MockPaymentGateway
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 // Everything the process needs from its environment, read once at startup so a missing value is a
 // process that will not start rather than a route that fails later under a user.
@@ -13,6 +16,10 @@ data class KonektConfig(
     // default is the security property: a machine route that reveals any subscriber's code IS the
     // authentication system if it ships.
     val revealOtpCodes: Boolean,
+    // How the payment provider behaves. APPROVE unless told otherwise, so a deployment that forgets
+    // to set it cannot be one that declines everything.
+    val paymentMode: MockPaymentGateway.Mode,
+    val paymentDelay: Duration,
     // Apply the migrations and exit, without serving. The deploy runs the same image this way before
     // the application pods roll.
     val migrateOnly: Boolean,
@@ -36,6 +43,12 @@ data class KonektConfig(
                 // Opt in by an explicit "true", so an unset or misspelled variable means closed. An
                 // absent setting must never mean open.
                 revealOtpCodes = System.getenv("DEV_REVEAL_OTP") == "true",
+                paymentMode =
+                    when (System.getenv("PAYMENT_MOCK_MODE")) {
+                        "decline" -> MockPaymentGateway.Mode.DECLINE
+                        else -> MockPaymentGateway.Mode.APPROVE
+                    },
+                paymentDelay = (System.getenv("PAYMENT_MOCK_DELAY_MS")?.toLongOrNull() ?: 0L).milliseconds,
                 migrateOnly = System.getenv("MIGRATE_ONLY") == "true",
             )
 

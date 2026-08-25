@@ -71,7 +71,11 @@ private fun OrderView.toResponse(): PurchaseOrderResponse =
         // bank does not ring support about it.
         reversalText =
             if (status == OrderStatus.COMPENSATED) {
-                "${MoneyFormat.format(payload.price)} returned to your balance — nothing was activated."
+                // The provider's own words first when there are any, then the money. A subscriber who
+                // is told what was reversed and what their balance is now does not ring support; one
+                // who is told "something went wrong" does.
+                val what = declineReason?.let { "$it " } ?: ""
+                "$what${MoneyFormat.format(payload.price)} was returned to your balance and nothing was activated."
             } else {
                 null
             },
