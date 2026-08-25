@@ -152,6 +152,11 @@ circular dependency inside `:server` naming neither module.
 - **Time is a `KonektClock`, injected.** `ClockUsageTest` refuses `Clock.System` anywhere but
   `KonektClock.kt`. petich's clock comes from the same one through `asPetichClock()`, so a test that
   moves time moves it for the saga sweeper too.
+- **A live update names the node it replaces.** The component id in an `UpdateComponentMessage` must
+  be the id the screen already has — derive it from the subject (`counter-data`), never generate one.
+  A random id is a frame that arrives and changes nothing, silently.
+- **`KompotUpdateBroadcaster` must be started**, or it refuses to broadcast and says why. The failure
+  it prevents is a publish reaching a bus nobody collects from.
 - **The broker's topics are fixed at startup and declared in two files** — `deploy/compose.yaml` and
   `EventTopics`. booblik creates nothing on demand, so an event routed to a topic that does not exist
   is a publish that fails forever and a stuck outbox. Two tests pair the halves.

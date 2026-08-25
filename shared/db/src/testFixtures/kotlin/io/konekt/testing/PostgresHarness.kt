@@ -57,7 +57,7 @@ object PostgresHarness {
                 statement.execute(
                     """
                     TRUNCATE TABLE petiches, outbox_events, idempotency_keys, scheduled_jobs,
-                                   ledger_entry, entitlement, refresh_token, session_family,
+                                   usage_counter, ledger_entry, entitlement, refresh_token, session_family,
                                    esim, account, subscriber, otp_challenge
                     RESTART IDENTITY CASCADE
                     """.trimIndent(),

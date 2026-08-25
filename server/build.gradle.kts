@@ -48,6 +48,7 @@ dependencies {
     // The feature vertical. :server composes features; a feature never sees :server.
     implementation(project(":feature:auth-server-data"))
     implementation(project(":feature:purchase-server-data"))
+    implementation(project(":feature:usage-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.
     implementation(platform(libs.kompot.bom))
@@ -55,6 +56,9 @@ dependencies {
     implementation(libs.kompot.standard)
     implementation(libs.kompot.ktor)
     implementation(libs.kompot.auth)
+    implementation(libs.kompot.realtime)
+    implementation(libs.kompot.realtimeServer)
+    implementation(libs.ktor.server.sse)
     implementation(libs.ktor.server.resources)
     implementation(libs.ktor.server.auth)
 
@@ -105,6 +109,9 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.koin.test)
     testImplementation(libs.testcontainers.core)
+    // The client SSE plugin lives in ktor-client-core — there is no ktor-client-sse artefact, which
+    // is easy to assume from the server side, where ktor-server-sse IS one.
+    testImplementation(libs.ktor.client.core)
     testImplementation(testFixtures(project(":shared:db")))
     testImplementation(libs.testcontainers.junit)
 }

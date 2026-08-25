@@ -4,6 +4,7 @@ import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
+import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.db.DatabaseFactory
 import io.konekt.events.BooblikOutboxPublisher
@@ -21,7 +22,14 @@ import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
+import io.konekt.feature.usage.server.data.ExposedUsageCounters
+import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
+import io.konekt.feature.usage.server.domain.LoadCountersUseCase
+import io.konekt.feature.usage.server.domain.UsageCounters
+import io.konekt.feature.usage.server.domain.UsageGrants
 import io.konekt.http.configureStatusPages
+import io.konekt.realtime.ComponentBroadcaster
+import io.konekt.realtime.realtimeRoutes
 import io.konekt.time.KonektClock
 import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
@@ -38,6 +46,7 @@ import io.ktor.server.resources.Resources
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.ktor.server.sse.SSE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -104,6 +113,7 @@ fun Application.baseModule(extraModules: List<org.koin.core.module.Module> = emp
 
     install(ContentNegotiation) { json() }
     install(Resources)
+    install(SSE)
 
     // Before routing, and the reason is not order of execution but order of thought: a route written
     // after this exists answers `.getOrThrow()` and stops, because the mapping is already there to
@@ -144,6 +154,7 @@ fun Application.module(config: KonektConfig) {
         val koin = getKoin()
         koin.get<SuspendedPetichSweeper>().start(workers)
         koin.get<OutboxRelayWorker>().start(workers)
+        koin.get<KompotUpdateBroadcaster>().start(workers)
     }
     monitor.subscribe(ApplicationStopping) {
         workers.cancel()
@@ -161,6 +172,7 @@ fun Application.module(config: KonektConfig) {
         authenticate(AUTH_JWT) {
             authenticatedSessionRoutes()
             purchaseRoutes()
+            realtimeRoutes()
         }
 
         if (config.revealOtpCodes) {

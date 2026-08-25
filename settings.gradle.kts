@@ -84,6 +84,11 @@ include(":feature:purchase-shared-api")
 include(":feature:purchase-server-domain")
 include(":feature:purchase-server-data")
 
+// Counters: what a subscriber has left. Two modules rather than four — nothing here crosses the wire
+// as a DTO, because a counter reaches the client as a COMPONENT and not as data.
+include(":feature:usage-server-domain")
+include(":feature:usage-server-data")
+
 // The wire specification of THIS build: the toolkit's spec modules plus konekt's own, and the
 // committed JSON Schema files another implementation would read. JVM-only, because kompot-spec is.
 include(":shared:spec")

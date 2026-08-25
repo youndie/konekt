@@ -1,7 +1,7 @@
 ---
 id: B-16
 title: "The traffic simulator: a consumer that moves the counters"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m2-live
@@ -22,8 +22,35 @@ back to an open screen through the realtime channel.
 - Not covered: realistic usage patterns. The rate is configuration, chosen so a counter visibly moves
   during a demonstration.
 
-- AC: with the simulator running, the home screen's data counter decreases without any interaction.
-- AC: stopping the simulator stops the movement and nothing else changes.
-- Anchors: `server/src/main/kotlin/io/konekt/mocks/traffic/`.
+- AC OK: the whole chain, every link real — the simulator publishes to a **real broker**, a consumer
+  reads the topic, the counter goes from 10 000 to 9 975, and the new card is pushed to that
+  subscriber's stream. A test that wrote counters directly would prove the arithmetic and nothing
+  about the path, and the path is what this item exists for.
+- AC OK: with nothing published, the counter is asserted to be **exactly** where it was rather than
+  merely not higher — a consumer that re-applied its last event would pass the looser check.
+- Also: a counter is floored at zero in SQL. A screen that says minus three hundred and ninety
+  megabytes is worse than one that says zero, and the clamp is two mutually exclusive `UPDATE`s
+  rather than a `CHECK`, because a check refuses the write and leaves the caller to handle a failure
+  that has an obvious right answer.
+- Also: the copy changes with the state and not only the colour, which is the canvas's rule and the
+  reason `state` is on the wire at all.
+- Also: usage for a subscriber who has bought nothing is ignored rather than failing. The simulator
+  does not know who owns what, and a consumer that threw there would stop the poll for everybody else.
+- Anchors: `server/src/main/kotlin/io/konekt/mocks/traffic/`,
+  `feature/usage-server-domain/`, `feature/usage-server-data/`,
+  `shared/db/src/main/resources/db/migration/V7__usage_counter.sql`,
+  `server/src/test/kotlin/io/konekt/mocks/TrafficChainTest.kt`.
+
+## Where counters come from
+
+A purchase grants; nothing else does. That is why this item created the counter feature rather than
+seeding rows from nowhere — a counter that exists without having been bought is a number with no
+story behind it, and the first screen to show one would have to invent an explanation.
+
+The consumer's position lives in the consumer, because booblik stores no offsets — that absence is
+what removes the group coordinator and the cluster consensus behind it. This one resumes from where
+the broker is **now** rather than from zero, which is right for simulated traffic and wrong for
+anything real: replaying a day of usage on a restart would empty every counter in the product. Said
+here because the correct choice for a real integration is the opposite one.
 
 Background: [research-architecture](../research/research-architecture.md) §1.8.

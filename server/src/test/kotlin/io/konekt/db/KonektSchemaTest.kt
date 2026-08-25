@@ -6,6 +6,7 @@ import io.konekt.feature.auth.server.data.RefreshTokenTable
 import io.konekt.feature.auth.server.data.SessionFamilyTable
 import io.konekt.feature.purchase.server.data.EntitlementTable
 import io.konekt.feature.purchase.server.data.LedgerEntryTable
+import io.konekt.feature.usage.server.data.UsageCounterTable
 import io.konekt.testing.PostgresHarness
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.Table
@@ -72,15 +73,22 @@ class KonektSchemaTest {
     // A feature that adds a table and not a line here is a feature whose migration nobody verified.
     private val allTables: List<Table> get() =
         petichTables + konektCoreTables +
-            listOf(OtpChallengeTable, SessionFamilyTable, RefreshTokenTable, EntitlementTable, LedgerEntryTable)
+            listOf(
+                OtpChallengeTable,
+                SessionFamilyTable,
+                RefreshTokenTable,
+                EntitlementTable,
+                LedgerEntryTable,
+                UsageCounterTable,
+            )
 
     @Test
     fun `the schema test is looking at something`() {
         // The guard on the guard. statementsRequiredForDatabaseMigration returns an empty list both
         // when everything matches and when it was handed no tables, and the first assertion cannot
-        // tell those apart. Twelve is petich's four, konekt's three core tables, the auth feature's
-        // three and the purchase feature's two; the number is asserted here so that a table dropped
-        // from any list fails loudly rather than shrinking the check.
-        assertEquals(12, allTables.size)
+        // tell those apart. Thirteen is petich's four, konekt's three core tables, the auth
+        // feature's three, the purchase feature's two and usage's one; the number is asserted here so
+        // that a table dropped from any list fails loudly rather than shrinking the check.
+        assertEquals(13, allTables.size)
     }
 }
