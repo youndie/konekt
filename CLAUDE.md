@@ -41,8 +41,10 @@ from a registry rather than recalled, is [docs/research/research-stack.md](docs/
    `docs/backlog/`; the index between the markers is generated, so edit the item and run
    `python3 scripts/backlog_index.py`.
 4. The layer document the task belongs to — `docs/features/`, `docs/screens/`, `docs/api/`,
-   `docs/services/`. **These four are empty today**, and that is the current state rather than an
-   oversight: there is no code, and a document written ahead of code documents intent as fact.
+   `docs/services/`. **These four are still empty**, and that is now a gap rather than a stage: they
+   were empty because there was no code, and there are four feature verticals now. `B-39` is the item.
+   Until it closes, the backlog item and the research documents are the whole written record, and the
+   auth tier of a route is readable only from `Application.kt`.
 
 For anything touching the interface, [docs/design/design-app-canvas.md](docs/design/design-app-canvas.md)
 carries the component dictionary and the three frames that describe states a naive implementation
@@ -213,6 +215,20 @@ circular dependency inside `:server` naming neither module.
 - **A BOM does not reach the KSP processor classpath.** That configuration needs its own
   `add("kspCommonMainMetadata", platform(libs.kompot.bom))`, or the coordinate resolves with no
   version and the error ends in a bare colon.
+- **Inside a KMP source-set dependency block it is `project.dependencies.platform(...)`.** The
+  receiver there is `KotlinDependencyHandler`, which has no `platform` of its own, and the error names
+  the function rather than the receiver — so it reads as a missing import.
+- **kompot generates component registrations and nothing generates action ones.** An action of ours
+  goes into a hand-written `SerializersModule` and into the application's `Json`. Forgetting it
+  compiles, starts and draws every screen: encoding is fine, and the failure is the decode on the way
+  back in, on the one request the action exists for. Cover it by posting the server's own action back,
+  as `EsimWizardRoutingTest` does.
+- **`wizard-core` is the step machine and `kompot-wizard` is its form-shaped wire half.**
+  `WizardScreenComponent` needs a `formId` naming a real `FormSchema`, so a flow with no form takes
+  the engine only and draws its own chrome from `step_meter`. The engine also cannot refuse a
+  transition — `Next` moves or stays — so every "not from here, not yet" rule runs in the use case
+  BEFORE the transition, and answers with the same step plus a reason rather than with a status code.
+  A refusal thrown as an exception is a wizard that is neither here nor there.
 - **Anything that reads a generated directory must declare the dependency**, ktlint included —
   excluding generated files from the *check* does not remove the directory from the task's *inputs*.
 - **A green check that visited nothing is the failure mode here**, twice over: the conformance kit
