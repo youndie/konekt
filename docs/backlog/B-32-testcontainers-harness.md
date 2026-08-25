@@ -38,7 +38,8 @@ feature rather than by whoever writes it. Two seams, two tools, and the split is
   `truncateAll()` between tests. What is left is the MockK use-case seam (no use case exists yet),
   Turbine (no `Flow` exists yet) and the Koin graph test (no graph exists yet). The harness landed
   first because a schema cannot be checked without a database, and the rest lands with the code it
-  is for.
+  is for. `B-33` added the Koin graph test: `verify()` over each module, plus a resolve by type,
+  because `verify()` over an empty module list passes and is not by itself evidence of anything.
 
 - AC: a repository test creates its schema through the real migrations in a container and passes.
 - AC: the Koin graph test fails when a binding is removed, naming the missing type.

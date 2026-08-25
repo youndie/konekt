@@ -113,9 +113,15 @@ symptom of it not being ignored is a build error that reads like a compilation f
 - **`singleOf(::XImpl)` resolves defaulted constructor parameters through the container.** The Kotlin
   default is ignored, and a parameter whose type has no binding throws `NoDefinitionFoundException` at
   runtime while the compiler says nothing. Such a repository is registered with an explicit lambda.
-- **`suspendRunCatching`, never `runCatching`, in suspend code.** Plain `runCatching` swallows
+- **`suspendRunCatching`, never `runCatching`.** Plain `runCatching` swallows
   `CancellationException`; the symptom is a request that will not stop, and nobody attributes it to
-  this.
+  this. `RunCatchingUsageTest` refuses it in the sources outright.
+- **Time is a `KonektClock`, injected.** `ClockUsageTest` refuses `Clock.System` anywhere but
+  `KonektClock.kt`. petich's clock comes from the same one through `asPetichClock()`, so a test that
+  moves time moves it for the saga sweeper too.
+- **A refusal is a `KonektException`**, and the `when` mapping it to a status has no `else` — add a
+  case to the sealed hierarchy without mapping it and the build fails. A route answers
+  `.getOrThrow()` and stops; `.onFailure` is for the one error that needs a body of its own.
 - **Never wrap a `Result` in a `Result`.** A repository unwraps what it gets from below and throws a
   domain exception; a `failure` nested inside a `success` travels past the error handler in silence.
 - **`io.ktor.server.cio.CIO` collides by name with the client's `CIO`.** Any file that also builds an

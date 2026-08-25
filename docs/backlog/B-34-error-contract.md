@@ -1,7 +1,7 @@
 ---
 id: B-34
 title: "One error contract: Result out of use cases, StatusPages into status codes"
-status: open
+status: wip
 priority: P1
 size: S
 stage: stage-m0-wire
@@ -30,11 +30,29 @@ the auth tier and the error codes of an endpoint are columns rather than prose.
 - Not covered: an error taxonomy on the wire. Status codes plus a machine-readable code field; no
   problem+json.
 
-- AC: an unhandled domain exception from any route produces its mapped status and body, asserted per
-  exception type.
-- AC: cancelling a request cancels the work — a test asserts the coroutine actually stops.
-- AC: a request for another subscriber's order answers 404.
+- AC ✅: every refusal is driven through a real route and asserted per type — six of them, with the
+  status, the machine-readable code and a non-empty message. `everyRefusalIsCovered` compares the
+  exercised set against `KonektException::class.sealedSubclasses`, so a refusal added to the domain
+  and not exercised here fails.
+- AC ✅: `SuspendRunCatchingTest` cancels a real job and asserts the line after the block never ran.
+  A test that merely throws `CancellationException` and catches it would pass against plain
+  `runCatching`; this one does not, which is the whole difference.
+- AC ⏳ **carried to `B-06`**: "another subscriber's order answers 404" needs a session and an
+  owner-scoped resource, and neither exists yet. It is an auth-tier rule and it belongs to the first
+  feature that has an owner — written down here rather than quietly dropped.
+- Also done: the `when` in `httpStatus()` has no `else`, so a refusal added to the sealed hierarchy
+  and not mapped **fails to compile**. A lookup table would have let it fall through to 500, which is
+  the shape of failure a client reports as "it just errors".
+- Also done: an unexpected exception is logged in full and answered with nothing. Its message is
+  written for whoever wrote the code — table names, identifiers, sometimes a query — and a subscriber
+  is not that reader. `ErrorContractTest` asserts the leak does not happen by looking for the words.
+- Also done: `RunCatchingUsageTest` refuses plain `runCatching` anywhere in the server or the shared
+  modules. Coarse on purpose — `runCatching` in non-suspending code is fine and this refuses it
+  anyway, because the alternative is parsing Kotlin to tell them apart, and a rule slightly too
+  strict and always right beats one that is exact and sometimes silent.
 - Anchors: `server/src/main/kotlin/io/konekt/http/StatusPages.kt`,
-  `shared/domain/src/commonMain/kotlin/io/konekt/domain/SuspendRunCatching.kt`.
+  `shared/domain/src/commonMain/kotlin/io/konekt/domain/SuspendRunCatching.kt`,
+  `shared/domain/src/commonMain/kotlin/io/konekt/domain/KonektException.kt`,
+  `server/src/test/kotlin/io/konekt/http/`.
 
 Background: [research-stack](../research/research-stack.md) D14.

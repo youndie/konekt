@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (32)
+## Open (31)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -65,8 +65,7 @@ so re-prioritising must never move a file.
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
-| [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[ ]` | Time is injected, because four different deadlines depend on it | P1 | XS | B-01 |
-| [B-34](docs/backlog/B-34-error-contract.md) `[ ]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
+| [B-34](docs/backlog/B-34-error-contract.md) `[~]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[~]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
 | [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
 | [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
@@ -78,7 +77,7 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (5)
+## Closed (6)
 
 **The wire and the shell**
 
@@ -86,6 +85,7 @@ so re-prioritising must never move a file.
 - [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[x]` - Postgres, Flyway and the Exposed plugin, including the tables petich does not create
 - [B-03](docs/backlog/B-03-component-dictionary.md) `[x]` - Fix the component dictionary: nine own wire types in one KSP module
 - [B-31](docs/backlog/B-31-money-type.md) `[x]` - Money is a type, and only the server formats it
+- [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[x]` - Time is injected, because four different deadlines depend on it
 
 **Upstream and the box**
 

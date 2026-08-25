@@ -93,6 +93,7 @@ dependencies {
     testImplementation(libs.ktor.server.testHost)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
+    testImplementation(libs.koin.test)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit)
     testImplementation(libs.testcontainers.postgresql)
