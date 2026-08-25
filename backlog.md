@@ -41,13 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (16)
+## Open (15)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
-| [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[ ]` | Expand and contract: a migration is compatible with the code already running | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
@@ -62,7 +61,7 @@ so re-prioritising must never move a file.
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 | [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[ ]` | The feature, screen and API layers are empty, and the reason they were empty has expired | P2 | M | - |
 
-## Closed (23)
+## Closed (24)
 
 **The wire and the shell**
 
@@ -76,6 +75,7 @@ so re-prioritising must never move a file.
 - [B-32](docs/backlog/B-32-testcontainers-harness.md) `[x]` - Repository tests run against a real Postgres, and use cases against MockK
 - [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[x]` - Time is injected, because four different deadlines depend on it
 - [B-34](docs/backlog/B-34-error-contract.md) `[x]` - One error contract: Result out of use cases, StatusPages into status codes
+- [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[x]` - Expand and contract: a migration is compatible with the code already running
 - [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[x]` - No iOS test is executed by anything, and the build says nothing about it
 - [B-38](docs/backlog/B-38-refresh-and-logout.md) `[x]` - Refresh and logout: a token pair that can be ended
 

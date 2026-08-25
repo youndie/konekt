@@ -5,6 +5,14 @@
 -- replica answers "no such wizard" to a button its neighbour drew. Both fail silently, and both cost
 -- somebody a profile slot they cannot get back without support.
 
+-- EVERY DDL STATEMENT IN THIS FILE WAITS AT MOST THREE SECONDS FOR ITS LOCK.
+--
+-- An ALTER or a CREATE that waits behind a long read queues every LATER reader behind itself, and a
+-- blocked table is downtime whatever the deploy is doing. Failing fast turns that into a migration
+-- that did not run, which the deploy step reports and a person retries — the difference between a
+-- release that stopped and a service that stopped.
+SET lock_timeout = '3s';
+
 CREATE TABLE esim_wizard_session (
     id            VARCHAR(64) NOT NULL,
     subscriber_id VARCHAR(64) NOT NULL,

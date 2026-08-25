@@ -1,7 +1,7 @@
 ---
 id: B-36
 title: "Expand and contract: a migration is compatible with the code already running"
-status: open
+status: done
 priority: P0
 size: M
 stage: stage-m0-wire
@@ -39,12 +39,34 @@ migration.
 - Not covered: data migrations large enough to need batching. The first one becomes a background job
   with a resumable cursor, not a Flyway script.
 
-- AC: the end-to-end stand runs the **previous** release's server image against the **new** schema and
-  passes — the state a rolling deploy actually passes through.
-- AC: a migration that would drop a column still read by the previous release fails that check.
-- AC: an index migration completes without blocking a concurrent writer, verified by a test that
-  writes during it.
-- Anchors: `server/src/main/resources/db/migration/`, `deploy/compose.yaml`,
-  `e2e/src/test/kotlin/io/konekt/e2e/RollingSchemaTest.kt`.
+- AC OK, **in a stronger form than written**: a migration that takes something away fails a gate
+  **before it is ever run**, rather than failing a stand afterwards. `ExpandAndContractTest` refuses
+  `DROP COLUMN`, `DROP TABLE`, `RENAME`, `ALTER … TYPE` and `SET NOT NULL` in any migration that does
+  not carry `-- contract: expanded in V<n>`, and then checks that the named expand exists and came
+  earlier — so a pair written backwards fails too. The escape hatch is deliberate and was tested in
+  both directions: without it the rule is unusable and gets deleted the first week somebody needs it.
+- AC OK: every migration bounds how long it waits for a lock, enforced by the same gate. All eight
+  existing ones gained `SET lock_timeout = '3s'`, which is safe to do now and would be a checksum
+  change on a deployed schema later.
+- AC OK: an index migration completes without blocking a concurrent writer, measured with a live
+  writer against a real Postgres 18 — **and with its own control in the same run**, because a
+  measurement of one variant is only "writes happened". The first version asserted that a plain
+  `CREATE INDEX` blocks for at least 200ms; the Linux box did it in 148, which says something about
+  the box and nothing about the index. The claim is now relative: the plain build must block at least
+  four times longer than the concurrent one. Stable across three consecutive runs.
+- AC **moved to `B-35`**, not carried: running the **previous release's image** against the new schema
+  is a requirement on the stand, not work this item can do — there is no stand and no previous
+  release. It is written into that item rather than left as a remainder here, because it will never
+  become true from this side.
+**One thing the gate cannot do, said plainly.** It reads the migration, not the code: it knows a
+column is being dropped and cannot know whether the previous release still reads it. That is exactly
+what AC1 is for, and it is why the gate demands a marker naming the expand rather than trying to
+decide for itself — the marker is a person asserting the thing a machine here cannot check, at the
+moment they are best placed to know it.
+
+- Anchors: `shared/db/src/main/resources/db/migration/`,
+  `shared/db/src/test/kotlin/io/konekt/db/ExpandAndContractTest.kt`,
+  `shared/db/src/test/kotlin/io/konekt/db/ConcurrentIndexTest.kt`,
+  `shared/db/src/main/kotlin/io/konekt/db/DatabaseFactory.kt`.
 
 Background: [research-stack](../research/research-stack.md) D22, §1.5, §1.6, Risk 10, Risk 11.

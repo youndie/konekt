@@ -2,6 +2,14 @@
 -- than adding one: two live codes for a number doubles the guessing surface for no benefit anybody
 -- asked for.
 
+-- EVERY DDL STATEMENT IN THIS FILE WAITS AT MOST THREE SECONDS FOR ITS LOCK.
+--
+-- An ALTER or a CREATE that waits behind a long read queues every LATER reader behind itself, and a
+-- blocked table is downtime whatever the deploy is doing. Failing fast turns that into a migration
+-- that did not run, which the deploy step reports and a person retries — the difference between a
+-- release that stopped and a service that stopped.
+SET lock_timeout = '3s';
+
 CREATE TABLE otp_challenge (
     msisdn         VARCHAR(20) NOT NULL,
     -- The hash, never the code. An unkeyed digest of six digits is reversed by hashing all million

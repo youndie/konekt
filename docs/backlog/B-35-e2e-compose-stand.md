@@ -36,6 +36,13 @@ thing that owns the whole.
 - AC: `docker compose up` plus one Gradle task runs the three scenarios green from a clean checkout.
 - AC: killing the broker mid-scenario fails the run with a message naming the broker, not a timeout.
 - AC: the same command runs in CI, and the CI job declares its Docker requirement.
+- AC, **moved here from `B-36`**: the stand runs the **previous** release's server image against the
+  **new** schema and passes, which is the state a rolling deploy actually passes through and the one
+  no unit test can reach. `ExpandAndContractTest` refuses a destructive migration by reading the file;
+  only this can tell whether the code still running reads what was removed. It needs two things this
+  repository does not have yet — the stand itself and a previous release to point at — which is why
+  it belongs to the item that builds the first of them.
+
 - Anchors: `deploy/compose.yaml`, `e2e/src/test/kotlin/io/konekt/e2e/`.
 
 Background: [research-stack](../research/research-stack.md) D21,

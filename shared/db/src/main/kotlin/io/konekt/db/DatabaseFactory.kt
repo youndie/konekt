@@ -68,6 +68,18 @@ object DatabaseFactory {
             // "assume everything before now is fine", which is the wrong answer for every case
             // except a one-off adoption that has not happened here.
             .cleanDisabled(true)
+            // THE SECOND HALF OF THE CONCURRENT-INDEX RECIPE, and the half whose absence is a HANG
+            // rather than a failure. A migration opts out of its transaction with a
+            // `V<n>__<desc>.sql.conf` carrying `executeInTransaction=false`, which
+            // CREATE INDEX CONCURRENTLY requires — and that alone deadlocks on PostgreSQL, because
+            // Flyway's own lock is transactional and waits on the index build that is waiting on it.
+            // During a deploy a deadlock reads as a slow rollout, which is the most expensive way for
+            // this to go wrong. See research-stack §1.6 and flyway/flyway#3840.
+            //
+            // Set here rather than per migration: it is a property of how Flyway takes its lock, not
+            // of any one script, and a setting that has to be repeated is a setting that gets
+            // forgotten on the one script that needed it.
+            .configuration(mapOf("flyway.postgresql.transactional.lock" to "false"))
             .load()
             .migrate()
             .migrationsExecuted

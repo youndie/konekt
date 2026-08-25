@@ -195,11 +195,19 @@ circular dependency inside `:server` naming neither module.
 - **A migration is compatible with the code already running.** During a roll both versions talk to
   one schema. Expand then contract, one release apart — the table of changes is in
   [research-stack](docs/research/research-stack.md) D22. `generateMigrations` emits the destructive
-  form because it is the shortest; its output is a draft.
+  form because it is the shortest; its output is a draft. **`ExpandAndContractTest` enforces this**:
+  anything that takes something away needs a `-- contract: expanded in V<n>` line, and the named
+  expand must exist and come earlier. The marker is a person asserting what the gate cannot check —
+  that nothing running still reads it — at the moment they are best placed to know.
 - **A concurrent index needs two Flyway settings.** `V<n>__x.sql.conf` with
-  `executeInTransaction=false`, *and* `flyway.postgresql.transactional.lock=false`. With only the
-  first, Flyway's own lock deadlocks against the index build and the migration hangs — which during a
-  deploy reads as a slow rollout.
+  `executeInTransaction=false`, *and* `flyway.postgresql.transactional.lock=false` — the second is set
+  once in `DatabaseFactory`, because it is a property of how Flyway takes its lock rather than of any
+  one script. With only the first, Flyway's own lock deadlocks against the index build and the
+  migration hangs, which during a deploy reads as a slow rollout. `ConcurrentIndexTest` runs the
+  recipe against a real Postgres with a live writer, and measures the plain variant in the same run
+  as its control: a threshold in milliseconds would measure the runner.
+- **Every migration sets `SET lock_timeout`.** A statement waiting for a lock queues every later
+  reader behind it, and a blocked table is downtime whatever the deploy is doing.
 - **A component is registered by KSP, so `build` proves nothing about the dictionary.**
   `:shared:components` switches off every per-target KSP task so generation happens once against the
   common metadata, and a disabled KSP task is the classic way to get a green and empty build. What
