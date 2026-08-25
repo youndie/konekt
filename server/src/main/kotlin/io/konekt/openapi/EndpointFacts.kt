@@ -7,6 +7,7 @@ import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
@@ -156,6 +157,27 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyType = "io.konekt.feature.purchase.shared.api.PurchaseOrderResponse",
                 // 409 for an order that has already finished or is not waiting for anything.
                 refusals = setOf(404, 409),
+            ),
+        endpointKey<TopUps>("POST") to
+            EndpointFacts(
+                summary = "Put money on the account",
+                // NOT `submit`. It answers a TopUpResponse, which is a DTO rather than a KompotAction,
+                // and `submit` asserts the latter — the one thing that kind is read for is
+                // `performTargetsAreSubmitEndpoints`. A kind borrowed because it is the nearest-looking
+                // word turns a conformant server into a page of findings about a contract it never
+                // made.
+                successBodyType = "io.konekt.feature.purchase.shared.api.TopUpResponse",
+                // 422 for an amount outside the limits, 404 for a subscriber with no account. A
+                // refusal by the payment provider is NOT here: it is a 201 whose body carries the
+                // reason, because the top-up exists and its answer is "no".
+                refusals = setOf(404, 422),
+            ),
+        endpointKey<TopUps.ById>("GET") to
+            EndpointFacts(
+                summary = "One top-up, as its owner sees it",
+                successBodyType = "io.konekt.feature.purchase.shared.api.TopUpResponse",
+                // 404 and not 403 for somebody else's top-up — a 403 is an enumeration oracle.
+                refusals = setOf(404),
             ),
         endpointKey<HomeScreenResource>("GET") to
             EndpointFacts(

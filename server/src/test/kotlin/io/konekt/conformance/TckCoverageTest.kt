@@ -4,6 +4,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.OpenApiFiles
 import io.konekt.openapi.endpointKey
@@ -70,6 +71,9 @@ class TckCoverageTest {
                 // one first. The second is the largest component tree this server emits.
                 endpointKey<Purchases.ById>("GET"),
                 endpointKey<OrderScreen>("GET"),
+                // Reachable because the walk tops up before it buys, which is the same reason the
+                // stand no longer writes a balance straight into the database.
+                endpointKey<TopUps.ById>("GET"),
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",

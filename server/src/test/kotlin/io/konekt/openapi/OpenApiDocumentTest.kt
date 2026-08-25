@@ -173,6 +173,6 @@ class OpenApiDocumentTest {
         val DESCRIBING_JWT = JwtConfig(secret = "openapi-generator", issuer = "konekt", audience = "konekt-app")
 
         // Fifteen: the whole product surface plus /health, and without the development route.
-        const val EXPECTED_OPERATIONS = 15
+        const val EXPECTED_OPERATIONS = 17
     }
 }

@@ -43,7 +43,7 @@ class PurchaseScenarioTest {
             Stand.client().use { client ->
                 val session = Stand.signIn(client)
                 // Seeded, because nothing in the product adds money yet (B-40).
-                Stand.creditAccount(session.subscriberId, majorUnits = 50)
+                Stand.topUp(client, session, majorUnits = 50)
 
                 val started =
                     client
@@ -93,7 +93,12 @@ class PurchaseScenarioTest {
             // compensated branch is to abandon a confirmation and wait out its five-minute deadline.
             Stand.client(Stand.decliningUrl).use { client ->
                 val session = Stand.signIn(client)
-                Stand.creditAccount(session.subscriberId, majorUnits = 50)
+                // THE MONEY GOES IN THROUGH THE APPROVING SERVER, and it has to. The payment mock
+                // refuses in both directions on this one, so a top-up here would be refused too and
+                // the purchase would then fail for want of a balance rather than for the reason this
+                // scenario is about. The two servers share one database, so a session obtained here
+                // spends what was put in there.
+                Stand.client().use { approving -> Stand.topUp(approving, session, majorUnits = 50) }
 
                 val started =
                     client
@@ -130,7 +135,7 @@ class PurchaseScenarioTest {
         runBlocking {
             Stand.client().use { client ->
                 val session = Stand.signIn(client)
-                Stand.creditAccount(session.subscriberId, majorUnits = 50)
+                Stand.topUp(client, session, majorUnits = 50)
 
                 val started =
                     client

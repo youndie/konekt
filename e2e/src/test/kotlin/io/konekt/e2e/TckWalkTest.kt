@@ -64,12 +64,15 @@ class TckWalkTest {
         runBlocking {
             Stand.client().use { client ->
                 val session = Stand.signIn(client)
-                Stand.creditAccount(session.subscriberId, majorUnits = 50)
 
-                // A completed order, so that `/api/v1/screens/orders/{orderId}` is an address the walk
-                // can reach at all. The kit cannot invent an identifier that exists, which is why
+                // A top-up and a completed order, so that the three templated addresses are
+                // reachable at all. The kit cannot invent an identifier that exists, which is why
                 // `pathParameters` is the application's to supply — and until something supplies one,
                 // the largest component tree this server emits is walked by nothing.
+                //
+                // The money goes in through the product's own path. Before B-40 that was an UPDATE at
+                // the stand's database, so there was no top-up to name either.
+                val topUpId = Stand.topUp(client, session, majorUnits = 50).topUpId
                 val orderId = completeOnePurchase(client, session)
 
                 // A SECOND code for the kit's own login. The one `Stand.signIn` used is spent, and the
@@ -82,7 +85,7 @@ class TckWalkTest {
 
                 val report =
                     KonektLoginTransport(RemoteTckTransport(Stand.serverUrl, client), LOGIN_PATH).let { transport ->
-                        TckRunner(transport, konektTckConfig(document, orderId, loginValues)).run()
+                        TckRunner(transport, konektTckConfig(document, orderId, topUpId, loginValues)).run()
                     }
 
                 // Coverage first, per check and per endpoint. Never as a sum: a sum is satisfied by the
@@ -130,6 +133,7 @@ class TckWalkTest {
     private fun konektTckConfig(
         document: JsonObject,
         orderId: String,
+        topUpId: String,
         loginValues: Map<String, JsonPrimitive>,
     ): TckConfig =
         TckConfig(
@@ -149,6 +153,8 @@ class TckWalkTest {
                     placeholders.associateWith { name ->
                         when (name) {
                             "orderId" -> orderId
+
+                            "topUpId" -> topUpId
 
                             // A placeholder added to the plan and not given a value here would
                             // otherwise be substituted with the word "orderId" and produce a 404 that

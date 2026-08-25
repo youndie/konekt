@@ -40,4 +40,13 @@ object LedgerEntryTable : Table("ledger_entry") {
 
     // Zero-sum, and there to carry a sentence rather than an amount.
     const val DECLINE = "decline"
+
+    // Money coming IN, and kept apart from RELEASE on purpose. The two are identical in SQL — both
+    // add to the balance — and mean opposite things: a release returns money that was already the
+    // subscriber's, a top-up is money the provider has paid. A year from now the ledger is the only
+    // thing that can still tell them apart.
+    const val TOP_UP = "top_up"
+
+    // The compensation of a TOP_UP: money taken back because a step after the credit failed.
+    const val TOP_UP_REVERSAL = "top_up_reversal"
 }

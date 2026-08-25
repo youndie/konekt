@@ -61,6 +61,29 @@ interface AccountBalances {
     suspend fun reversalOf(orderId: String): Reversal?
 
     suspend fun balanceOf(accountId: String): Money?
+
+    // MONEY COMING IN, which is the direction this interface did not have until B-40. An account was
+    // created with zero and nothing could raise it.
+    //
+    // Separate from `release`, which looks identical in SQL and means the opposite thing: a release
+    // returns money that was already the subscriber's and had been held, and it must never be usable
+    // to invent money the provider has not paid. The ledger entry is what keeps the two apart when
+    // somebody reads the account back a year from now.
+    suspend fun credit(
+        accountId: String,
+        topUpId: String,
+        amount: Money,
+    )
+
+    // The compensation of a credit, and the reason it exists is not symmetry. If a step after the
+    // credit fails, the subscriber is holding money the operator has not been paid for; leaving it
+    // is a gift, and taking it back silently is worse. This is the taking-back, and it is a ledger
+    // entry of its own so the pair is legible.
+    suspend fun debit(
+        accountId: String,
+        topUpId: String,
+        amount: Money,
+    )
 }
 
 data class Reversal(

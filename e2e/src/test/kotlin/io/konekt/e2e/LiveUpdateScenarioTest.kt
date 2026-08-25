@@ -35,7 +35,7 @@ class LiveUpdateScenarioTest {
         runBlocking {
             Stand.client().use { client ->
                 val session = Stand.signIn(client)
-                Stand.creditAccount(session.subscriberId, majorUnits = 50)
+                Stand.topUp(client, session, majorUnits = 50)
 
                 // A counter has to exist before anything can spend from it: the simulator only
                 // publishes for subscribers who have something, because events for anyone else are

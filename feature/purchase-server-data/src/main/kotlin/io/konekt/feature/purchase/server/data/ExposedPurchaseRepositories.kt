@@ -86,6 +86,40 @@ class ExposedAccountBalances(
         }
     }
 
+    override suspend fun credit(
+        accountId: String,
+        topUpId: String,
+        amount: Money,
+    ) {
+        dbQuery {
+            // No WHERE guard on the amount, unlike `hold`. A credit cannot make the balance negative,
+            // so there is nothing for a concurrent one to race against — two top-ups landing together
+            // both add, which is the correct answer. The refusal that matters for a top-up happened
+            // one step earlier, at the provider.
+            AccountTable.update({ AccountTable.id eq accountId }) {
+                it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
+            }
+            entry(accountId, topUpId, LedgerEntryTable.TOP_UP, amount.minorUnits, amount.currency)
+        }
+    }
+
+    override suspend fun debit(
+        accountId: String,
+        topUpId: String,
+        amount: Money,
+    ) {
+        dbQuery {
+            // Allowed to go negative, and that is deliberate. This runs when a step after the credit
+            // failed, so the money was never the subscriber's; refusing to take it back because they
+            // have already spent some of it would leave the operator paying for it. A negative
+            // balance is visible and recoverable — a silent gift is neither.
+            AccountTable.update({ AccountTable.id eq accountId }) {
+                it[balanceMinor] = AccountTable.balanceMinor minus amount.minorUnits
+            }
+            entry(accountId, topUpId, LedgerEntryTable.TOP_UP_REVERSAL, -amount.minorUnits, amount.currency)
+        }
+    }
+
     override suspend fun capture(
         accountId: String,
         orderId: String,

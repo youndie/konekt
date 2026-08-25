@@ -24,8 +24,13 @@ import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
+import io.konekt.feature.purchase.server.data.topUpRoutes
+import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
+import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
+import io.konekt.feature.purchase.server.domain.TopUpPayload
+import io.konekt.feature.purchase.server.domain.topUpInterceptors
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
 import io.konekt.mocks.traffic.TrafficChain
@@ -61,6 +66,7 @@ import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
@@ -173,6 +179,7 @@ val konektRoutes: List<RouteGroup> =
         RouteGroup(AuthTier.USER) {
             authenticatedSessionRoutes()
             purchaseRoutes()
+            topUpRoutes()
             esimWizardRoutes()
             homeRoutes()
             realtimeRoutes()
@@ -302,7 +309,10 @@ fun petichModule(
     single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
     single<PetichRepository> { get<OutboxAwarePetichRepository>() }
 
-    single {
+    // TWO ENGINES OVER ONE SAGA TABLE, named by saga type. petich resolves nothing by type itself —
+    // an engine is a fixed interceptor list — so handing a top-up to the purchase engine finds no
+    // step that supports its payload, completes a saga that did nothing, and reports success.
+    single(named(PURCHASE_SAGA_TYPE)) {
         PetichEngine(
             interceptors =
                 purchaseInterceptors(
@@ -351,10 +361,30 @@ fun petichModule(
         )
     }
 
+    single(named(TOP_UP_SAGA_TYPE)) {
+        PetichEngine(
+            interceptors = topUpInterceptors(balances = get(), payments = get(), json = get()),
+            repository = get<OutboxAwarePetichRepository>(),
+            // The same requireOutbox for the same reason: petich degrades quietly to a plain update
+            // when handed a repository that cannot store events, and a top-up whose completion nobody
+            // was told about looks exactly like one that worked.
+            config = PetichEngineConfig(requireOutbox = true),
+            clock = get<KonektClock>().asPetichClock(),
+        )
+    }
+
     single {
         SuspendedPetichSweeper(
             repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
-            engineFor = { get() },
+            // BY SAGA TYPE, and `{ get() }` stopped being correct the moment there were two engines.
+            // The sweeper rolls back sagas that waited too long, and rolling one back with another
+            // type's interceptor list runs the wrong compensations — or none, which is the quiet one:
+            // the money stays held and the saga is marked failed.
+            //
+            // Only the purchase saga ever suspends today, so this dispatch is exercised by one branch.
+            // It is written for both anyway: the day a top-up grows a confirmation step, the failure
+            // is a balance that is never returned rather than a compile error.
+            engineFor = { saga -> get(named(saga.type)) },
             clock = get<KonektClock>().asPetichClock(),
         )
     }
@@ -364,7 +394,14 @@ fun petichModule(
 // a wire at all — these types never leave the process, they go into a column.
 private val petichSerializersModule =
     SerializersModule {
-        polymorphic(PetichPayload::class) { subclass(PurchasePayload::class) }
+        polymorphic(PetichPayload::class) {
+            subclass(PurchasePayload::class)
+            // Without this line no top-up can be created at all: petich writes its payload
+            // polymorphically into the saga row, and an unregistered subclass is a 500 on the first
+            // POST. Not hypothetical — it is one of the four defects the stand found on its first
+            // boot, when the PURCHASE payload was the one missing from here.
+            subclass(TopUpPayload::class)
+        }
         polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
         polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
     }

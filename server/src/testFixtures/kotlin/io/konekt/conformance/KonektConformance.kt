@@ -5,6 +5,7 @@ import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.openapi.endpointKey
 
@@ -81,6 +82,9 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         endpointKey<AuthSession.Refresh>("POST"),
         endpointKey<AuthSession.Logout>("POST"),
         endpointKey<Purchases>("POST"),
+        // Putting money in. Its GET sibling IS walked — the walk tops up before it buys, which is
+        // also how it stopped needing a database write of its own (B-40).
+        endpointKey<TopUps>("POST"),
         endpointKey<EsimWizardResource>("POST"),
         endpointKey<EsimWizardResource.Step>("POST"),
     )

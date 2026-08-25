@@ -12,6 +12,9 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.purchase.shared.api.CreateTopUpRequest
+import io.konekt.feature.purchase.shared.api.TopUpResponse
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -21,6 +24,7 @@ import io.ktor.client.plugins.resources.Resources
 import io.ktor.client.plugins.resources.get
 import io.ktor.client.plugins.resources.post
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -101,24 +105,34 @@ object Stand {
         return Session(msisdn = msisdn, subscriberId = subscriberIdOf(msisdn), accessToken = action.accessToken)
     }
 
-    // SEEDED IN SQL, because the product has no way to add money: a subscriber is created with zero
-    // and nothing tops it up (B-40). Reaching into the stand's own database is honest for a stand;
-    // adding a development-only top-up endpoint so that a test has something to call would be a
-    // production surface invented for a test.
-    fun creditAccount(
-        subscriberId: String,
+    // TOPPING UP THROUGH THE PRODUCT'S OWN PATH, which this used to do with an UPDATE straight at
+    // the stand's database because nothing could add money at all (B-40).
+    //
+    // The difference is not tidiness. A scenario that seeds its precondition in SQL proves the
+    // purchase works given a balance, and says nothing about how a balance is ever obtained — which
+    // was the one thing this product could not do. Now every scenario's first step exercises the
+    // top-up saga, so a break in it fails four tests rather than none.
+    //
+    // Whichever server the client points at, which is the whole switch: the payment mock refuses on
+    // the declining one, and both servers share one database, so money put in through the approving
+    // server is spendable through the refusing one.
+    suspend fun topUp(
+        client: HttpClient,
+        session: Session,
         majorUnits: Long,
-    ) {
-        connection().use { connection ->
-            connection
-                .prepareStatement("UPDATE account SET balance_minor = ? WHERE subscriber_id = ?")
-                .use { statement ->
-                    statement.setLong(1, majorUnits * 100)
-                    statement.setString(2, subscriberId)
-                    check(statement.executeUpdate() == 1) { "no account for $subscriberId" }
-                }
-        }
-    }
+    ): TopUpResponse = topUpRaw(client, session, amountMinor = majorUnits * 100)
+
+    // Minor units, for the scenarios that are about the amount itself rather than about the money.
+    suspend fun topUpRaw(
+        client: HttpClient,
+        session: Session,
+        amountMinor: Long,
+    ): TopUpResponse =
+        client
+            .post(TopUps()) {
+                bearerAuth(session.accessToken)
+                setBody(CreateTopUpRequest(amountMinor = amountMinor))
+            }.body()
 
     private fun subscriberIdOf(msisdn: String): String =
         connection().use { connection ->

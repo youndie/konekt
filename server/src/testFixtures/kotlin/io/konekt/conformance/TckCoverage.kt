@@ -3,6 +3,7 @@ package io.konekt.conformance
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.openapi.EndpointKind
 import io.konekt.openapi.resourceAddress
 import kotlinx.serialization.json.JsonArray
@@ -156,6 +157,7 @@ val KONEKT_WALK_PLAN =
             mapOf(
                 resourceAddress<OrderScreen>() to setOf("orderId"),
                 resourceAddress<Purchases.ById>() to setOf("orderId"),
+                resourceAddress<TopUps.ById>() to setOf("topUpId"),
             ),
         recordedUpdateStreams = emptySet(),
         submitPayloads = emptySet(),

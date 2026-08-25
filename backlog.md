@@ -49,7 +49,6 @@ so re-prioritising must never move a file.
 | [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
-| [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[ ]` | A subscriber is created with nothing and there is no way to add any | P1 | M | - |
 | [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[ ]` | A @Test whose return type is not void is silently ignored, and three of them were | P1 | S | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
@@ -57,8 +56,9 @@ so re-prioritising must never move a file.
 | [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[ ]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
+| [B-41](docs/backlog/B-41-order-status-vocabulary-disagrees.md) `[ ]` | The server emits order statuses the component dictionary does not declare, and declares one nothing emits | P2 | S | - |
 
-## Closed (29)
+## Closed (30)
 
 **The wire and the shell**
 
@@ -93,6 +93,10 @@ so re-prioritising must never move a file.
 - [B-16](docs/backlog/B-16-traffic-simulator.md) `[x]` - The traffic simulator: a consumer that moves the counters
 - [B-17](docs/backlog/B-17-esim-order-wizard.md) `[x]` - The eSIM order wizard, and an SM-DP+ mock that can be out of slots
 - [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[x]` - Answer in writing how the screen cache and a live update interact
+
+**The rest of the product**
+
+- [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[x]` - A subscriber is created with nothing and there is no way to add any
 
 **Proof**
 
