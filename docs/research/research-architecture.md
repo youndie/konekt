@@ -1,0 +1,441 @@
+---
+id: research-architecture
+title: konekt — architecture research
+type: research
+status: active
+date: 2026-08-25
+---
+
+# Research: the architecture of konekt
+
+`konekt` is a white-label subscriber account for an eSIM MVNO: the operator takes the box, rebrands
+it, and gets a phone application and a server without writing a client. It is a reference build
+rather than a product — every system outside its boundary (BSS/OCS, SM-DP+, the payment gateway, the
+SMSC) is mocked on purpose, and what is real is the wiring: six toolkits, each carrying the load it
+was written for, on a domain that loads them without contrivance.
+
+This document records **verified facts** (read in source, in a published artefact, or in a registry
+listing), **decisions taken**, and **risks**. Anything unverified is called a hypothesis and says
+where it will be checked.
+
+There is no code yet. "Verified" therefore means *read in the dependency at the version konekt will
+pin*, not *read in konekt* — and that distinction is the whole reason this document exists before
+the first commit: five of the eleven facts below contradict something the brief assumed.
+
+The brief is preserved verbatim as [source-draft](source-draft.md); it is in Russian and is not
+edited, because a draft rewritten to agree with its research stops recording what was believed
+first. The interface design is [design-app-canvas](../design/design-app-canvas.md). Upstream gaps
+found here and their proposed issues are [research-upstream-proposals](research-upstream-proposals.md).
+
+---
+
+## 1. Verified facts
+
+### 1.1 There is no such thing as "the stack version": six version lines, one of them tripled
+
+Verified against `https://reposilite.kotlin.website/snapshots` — `maven-metadata.xml` per coordinate,
+read on 2026-08-25 — and against `gradle.properties` in each repository at `HEAD`.
+
+| Fact | Where verified |
+|---|---|
+| kompot publishes 20 coordinates, all at `0.30.0.72` | `io/github/youndie/kompot-*/maven-metadata.xml` |
+| a kompot version is `kompot.version` plus the CI run number on the tail | `kompot/gradle.properties` (`kompot.version=0.30.0`) + README §Installation |
+| petich is at `0.1.0.4`, all six modules | `io/github/youndie/petich-*/maven-metadata.xml` |
+| booblik client is at `0.3.0`; `booblik-protocol` exists only from `0.3.0` | `io/github/youndie/booblik/*/maven-metadata.xml` |
+| katcher runs **three** version lines: server `0.6.2`, `client` `0.5.1`, `client-android` and `android-gradle-plugin` `0.4.92` | `katcher/gradle.properties` + `ru/workinprogress/katcher/*/maven-metadata.xml` |
+| metrik agent `0.1.13`, tracy agent `0.1.12`, viddik `0.1.2.13` | `ru/workinprogress/{metrik,tracy}/agent`, `ru/workinprogress/viddik-*` |
+| every consumer of kompot or petich needs **Java 25** | `kompot/README.md` §Building, `petich/README.md` §Building |
+| kompot builds on Kotlin `2.4.10`, Compose Multiplatform `1.11.1`, Ktor `3.5.2` | `kompot/gradle/libs.versions.toml` |
+
+**Consequence 1.** kompot must be taken through `kompot-bom` and the version named once. Two
+coordinates one CI run apart — `kompot-core:0.30.0.71` beside `kompot-client:0.30.0.72` — resolve
+quietly into a combination nobody ever built, and the tail digit makes that trivially easy to write
+by accident. The platform makes it impossible to write down at all.
+
+**Consequence 2.** katcher cannot be pinned with one version property. A version catalogue that
+carries `katcher = "0.6.2"` and uses it for the client resolves nothing, and the error will name a
+coordinate rather than the mistake. Three separate entries, each commented with what it versions.
+
+**Consequence 3.** Everything is a snapshot repository with no release line. `konekt` therefore
+gates a milestone on *all* coordinates resolving in one clean build, not on the first artefact
+appearing — a version can be half-published while CI is still running, and the failure reads as
+"Could not find" halfway through an otherwise green pipeline.
+
+### 1.2 The wire has no vocabulary for shape, and that is deliberate
+
+Verified against kompot `0.30.0` sources.
+
+| Fact | Where verified |
+|---|---|
+| `kompot-core` declares exactly two token kinds: `ColorToken`, `TypographyToken` | `kompot-core/src/commonMain/kotlin/io/github/youndie/kompot/` |
+| the modifier vocabulary is `Background`, `Gradient`, `Padding`, `Size`, `Weight` — no radius, border or elevation | same package, `*Modifier*.kt` |
+| `KompotTheme` carries `id`, `light`/`dark` palettes and `typography`, and nothing else | `kompot-theme/.../KompotTheme.kt` |
+| `KompotPalette` is `Map<String, String>` of hex colours; `KompotTextStyle` is size, line height, weight, letter spacing and colour | same file |
+| shape reaches a renderer through `KompotDesignSystem.resolveSurface(role)` returning `KompotSurface(shape, container, content, outline, textStyle)` | `kompot-client/.../DesignSystem.kt`, `kompot-client/.../Surface.kt` |
+| a `SurfaceRole` is documented as a client-side key that never travels | `kompot-client/.../Surface.kt`, the comment above `SurfaceRole` |
+| `dark = null` means the client stays on its built-in palette rather than reusing the light one | `kompot-theme/.../KompotTheme.kt` |
+
+**Consequence 1.** The design's note — *"radii are a client build constant; the server theme carries
+colours and typography only, so brand B's shape change needs a client release"* — is correct, and it
+is correct by design rather than by omission. kompot protects the property that the server names
+nothing about appearance. Brand B in the canvas differs from brand A by radii alone (36→22, 20→12,
+pill→rounded rectangle), so that one axis of the rebrand is the one axis that cannot ship from the
+server.
+
+**Consequence 2.** The brief's success metric — *"a change of brand (theme + copy) with no client
+rebuild"* — is true for colour and typography and false for shape. It is restated in D2 rather than
+quietly kept.
+
+**Consequence 3.** The brand kit is therefore two artefacts with different lifetimes: a colour and
+type kit served from `/theme`, and a shape scale compiled into the client. Anything in the operator
+onboarding material that promises otherwise is wrong before it is written.
+
+### 1.3 A server-driven theme silently discards every surface role — a defect, not a boundary
+
+Verified against kompot `0.30.0` sources.
+
+| Fact | Where verified |
+|---|---|
+| `RemoteThemeDesignSystem` overrides `resolveColor` and `resolveTypography` only | `kompot-theme-client/.../RemoteThemeDesignSystem.kt` |
+| it therefore inherits the interface default `resolveSurface(role) = KompotSurface()` and never consults its own `fallback` | `kompot-client/.../DesignSystem.kt:26` |
+| the class documents itself as *"an overlay, not a replacement"* that falls back for what the theme did not describe | `RemoteThemeDesignSystem.kt`, header comment |
+| three renderers read the hook: button, `text_input`, `read_only_field` | `kompot-client/.../Components.kt:198`, `kompot-forms-client/.../FormRenderers.kt:47,84` |
+| no production class overrides `resolveSurface`; the only overrides in the repository are screenshot-test doubles | `grep -rn resolveSurface` across kompot |
+
+**Consequence.** An application that customises `resolveSurface` on its own design system and then
+wraps it in `rememberKompotDesignSystem(theme, fallback)` loses that customisation **the moment the
+theme arrives** — buttons return to Material's pill, fields get their borders back. Nothing throws
+and nothing logs; the first frame is right and the second is wrong. This is the single highest-value
+finding in this document, because konekt does exactly that on every launch, and it is
+[U1](research-upstream-proposals.md#u1) upstream.
+
+### 1.4 An unknown component is invisible from both sides
+
+Verified against kompot `0.30.0` sources.
+
+| Fact | Where verified |
+|---|---|
+| an unregistered wire type decodes to `UnknownComponent(originalType, fallback)` instead of throwing | `kompot-core/.../UnknownComponent.kt` |
+| the server may name a stand-in through `fallback`, which is itself an ordinary component | same file |
+| with `fallback == null` the renderer calls `println` and returns — **nothing is drawn** | `kompot-client/.../Components.kt:507-523` |
+| the registry is a plain `Map<KClass, KompotComponentRenderer>`, so an application can replace the entry for `UnknownComponent::class` | `kompot-client/.../Components.kt:527` |
+
+**Consequence 1.** The canvas is explicit that this must never be a hole — *"the server sent a
+component this build does not know; everything around it still works"*, in two densities, *"never a
+blank gap"*. konekt registers its own `UnknownComponentRenderer`. That is a supported extension
+point, so this is not a blocker.
+
+**Consequence 2.** `println` is: it reaches neither tracy nor a katcher breadcrumb, and on a phone it
+reaches nobody at all. A deployment that ships a newer server against an older client learns about it
+from store reviews. Raised upstream as [U2](research-upstream-proposals.md#u2) — the ask is a
+pluggable sink, not a different default drawing.
+
+### 1.5 What kompot's component dictionary already contains, and what konekt has to own
+
+Verified by reading every `@SerialName` in the published protocol modules.
+
+| Module | Wire types |
+|---|---|
+| `kompot-standard` | `column`, `row`, `text`, `button`, `table`, `paginated_list`; actions `navigate`, `open_url`, `close`, `copy_text`, `load_page` |
+| `kompot-forms` | `text_input`, `amount_input`, `autocomplete_input`, `checkbox_input`, `radio_group`, `select_input`, `read_only_field`, action `submit_form` |
+| `form-standard` | fields `text_field`, `amount_field`, `checkbox_field`, `autocomplete_field`, `selection_field`; values `text_value`, `amount_value`, `boolean_value`, `entity_value`; rules `required`, `required_if`, `regex`, `equals`, `not_equals`, `max_amount_from_field` |
+| `kompot-auth` | one action: `update_session` |
+
+**Consequence 1.** Every form frame in the canvas maps onto an existing `kompot-forms` type — except
+the `switch`, which has no wire type. See [U3](research-upstream-proposals.md#u3); until then it is a
+`checkbox_input` and looks like one.
+
+**Consequence 2.** The canvas's dictionary section names nine things the toolkit does not have:
+counter card with progress, plan card, QR block, eSIM card, order row, banner (info / low / error),
+snackbar, step meter, and skeleton. Those are konekt's own components, in one KSP module with its own
+`kompotModuleTag`, and they are the reason konekt has a client release cycle at all.
+
+**Consequence 3.** `kompot-auth` is one action, not a session system. The brief's *"session through
+kompot-auth"* oversells it by a wide margin: OTP issue and check, token storage, refresh and logout
+are all konekt's. Recorded as a deviation in D4.
+
+### 1.6 kompot ships the realtime contract and refuses to choose a transport
+
+| Fact | Where verified |
+|---|---|
+| `kompot-realtime` is three declarations: `KompotRealtimeSource`, `UpdateComponentMessage`, `KompotScreenResponse` | `kompot-realtime/src/commonMain/` |
+| `kompot-realtime-server` is a broadcaster plus a bus contract; the default bus is in-memory | `kompot-realtime-server/src/commonMain/`, README §Modules |
+| *"it does not choose a transport — the SSE or WebSocket implementation is yours"* | `kompot/README.md` §What it does not do |
+| `kompot-ktor`, `kompot-realtime-server` and `kompot-forms-standard` publish for JVM only | `kompot/README.md` §Targets |
+
+**Consequence.** The live counters and the live order status in the canvas are konekt code on both
+ends: an endpoint on the server and a `KompotRealtimeSource` on the client. One server process means
+no Redis and no `kompot-realtime-redis`. The three JVM-only modules also settle a layout question
+before it is asked — the server-side form DSL cannot live in a module shared with the client.
+
+### 1.7 petich guarantees compensation; it does not guarantee that anyone is told
+
+| Fact | Where verified |
+|---|---|
+| the phase order is fixed: `ENRICHMENT → VALIDATION → AUTHORIZATION → EXECUTION → POST_PROCESSING`, priority-ordered within a phase | `petich/README.md` §What it solves |
+| a step may return `InterceptorResult.Suspend(requiredAction, ttl)`; a sweeper rolls back a wait nobody returned to | same, §What it looks like |
+| with a repository that is not outbox-aware **the engine falls back to a plain update and drops the events** | same, §What it solves, final bullet |
+| petich delivers nothing itself: the transport is the application's | same, §What it does not do |
+| no DDL, no migrations, no driver, no connection pool — `petich-postgres` takes an Exposed `Database` | same, §Installation |
+| a six-interceptor saga costs ≈17 database writes, a four-interceptor one ≈9, measured through `pg_stat_user_tables` | same, §Cost |
+| `PetichEngineMetrics` counters exist and are a no-op by default | same, §Observability |
+
+**Consequence 1.** The whole demonstration chain — form → saga → outbox → booblik → realtime — hangs
+on one wiring decision, and the failure mode is silence. A saga test that asserts the saga reached
+`COMPLETED` passes identically whether the event was written or dropped. The gate is therefore a test
+that reads the **outbox row** inside the committed transaction, not one that waits for a message. See
+Risk 1 and [U4](research-upstream-proposals.md#u4).
+
+**Consequence 2.** Schema, migrations, pool and driver are konekt's: Postgres, Flyway, HikariCP,
+Exposed.
+
+**Consequence 3.** The purchase saga is designed at four steps, not six, and the 9-vs-17 figure is
+why (D5).
+
+### 1.8 booblik's topics are fixed at startup, and the wire is plaintext
+
+| Fact | Where verified |
+|---|---|
+| *"Topic creation is not coming: the set of partitions is fixed at startup on purpose"* | `booblik/README.md` §Overview |
+| neither TLS nor compression is coming — both are incompatible with the zero-copy path | same |
+| `booblik-client` is a JVM source set (`src/main/kotlin`), published as `io.github.youndie.booblik:booblik-client` under package `ru.workinprogress.booblik` | `booblik/booblik-client/src/main/kotlin/`, registry listing |
+| a subscription is a `Flow<RecordBatch>`; a caught-up consumer waits on the broker rather than polling | `booblik/README.md` §Overview |
+
+**Consequence 1.** `orders`, `usage` and `notifications` are declared in the broker's configuration
+and shipped in the compose file. A new topic is a broker restart, which makes topic naming an
+architectural decision rather than a runtime one.
+
+**Consequence 2.** No TLS means the broker never leaves the compose network. That is fine for a
+reference build and is stated rather than assumed.
+
+### 1.9 The observability trio covers the server and Android; iOS is not covered at all
+
+| Fact | Where verified |
+|---|---|
+| metrik is a Ktor plugin: `install(Metrik) { service, apiKey, endpoint, release }`, ingest over UDP `:9999` | `metrik/README.md` |
+| tracy is an agent plus two plugins (`Tracy` on the server, `TracyClient` on the outgoing `HttpClient`); logging is `suspend` because Kotlin/Native has no MDC | `tracy/README.md` §Quick start |
+| tracy fields carry `indexed = true` to become entity keys | same |
+| katcher `client:0.5.1` publishes **`jvm` and `linux_x64` only** — the Gradle module metadata names those two variants and no others | `ru/workinprogress/katcher/client/0.5.1/client-0.5.1.module` |
+| Android is a separate coordinate, `client-android:0.4.92`, plus `android-gradle-plugin:0.4.92` which uploads the R8 mapping | registry listing, `katcher/README.md` §Android integration |
+| the `client` module declares `jvm()` and one host-dependent native target; no Apple target is declared | `katcher/client/build.gradle.kts:21-41` |
+
+**Consequence.** konekt's iOS build has no crash reporting from this stack. The brief's §5 says
+*"katcher: server errors + Android client"* and is accurate; what has to be said out loud is the
+other half — an iOS crash in the reference build is invisible. Named as a gap in D8 and raised as
+[U5](research-upstream-proposals.md#u5) rather than papered over with a third-party SDK, which would
+defeat the point of the exercise.
+
+### 1.10 Conformance needs an OpenAPI document, and a clean report can mean nothing was checked
+
+| Fact | Where verified |
+|---|---|
+| `kompot-tck` walks a **running** server: `TckRunner(RemoteTckTransport(url), TckConfig(schemas, openApi))` | `kompot/README.md` §The wire specification |
+| it reads endpoint kinds out of the deployment's OpenAPI document and assumes no addresses | same |
+| *"a check that found nothing to apply to passes silently, and that is the commonest way to end up with a conformance kit that proves nothing"* — the report prints how many targets each check visited | same |
+| an application assembles its own spec: `KompotSpec.generateAll(KompotToolkitSpec.modules + myComponentsSpecModule())` | same |
+
+**Consequence.** Two obligations, both easy to skip and both worth a backlog item. konekt publishes
+an OpenAPI document as a build artefact, and the CI gate asserts **per-check target counts above
+zero**, not `report.isClean`. A green TCK on a server whose screens the walk never reached is the
+exact failure the toolkit's own author warns about.
+
+### 1.11 `call.respond` on a component tree drops the root's type discriminator
+
+| Fact | Where verified |
+|---|---|
+| a plain `call.respond(component)` resolves the serialiser from the concrete runtime class and omits `"type"` on the **root**; nested children are unaffected | `kompot/README.md` §What it looks like |
+| the supported call is `call.respondKompotComponent(...)` | same |
+
+**Consequence.** The client receives an unknown component for the whole screen, and by §1.4 draws
+nothing — a blank screen from one wrong call, with children that would have serialised perfectly.
+konekt forbids `call.respond` on a `KompotComponent` by convention and catches it in review; the TCK
+walk catches it in CI, since an empty root fails the walk.
+
+---
+
+## 2. Decisions
+
+### D1. One repository, `konekt`, docs inside it
+
+Brief: unstated. Decision: server, client and `docs/` in `github.com/youndie/konekt`, public.
+
+Why:
+
+- one product, one deployable pair, one release cadence — the condition under which a separate
+  documentation repository earns its keep (three or more service repositories with a feature smeared
+  across them) is not met;
+- the client and the server share the component module: the same `@KompotComponentMarker` classes are
+  serialised on one side and rendered on the other, and splitting the repository would put a
+  publication step in the middle of the tightest loop in the project;
+- the price: the Android and iOS build and the server build sit in one Gradle build, so a server-only
+  change still evaluates the client's configuration. Acceptable at this size; revisit if
+  configuration time passes a minute.
+
+The name is `konekt`, one `n`, because the canvas and the activation code in it
+(`LPA:1$rsp.konekt.io$…`) already spell it that way and an activation code is the one string a
+subscriber reads character by character.
+
+### D2. A brand kit is colour and typography from the server, shape from the client *(deviation from the brief)*
+
+Brief §8: *"a change of brand (theme + copy) — without rebuilding the client"*.
+Decision: colour, typography and every string ship from the server; the shape scale is a client build
+constant, and brand B in the canvas needs a client release for its radii.
+
+Why:
+
+- §1.2 — the wire has no shape vocabulary and kompot protects that deliberately; `SurfaceRole` is
+  documented as a client-side key that never travels;
+- inventing one in konekt would mean a fork of `kompot-core`, which is exactly the failure this
+  project exists to avoid demonstrating;
+- the price: honesty in the operator-facing material. Two brands that differ only in palette are a
+  configuration change; two that differ in shape are a release. The canvas already proves the layout
+  survives the shape swap, which is what makes the client-side constant cheap rather than dangerous.
+
+### D3. konekt ships its own renderer for `UnknownComponent`
+
+Brief: unstated. Decision: replace the toolkit's entry for `UnknownComponent::class` with a renderer
+drawing the canvas's two densities, and route the event to tracy and to a katcher breadcrumb.
+
+Why: §1.4 — the default draws nothing and reports through `println`. The registry is open, so this
+costs one map entry and no fork. The upstream ask is narrower than the local fix, on purpose.
+
+### D4. Authentication is konekt's, not the toolkit's *(deviation from the brief)*
+
+Brief §3: *"Authorisation — number + OTP, session through kompot-auth"*.
+Decision: `kompot-auth` contributes the `update_session` action and nothing else. OTP issue, OTP
+check, rate limiting, token storage, refresh and logout are konekt code behind a Ktor `Authentication`
+provider.
+
+Why: §1.5 — `kompot-auth` is a single serialisable action. Recording this now is worth more than it
+looks: a backlog written from the brief would have carried an item called "wire up kompot-auth" and
+sized it at a day.
+
+### D5. The purchase saga is four interceptors
+
+Brief §5: reserve → activate in the mock BSS → charge → emit, plus a confirmation step.
+Decision: `VALIDATION` (balance and plan availability), `AUTHORIZATION` (hold, then `Suspend` for
+confirmation), `EXECUTION` (charge and provision), `POST_PROCESSING` (emit) — four, with the hold and
+the confirmation in one interceptor rather than two.
+
+Why: §1.7 — 9 writes against 17, measured, and the saga table is the hottest row in the system
+because every step boundary writes to it. The rejected alternative splits hold and confirm for
+readability; it costs about 8 extra writes on the most frequent operation in the product to make one
+interceptor easier to read.
+
+### D6. The outbox-to-booblik bridge is konekt code, and its absence is a failing test
+
+Brief §5: *"the petich outbox publishes into booblik"*.
+Decision: correct, and the publisher is konekt's — petich supplies the mechanism only (§1.7). It
+ships with a test asserting that a committed saga leaves a row in the outbox table.
+
+Why: the fallback is silent. The rejected alternative is an end-to-end test that waits for a message
+on the topic; it is slower, it is flaky, and it fails for a dozen reasons that are not this one.
+
+### D7. Server-Sent Events, not WebSocket
+
+Brief §5: *"kompot-realtime (+server) — live counters and order status"*, transport unstated.
+Decision: SSE over one endpoint, in-memory bus, no Redis.
+
+Why: the traffic is one-directional (`UpdateComponentMessage` server→client), SSE survives proxies
+that mishandle upgrades, and reconnection with `Last-Event-ID` is in the protocol rather than in our
+code. One server process means the in-memory bus is the whole requirement. The price: no client→server
+channel, which the product does not need — every subscriber action is already an HTTP action.
+
+### D8. iOS crash reporting is a stated gap, not a third-party SDK
+
+Decision: v1 collects no crashes from the iOS build. It is written in the service document and in the
+README, and raised upstream ([U5](research-upstream-proposals.md#u5)).
+
+Why: §1.9. Adding Sentry or Crashlytics to a build whose purpose is to exercise this stack would
+answer the wrong question and hide the finding. An empty answer that names itself is worth more here
+than a full one from somewhere else.
+
+### D9. Upstream gaps go out as issues; konekt never forks a toolkit module
+
+Decision: every gap this project finds in kompot, petich, booblik, katcher, metrik or tracy is filed
+as an issue on that repository. Where a gap blocks work, konekt works around it in its own code, and
+the workaround carries a comment naming the issue so that it can be removed rather than inherited.
+
+Why: this is the instruction under which the research was done, and it is also the arrangement that
+makes the reference build worth anything to the toolkits — a second implementation reading a
+published contract finds what the author cannot, and an issue records the finding where the next
+reader will look. A fork moves the finding into a private diff and it dies there. The workaround
+comments matter as much as the issues: a workaround copied into the next project outlives the illness
+it was written for.
+
+### D10. External systems are mocked in-process, behind interfaces, with injectable failure
+
+Brief §3: BSS/OCS, SM-DP+, the payment gateway and the SMSC are mocked.
+Decision: in-process modules behind the same interfaces a real integration would implement, each with
+a configuration switch for always-succeed / refuse / delay.
+
+Why: the demonstration's payload is compensation and rollback, and neither can be shown without a
+refusal on demand. Separate mock processes would add operational surface without adding anything to
+what is being shown; the interface boundary is what keeps the swap honest.
+
+---
+
+## 3. Risks and open questions
+
+**Risk 1. The petich outbox falls back silently, so the entire event chain can be absent while every
+test is green.** The engine drops events when handed a repository without outbox support and says
+nothing (§1.7). Mitigation: the wiring test of D6 asserts an outbox row exists after a committed
+saga; and a startup assertion refuses to boot when the configured repository does not implement the
+outbox interface, because a check that runs at request time runs after the damage. Open: whether
+`PetichEngineMetrics` can carry a dropped-event counter, which is [U4](research-upstream-proposals.md#u4).
+
+**Risk 2. The TCK can pass without checking anything.** A walk that reaches no screens reports clean
+(§1.10). Mitigation: the CI step parses the per-check target counts and fails when any check visited
+zero targets — the assertion is on coverage, not on the verdict.
+
+**Risk 3. Every dependency is a snapshot, and a version can be half-published.** Mitigation:
+`kompot-bom` for kompot; for the other five, a milestone closes only after a clean resolve from an
+empty Gradle cache, run after the upstream CI finished rather than after the first artefact appeared.
+
+**Risk 4. Surface customisation vanishes when the theme arrives** (§1.3). Mitigation until
+[U1](research-upstream-proposals.md#u1) lands: konekt's design system wraps `RemoteThemeDesignSystem`
+rather than being wrapped by it, forwarding `resolveSurface` to its own implementation. A screenshot
+test takes the same screen before and after the theme arrives and fails on any difference outside
+colour and type.
+
+**Risk 5. The forward-compatibility frame in the canvas cannot be demonstrated by the build that
+draws it.** `esim_transfer_widget` is unknown only to a client that does not register it, and the
+client in the repository will register everything the server sends. Mitigation: a deliberate fixture —
+one server route that emits a type absent from the client registry on purpose, reachable in the
+demo build only. Without it the frame is a picture of a state the product can never enter.
+
+**Risk 6. booblik is one process with no replication, and its topics are fixed at startup** (§1.8).
+For a reference build this is honest; for a boxed product it is a stated limitation, and it belongs in
+the operator-facing material rather than in a footnote.
+
+**Open question 1.** How does `kompot-client-cache`'s ETag revalidation interact with a realtime
+`UpdateComponentMessage` — does a cached screen replayed from disk carry a component that a live
+update has already replaced? Hypothesis: the cache stores the screen as fetched and the update applies
+on top in memory, so a cold start shows the stale value for one request. Check in M2, with the counter
+screen as the subject.
+
+**Open question 2.** Where does an OTP resend live relative to `Suspend(ttl)`? A resend that does not
+extend the TTL will roll a saga back under a subscriber who is still typing. Hypothesis: the resend is
+an ordinary HTTP action that does not touch the saga, and the TTL is chosen to outlast two resends.
+Check in M1, and record the number that was chosen and why.
+
+**Open question 3.** Is `wasmJs` worth a target? kompot publishes every protocol and client module for
+it, so an operator web account would be nearly free. The product is Android and iOS. Deferred — asked
+again when the client component set is stable, because the answer changes if any own component turns
+out to be platform-bound.
+
+---
+
+## 4. What happens next
+
+The order of work and the acceptance criteria live in [backlog.md](../../backlog.md). The first
+things that have to be nailed down, because everything else rests on them:
+
+1. **The component dictionary** (§1.5, M0). Nine own components with their wire names, in one KSP
+   module. Backend-driven UI means the dictionary is the API; renaming a type later is a coordinated
+   release of both sides. It is fixed before the first screen, not after the third.
+2. **The design system wrapper** (Risk 4, M0). The `resolveSurface` forwarding and the screenshot test
+   that guards it — before any theme work, because the defect is invisible once there is enough
+   styling to hide in.
+3. **The saga skeleton with its outbox assertion** (D6, M1). The wiring test comes before the second
+   saga, since it is the thing that stops the silent fallback from being discovered in M4.

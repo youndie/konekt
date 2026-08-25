@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#eceeed;font-family:'Manrope',system-ui,sans-serif}a{color:#0B6B60;text-decoration:none}a:hover{color:#00332C}</style></helmet>
+
+<section style="padding:44px 48px 60px;display:flex;flex-direction:column;gap:34px;box-sizing:border-box;min-width:1800px">
+
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <a href="#2a" style="font:600 10.5px 'Space Grotesk',monospace;padding:3px 7px;background:#141A19;color:#fff;border-radius:5px">2a</a>
+      <span style="font:700 15px 'Manrope';color:#141A19">Konekt — brand A on Signal tokens</span>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.65 'Manrope';color:#5A6663;text-wrap:pretty">Eight screens at 393×852, light and dark side by side, every state as its own frame. Colour swatches carry the wire token names from <span style="font:500 12px 'Space Grotesk'">kompot-ds-material</span>; form frames use the real field types from <span style="font:500 12px 'Space Grotesk'">kompot-forms</span>. Radii are a client build constant — the server theme carries colours and typography only, so brand B's shape change needs a client release.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">TOKENS · BRAND A</span>
+    <div style="display:flex;flex-wrap:wrap;gap:26px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:22px 24px">
+
+      <div style="display:flex;flex-direction:column;gap:9px;flex:1 1 460px;min-width:0">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">COLOR ROLES · LIGHT</span>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px">
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#0B6B60"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">primary<br>#0B6B60</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#B8EDE4"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">primary_container<br>#B8EDE4</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#B0490E"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">secondary<br>#B0490E</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#B3261E"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">error<br>#B3261E</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#E9F2EF;border:1px solid #BDCCC8"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">surface_variant<br>#E9F2EF</span></div>
+        </div>
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693;padding-top:4px">COLOR ROLES · DARK</span>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px">
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#9CDBD0"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">primary<br>#9CDBD0</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#084A43"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">primary_container<br>#084A43</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#F0B183"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">secondary<br>#F0B183</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#F2B8B5"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">error<br>#F2B8B5</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="height:34px;border-radius:10px;background:#18211F;border:1px solid #3D4A47"></div><span style="font:400 9.5px/1.25 'Space Grotesk',monospace;color:#5A6663;overflow-wrap:anywhere">surface_variant<br>#18211F</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px;flex:1 1 300px;min-width:0">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">TYPE SCALE</span>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 30px/1.05 'Space Grotesk';letter-spacing:-0.035em;color:#141A19">2 480,50 ₽</span><span style="font:400 9.5px 'Space Grotesk',monospace;color:#8A9693">display · Grotesk 700</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:700 18px 'Manrope';color:#141A19">Title large</span><span style="font:400 9.5px 'Space Grotesk',monospace;color:#8A9693">Manrope 700/18</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:500 14px 'Manrope';color:#141A19">Body medium sets the rest</span><span style="font:400 9.5px 'Space Grotesk',monospace;color:#8A9693">Manrope 500/14</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:600 12px 'Manrope';color:#5A6663">Label · sentence case</span><span style="font:400 9.5px 'Space Grotesk',monospace;color:#8A9693">Manrope 600/12</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:500 13px 'Space Grotesk';color:#5A6663">8944 5000 0000 1234 567</span><span style="font:400 9.5px 'Space Grotesk',monospace;color:#8A9693">ICCID · Grotesk 500</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px;flex:0 0 210px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">SHAPE · A / B</span>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:44px;height:32px;border-radius:12px;background:#E9F2EF;border:1px solid #BDCCC8"></div><span style="font:400 9.5px 'Space Grotesk',monospace;color:#5A6663">sm 12/8</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:44px;height:32px;border-radius:20px;background:#E9F2EF;border:1px solid #BDCCC8"></div><span style="font:400 9.5px 'Space Grotesk',monospace;color:#5A6663">md 20/12</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:44px;height:32px;border-radius:36px;background:#E9F2EF;border:1px solid #BDCCC8"></div><span style="font:400 9.5px 'Space Grotesk',monospace;color:#5A6663">lg 36/22</span></div>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center"><div style="width:44px;height:32px;border-radius:999px;background:#E9F2EF;border:1px solid #BDCCC8"></div><span style="font:400 9.5px 'Space Grotesk',monospace;color:#5A6663">pill</span></div>
+        </div>
+        <span style="font:400 10.5px/1.5 'Manrope';color:#8A9693;text-wrap:pretty">Spacing 4 · 8 · 12 · 16 · 20 · 24. Touch target min 48.</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">01 · HOME &amp; BALANCE — LIGHT / DARK</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px">
+          <span style="font:700 14px 'Space Grotesk'">9:41</span>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 16px 0">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 6px 2px">
+            <span style="font:800 22px 'Manrope';letter-spacing:-0.02em">Konekt</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0B6B60" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div>
+              <div style="width:40px;height:40px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center;font:700 14px 'Space Grotesk';color:#00332C">AK</div>
+            </div>
+          </div>
+
+          <div style="background:#B8EDE4;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:600 12px 'Manrope';color:#0B6B60">Balance</span>
+                <span style="font:700 36px/1.15 'Space Grotesk';letter-spacing:-0.035em;color:#00332C">2 480,50 ₽</span>
+              </div>
+              <span style="font:500 11.5px 'Manrope';color:#28564F;padding-top:6px">+7 999 120-45-67</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#0B6B60;color:#fff;font:700 14.5px 'Manrope';padding:15px 18px;border-radius:999px;cursor:pointer;min-height:50px;line-height:20px" style-hover="background:#00332C">Top up</button>
+              <button style="all:unset;box-sizing:border-box;text-align:center;background:#FAFDFC;color:#0B6B60;font:700 14.5px 'Manrope';padding:15px 20px;border-radius:999px;cursor:pointer;min-height:50px;line-height:20px">History</button>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font:700 18px 'Manrope';color:#141A19">Smart 20</span>
+              <span style="font:500 11.5px 'Manrope';color:#5A6663">renews 12 Sep</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#5A6663">Data</span><span style="font:600 14px 'Space Grotesk';color:#141A19">15,8 GB left</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="width:79%;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#5A6663">Minutes</span><span style="font:600 14px 'Space Grotesk';color:#B0490E">18 of 300</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="width:6%;background:#B0490E;border-radius:999px"></div><div style="flex:1;background:#F7DFCE;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#B0490E">Running low</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#5A6663">SMS</span><span style="font:600 14px 'Space Grotesk';color:#B3261E">0 of 50</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="flex:1;background:#F9DEDC;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#B3261E">Used up</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#B8EDE4;color:#00332C;font:700 13.5px 'Manrope';padding:14px 14px;border-radius:20px;cursor:pointer;min-height:48px;line-height:20px">Buy a package</button>
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;border:1.5px solid #BDCCC8;color:#0B6B60;font:700 13.5px 'Manrope';padding:14px 14px;border-radius:20px;cursor:pointer;min-height:48px;line-height:20px">Roaming</button>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:20px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 13.5px 'Manrope';color:#141A19">Turkey · 10 GB</span>
+              <span style="font:500 11.5px 'Manrope';color:#5A6663">eSIM ready to install</span>
+            </div>
+            <button style="all:unset;box-sizing:border-box;text-align:center;background:#0B6B60;color:#fff;font:700 13px 'Manrope';padding:12px 16px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Install</button>
+          </div>
+
+        </div>
+        <div style="flex:none;background:#E9F2EF;border-top:1px solid #DCE7E4;padding:8px 10px 6px;display:flex;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border-radius:999px;background:#B8EDE4"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3z"></path></svg><span style="font:700 10.5px 'Manrope';color:#00332C">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Plans</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h5"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Orders</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Profile</span></div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center;background:#E9F2EF"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#0D1513;border:1px solid #3D4A47;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#E3EEEB">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px">
+          <span style="font:700 14px 'Space Grotesk'">9:41</span>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:13px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #E3EEEB"></div></div>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:6px 16px 0">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 6px 2px">
+            <span style="font:800 22px 'Manrope';letter-spacing:-0.02em">Konekt</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:40px;height:40px;border-radius:999px;background:#18211F;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#9CDBD0" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div>
+              <div style="width:40px;height:40px;border-radius:999px;background:#084A43;display:flex;align-items:center;justify-content:center;font:700 14px 'Space Grotesk';color:#9CDBD0">AK</div>
+            </div>
+          </div>
+
+          <div style="background:#084A43;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:600 12px 'Manrope';color:#9CDBD0">Balance</span>
+                <span style="font:700 36px/1.15 'Space Grotesk';letter-spacing:-0.035em;color:#D9F4EF">2 480,50 ₽</span>
+              </div>
+              <span style="font:500 11.5px 'Manrope';color:#8FBDB6;padding-top:6px">+7 999 120-45-67</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#9CDBD0;color:#00332C;font:700 14.5px 'Manrope';padding:15px 18px;border-radius:999px;cursor:pointer;min-height:50px;line-height:20px">Top up</button>
+              <button style="all:unset;box-sizing:border-box;text-align:center;border:1.5px solid #3D4A47;color:#9CDBD0;font:700 14.5px 'Manrope';padding:15px 20px;border-radius:999px;cursor:pointer;min-height:50px;line-height:20px">History</button>
+            </div>
+          </div>
+
+          <div style="background:#18211F;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font:700 18px 'Manrope';color:#E3EEEB">Smart 20</span>
+              <span style="font:500 11.5px 'Manrope';color:#9DB1AC">renews 12 Sep</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#9DB1AC">Data</span><span style="font:600 14px 'Space Grotesk';color:#E3EEEB">15,8 GB left</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="width:79%;background:#9CDBD0;border-radius:999px"></div><div style="flex:1;background:#264540;border-radius:999px"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#9DB1AC">Minutes</span><span style="font:600 14px 'Space Grotesk';color:#F0B183">18 of 300</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="width:6%;background:#F0B183;border-radius:999px"></div><div style="flex:1;background:#4A3320;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#F0B183">Running low</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#9DB1AC">SMS</span><span style="font:600 14px 'Space Grotesk';color:#F2B8B5">0 of 50</span></div>
+                <div style="display:flex;gap:5px;height:12px"><div style="flex:1;background:#5A2320;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#F2B8B5">Used up</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#084A43;color:#9CDBD0;font:700 13.5px 'Manrope';padding:14px 14px;border-radius:20px;cursor:pointer;min-height:48px;line-height:20px">Buy a package</button>
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;border:1.5px solid #3D4A47;color:#9CDBD0;font:700 13.5px 'Manrope';padding:14px 14px;border-radius:20px;cursor:pointer;min-height:48px;line-height:20px">Roaming</button>
+            </div>
+          </div>
+
+          <div style="background:#18211F;border-radius:20px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 13.5px 'Manrope';color:#E3EEEB">Turkey · 10 GB</span>
+              <span style="font:500 11.5px 'Manrope';color:#9DB1AC">eSIM ready to install</span>
+            </div>
+            <button style="all:unset;box-sizing:border-box;text-align:center;background:#9CDBD0;color:#00332C;font:700 13px 'Manrope';padding:12px 16px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Install</button>
+          </div>
+
+        </div>
+        <div style="flex:none;background:#131C1A;border-top:1px solid #26302E;padding:8px 10px 6px;display:flex;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border-radius:999px;background:#084A43"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9CDBD0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3z"></path></svg><span style="font:700 10.5px 'Manrope';color:#9CDBD0">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9DB1AC" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg><span style="font:600 10.5px 'Manrope';color:#9DB1AC">Plans</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9DB1AC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h5"></path></svg><span style="font:600 10.5px 'Manrope';color:#9DB1AC">Orders</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#9DB1AC" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg><span style="font:600 10.5px 'Manrope';color:#9DB1AC">Profile</span></div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center;background:#131C1A"><div style="width:134px;height:5px;border-radius:999px;background:#E3EEEB;opacity:.3"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px">
+          <span style="font:700 14px 'Space Grotesk'">9:41</span>
+          <div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div>
+        </div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 12px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141A19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Plan usage</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:0 16px">
+
+          <div style="background:#FAFDFC;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="font:600 12px 'Manrope';color:#5A6663">Data remaining</span>
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font:700 44px/1 'Space Grotesk';letter-spacing:-0.04em;color:#141A19">15,8</span><span style="font:600 16px 'Manrope';color:#5A6663">of 20 GB</span></div>
+            </div>
+            <div style="display:flex;gap:5px;height:14px"><div style="width:79%;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 12px 'Manrope';color:#5A6663">Cycle 12 Aug – 12 Sep</span><span style="font:600 12px 'Space Grotesk';color:#0B6B60">18 days left</span></div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:36px;padding:8px 22px;display:flex;flex-direction:column">
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 14px 'Manrope'">Minutes</span><span style="font:500 11.5px 'Manrope';color:#B0490E">Running low · 18 left</span></div>
+              <span style="font:600 14px 'Space Grotesk';color:#B0490E">18 / 300</span>
+            </div>
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 14px 'Manrope'">SMS</span><span style="font:500 11.5px 'Manrope';color:#B3261E">Used up · 50 sent</span></div>
+              <span style="font:600 14px 'Space Grotesk';color:#B3261E">0 / 50</span>
+            </div>
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 14px 'Manrope'">Roaming data</span><span style="font:500 11.5px 'Manrope';color:#5A6663">Turkey eSIM · not started</span></div>
+              <span style="font:600 14px 'Space Grotesk';color:#5A6663">10 GB</span>
+            </div>
+          </div>
+
+          <div style="background:#F7DFCE;border-radius:20px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B0490E" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 12.5px/1.5 'Manrope';color:#5A3316">Minutes run out in about two days at your current pace. A 100-minute add-on costs 149 ₽.</span>
+              <button style="all:unset;box-sizing:border-box;text-align:center;background:#B0490E;color:#fff;font:700 12.5px 'Manrope';padding:11px 16px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px;align-self:flex-start">Add 100 minutes</button>
+            </div>
+          </div>
+
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;background:#F2F7F5">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Buy a package</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+    </div>
+    <span style="font:400 11px/1.5 'Manrope';color:#8A9693">Frames: home · home dark · plan usage detail. Counter states in one screen — normal on <span style="font:500 10.5px 'Space Grotesk'">primary</span>, low on <span style="font:500 10.5px 'Space Grotesk'">secondary</span>, exhausted on <span style="font:500 10.5px 'Space Grotesk'">error</span>.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">02 · PLANS CATALOG &amp; PLAN DETAIL</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:none;padding:4px 20px 12px;display:flex;flex-direction:column;gap:12px">
+          <span style="font:800 24px 'Manrope';letter-spacing:-0.02em">eSIM data plans</span>
+          <div style="background:#FAFDFC;border:1.5px solid #BDCCC8;border-radius:999px;padding:0 18px;height:50px;display:flex;align-items:center;gap:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M16 16l4 4"></path></svg>
+            <span style="font:500 14px 'Manrope';color:#8A9693">Country or region</span>
+          </div>
+          <div style="display:flex;gap:8px;overflow:hidden">
+            <span style="font:700 12.5px 'Manrope';color:#00332C;background:#B8EDE4;padding:10px 16px;border-radius:999px;white-space:nowrap">Popular</span>
+            <span style="font:600 12.5px 'Manrope';color:#0B6B60;border:1.5px solid #BDCCC8;padding:9px 16px;border-radius:999px;white-space:nowrap">Europe</span>
+            <span style="font:600 12.5px 'Manrope';color:#0B6B60;border:1.5px solid #BDCCC8;padding:9px 16px;border-radius:999px;white-space:nowrap">Asia</span>
+            <span style="font:600 12.5px 'Manrope';color:#0B6B60;border:1.5px solid #BDCCC8;padding:9px 16px;border-radius:999px;white-space:nowrap">Global</span>
+          </div>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:0 16px">
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:700 16.5px 'Manrope'">Turkey</span>
+                <span style="font:500 12px 'Manrope';color:#5A6663">10 GB · 30 days · 5G</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                <span style="font:700 19px 'Space Grotesk';letter-spacing:-0.02em">1 190 ₽</span>
+                <span style="font:500 10.5px 'Manrope';color:#8A9693">119 ₽ / GB</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font:600 11.5px 'Manrope';color:#0B6B60;background:#E9F2EF;padding:7px 12px;border-radius:999px">Installs in 2 min</span>
+              <button style="all:unset;box-sizing:border-box;text-align:center;background:#0B6B60;color:#fff;font:700 13px 'Manrope';padding:12px 22px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Choose</button>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:700 16.5px 'Manrope'">Georgia</span>
+                <span style="font:500 12px 'Manrope';color:#5A6663">5 GB · 15 days · 4G</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                <span style="font:700 19px 'Space Grotesk';letter-spacing:-0.02em">690 ₽</span>
+                <span style="font:500 10.5px 'Manrope';color:#8A9693">138 ₽ / GB</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font:600 11.5px 'Manrope';color:#5A6663;background:#E9F2EF;padding:7px 12px;border-radius:999px">Top-up available</span>
+              <button style="all:unset;box-sizing:border-box;text-align:center;background:#B8EDE4;color:#00332C;font:700 13px 'Manrope';padding:12px 22px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Choose</button>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px;opacity:.55">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:700 16.5px 'Manrope'">Serbia</span>
+                <span style="font:500 12px 'Manrope';color:#5A6663">3 GB · 7 days</span>
+              </div>
+              <span style="font:700 19px 'Space Grotesk';letter-spacing:-0.02em">450 ₽</span>
+            </div>
+            <span style="font:600 11.5px 'Manrope';color:#5A6663">Sold out · restocks 28 Aug</span>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="width:52%;height:15px;border-radius:6px;background:#E9F2EF"></div>
+              <div style="width:34%;height:11px;border-radius:6px;background:#EEF4F2"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px"><div style="width:30%;height:11px;border-radius:6px;background:#EEF4F2"></div><div style="width:80px;height:36px;border-radius:999px;background:#E9F2EF"></div></div>
+          </div>
+
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 12px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141A19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Turkey · 10 GB</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:0 16px">
+
+          <div style="background:#B8EDE4;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:600 12px 'Manrope';color:#0B6B60">Data plan</span>
+                <span style="font:700 34px/1.05 'Space Grotesk';letter-spacing:-0.035em;color:#00332C">10 GB</span>
+              </div>
+              <span style="font:700 22px 'Space Grotesk';letter-spacing:-0.02em;color:#00332C">1 190 ₽</span>
+            </div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <span style="font:600 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:8px 13px;border-radius:999px">30 days</span>
+              <span style="font:600 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:8px 13px;border-radius:999px">5G where available</span>
+              <span style="font:600 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:8px 13px;border-radius:999px">Hotspot allowed</span>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:6px 20px;display:flex;flex-direction:column">
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13.5px 'Manrope';color:#5A6663">Network</span><span style="font:600 13.5px 'Manrope'">Turkcell, Vodafone TR</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13.5px 'Manrope';color:#5A6663">Activation</span><span style="font:600 13.5px 'Manrope'">On first connection</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13.5px 'Manrope';color:#5A6663">Calls &amp; SMS</span><span style="font:600 13.5px 'Manrope';color:#8A9693">Not included</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13.5px 'Manrope';color:#5A6663">Top-up</span><span style="font:600 13.5px 'Manrope'">From 290 ₽ / 2 GB</span></div>
+          </div>
+
+          <div style="background:#E9F2EF;border-radius:22px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B6B60" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 8h3v3H8zM13 13h3v3h-3z"></path></svg>
+            <span style="font:500 12.5px/1.55 'Manrope';color:#28564F">Installs as an eSIM by QR code. Your device supports it — checked on this phone.</span>
+          </div>
+
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;background:#F2F7F5;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 6px"><span style="font:500 12.5px 'Manrope';color:#5A6663">Charged once</span><span style="font:700 16px 'Space Grotesk';letter-spacing:-0.02em">1 190 ₽</span></div>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Buy for 1 190 ₽</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#0D1513;border:1px solid #3D4A47;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#E3EEEB">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:13px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #E3EEEB"></div></div></div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 12px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#18211F;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E3EEEB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Turkey · 10 GB</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:0 16px">
+
+          <div style="background:#084A43;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px">
+                <span style="font:600 12px 'Manrope';color:#9CDBD0">Data plan</span>
+                <span style="font:700 34px/1.05 'Space Grotesk';letter-spacing:-0.035em;color:#D9F4EF">10 GB</span>
+              </div>
+              <span style="font:700 22px 'Space Grotesk';letter-spacing:-0.02em;color:#D9F4EF">1 190 ₽</span>
+            </div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <span style="font:600 11.5px 'Manrope';color:#9CDBD0;border:1.5px solid #2C5A53;padding:7px 13px;border-radius:999px">30 days</span>
+              <span style="font:600 11.5px 'Manrope';color:#9CDBD0;border:1.5px solid #2C5A53;padding:7px 13px;border-radius:999px">5G where available</span>
+              <span style="font:600 11.5px 'Manrope';color:#9CDBD0;border:1.5px solid #2C5A53;padding:7px 13px;border-radius:999px">Hotspot allowed</span>
+            </div>
+          </div>
+
+          <div style="background:#18211F;border-radius:22px;padding:6px 20px;display:flex;flex-direction:column">
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #26302E"><span style="font:500 13.5px 'Manrope';color:#9DB1AC">Network</span><span style="font:600 13.5px 'Manrope'">Turkcell, Vodafone TR</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #26302E"><span style="font:500 13.5px 'Manrope';color:#9DB1AC">Activation</span><span style="font:600 13.5px 'Manrope'">On first connection</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #26302E"><span style="font:500 13.5px 'Manrope';color:#9DB1AC">Calls &amp; SMS</span><span style="font:600 13.5px 'Manrope';color:#7E918C">Not included</span></div>
+            <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13.5px 'Manrope';color:#9DB1AC">Top-up</span><span style="font:600 13.5px 'Manrope'">From 290 ₽ / 2 GB</span></div>
+          </div>
+
+          <div style="background:#18211F;border-radius:22px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CDBD0" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 8h3v3H8zM13 13h3v3h-3z"></path></svg>
+            <span style="font:500 12.5px/1.55 'Manrope';color:#9DB1AC">Installs as an eSIM by QR code. Your device supports it — checked on this phone.</span>
+          </div>
+
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 6px"><span style="font:500 12.5px 'Manrope';color:#9DB1AC">Charged once</span><span style="font:700 16px 'Space Grotesk';letter-spacing:-0.02em">1 190 ₽</span></div>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#9CDBD0;color:#00332C;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Buy for 1 190 ₽</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#E3EEEB;opacity:.3"></div></div>
+      </div>
+
+    </div>
+    <span style="font:400 11px/1.5 'Manrope';color:#8A9693">Catalog carries four list states in one frame: available, tonal alternate, sold out, loading skeleton.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">03 · PURCHASE — CONFIRM, PROCESSING, SUCCESS, ROLLBACK</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;color:#141A19">
+        <div style="flex:1;min-height:0;position:relative;overflow:hidden;background:#F2F7F5">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;padding:46px 16px 0">
+            <div style="display:flex;align-items:center;gap:14px;padding:4px 4px 2px">
+              <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141A19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+              <span style="font:700 19px 'Manrope';letter-spacing:-0.01em;color:#141A19">Turkey · 10 GB</span>
+            </div>
+            <div style="background:#B8EDE4;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <span style="font:600 12px 'Manrope';color:#0B6B60">Data plan</span>
+                  <span style="font:700 34px/1.15 'Space Grotesk';letter-spacing:-0.035em;color:#00332C">10 GB</span>
+                </div>
+                <span style="font:700 22px 'Space Grotesk';letter-spacing:-0.02em;color:#00332C">1 190 ₽</span>
+              </div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap">
+                <span style="font:600 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:8px 13px;border-radius:999px">30 days</span>
+                <span style="font:600 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:8px 13px;border-radius:999px">5G where available</span>
+              </div>
+            </div>
+            <div style="background:#FAFDFC;border-radius:22px;padding:6px 20px;display:flex;flex-direction:column">
+              <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13.5px 'Manrope';color:#5A6663">Network</span><span style="font:600 13.5px 'Manrope';color:#141A19">Turkcell, Vodafone TR</span></div>
+              <div style="padding:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13.5px 'Manrope';color:#5A6663">Activation</span><span style="font:600 13.5px 'Manrope';color:#141A19">On first connection</span></div>
+            </div>
+          </div>
+          <div style="position:absolute;inset:0;background:rgba(20,26,25,.42)"></div>
+          <div style="position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px">
+            <span style="font:700 14px 'Space Grotesk';color:#fff">9:41</span>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#fff"></div><div style="width:13px;height:10px;border-radius:2px;background:#fff"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #fff"></div></div>
+          </div>
+        </div>
+        <div style="flex:none;background:#FAFDFC;border-radius:36px 36px 0 0;padding:16px 20px 12px;display:flex;flex-direction:column;gap:16px">
+          <div style="width:44px;height:5px;border-radius:999px;background:#DCE7E4;align-self:center"></div>
+          <span style="font:800 21px 'Manrope';letter-spacing:-0.02em">Confirm purchase</span>
+
+          <div style="background:#F2F7F5;border-radius:20px;padding:8px 18px;display:flex;flex-direction:column">
+            <div style="padding:12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E4EDEA"><span style="font:500 13px 'Manrope';color:#5A6663">Plan</span><span style="font:600 13px 'Manrope'">Turkey · 10 GB · 30 d</span></div>
+            <div style="padding:12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13px 'Manrope';color:#5A6663">Price</span><span style="font:700 15px 'Space Grotesk'">1 190 ₽</span></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <span style="font:600 11.5px 'Manrope';color:#5A6663">Pay from</span>
+            <div style="border:2px solid #0B6B60;background:#FAFDFC;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="width:20px;height:20px;border-radius:999px;border:2px solid #0B6B60;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:10px;height:10px;border-radius:999px;background:#0B6B60"></div></div>
+              <div style="display:flex;flex-direction:column;gap:1px;flex:1"><span style="font:600 13.5px 'Manrope'">Balance · 2 480,50 ₽</span><span style="font:500 11px 'Manrope';color:#5A6663">Instant, no fee</span></div>
+            </div>
+            <div style="border:1.5px solid #BDCCC8;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="width:20px;height:20px;border-radius:999px;border:2px solid #BDCCC8;flex:none"></div>
+              <div style="display:flex;flex-direction:column;gap:1px;flex:1"><span style="font:600 13.5px 'Manrope'">Card ···4417</span><span style="font:500 11px 'Manrope';color:#5A6663">Mir · expires 09/27</span></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:0 2px">
+            <div style="width:22px;height:22px;border-radius:7px;background:#0B6B60;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></div>
+            <span style="font:500 12px/1.5 'Manrope';color:#5A6663">I accept the plan terms and understand the eSIM cannot be refunded after activation.</span>
+          </div>
+
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Pay 1 190 ₽</button>
+          <div style="height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+        </div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px;padding:0 34px;text-align:center">
+          <div style="width:96px;height:96px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0B6B60" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 21px 'Manrope';letter-spacing:-0.02em">Paying 1 190 ₽</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">Confirming with the payment provider. Keep the app open — this usually takes under 15 seconds.</span>
+          </div>
+          <div style="width:100%;display:flex;gap:5px;height:8px"><div style="width:62%;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <span style="font:500 11.5px 'Space Grotesk';color:#8A9693">order 8f21-4c90</span>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;border:1.5px solid #BDCCC8;color:#8A9693;font:700 15px 'Manrope';padding:16px;border-radius:999px;min-height:52px;line-height:20px">Cancel</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:0 22px">
+          <div style="width:88px;height:88px;border-radius:999px;background:#0B6B60;display:flex;align-items:center;justify-content:center;align-self:flex-start">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4.5 4.5L19 7"></path></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 26px/1.15 'Manrope';letter-spacing:-0.025em">Paid. eSIM is ready to install.</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">Turkey · 10 GB · 30 days. Install now or later from Orders — the plan starts counting on first connection, not now.</span>
+          </div>
+          <div style="background:#FAFDFC;border-radius:22px;padding:8px 18px;display:flex;flex-direction:column">
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13px 'Manrope';color:#5A6663">Order</span><span style="font:600 13px 'Space Grotesk'">8f21-4c90</span></div>
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13px 'Manrope';color:#5A6663">Charged</span><span style="font:600 13px 'Manrope'">1 190 ₽ from balance</span></div>
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13px 'Manrope';color:#5A6663">Balance left</span><span style="font:600 13px 'Space Grotesk'">1 290,50 ₽</span></div>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Install eSIM</button>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;color:#0B6B60;font:700 15px 'Manrope';padding:14px;border-radius:999px;cursor:pointer;min-height:48px;line-height:20px">Later, show receipt</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:0 22px">
+          <div style="width:88px;height:88px;border-radius:999px;background:#F9DEDC;display:flex;align-items:center;justify-content:center;align-self:flex-start">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2.4" stroke-linecap="round"><path d="M12 7v7M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 26px/1.15 'Manrope';letter-spacing:-0.025em">Payment failed. Nothing was charged.</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">The provider declined the operation. We reversed the hold — your balance is back to where it was, and no eSIM was issued.</span>
+          </div>
+          <div style="background:#F9DEDC;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:600 12.5px 'Manrope';color:#7A1C16">Reversed</span><span style="font:700 14px 'Space Grotesk';color:#7A1C16">+1 190 ₽</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 12px 'Manrope';color:#7A1C16">Balance</span><span style="font:600 12.5px 'Space Grotesk';color:#7A1C16">2 480,50 ₽</span></div>
+            <span style="font:500 11.5px/1.5 'Manrope';color:#7A1C16">Reference 8f21-4c90 · declined by issuer (51)</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Try another method</button>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;color:#0B6B60;font:700 15px 'Manrope';padding:14px;border-radius:999px;cursor:pointer;min-height:48px;line-height:20px">Contact support</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+    </div>
+    <span style="font:400 11px/1.5 'Manrope';color:#8A9693">Rollback is stated in money, not in apology: what was reversed, what the balance is now, and the reference to quote to support.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">04 · eSIM INSTALL — FRAME BY FRAME</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 10px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141A19" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Install eSIM</span>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;padding:6px 16px 0">
+          <div style="display:flex;gap:5px;height:6px;padding:0 4px"><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:8px 6px 0">
+            <span style="font:600 11.5px 'Space Grotesk';letter-spacing:.06em;color:#0B6B60">STEP 1 OF 4</span>
+            <span style="font:800 24px/1.2 'Manrope';letter-spacing:-0.025em">Before you start</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">Install over Wi-Fi and keep your current SIM in place. The eSIM is added as a second line.</span>
+          </div>
+          <div style="background:#FAFDFC;border-radius:22px;padding:6px 18px;display:flex;flex-direction:column">
+            <div style="padding:14px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="width:26px;height:26px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></div>
+              <div style="display:flex;flex-direction:column;gap:1px"><span style="font:600 13.5px 'Manrope'">Device supports eSIM</span><span style="font:500 11.5px 'Manrope';color:#5A6663">iPhone 14 Pro · iOS 18.2</span></div>
+            </div>
+            <div style="padding:14px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="width:26px;height:26px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></div>
+              <div style="display:flex;flex-direction:column;gap:1px"><span style="font:600 13.5px 'Manrope'">Carrier lock</span><span style="font:500 11.5px 'Manrope';color:#5A6663">Unlocked</span></div>
+            </div>
+            <div style="padding:14px 0;display:flex;align-items:center;gap:12px">
+              <div style="width:26px;height:26px;border-radius:999px;background:#F7DFCE;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0490E" stroke-width="2.6" stroke-linecap="round"><path d="M12 8v5M12 16h.01"></path></svg></div>
+              <div style="display:flex;flex-direction:column;gap:1px"><span style="font:600 13.5px 'Manrope'">Free eSIM slots</span><span style="font:500 11.5px 'Manrope';color:#B0490E">1 of 8 left · delete unused ones later</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Show QR code</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 10px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#E9F2EF;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141A19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Scan or install</span>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;padding:6px 16px 0">
+          <div style="display:flex;gap:5px;height:6px;padding:0 4px"><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <div style="background:#FAFDFC;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:16px;align-items:center">
+            <div style="width:214px;height:214px;padding:14px;box-sizing:border-box;background:#fff;border-radius:20px;border:1px solid #E9F2EF">{{ qr }}</div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+              <span style="font:600 13px 'Manrope';color:#141A19">Turkey · 10 GB</span>
+              <span style="font:500 11.5px 'Space Grotesk';color:#8A9693">LPA:1$rsp.konekt.io$8F214C90</span>
+            </div>
+            <button style="all:unset;box-sizing:border-box;text-align:center;background:#E9F2EF;color:#0B6B60;font:700 13px 'Manrope';padding:12px 20px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Copy activation code</button>
+          </div>
+          <div style="background:#B8EDE4;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:700 13px 'Manrope';color:#00332C">Installing on this phone?</span>
+            <span style="font:500 12px/1.55 'Manrope';color:#28564F">Skip the QR — tap below and iOS opens the eSIM sheet directly.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Install on this phone</button>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;color:#0B6B60;font:700 15px 'Manrope';padding:14px;border-radius:999px;cursor:pointer;min-height:48px;line-height:20px">Email the QR code</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#0D1513;border:1px solid #3D4A47;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#E3EEEB">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:13px;height:10px;border-radius:2px;background:#E3EEEB"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #E3EEEB"></div></div></div>
+        <div style="flex:none;display:flex;align-items:center;gap:14px;padding:4px 20px 10px">
+          <div style="width:40px;height:40px;border-radius:999px;background:#18211F;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E3EEEB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></div>
+          <span style="font:700 19px 'Manrope';letter-spacing:-0.01em">Scan or install</span>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;padding:6px 16px 0">
+          <div style="display:flex;gap:5px;height:6px;padding:0 4px"><div style="flex:1;background:#9CDBD0;border-radius:999px"></div><div style="flex:1;background:#9CDBD0;border-radius:999px"></div><div style="flex:1;background:#264540;border-radius:999px"></div><div style="flex:1;background:#264540;border-radius:999px"></div></div>
+          <div style="background:#18211F;border-radius:36px;padding:22px;display:flex;flex-direction:column;gap:16px;align-items:center">
+            <div style="width:214px;height:214px;padding:14px;box-sizing:border-box;background:#E3EEEB;border-radius:20px">{{ qrDark }}</div>
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+              <span style="font:600 13px 'Manrope';color:#E3EEEB">Turkey · 10 GB</span>
+              <span style="font:500 11.5px 'Space Grotesk';color:#7E918C">LPA:1$rsp.konekt.io$8F214C90</span>
+            </div>
+            <button style="all:unset;box-sizing:border-box;text-align:center;border:1.5px solid #3D4A47;color:#9CDBD0;font:700 13px 'Manrope';padding:12px 20px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px">Copy activation code</button>
+          </div>
+          <div style="background:#084A43;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+            <span style="font:700 13px 'Manrope';color:#D9F4EF">Installing on this phone?</span>
+            <span style="font:500 12px/1.55 'Manrope';color:#9CDBD0">Skip the QR — tap below and iOS opens the eSIM sheet directly.</span>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#9CDBD0;color:#00332C;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Install on this phone</button>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;color:#9CDBD0;font:700 15px 'Manrope';padding:14px;border-radius:999px;cursor:pointer;min-height:48px;line-height:20px">Email the QR code</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#E3EEEB;opacity:.3"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;padding:14px 16px 0">
+          <div style="display:flex;gap:5px;height:6px;padding:0 4px"><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:6px 6px 0">
+            <span style="font:600 11.5px 'Space Grotesk';letter-spacing:.06em;color:#0B6B60">STEP 3 OF 4</span>
+            <span style="font:800 24px/1.2 'Manrope';letter-spacing:-0.025em">Activating the line</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">Stay on Wi-Fi. This takes up to a minute and finishes on its own.</span>
+          </div>
+          <div style="background:#FAFDFC;border-radius:22px;padding:6px 18px;display:flex;flex-direction:column">
+            <div style="padding:15px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="width:26px;height:26px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></div>
+              <span style="font:600 13.5px 'Manrope'">Profile downloaded</span>
+            </div>
+            <div style="padding:15px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="width:26px;height:26px;border-radius:999px;border:2.5px solid #0B6B60;border-right-color:#D3EFE9;flex:none"></div>
+              <span style="font:600 13.5px 'Manrope'">Registering on Turkcell</span>
+            </div>
+            <div style="padding:15px 0;display:flex;align-items:center;gap:12px">
+              <div style="width:26px;height:26px;border-radius:999px;background:#E9F2EF;flex:none"></div>
+              <span style="font:600 13.5px 'Manrope';color:#8A9693">Enabling data</span>
+            </div>
+          </div>
+          <div style="background:#E9F2EF;border-radius:20px;padding:14px 18px;display:flex;flex-direction:column;gap:3px">
+            <span style="font:600 12.5px 'Manrope';color:#28564F">Label: Konekt Turkey</span>
+            <span style="font:500 11.5px 'Manrope';color:#5A6663">You can rename the line in iOS settings afterwards.</span>
+          </div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:0 22px">
+          <div style="width:88px;height:88px;border-radius:999px;background:#0B6B60;display:flex;align-items:center;justify-content:center;align-self:flex-start">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4.5 4.5L19 7"></path></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 26px/1.15 'Manrope';letter-spacing:-0.025em">Konekt Turkey is live</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#5A6663">10 GB starts counting now. Turn on data roaming for this line when you land.</span>
+          </div>
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 13.5px 'Manrope'">Data roaming</span><span style="font:500 11.5px 'Manrope';color:#5A6663">Konekt Turkey line only</span></div>
+            <div style="width:52px;height:32px;border-radius:999px;background:#0B6B60;padding:3px;box-sizing:border-box;display:flex;justify-content:flex-end;align-items:center"><div style="width:26px;height:26px;border-radius:999px;background:#fff"></div></div>
+          </div>
+          <div style="background:#FAFDFC;border-radius:22px;padding:8px 18px;display:flex;flex-direction:column">
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:500 13px 'Manrope';color:#5A6663">ICCID</span><span style="font:600 12.5px 'Space Grotesk'">8944 5000 0000 1234 567</span></div>
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13px 'Manrope';color:#5A6663">Valid until</span><span style="font:600 13px 'Manrope'">21 Sep, 09:41</span></div>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#0B6B60;color:#fff;font:700 15px 'Manrope';padding:16px;border-radius:999px;cursor:pointer;min-height:52px;line-height:20px">Done</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+    </div>
+    <span style="font:400 11px/1.5 'Manrope';color:#8A9693">Four steps, plus the QR frame in dark. The slot warning on step 1 is the failure this flow actually hits in the field — eight-profile limit reached.</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">05 · ORDERS &amp; PROFILE</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:none;padding:4px 20px 12px;display:flex;flex-direction:column;gap:12px">
+          <span style="font:800 24px 'Manrope';letter-spacing:-0.02em">Orders</span>
+          <div style="display:flex;gap:8px">
+            <span style="font:700 12.5px 'Manrope';color:#00332C;background:#B8EDE4;padding:10px 16px;border-radius:999px">All</span>
+            <span style="font:600 12.5px 'Manrope';color:#0B6B60;border:1.5px solid #BDCCC8;padding:9px 16px;border-radius:999px">Active</span>
+            <span style="font:600 12.5px 'Manrope';color:#0B6B60;border:1.5px solid #BDCCC8;padding:9px 16px;border-radius:999px">Refunded</span>
+          </div>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:0 16px">
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 15px 'Manrope'">Turkey · 10 GB</span><span style="font:500 11.5px 'Space Grotesk';color:#8A9693">8f21-4c90 · 12 Aug</span></div>
+              <span style="font:700 11px 'Manrope';color:#00332C;background:#B8EDE4;padding:6px 11px;border-radius:999px">Active</span>
+            </div>
+            <div style="display:flex;gap:5px;height:8px"><div style="width:79%;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 12px 'Manrope';color:#5A6663">15,8 GB left · 18 days</span><span style="font:600 12.5px 'Manrope';color:#0B6B60">Top up</span></div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 15px 'Manrope'">Georgia · 5 GB</span><span style="font:500 11.5px 'Space Grotesk';color:#8A9693">7c04-2211 · 2 Jul</span></div>
+            <span style="font:700 11px 'Manrope';color:#5A6663;background:#E9F2EF;padding:6px 11px;border-radius:999px">Expired</span>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 15px 'Manrope'">Serbia · 3 GB</span><span style="font:500 11.5px 'Space Grotesk';color:#8A9693">6a88-9931 · 28 Jun</span></div>
+              <span style="font:700 11px 'Manrope';color:#7A1C16;background:#F9DEDC;padding:6px 11px;border-radius:999px">Refunded</span>
+            </div>
+            <span style="font:500 12px/1.5 'Manrope';color:#5A6663">450 ₽ returned to balance on 28 Jun — profile never activated.</span>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 15px 'Manrope'">Top-up · 1 000 ₽</span><span style="font:500 11.5px 'Space Grotesk';color:#8A9693">5b17-7702 · 26 Jun</span></div>
+            <span style="font:700 11px 'Manrope';color:#00332C;background:#E9F2EF;padding:6px 11px;border-radius:999px">Completed</span>
+          </div>
+
+        </div>
+        <div style="flex:none;background:#E9F2EF;border-top:1px solid #DCE7E4;padding:8px 10px 6px;display:flex;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3z"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Plans</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border-radius:999px;background:#B8EDE4"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h5"></path></svg><span style="font:700 10.5px 'Manrope';color:#00332C">Orders</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Profile</span></div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center;background:#E9F2EF"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F2F7F5;border:1px solid #BDCCC8;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#141A19">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:13px;height:10px;border-radius:2px;background:#141A19"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #141A19"></div></div></div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:12px;padding:4px 16px 0">
+
+          <div style="display:flex;align-items:center;gap:14px;padding:6px 6px 4px">
+            <div style="width:56px;height:56px;border-radius:999px;background:#B8EDE4;display:flex;align-items:center;justify-content:center;font:700 19px 'Space Grotesk';color:#00332C">AK</div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:800 20px 'Manrope';letter-spacing:-0.02em">Anna Kotova</span>
+              <span style="font:500 12.5px 'Space Grotesk';color:#5A6663">+7 999 120-45-67</span>
+            </div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:6px 18px;display:flex;flex-direction:column">
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:600 13.5px 'Manrope'">Payment methods</span><span style="font:500 12.5px 'Manrope';color:#5A6663">2 cards</span></div>
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF"><span style="font:600 13.5px 'Manrope'">Auto top-up</span><span style="font:600 12.5px 'Manrope';color:#0B6B60">On · at 300 ₽</span></div>
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:600 13.5px 'Manrope'">My eSIMs</span><span style="font:500 12.5px 'Manrope';color:#5A6663">1 active</span></div>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:6px 18px;display:flex;flex-direction:column">
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #E9F2EF">
+              <div style="display:flex;flex-direction:column;gap:2px"><span style="font:600 13.5px 'Manrope'">Appearance</span><span style="font:500 11.5px 'Manrope';color:#5A6663">Follows the system</span></div>
+              <div style="display:flex;gap:4px;background:#E9F2EF;border-radius:999px;padding:3px">
+                <span style="font:700 11.5px 'Manrope';color:#00332C;background:#FAFDFC;padding:7px 12px;border-radius:999px">Auto</span>
+                <span style="font:600 11.5px 'Manrope';color:#5A6663;padding:7px 12px">Light</span>
+                <span style="font:600 11.5px 'Manrope';color:#5A6663;padding:7px 12px">Dark</span>
+              </div>
+            </div>
+            <div style="padding:15px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:600 13.5px 'Manrope'">Language</span><span style="font:500 12.5px 'Manrope';color:#5A6663">English</span></div>
+          </div>
+
+          <div style="background:#B8EDE4;border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:700 14.5px 'Manrope';color:#00332C">Need a hand with an eSIM?</span>
+            <span style="font:500 12.5px/1.55 'Manrope';color:#28564F">Support answers in about 4 minutes, 24/7. Have your order reference ready.</span>
+            <button style="all:unset;box-sizing:border-box;text-align:center;background:#0B6B60;color:#fff;font:700 13px 'Manrope';padding:12px 18px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px;align-self:flex-start">Open chat</button>
+          </div>
+
+          <div style="background:#FAFDFC;border-radius:22px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <span style="font:600 13.5px 'Manrope';color:#B3261E">Sign out</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+          </div>
+
+        </div>
+        <div style="flex:none;background:#E9F2EF;border-top:1px solid #DCE7E4;padding:8px 10px 6px;display:flex;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3z"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Plans</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h5"></path></svg><span style="font:600 10.5px 'Manrope';color:#5A6663">Orders</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border-radius:999px;background:#B8EDE4"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#00332C" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg><span style="font:700 10.5px 'Manrope';color:#00332C">Profile</span></div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center;background:#E9F2EF"><div style="width:134px;height:5px;border-radius:999px;background:#141A19;opacity:.28"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ showKit }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">06 · COMPONENT DICTIONARY — ALL STATES</span>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+      <div style="flex:1 1 420px;min-width:0;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">BUTTONS · FILLED / TONAL / OUTLINE / TEXT</span>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:center">
+          <span style="font:500 9.5px 'Space Grotesk';color:#8A9693">default</span>
+          <span style="font:500 9.5px 'Space Grotesk';color:#8A9693">hover</span>
+          <span style="font:500 9.5px 'Space Grotesk';color:#8A9693">pressed</span>
+          <span style="font:500 9.5px 'Space Grotesk';color:#8A9693">loading</span>
+          <span style="font:500 9.5px 'Space Grotesk';color:#8A9693">disabled</span>
+
+          <div style="background:#0B6B60;color:#fff;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:999px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Pay</div>
+          <div style="background:#00554B;color:#fff;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:999px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Pay</div>
+          <div style="background:#00332C;color:#fff;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:999px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;transform:scale(.97)">Pay</div>
+          <div style="background:#0B6B60;padding:13px 8px;border-radius:999px;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:5px"><div style="width:7px;height:7px;border-radius:999px;background:#fff;opacity:.9"></div><div style="width:7px;height:7px;border-radius:999px;background:#fff;opacity:.55"></div><div style="width:7px;height:7px;border-radius:999px;background:#fff;opacity:.3"></div></div>
+          <div style="background:#E4EDEA;color:#A7B5B1;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:999px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Pay</div>
+
+          <div style="background:#B8EDE4;color:#00332C;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Buy</div>
+          <div style="background:#A4E4D9;color:#00332C;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Buy</div>
+          <div style="background:#8ED8CB;color:#00332C;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;transform:scale(.97)">Buy</div>
+          <div style="background:#B8EDE4;padding:13px 8px;border-radius:20px;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:5px"><div style="width:7px;height:7px;border-radius:999px;background:#00332C;opacity:.9"></div><div style="width:7px;height:7px;border-radius:999px;background:#00332C;opacity:.5"></div><div style="width:7px;height:7px;border-radius:999px;background:#00332C;opacity:.25"></div></div>
+          <div style="background:#EDF3F1;color:#A7B5B1;font:700 12.5px 'Manrope';padding:13px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Buy</div>
+
+          <div style="border:1.5px solid #BDCCC8;color:#0B6B60;font:700 12.5px 'Manrope';padding:12px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">More</div>
+          <div style="border:1.5px solid #0B6B60;background:#EDF6F4;color:#0B6B60;font:700 12.5px 'Manrope';padding:12px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">More</div>
+          <div style="border:1.5px solid #0B6B60;background:#DCEFEB;color:#00332C;font:700 12.5px 'Manrope';padding:12px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;transform:scale(.97)">More</div>
+          <div style="border:1.5px solid #BDCCC8;padding:12px 8px;border-radius:20px;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:5px"><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.9"></div><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.5"></div><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.25"></div></div>
+          <div style="border:1.5px solid #E4EDEA;color:#A7B5B1;font:700 12.5px 'Manrope';padding:12px 8px;border-radius:20px;text-align:center;min-height:46px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">More</div>
+
+          <div style="color:#0B6B60;font:700 12.5px 'Manrope';padding:13px 8px;text-align:center;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Skip</div>
+          <div style="color:#00332C;background:#EDF6F4;border-radius:999px;font:700 12.5px 'Manrope';padding:13px 8px;text-align:center;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Skip</div>
+          <div style="color:#00332C;background:#DCEFEB;border-radius:999px;font:700 12.5px 'Manrope';padding:13px 8px;text-align:center;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;transform:scale(.97)">Skip</div>
+          <div style="padding:13px 8px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:5px"><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.9"></div><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.5"></div><div style="width:7px;height:7px;border-radius:999px;background:#0B6B60;opacity:.25"></div></div>
+          <div style="color:#A7B5B1;font:700 12.5px 'Manrope';padding:13px 8px;text-align:center;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Skip</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 360px;min-width:0;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">FORM FIELDS · kompot-forms TYPES</span>
+        <div style="display:flex;flex-direction:column;gap:10px">
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:1.5px solid #BDCCC8;border-radius:20px;padding:12px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#5A6663">Full name</span><span style="font:500 14px 'Manrope';color:#A7B5B1">Enter as in passport</span></div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">text_input · empty</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:2px solid #0B6B60;border-radius:20px;padding:11px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#0B6B60">Full name</span><span style="font:500 14px 'Manrope';color:#141A19">Anna Kotova</span></div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">text_input · focused, filled</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:2px solid #B3261E;border-radius:20px;padding:11px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#B3261E">Phone</span><span style="font:500 14px 'Space Grotesk';color:#141A19">+7 999 120-45</span></div>
+            <span style="font:500 10.5px 'Manrope';color:#B3261E;padding-left:4px">Number is too short</span>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">text_input · error</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:1.5px solid #BDCCC8;background:#F2F7F5;border-radius:20px;padding:11px 16px;display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#5A6663">Amount</span><span style="font:600 17px 'Space Grotesk';color:#141A19">1 000</span></div>
+              <span style="font:600 14px 'Manrope';color:#5A6663">₽</span>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">amount_input · currency suffix</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:1.5px solid #BDCCC8;border-radius:20px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#5A6663">Country</span><span style="font:500 14px 'Manrope';color:#141A19">Turkey</span></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">select_input</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:2px solid #0B6B60;border-radius:20px 20px 6px 6px;padding:11px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#0B6B60">City</span><span style="font:500 14px 'Manrope';color:#141A19">Ista</span></div>
+            <div style="border:1px solid #E4EDEA;border-top:none;border-radius:0 0 20px 20px;background:#FAFDFC;display:flex;flex-direction:column">
+              <span style="font:500 13px 'Manrope';color:#141A19;padding:11px 16px;border-bottom:1px solid #EEF4F2">Istanbul</span>
+              <span style="font:500 13px 'Manrope';color:#141A19;padding:11px 16px">Isparta</span>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">autocomplete_input · suggestions open</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="background:#F2F7F5;border-radius:20px;padding:12px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#5A6663">ICCID</span><span style="font:500 13px 'Space Grotesk';color:#5A6663">8944 5000 0000 1234 567</span></div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">read_only_field</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="border:1.5px solid #E4EDEA;border-radius:20px;padding:12px 16px;display:flex;flex-direction:column;gap:1px"><span style="font:600 11px 'Manrope';color:#A7B5B1">Promo code</span><span style="font:500 14px 'Manrope';color:#A7B5B1">Not available on this plan</span></div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">text_input · disabled</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="flex:1 1 300px;min-width:0;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">SELECTION · FEEDBACK · PROGRESS</span>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:7px;background:#0B6B60;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg></div><span style="font:500 12.5px 'Manrope'">on</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:7px;border:2px solid #BDCCC8"></div><span style="font:500 12.5px 'Manrope'">off</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:7px;background:#E4EDEA"></div><span style="font:500 12.5px 'Manrope';color:#A7B5B1">disabled</span></div>
+          </div>
+          <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">checkbox_input</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:999px;border:2px solid #0B6B60;display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-radius:999px;background:#0B6B60"></div></div><span style="font:500 12.5px 'Manrope'">balance</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:22px;height:22px;border-radius:999px;border:2px solid #BDCCC8"></div><span style="font:500 12.5px 'Manrope'">card</span></div>
+          </div>
+          <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">radio_group</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="width:52px;height:32px;border-radius:999px;background:#0B6B60;padding:3px;box-sizing:border-box;display:flex;justify-content:flex-end"><div style="width:26px;height:26px;border-radius:999px;background:#fff"></div></div>
+            <div style="width:52px;height:32px;border-radius:999px;background:#DCE7E4;padding:3px;box-sizing:border-box;display:flex"><div style="width:26px;height:26px;border-radius:999px;background:#fff"></div></div>
+            <div style="width:52px;height:32px;border-radius:999px;background:#EDF3F1;padding:3px;box-sizing:border-box;display:flex"><div style="width:26px;height:26px;border-radius:999px;background:#DCE7E4"></div></div>
+          </div>
+          <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">switch · on / off / disabled</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="background:#E9F2EF;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0B6B60" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg><span style="font:500 11.5px/1.5 'Manrope';color:#28564F">Plan renews on 12 Sep.</span></div>
+          <div style="background:#F7DFCE;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B0490E" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 8v5M12 16h.01"></path><circle cx="12" cy="12" r="9"></circle></svg><span style="font:500 11.5px/1.5 'Manrope';color:#5A3316">Minutes running low.</span></div>
+          <div style="background:#F9DEDC;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B3261E" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 8v5M12 16h.01"></path><circle cx="12" cy="12" r="9"></circle></svg><span style="font:500 11.5px/1.5 'Manrope';color:#7A1C16">Payment reversed — nothing charged.</span></div>
+          <div style="background:#141A19;border-radius:16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:500 11.5px 'Manrope';color:#E3EEEB">Activation code copied</span><span style="font:700 11.5px 'Manrope';color:#9CDBD0">Undo</span></div>
+          <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">banners · info / low / error · snackbar</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;gap:5px;height:10px"><div style="width:62%;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <div style="display:flex;gap:5px;height:6px"><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#0B6B60;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div><div style="flex:1;background:#D3EFE9;border-radius:999px"></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="width:60%;height:13px;border-radius:6px;background:#E9F2EF"></div><div style="width:88%;height:10px;border-radius:6px;background:#EEF4F2"></div></div>
+          <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">progress · step meter · skeleton</span>
+        </div>
+
+      </div>
+
+      <div style="flex:1 1 300px;min-width:0;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">UNKNOWN COMPONENT · FORWARD COMPATIBILITY</span>
+        <div style="border:1.5px dashed #BDCCC8;background:#F2F7F5;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:9px;background:#E9F2EF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5A6663" stroke-width="2" stroke-linecap="round"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg></div>
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font:700 13px 'Manrope';color:#141A19">This block needs a newer app</span>
+              <span style="font:500 11px 'Space Grotesk';color:#8A9693">type: esim_transfer_widget</span>
+            </div>
+          </div>
+          <span style="font:500 11.5px/1.55 'Manrope';color:#5A6663">The server sent a component this build does not know. Everything around it still works — update to see it.</span>
+          <button style="all:unset;box-sizing:border-box;text-align:center;background:#E9F2EF;color:#0B6B60;font:700 12px 'Manrope';padding:11px 16px;border-radius:999px;cursor:pointer;min-height:44px;line-height:20px;align-self:flex-start">Update Konekt</button>
+        </div>
+        <div style="border:1.5px dashed #BDCCC8;border-radius:20px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font:500 11.5px 'Manrope';color:#8A9693">Collapsed variant, inside a list</span>
+          <span style="font:500 10.5px 'Space Grotesk';color:#A7B5B1">unknown</span>
+        </div>
+        <span style="font:400 10.5px/1.5 'Manrope';color:#8A9693">Two densities: full card when the block is the screen's subject, one-line when it sits among known rows. Never a blank gap.</span>
+      </div>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showIcons }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">07 · APP ICON — SKETCHES</span>
+    <div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:22px 24px;display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">BRAND A</span>
+        <div style="display:flex;gap:14px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:120px;height:120px;border-radius:28px;background:#0B6B60;display:flex;align-items:center;justify-content:center">
+              <svg width="72" height="72" viewBox="0 0 72 72" fill="none" stroke="#B8EDE4" stroke-width="6" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">120 · light</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:76px;height:76px;border-radius:18px;background:#B8EDE4;display:flex;align-items:center;justify-content:center">
+              <svg width="46" height="46" viewBox="0 0 72 72" fill="none" stroke="#00332C" stroke-width="6.5" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">76 · tonal</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:60px;height:60px;border-radius:14px;background:#0D1513;display:flex;align-items:center;justify-content:center">
+              <svg width="36" height="36" viewBox="0 0 72 72" fill="none" stroke="#9CDBD0" stroke-width="7" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">60 · dark</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:60px;height:60px;border-radius:14px;background:#E9F2EF;display:flex;align-items:center;justify-content:center">
+              <svg width="36" height="36" viewBox="0 0 72 72" fill="none" stroke="#141A19" stroke-width="7" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">mono</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:600 10px 'Space Grotesk',monospace;letter-spacing:.08em;color:#8A9693">BRAND B</span>
+        <div style="display:flex;gap:14px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:120px;height:120px;border-radius:22px;background:#17171B;display:flex;align-items:center;justify-content:center">
+              <svg width="72" height="72" viewBox="0 0 72 72" fill="none" stroke="#FF8A6B" stroke-width="6" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">120 · Ink</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:76px;height:76px;border-radius:14px;background:#D24A2C;display:flex;align-items:center;justify-content:center">
+              <svg width="46" height="46" viewBox="0 0 72 72" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">76 · accent</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:60px;height:60px;border-radius:11px;background:#E6E5E9;display:flex;align-items:center;justify-content:center">
+              <svg width="36" height="36" viewBox="0 0 72 72" fill="none" stroke="#17171B" stroke-width="7" stroke-linecap="round"><path d="M22 52V20"></path><path d="M22 36c10-12 18-16 28-16"></path><path d="M22 36c10 12 18 16 28 16"></path></svg>
+            </div>
+            <span style="font:400 9.5px 'Space Grotesk';color:#8A9693">mono</span>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin:0;flex:1 1 260px;min-width:0;font:400 11.5px/1.6 'Manrope';color:#8A9693;text-wrap:pretty">Drawn as vector sketches, not finished artwork — I can't generate images. The mark is a K whose arms read as signal arcs; it holds at 60px and in monochrome. If you want a real icon, hand these to an illustrator or send me the existing brand mark and I'll build the size set around it.</p>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ showBrandB }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 10.5px 'Space Grotesk',monospace;letter-spacing:.09em;color:#5A6663">08 · BRAND B PARITY — INK PALETTE, TIGHTER RADII, SAME MARKUP</span>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#F6F5F7;border:1px solid #C9C8CE;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#17171B">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#17171B"></div><div style="width:13px;height:10px;border-radius:2px;background:#17171B"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #17171B"></div></div></div>
+        <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:6px 16px 0">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 6px 2px">
+            <span style="font:800 22px 'Manrope';letter-spacing:-0.02em">Konekt</span>
+            <div style="width:40px;height:40px;border-radius:12px;background:#E6E5E9;display:flex;align-items:center;justify-content:center;font:700 14px 'Space Grotesk';color:#17171B">AK</div>
+          </div>
+
+          <div style="background:#17171B;border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font:600 11.5px 'Manrope';color:#A3A2AB">Balance</span>
+                <span style="font:700 34px/1.05 'Space Grotesk';letter-spacing:-0.035em;color:#F7F6F8">2 480,50 ₽</span>
+              </div>
+              <span style="font:500 11px 'Space Grotesk';color:#A3A2AB;padding-top:6px">+7 999 120-45-67</span>
+            </div>
+            <div style="display:flex;gap:7px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#D24A2C;color:#fff;font:700 14px 'Manrope';padding:14px 18px;border-radius:12px;cursor:pointer;min-height:48px;line-height:20px">Top up</button>
+              <button style="all:unset;box-sizing:border-box;text-align:center;border:1px solid #3A3A42;color:#E6E5E9;font:700 14px 'Manrope';padding:14px 18px;border-radius:12px;cursor:pointer;min-height:48px;line-height:20px">History</button>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E6E5E9;border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+              <span style="font:700 17px 'Manrope';letter-spacing:-0.01em">Smart 20</span>
+              <span style="font:500 11.5px 'Manrope';color:#63626B">renews 12 Sep</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#63626B">Data</span><span style="font:600 13.5px 'Space Grotesk'">15,8 GB left</span></div>
+                <div style="display:flex;gap:4px;height:9px"><div style="width:79%;background:#2A2A31;border-radius:999px"></div><div style="flex:1;background:#E0DFE4;border-radius:999px"></div></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#63626B">Minutes</span><span style="font:600 13.5px 'Space Grotesk';color:#D24A2C">18 of 300</span></div>
+                <div style="display:flex;gap:4px;height:9px"><div style="width:6%;background:#D24A2C;border-radius:999px"></div><div style="flex:1;background:#F6DED7;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#D24A2C">Running low</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 13px 'Manrope';color:#63626B">SMS</span><span style="font:600 13.5px 'Space Grotesk';color:#B3261E">0 of 50</span></div>
+                <div style="display:flex;gap:4px;height:9px"><div style="flex:1;background:#F9DEDC;border-radius:999px"></div></div>
+                <span style="font:600 11.5px 'Manrope';color:#B3261E">Used up</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px">
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;background:#E6E5E9;color:#17171B;font:700 13.5px 'Manrope';padding:13px 14px;border-radius:12px;cursor:pointer;min-height:46px;line-height:20px">Buy a package</button>
+              <button style="all:unset;box-sizing:border-box;flex:1;text-align:center;border:1px solid #C9C8CE;color:#17171B;font:700 13.5px 'Manrope';padding:13px 14px;border-radius:12px;cursor:pointer;min-height:46px;line-height:20px">Roaming</button>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E6E5E9;border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:600 13.5px 'Manrope'">Turkey · 10 GB</span>
+              <span style="font:500 11.5px 'Manrope';color:#63626B">eSIM ready to install</span>
+            </div>
+            <button style="all:unset;box-sizing:border-box;text-align:center;background:#17171B;color:#fff;font:700 13px 'Manrope';padding:12px 16px;border-radius:12px;cursor:pointer;min-height:44px;line-height:20px">Install</button>
+          </div>
+
+        </div>
+        <div style="flex:none;background:#EFEEF1;border-top:1px solid #E0DFE4;padding:8px 10px 6px;display:flex;justify-content:space-around">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px;border-radius:12px;background:#E6E5E9"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#17171B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21H3z"></path></svg><span style="font:700 10.5px 'Manrope';color:#17171B">Home</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63626B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg><span style="font:600 10.5px 'Manrope';color:#63626B">Plans</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63626B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"></path><path d="M8 9h8M8 13h5"></path></svg><span style="font:600 10.5px 'Manrope';color:#63626B">Orders</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 16px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63626B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg><span style="font:600 10.5px 'Manrope';color:#63626B">Profile</span></div>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center;background:#EFEEF1"><div style="width:134px;height:5px;border-radius:999px;background:#17171B;opacity:.28"></div></div>
+      </div>
+
+      <div style="width:393px;height:852px;flex:none;box-sizing:border-box;background:#131317;border:1px solid #3A3A42;border-radius:30px;overflow:hidden;display:flex;flex-direction:column;color:#F7F6F8">
+        <div style="flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px"><span style="font:700 14px 'Space Grotesk'">9:41</span><div style="display:flex;align-items:center;gap:5px"><div style="width:15px;height:10px;border-radius:2px;background:#F7F6F8"></div><div style="width:13px;height:10px;border-radius:2px;background:#F7F6F8"></div><div style="width:22px;height:11px;border-radius:3px;border:1.5px solid #F7F6F8"></div></div></div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:0 22px">
+          <div style="width:84px;height:84px;border-radius:22px;background:#D24A2C;display:flex;align-items:center;justify-content:center;align-self:flex-start">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4.5 4.5L19 7"></path></svg>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:800 25px/1.15 'Manrope';letter-spacing:-0.025em">Paid. eSIM is ready to install.</span>
+            <span style="font:500 13.5px/1.6 'Manrope';color:#A3A2AB">Turkey · 10 GB · 30 days. The plan starts counting on first connection, not now.</span>
+          </div>
+          <div style="background:#1D1D22;border-radius:22px;padding:8px 18px;display:flex;flex-direction:column">
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #2A2A31"><span style="font:500 13px 'Manrope';color:#A3A2AB">Order</span><span style="font:600 12.5px 'Space Grotesk'">8f21-4c90</span></div>
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #2A2A31"><span style="font:500 13px 'Manrope';color:#A3A2AB">Charged</span><span style="font:600 13px 'Manrope'">1 190 ₽ from balance</span></div>
+            <div style="padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:500 13px 'Manrope';color:#A3A2AB">Balance left</span><span style="font:600 12.5px 'Space Grotesk'">1 290,50 ₽</span></div>
+          </div>
+        </div>
+        <div style="flex:none;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px">
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;background:#FF8A6B;color:#3A1004;font:700 15px 'Manrope';padding:16px;border-radius:12px;cursor:pointer;min-height:52px;line-height:20px">Install eSIM</button>
+          <button style="all:unset;box-sizing:border-box;width:100%;text-align:center;color:#FF8A6B;font:700 15px 'Manrope';padding:14px;border-radius:12px;cursor:pointer;min-height:48px;line-height:20px">Later, show receipt</button>
+        </div>
+        <div style="flex:none;height:22px;display:flex;align-items:center;justify-content:center"><div style="width:134px;height:5px;border-radius:999px;background:#F7F6F8;opacity:.3"></div></div>
+      </div>
+
+      <p style="margin:0;flex:1 1 260px;min-width:0;font:400 11.5px/1.6 'Manrope';color:#8A9693;text-wrap:pretty">Identical structure to brand A: same counters, same rollback copy, same touch targets. Only palette and radii move — 36 becomes 22, 20 becomes 12, pills become rounded rectangles. Typography stays Manrope + Space Grotesk, per your call. Nothing in the layout depends on the shape scale, which is what this pair is here to prove.</p>
+
+    </div>
+  </div>
+  </sc-if>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showKit&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gallery&quot;},&quot;showBrandB&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gallery&quot;},&quot;showIcons&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gallery&quot;}}">
+class Component extends DCLogic {
+  qrGrid(dark) {
+    const n = 25, cells = [];
+    let seed = 20240812;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const on = dark ? "#0D1513" : "#141A19";
+    const isFinder = (r, c) =>
+      (r < 7 && c < 7) || (r < 7 && c > n - 8) || (r > n - 8 && c < 7);
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        let fill = false;
+        if (isFinder(r, c)) {
+          const rr = r < 7 ? r : n - 1 - r, cc = c < 7 ? c : n - 1 - c;
+          const ring = Math.max(Math.abs(rr - 3), Math.abs(cc - 3));
+          fill = ring !== 2;
+        } else if (r === 6 || c === 6) {
+          fill = (r + c) % 2 === 0;
+        } else {
+          fill = rnd() > 0.5;
+        }
+        cells.push(
+          React.createElement("div", {
+            key: r + "-" + c,
+            style: { background: fill ? on : "transparent", borderRadius: 1 },
+          })
+        );
+      }
+    }
+    return React.createElement(
+      "div",
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "repeat(25, 1fr)",
+          gridTemplateRows: "repeat(25, 1fr)",
+          gap: 1,
+          width: "100%",
+          height: "100%",
+        },
+      },
+      cells
+    );
+  }
+  renderVals() {
+    return {
+      qr: this.qrGrid(false),
+      qrDark: this.qrGrid(true),
+      showKit: this.props.showKit ?? true,
+      showBrandB: this.props.showBrandB ?? true,
+      showIcons: this.props.showIcons ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>

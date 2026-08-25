@@ -1,0 +1,103 @@
+# Backlog: a white-label eSIM account that proves the stack carries it
+
+> Role of this document: the product backlog. **One file per item in
+> [`docs/backlog/`](docs/backlog/)** — `M-NN-<slug>.md`. What lives here is the index (generated) and
+> everything that is not an item: the goal, the stages and the decisions.
+>
+> New item: copy [`docs/templates/backlog-item.md`](docs/templates/backlog-item.md), take the next
+> free `M-NN`, and run `python3 scripts/backlog_index.py` after editing.
+
+## Goal
+
+konekt is a reference build, so "done" is not "the feature works" but "the feature works and what it
+cost is visible". Two things are being demonstrated at once and they pull in different directions:
+a subscriber account good enough that its screens are worth photographing, and six toolkits each
+carrying the load it was written for on a domain that loads them without contrivance.
+
+The order below follows that second goal. The wire comes first because in a backend-driven product
+the component dictionary is the API and renaming a type later is a coordinated release of both sides.
+Money comes second because compensation is the reason petich is here at all, and a saga that cannot
+be made to fail on demand demonstrates nothing. Everything that makes the build *observable* comes
+late on purpose — not because it matters less, but because three of the four things worth observing
+do not exist until then.
+
+## Stages
+
+A stage is a field on the item, not a directory. Items are cited by id from documents in every layer,
+so re-prioritising must never move a file.
+
+| Stage id | Stage | What it is |
+|---|---|---|
+| `stage-m0-wire` | The wire and the shell | The dictionary, the design system, sign-in and one screen drawn end to end. Everything here is expensive to change later. |
+| `stage-m1-money` | Money that can be undone | The purchase saga with its confirmation and its compensated branch, and the guards that stop the event chain from being silently absent. |
+| `stage-m2-live` | Live | The broker, the outbox bridge, the realtime transport, and the eSIM wizard that gives them something to carry. |
+| `stage-m3-product` | The rest of the product | Roaming, the custom builder, the tariff change, and the second brand. |
+| `stage-m4-proof` | Proof | Conformance that cannot pass vacuously, observability in three tools, screenshots, and the gaps written down. |
+| `stage-m5-upstream` | Upstream and the box | The findings filed where the next reader will look, and the boundaries stated where the buyer will read them. |
+
+## Marks
+
+`[ ]` open · `[~]` in progress · `[x]` done · `[?]` open question · `[-]` dropped
+
+<!-- BEGIN INDEX -->
+
+## Open (30)
+
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[ ]` | Gradle skeleton on Java 25, with the six dependency lines pinned separately | P0 | M | - |
+| [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and Exposed, including the tables petich does not create | P0 | M | B-01 |
+| [B-03](docs/backlog/B-03-component-dictionary.md) `[ ]` | Fix the component dictionary: nine own wire types in one KSP module | P0 | L | B-01 |
+| [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | The design system must keep its surface roles after the theme arrives | P0 | S | B-01 |
+| [B-06](docs/backlog/B-06-otp-login.md) `[ ]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
+| [B-07](docs/backlog/B-07-home-screen.md) `[ ]` | Home: balance and counters, drawn from the server | P0 | M | B-03, B-04, B-06 |
+| [B-08](docs/backlog/B-08-purchase-saga.md) `[ ]` | The purchase saga: four interceptors, with the confirmation as a suspend | P0 | L | B-02 |
+| [B-09](docs/backlog/B-09-outbox-guard.md) `[ ]` | Refuse to boot on a repository that silently drops events | P0 | S | B-02 |
+| [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
+| [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
+| [B-10](docs/backlog/B-10-payment-mock.md) `[ ]` | A payment mock that can refuse and can be slow | P1 | S | B-08 |
+| [B-11](docs/backlog/B-11-rollback-screen.md) `[ ]` | The rollback screen states the reversal in money, not in apology | P1 | S | B-10 |
+| [B-13](docs/backlog/B-13-booblik-topics.md) `[ ]` | booblik in the compose file, with its three topics declared at startup | P1 | S | - |
+| [B-14](docs/backlog/B-14-outbox-to-booblik-bridge.md) `[ ]` | The bridge from the petich outbox to booblik | P1 | M | B-09, B-13 |
+| [B-15](docs/backlog/B-15-sse-realtime.md) `[ ]` | The realtime transport: an SSE endpoint and a client source | P1 | M | B-07 |
+| [B-17](docs/backlog/B-17-esim-order-wizard.md) `[ ]` | The eSIM order wizard, and an SM-DP+ mock that can be out of slots | P1 | L | B-08 |
+| [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
+| [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
+| [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
+| [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Write down that the iOS build reports no crashes | P1 | XS | B-26 |
+| [B-29](docs/backlog/B-29-file-upstream-issues.md) `[~]` | File U1–U5 upstream and record what came back | P1 | S | - |
+| [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
+| [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
+| [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
+| [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
+| [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
+| [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |
+| [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[ ]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
+| [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
+| [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
+
+## Closed (0)
+
+<!-- END INDEX -->
+
+## Decisions worth not re-litigating
+
+**Nothing upstream is forked.** A gap in kompot, petich, booblik, katcher, metrik or tracy goes out as
+an issue ([B-29](docs/backlog/B-29-file-upstream-issues.md)), konekt works around it in its own code,
+and the workaround carries a comment naming the issue. The reason is not politeness: a second
+implementation reading a published contract finds what the author cannot, and a fork moves that
+finding into a private diff where it dies. See
+[research-architecture](docs/research/research-architecture.md) D9.
+
+**The order of the first three items is not arbitrary.**
+[B-03](docs/backlog/B-03-component-dictionary.md) fixes the component dictionary before any screen
+exists, and [B-04](docs/backlog/B-04-design-system-forwards-surface.md) fixes the design system
+wrapper before any theme work. Both are cheap now and both are structural later — the dictionary
+because it is the API, the wrapper because the defect it guards against is invisible once there is
+enough styling to hide in.
+
+**Two guards are worth more than the features they guard.**
+[B-09](docs/backlog/B-09-outbox-guard.md) and [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md)
+both exist for the same reason: a green result that means nothing. petich drops events silently when
+handed the wrong repository, and the conformance kit passes silently when it finds nothing to check.
+Neither failure is visible from any assertion anyone naturally writes.
