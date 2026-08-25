@@ -11,7 +11,7 @@ class ApplicationSmokeTest {
     @Test
     fun `health answers ok`() =
         testApplication {
-            application { module() }
+            application { baseModule() }
 
             val response = client.get("/health")
 
@@ -22,13 +22,12 @@ class ApplicationSmokeTest {
     @Test
     fun `the real application maps a refusal, not just the test one`() =
         testApplication {
-            application { module() }
+            application { baseModule() }
 
             // ErrorContractTest builds its own application, so it proves the mapping works and not
-            // that anything installs it. This route does not exist, so Ktor's own 404 answers — and
-            // what is asserted is that the answer came through ContentNegotiation and StatusPages as
-            // configured here, rather than as a bare page. A contract written and never installed is
-            // the commonest way for one to be absent.
+            // that anything installs it. baseModule is what the real composition root calls, so
+            // asserting here is asserting about the thing that ships. A contract written and never
+            // installed is the commonest way for one to be absent.
             val response = client.get("/no-such-route")
 
             assertEquals(HttpStatusCode.NotFound, response.status)

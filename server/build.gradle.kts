@@ -42,12 +42,20 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     implementation(project(":shared:domain"))
+    implementation(project(":shared:db"))
+    implementation(project(":shared:server-http"))
+    implementation(project(":shared:components"))
+    // The feature vertical. :server composes features; a feature never sees :server.
+    implementation(project(":feature:auth-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.
     implementation(platform(libs.kompot.bom))
     implementation(libs.kompot.core)
     implementation(libs.kompot.standard)
     implementation(libs.kompot.ktor)
+    implementation(libs.kompot.auth)
+    implementation(libs.ktor.server.resources)
+    implementation(libs.ktor.server.auth)
 
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)
@@ -77,14 +85,11 @@ dependencies {
     // Test-only: the schema check asks Exposed what DDL the migrated database still needs.
     testImplementation(libs.exposed.migrationJdbc)
 
-    // The driver, the pool and the migrator: petich-postgres deliberately ships none of the three,
-    // because it takes an Exposed Database and does not know which DBMS is underneath.
-    implementation(libs.postgresql)
-    implementation(libs.hikari)
-    implementation(libs.flyway.core)
-    // A separate coordinate since Flyway 10. Without it the Postgres dialect is simply absent and
-    // the failure names the JDBC URL rather than the missing module.
-    implementation(libs.flyway.postgresql)
+    // petich-postgres deliberately ships no driver, pool or migrator, because it takes an Exposed
+    // Database and does not know which DBMS is underneath. All three come from :shared:db.
+    // The driver has to be on the RUNTIME classpath of whatever actually opens a connection, even
+    // though the code that opens it lives in :shared:db.
+    runtimeOnly(libs.postgresql)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
@@ -94,7 +99,6 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.koin.test)
-    testImplementation(libs.testcontainers.core)
+    testImplementation(testFixtures(project(":shared:db")))
     testImplementation(libs.testcontainers.junit)
-    testImplementation(libs.testcontainers.postgresql)
 }

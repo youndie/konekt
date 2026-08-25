@@ -33,11 +33,7 @@ class RunCatchingUsageTest {
     private val forbidden = Regex("""\brunCatching\s*[({]""")
 
     @OptIn(kotlin.io.path.ExperimentalPathApi::class)
-    private fun sources() =
-        roots
-            .map(::Path)
-            .filter { it.toFile().isDirectory }
-            .flatMap { root -> root.walk().filter { it.extension == "kt" }.toList() }
+    private fun sources() = io.konekt.testing.productionSources()
 
     @Test
     fun `nothing uses plain runCatching`() {
@@ -61,7 +57,7 @@ class RunCatchingUsageTest {
         // that. The roots are relative to the module, so a change of test working directory would
         // silently empty this guard.
         val files = sources()
-        assertTrue(files.size >= 10, "found ${files.size} source files across $roots — are the paths right?")
+        assertTrue(files.size >= 10, "found ${files.size} production source files — are the paths right?")
         assertTrue(
             files.any { it.fileName.toString() == "SuspendRunCatching.kt" },
             "the shared domain is not in the scanned set, so the rule it defines is unguarded",

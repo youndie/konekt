@@ -123,6 +123,9 @@ ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
+# The multiplatform half: the @Resource annotation and the types both sides share. Declared once in a
+# feature's -shared-api module so a path exists in exactly one place.
+ktor-resources = { module = "io.ktor:ktor-resources", version.ref = "ktor" }
 ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 
 # --- kompot ------------------------------------------------------------------------------------

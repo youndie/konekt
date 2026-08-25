@@ -10,6 +10,12 @@ import org.jetbrains.exposed.v1.core.Table
 //
 // They live under `io.konekt` because `exposed.migrations.tablesPackage` takes a single package
 // root, and every feature module's tables have to sit under the same one.
+//
+// AND THEY LIVE IN A MODULE OF THEIR OWN, which is what the first feature forced. `subscriber` and
+// `account` belong to no single feature — sign-in creates them, balance reads them, orders spend
+// against them — so a feature that declared its own copy would be a second schema that agrees with
+// this one until it does not. One declaration, and both `:server` and every feature's `-server-data`
+// depend on it.
 
 object SubscriberTable : Table("subscriber") {
     val id = varchar("id", 64)

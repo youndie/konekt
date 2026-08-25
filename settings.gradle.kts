@@ -55,6 +55,23 @@ include(":shared:domain")
 // rather than grown one screen at a time.
 include(":shared:components")
 
+// The Exposed declarations of the tables no single feature owns — subscriber and account. In a
+// module of its own because more than one feature reads them, and a second declaration of one table
+// is two schemas that agree until they do not.
+include(":shared:db")
+
+// The HTTP contract every feature's routes share: who is acting, the owner check, and the mapping
+// from a refusal to a status. In a module rather than in :server because a feature's routing cannot
+// depend on the thing that composes it.
+include(":shared:server-http")
+
+// The first feature vertical. Four modules rather than a package, because the layering is then the
+// compiler's business: -server-domain cannot see Exposed, so it cannot accidentally depend on it,
+// which is the entire reason the repository interface exists. See research-stack D12.
+include(":feature:auth-shared-api")
+include(":feature:auth-server-domain")
+include(":feature:auth-server-data")
+
 // The wire specification of THIS build: the toolkit's spec modules plus konekt's own, and the
 // committed JSON Schema files another implementation would read. JVM-only, because kompot-spec is.
 include(":shared:spec")

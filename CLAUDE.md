@@ -87,6 +87,23 @@ proves nothing.
 `build/` is in the ignore list because the replica deletes whatever the Mac does not have, and the
 symptom of it not being ignored is a build error that reads like a compilation failure.
 
+## How a feature is laid out
+
+A feature is a vertical of modules, not a package — `feature/<name>-shared-api`,
+`-server-domain`, `-server-data`, and a client module when there is one. The layering is then the
+compiler's business: `-server-domain` cannot see Exposed, so it cannot accidentally depend on it,
+which is the entire reason the repository interface exists. `feature/auth-*` is the worked example.
+
+**A feature never depends on `:server`.** `:server` composes features. Anything more than one feature
+needs lives in a shared module instead:
+
+| Module | What is in it |
+|---|---|
+| `:shared:domain` | `Money`, `KonektException`, `suspendRunCatching`, `KonektClock` — KMP, no framework |
+| `:shared:db` | the tables no feature owns (`subscriber`, `account`), the migrations, `DatabaseFactory`, and the Postgres test harness as **test fixtures** |
+| `:shared:server-http` | the principal, `ownedOr404`, and the `StatusPages` mapping |
+| `:shared:components` | the nine wire types of the component dictionary |
+
 ## Rules that are cheap to follow and expensive to discover
 
 - **Never `call.respond` a `KompotComponent`.** It drops the `"type"` discriminator on the root of the
@@ -98,6 +115,9 @@ symptom of it not being ignored is a build error that reads like a compilation f
   apart resolve into a combination nobody ever built.
 - **katcher is three version lines**, not one: server, `client`, and `client-android` plus the Gradle
   plugin. They are separate entries in the catalogue and the catalogue says why.
+- **`authenticate { }` proves the caller is somebody, not that the thing is theirs.** The owner check
+  lives in the use case beside the principal, through `ownedOr404` — which answers **404 and not
+  403**, because a 403 confirms the resource exists and hands out an enumeration oracle.
 - **An issue outside `youndie/*` is asked about first.** Our own repositories are the working
   arrangement and need no permission; anybody else's tracker costs them time and cannot be quietly
   withdrawn. Write the finding into

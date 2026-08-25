@@ -21,12 +21,10 @@ class ClockUsageTest {
 
     private val forbidden = Regex("""\bClock\.System\b""")
 
+    // Every module's production sources, discovered rather than listed: a module added later is
+    // covered without anybody remembering to add it here, which is the failure mode of a list.
     @OptIn(kotlin.io.path.ExperimentalPathApi::class)
-    private fun sources() =
-        Path("src/main/kotlin")
-            .walk()
-            .filter { it.extension == "kt" }
-            .toList()
+    private fun sources() = io.konekt.testing.productionSources()
 
     @Test
     fun `only the clock implementation reads the system clock`() {
@@ -50,7 +48,7 @@ class ClockUsageTest {
         // allowance covering nothing — and the first assertion would still pass, having found no
         // offenders because it found nothing at all.
         val files = sources()
-        assertTrue(files.size >= 3, "found ${files.size} source files — is the path right?")
+        assertTrue(files.size >= 10, "found ${files.size} source files — is the path right?")
 
         allowed.forEach { name ->
             val file = files.singleOrNull { it.fileName.toString() == name }

@@ -1,6 +1,7 @@
 package io.konekt.db
 
 import io.konekt.db.tables.konektCoreTables
+import io.konekt.feature.auth.server.data.OtpChallengeTable
 import io.konekt.testing.PostgresHarness
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.Table
@@ -42,7 +43,7 @@ class KonektSchemaTest {
 
         val required =
             transaction(database) {
-                MigrationUtils.statementsRequiredForDatabaseMigration(*(petichTables + konektCoreTables).toTypedArray())
+                MigrationUtils.statementsRequiredForDatabaseMigration(*allTables.toTypedArray())
             }
 
         // Strict equality, with no exemption.
@@ -63,12 +64,17 @@ class KonektSchemaTest {
         )
     }
 
+    // Every table in the build, so a feature's tables are covered by the same check as the core's.
+    // A feature that adds a table and not a line here is a feature whose migration nobody verified.
+    private val allTables: List<Table> get() = petichTables + konektCoreTables + listOf(OtpChallengeTable)
+
     @Test
     fun `the schema test is looking at something`() {
         // The guard on the guard. statementsRequiredForDatabaseMigration returns an empty list both
         // when everything matches and when it was handed no tables, and the first assertion cannot
-        // tell those apart. Seven is petich's four plus konekt's three; the number is asserted here
-        // so that a table dropped from either list fails loudly rather than shrinking the check.
-        assertEquals(7, (petichTables + konektCoreTables).size)
+        // tell those apart. Eight is petich's four, konekt's three core tables and the auth
+        // feature's one; the number is asserted here so that a table dropped from any list fails
+        // loudly rather than shrinking the check.
+        assertEquals(8, allTables.size)
     }
 }

@@ -41,12 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (31)
+## Open (32)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | Guard that the design system keeps its surface roles after the theme arrives | P0 | S | B-01 |
-| [B-06](docs/backlog/B-06-otp-login.md) `[ ]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
+| [B-06](docs/backlog/B-06-otp-login.md) `[~]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
 | [B-07](docs/backlog/B-07-home-screen.md) `[ ]` | Home: balance and counters, drawn from the server | P0 | M | B-03, B-04, B-06 |
 | [B-08](docs/backlog/B-08-purchase-saga.md) `[ ]` | The purchase saga: four interceptors, with the confirmation as a suspend | P0 | L | B-02 |
 | [B-09](docs/backlog/B-09-outbox-guard.md) `[ ]` | Refuse to boot on a repository that silently drops events | P0 | S | B-02 |
@@ -67,6 +67,7 @@ so re-prioritising must never move a file.
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-34](docs/backlog/B-34-error-contract.md) `[~]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[~]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
+| [B-38](docs/backlog/B-38-refresh-and-logout.md) `[ ]` | Refresh and logout: a token pair that can be ended | P1 | M | B-06 |
 | [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
 | [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
