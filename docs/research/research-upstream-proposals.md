@@ -304,6 +304,41 @@ konekt's own plan; the amendments are in [research-architecture](research-archit
 
 ---
 
+## Second round, filed while building
+
+Found by doing the work rather than by reading, which is the difference between these three and the
+first five: each one blocked or corrupted something that was being built at the time.
+
+| | Repository | Ask | Blocks konekt | Filed |
+|---|---|---|---|---|
+| U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | **yes** — worked around reflectively | [petich#8](https://github.com/youndie/petich/issues/8) |
+| U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | no — filtered in our schema check | [petich#9](https://github.com/youndie/petich/issues/9) |
+| U8 | Exposed | `generateMigrations` omits a table when two tables reference the same parent, and its filenames collide | no — the draft is reviewed anyway | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) |
+
+**U6 is the one that mattered.** `ExposedPetichRepository` and its three siblings compile into the
+default package — in `petich-postgres-0.1.0.6.jar` the classes sit at the root of the archive with no
+directory. Kotlin cannot import from the default package and neither can Java, so no file in a named
+package can reference them: not by import, and not by fully qualified name, because there is none to
+write. That is the module's entire purpose, unreachable from every application that puts its own code
+in a package.
+
+It compiles and publishes green upstream because nothing there notices: `petich-postgres` has no
+tests, and a same-module reference from another default-package file resolves fine. The failure exists
+only from outside — the shape [proba](https://github.com/youndie/proba) exists for.
+
+konekt constructs the repository by name and casts to `OutboxAwarePetichRepository`, which *is*
+packaged. Three lines, no duplicated logic; the alternative was reimplementing the optimistic lock,
+the outbox batch insert and the expiry query. What it costs is the compiler's opinion on the
+constructor, which is why `PetichStorageTest` builds a real repository rather than a double.
+
+**U7 and U8 compound.** petich asks for two indexes in column comments and declares neither, so
+Exposed's view of the schema does not contain them — and Exposed's view is what `generateMigrations`
+and `MigrationUtils` compare against. A consumer who follows the comments and then adopts the
+standard Exposed workflow is handed a migration that deletes the two indexes the comments asked for,
+on the busiest table in the system. It applies cleanly and costs a sequential scan per sweep.
+
+---
+
 ## What came back
 
 Filed on 2026-08-25, all five closed the same day, and each verified in the source and in the

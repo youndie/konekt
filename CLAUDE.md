@@ -131,6 +131,21 @@ symptom of it not being ignored is a build error that reads like a compilation f
   `generatedKonektSerializersModule` and asserts it did not come back as an `UnknownComponent`.
   Adding a component means adding it to `konektWireNames` and to `konektDictionary` — the tests walk
   both and fail if they disagree.
+- **The database is Postgres 18 in a Testcontainer, never H2 and never a mock.** `:server:test` needs
+  Docker, so it runs on the Linux box like everything else. `PostgresHarness` starts one container
+  for the whole JVM and `truncateAll()` runs between tests.
+- **`KonektSchemaTest` is what proves the migrations are complete**, not review: it asks Exposed,
+  after Flyway has run, whether any DDL is still required for petich's four tables and konekt's
+  three. It ignores `DROP INDEX` (petich declares no index its own comments ask for —
+  youndie/petich#9) and asserts each such index by name instead, so the exemption cannot hide one.
+- **Never write a migration by hand from the generator's output.** `scripts/generate-migration.sh`
+  drafts one; the draft breaks a rolling deploy by construction, collides with itself on filenames,
+  and silently omits a table when two tables reference the same parent
+  (JetBrains/Exposed#2897). Rewrite it as an expand/contract pair, renumber it, and let the tests
+  decide.
+- **`ExposedPetichRepository` cannot be imported** — it is in the default package
+  (youndie/petich#8). Go through `io.konekt.db.PetichRepositories`, and delete that file when the
+  upstream fix lands.
 - **A BOM does not reach the KSP processor classpath.** That configuration needs its own
   `add("kspCommonMainMetadata", platform(libs.kompot.bom))`, or the coordinate resolves with no
   version and the error ends in a bare colon.

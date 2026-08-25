@@ -1,7 +1,7 @@
 ---
 id: B-32
 title: "Repository tests run against a real Postgres, and use cases against MockK"
-status: open
+status: wip
 priority: P0
 size: S
 stage: stage-m0-wire
@@ -33,6 +33,12 @@ feature rather than by whoever writes it. Two seams, two tools, and the split is
   parameters through the container and fails at runtime while the compiler says nothing.
 - The rejected alternative is H2 everywhere for speed. It buys a suite that is green about H2.
 - Not covered: performance testing. Nothing here measures anything.
+- **Half delivered by `B-02`**, which could not be accepted without it: `PostgresHarness` exists —
+  one Postgres 18 container for the whole test JVM, migrated by the real Flyway scripts, with
+  `truncateAll()` between tests. What is left is the MockK use-case seam (no use case exists yet),
+  Turbine (no `Flow` exists yet) and the Koin graph test (no graph exists yet). The harness landed
+  first because a schema cannot be checked without a database, and the rest lands with the code it
+  is for.
 
 - AC: a repository test creates its schema through the real migrations in a container and passes.
 - AC: the Koin graph test fails when a binding is removed, naming the missing type.

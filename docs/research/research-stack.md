@@ -231,6 +231,37 @@ the SDK, which is installed. The two states are indistinguishable from the messa
 `xcrun simctl list devices available` separates them.
 
 
+### 1.9 The migration generator omits a table and says nothing, and it cannot run where its output is wanted
+
+Measured on this repository's own schema while doing `B-02`, with the Exposed Gradle plugin `1.4.0`
+against Postgres 18 through `testContainersImageName`.
+
+| Fact | How it showed up |
+|---|---|
+| the plugin id is `org.jetbrains.exposed.plugin`, **not** `…plugin.gradle` | `Plugin … was not found`; the marker artefact is `org.jetbrains.exposed.plugin:org.jetbrains.exposed.plugin.gradle.plugin` |
+| the output directory property is `fileDirectory`, and `fileExtension` needs the dot — `"sql"` yields `…SUBSCRIBERsql` | `Unresolved reference 'migrationsDir'`, then a file Flyway would not pick up |
+| with **two tables referencing the same parent, one of them is not emitted**, exit code 0 | three tables in, two out; removing the sibling brings the missing one back |
+| versioned filenames are stamped to the **second**, so one run writes several files with the same version | `V20260825104001__CREATE_TABLE_PROBE.sql` beside `V20260825104001__CREATE_TABLE_SUBSCRIBER.sql`, which Flyway refuses outright |
+| the plugin's own Flyway step did not find `db/migration` | `No migrations found. Are your locations set up correctly?` — so it diffed against an empty database and drafted a schema that already exists |
+
+Reported as [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897).
+
+**Consequence 1.** The draft is a draft in a second sense. D22 already said the generator's *form* is
+unsafe — the shortest SQL that equalises two schemas is `DROP COLUMN` and `RENAME`, which is what
+breaks a rolling deploy. Now its *contents* are unreliable too, so the review has to check
+completeness as well as safety, which is the part a reviewer is worst at. What actually catches it is
+a machine: `KonektSchemaTest` asks Exposed, after Flyway has run, whether any DDL is still required.
+That check found the missing table; nothing else did or could.
+
+**Consequence 2 — a correction to D23.** That decision said `generateMigrations` is a Mac-local task,
+because a file written on the mutagen replica is reverted. That is true and it is not the whole
+constraint: the task needs **Docker**, and there is no Docker daemon on the Mac — only the client
+binary. So the task cannot run on the Mac at all, and cannot usefully run on the Linux box either.
+The resolution is `scripts/generate-migration.sh`: run it there, read the files back here. The
+general shape is worth keeping — *two constraints that are each satisfiable can be jointly
+unsatisfiable*, and the discovery cost was one failed run each way.
+
+
 ---
 
 ## 2. Decisions
@@ -467,6 +498,13 @@ written on the replica are reverted on the next sync. Its Testcontainers mode is
 at all — it applies the committed migrations to a throwaway Postgres and diffs against that, so the
 draft accounts for everything already in `db/migration` instead of against whatever a developer's
 local database happens to hold.
+
+**Corrected while doing `B-02` (§1.9).** Both halves of that paragraph were wrong in the same
+direction. The task cannot run on the Mac, because it needs a Docker daemon and the Mac has only the
+client binary; and its Testcontainers mode did **not** apply the committed migrations — it logged
+`No migrations found. Are your locations set up correctly?` and diffed against an empty database. So
+it runs on the Linux box through `scripts/generate-migration.sh`, which copies the drafts back, and
+the draft is checked against reality by `KonektSchemaTest` rather than trusted.
 
 
 ---

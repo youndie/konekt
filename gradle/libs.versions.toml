@@ -188,6 +188,9 @@ tracy-agent = { module = "ru.workinprogress.tracy:agent", version.ref = "tracyAg
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+# Where MigrationUtils lives. SchemaUtils.statementsRequiredToActualizeScheme is deprecated in favour
+# of it, and the deprecation names this coordinate — which is how the schema test found it.
+exposed-migrationJdbc = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
 exposed-kotlinDatetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 # A separate coordinate since Flyway 10: without it the Postgres dialect is simply absent and the
@@ -224,4 +227,4 @@ androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.lib
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 # Published to Maven Central, not to the Gradle Plugin Portal.
-exposedMigrations = { id = "org.jetbrains.exposed.plugin.gradle", version.ref = "exposedPlugin" }
+exposedMigrations = { id = "org.jetbrains.exposed.plugin", version.ref = "exposedPlugin" }

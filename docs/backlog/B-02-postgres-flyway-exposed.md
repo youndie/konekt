@@ -1,7 +1,7 @@
 ---
 id: B-02
 title: "Postgres, Flyway and the Exposed plugin, including the tables petich does not create"
-status: open
+status: done
 priority: P0
 size: M
 stage: stage-m0-wire
@@ -45,10 +45,46 @@ the shapes petich's repositories read, and the domain schema sits beside them.
   `subscriber`, `account`, `esim`. It also does not cover the test harness — that is `B-32`, and this
   item's acceptance runs on it.
 
-- AC: a clean database plus `flywayMigrate` yields a schema a petich saga runs against, verified by a
-  test that starts a saga and reads its row.
-- AC: the migration set is replayable from empty on the Postgres major the deployment runs, not on H2.
-- Anchors: `server/src/main/resources/db/migration/`, `server/src/main/kotlin/io/konekt/db/`.
+- AC ✅: `PetichStorageTest` runs a real saga through `PetichEngine` against the migrated schema and
+  reads the row back through a **second** repository instance — so the assertion is about what
+  Postgres holds, not about the object the engine returned.
+- AC ✅: Postgres 18 in a Testcontainer, the deployment's major, migrated by the real Flyway scripts.
+  No H2 anywhere.
+- AC ✅, and this one earned its keep immediately: `KonektSchemaTest` asks Exposed — after Flyway has
+  run — whether any DDL is still required for petich's four tables and konekt's three. That is a
+  machine comparing the SQL against the Table definitions, which is the only way to check column
+  types, lengths, nullability, defaults and constraint names without a third description that is
+  wrong in its own way. It caught a missing table the generator had silently omitted, and a `DEFAULT`
+  that had drifted.
+- AC ✅ (the question this item was told to settle): `tablesPackage` is a single package root and the
+  plugin does scan below it. The answer that mattered more is that the generator cannot be trusted —
+  see below.
+- Anchors: `server/src/main/resources/db/migration/`, `server/src/main/kotlin/io/konekt/db/`,
+  `server/src/test/kotlin/io/konekt/db/`, `scripts/generate-migration.sh`.
+
+## What this item ran into
+
+**petich's Exposed repositories are unreachable.** All four compile into the default package, so no
+file in a named package can reference them — the module's whole purpose, unusable from any
+application. Filed as [petich#8](https://github.com/youndie/petich/issues/8); konekt constructs the
+repository by name and casts to the packaged interface (`PetichRepositories`), three lines with the
+issue named in a comment.
+
+**The migration generator omits a table and reports success.** With two tables referencing the same
+parent, one of them is simply not emitted — [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897).
+Its filenames also collide, being stamped to the second, and Flyway refuses a set with duplicate
+versions. So `generateMigrations` produces a draft in two senses, and `KonektSchemaTest` is what
+makes the draft safe to use.
+
+**`generateMigrations` can run on neither machine alone.** It needs Docker, which exists only on the
+Linux box, and it writes files, which the one-way mutagen replica reverts. `scripts/generate-migration.sh`
+runs it there and reads the drafts back here — and corrects
+[research-stack](../research/research-stack.md) D23, which had said the task was Mac-local.
+
+**petich declares no index its own comments ask for**, so an Exposed-driven diff proposes dropping
+them ([petich#9](https://github.com/youndie/petich/issues/9)). The schema check ignores `DROP INDEX`
+for that reason and asserts each index's presence by name instead, so the exemption cannot hide a
+missing one.
 
 Background: [research-architecture](../research/research-architecture.md) §1.7,
-[research-stack](../research/research-stack.md) §1.2, §1.5, D16, D23.
+[research-stack](../research/research-stack.md) §1.2, §1.5, §1.9, D16, D23.
