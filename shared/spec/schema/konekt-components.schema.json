@@ -1,0 +1,460 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kompot.workinprogress.ru/schema/konekt-components.schema.json",
+  "title": "konekt-components",
+  "description": "The nine component types konekt adds to the kompot wire: counters, plans, eSIM, orders and feedback.",
+  "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
+  "x-kompot-contributes": {
+    "KompotComponent": {
+      "banner": "#/$defs/KompotComponentBanner",
+      "esim_card": "#/$defs/KompotComponentEsimCard",
+      "esim_qr": "#/$defs/KompotComponentEsimQr",
+      "order_row": "#/$defs/KompotComponentOrderRow",
+      "plan_card": "#/$defs/KompotComponentPlanCard",
+      "skeleton": "#/$defs/KompotComponentSkeleton",
+      "snackbar": "#/$defs/KompotComponentSnackbar",
+      "step_meter": "#/$defs/KompotComponentStepMeter",
+      "usage_counter_card": "#/$defs/KompotComponentUsageCounterCard"
+    }
+  },
+  "$defs": {
+    "KompotComponentBanner": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "banner",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "banner"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "text": {
+          "type": "string"
+        },
+        "tone": {
+          "type": "string"
+        },
+        "actionText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "text"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentEsimCard": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "esim_card",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "esim_card"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "label": {
+          "type": "string"
+        },
+        "iccid": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "statusText": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "label",
+        "iccid",
+        "status",
+        "statusText"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentEsimQr": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "esim_qr",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "esim_qr"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "payload": {
+          "type": "string"
+        },
+        "captionText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manualCodeText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "payload"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentOrderRow": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "order_row",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "order_row"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "reference": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "dateText": {
+          "type": "string"
+        },
+        "amountText": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "statusText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "noteText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "reference",
+        "title",
+        "dateText",
+        "amountText",
+        "status"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentPlanCard": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "plan_card",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "plan_card"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "priceText": {
+          "type": "string"
+        },
+        "quotaTexts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "zoneText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "badgeText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "title",
+        "priceText"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentSkeleton": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "skeleton",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "skeleton"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "shape": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "id"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentSnackbar": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "snackbar",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "snackbar"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "text": {
+          "type": "string"
+        },
+        "tone": {
+          "type": "string"
+        },
+        "actionText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "text"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentStepMeter": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "step_meter",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "step_meter"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "current": {
+          "type": "integer"
+        },
+        "total": {
+          "type": "integer"
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "current",
+        "total"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentUsageCounterCard": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "usage_counter_card",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "usage_counter_card"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "valueText": {
+          "type": "string"
+        },
+        "captionText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "progress": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "title",
+        "valueText"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

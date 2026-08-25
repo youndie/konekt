@@ -1,7 +1,7 @@
 ---
 id: B-37
 title: "No iOS test is executed by anything, and the build says nothing about it"
-status: open
+status: wip
 priority: P1
 size: S
 stage: stage-m0-wire
@@ -23,7 +23,13 @@ itself: a skipped task and a passing task look the same in a summary line.
   and its own CI job, never a thing `build` is assumed to have covered. A check folded into a target
   that succeeds without it is a check that quietly stops existing.
 - **The runtime is the machine owner's call, not a build step.** `xcodebuild -downloadPlatform iOS`
-  is several gigabytes; it is asked for, not run silently.
+  is several gigabytes; it is asked for, not run silently. **Done on this Mac on 2026-08-25** — iOS
+  27.0 — and it was necessary and not sufficient: with the runtime installed and no simulator
+  *device* created, the task still fails with *"Check that requested SDK is installed"*, which blames
+  the SDK that is installed. `xcrun simctl create <name> <devicetype> <runtime>` is the other half,
+  and only `xcrun simctl list devices available` tells the two states apart.
+- **It runs now**: `:shared:components:iosSimulatorArm64Test` executes six tests, none skipped, on
+  the same dictionary the JVM runs. What is left is CI, which has no Mac runner with a runtime.
 - **A job that is always red proves nothing and hides real breakage**, so the iOS CI job is added
   *when* a runner can run it, and until then this item stays open and named rather than being a
   green workflow that never executed a test.

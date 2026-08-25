@@ -49,3 +49,12 @@ include(":server")
 // must be able to name; JVM plus the three iOS targets, with Android joining when the client module
 // does.
 include(":shared:domain")
+
+// The component dictionary: the nine wire types this product owns, in one KSP module. In a
+// backend-driven product the dictionary IS the API, which is why it is fixed before the first screen
+// rather than grown one screen at a time.
+include(":shared:components")
+
+// The wire specification of THIS build: the toolkit's spec modules plus konekt's own, and the
+// committed JSON Schema files another implementation would read. JVM-only, because kompot-spec is.
+include(":shared:spec")

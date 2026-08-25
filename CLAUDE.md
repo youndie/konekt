@@ -64,11 +64,19 @@ This repository is a mutagen session (one-way replica, alpha here, beta `konekt`
 | `compileKotlinIosArm64` / `IosX64` / `IosSimulatorArm64` | **run** — Kotlin/Native cross-compiles the Apple klibs |
 | `linkDebugTestIos*`, `iosX64Test`, `iosSimulatorArm64Test` | **SKIPPED**, inside `BUILD SUCCESSFUL` |
 
-So a green build means the Apple code *compiles*. It says nothing about any Apple test, because a
-skipped task and a passing one read the same in the summary. The iOS test run is a separate named
-command — and today it fails on this Mac with "Xcode does not support simulator tests", because no
-simulator runtime is installed. **Nothing runs the iOS tests right now**; that is `B-37`, not an
-assumption.
+So a green build means the Apple code *compiles*. It says nothing about any Apple test: Gradle warns
+(`w: ⚠️ Native task 'iosSimulatorArm64Test' is disabled`), but the build succeeds and the standard
+advice attached to that warning is a setting that silences it. The iOS test run is a separate named
+command, on the Mac:
+
+```bash
+LOCAL=1 ./gradlew :shared:components:iosSimulatorArm64Test
+```
+
+It works as of 2026-08-25: iOS 27.0 runtime plus a simulator device. **Both are needed** — with the
+runtime installed and no device created, the task fails with "Check that requested SDK is installed",
+which blames the SDK that is installed. `xcrun simctl list devices available` is what tells the two
+apart. CI still has no Mac runner with a runtime; that is `B-37`.
 
 **Everything Apple stays on the Mac** — `iosSimulatorArm64Test`, `xcodebuild`, the simulator, the
 screenshot tasks (`LOCAL=1 ./gradlew …` gets past the WSL hook). So does **`generateMigrations`**, and so does every other task that writes files:
@@ -116,6 +124,18 @@ symptom of it not being ignored is a build error that reads like a compilation f
   `executeInTransaction=false`, *and* `flyway.postgresql.transactional.lock=false`. With only the
   first, Flyway's own lock deadlocks against the index build and the migration hangs — which during a
   deploy reads as a slow rollout.
+- **A component is registered by KSP, so `build` proves nothing about the dictionary.**
+  `:shared:components` switches off every per-target KSP task so generation happens once against the
+  common metadata, and a disabled KSP task is the classic way to get a green and empty build. What
+  proves it is `KonektRegistrationTest`, which round-trips **each** of the nine through
+  `generatedKonektSerializersModule` and asserts it did not come back as an `UnknownComponent`.
+  Adding a component means adding it to `konektWireNames` and to `konektDictionary` — the tests walk
+  both and fail if they disagree.
+- **A BOM does not reach the KSP processor classpath.** That configuration needs its own
+  `add("kspCommonMainMetadata", platform(libs.kompot.bom))`, or the coordinate resolves with no
+  version and the error ends in a bare colon.
+- **Anything that reads a generated directory must declare the dependency**, ktlint included —
+  excluding generated files from the *check* does not remove the directory from the task's *inputs*.
 - **A green check that visited nothing is the failure mode here**, twice over: the conformance kit
   passes silently when it finds no targets, and petich completes sagas silently when it is dropping
   their events. Both have their own backlog item and both assert on coverage rather than on a verdict.

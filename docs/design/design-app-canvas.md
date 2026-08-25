@@ -49,8 +49,9 @@ a client-side shape constant cheap rather than dangerous.
 ## The component dictionary konekt has to own
 
 Everything below is drawn in section 06 and has no wire type in the toolkit. These are konekt's own
-components, in one KSP module with its own `kompotModuleTag`. The wire names are a proposal, fixed
-before the first screen — see backlog `B-03`.
+components, in one KSP module with its own `kompotModuleTag`. **Built and fixed in `B-03`** — the
+names below are what is on the wire, and `shared/spec/schema/konekt-components.schema.json` is
+generated from the types themselves.
 
 | Canvas element | Proposed wire type | Why it is not a toolkit component |
 |---|---|---|
@@ -64,7 +65,18 @@ before the first screen — see backlog `B-03`.
 | step meter | `step_meter` | "step 3 of 4"; the wizard's own progress, not a generic progress bar |
 | skeleton | `skeleton` | the loading state of a list row, drawn rather than absent |
 | unknown block | replaces `UnknownComponent` | not a new wire type — a replacement renderer, see research §1.4 |
-| switch | `switch_input` | `kompot-forms` has no switch; see upstream [U3](../research/research-upstream-proposals.md#u3) |
+
+Nine, not ten. The tenth was a switch, and it is a toolkit component after all:
+[kompot#82](https://github.com/youndie/kompot/issues/82) closed on 2026-08-25 and
+`CheckboxInputComponent` now carries `variant`, with `KompotCheckboxVariants.SWITCH` the word the
+standard renderer acts on. A settings toggle is `checkbox_input` with that variant, and no component
+of ours.
+
+The nine carry **pre-formatted text**, not numbers with units — `valueText` is `"15,8 GB left"` and
+`priceText` is `"1 190 ₽"`. That is the backend-driven bargain taken deliberately: the server builds
+the screen, so the server formats, and a client that cannot format money cannot format it
+inconsistently. The exceptions are geometry rather than language — a counter's `progress` fraction and
+a step meter's two integers — because a bar and a "3 of 4" cannot be drawn from a sentence.
 
 ## What the canvas asserts that the build must be able to reach
 

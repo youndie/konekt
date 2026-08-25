@@ -185,6 +185,12 @@ any Apple test passed, because the test tasks are skipped rather than absent, an
 indistinguishable from a passing one in the summary line. The iOS test run is therefore a **separate,
 named command**, not something anybody may assume `build` covered.
 
+*Corrected while doing `B-03`*: the build is not entirely silent about it — Gradle emits
+`w: ⚠️ Native task 'iosSimulatorArm64Test' is disabled … simulator tests require macOS` for each one.
+That is better than nothing and is still not a gate: it is a warning in a build that succeeds, it
+appears once per target per module, and the standard advice attached to it is a property that turns
+it off. The conclusion is unchanged; the earlier wording here overstated it.
+
 **Consequence 2.** Right now that separate command fails on the missing simulator runtime, so **no
 iOS test in this repository is executed by anything** — not by CI, not locally. The code is compiled
 and unrun. The fix is a several-gigabyte `xcodebuild -downloadPlatform iOS`, which is the machine
@@ -194,6 +200,35 @@ assumption.
 This is worth separating from [research-architecture](research-architecture.md) §1.9, which says the
 iOS build reports no *crashes*. That is about production. This is about the tests, and the two gaps
 compound: an iOS defect is neither caught before release nor reported after it.
+
+
+### 1.8 Three things the build teaches only by failing, found while building the dictionary
+
+Measured on `:shared:components`, the first module in this repository with KSP and more than one
+target.
+
+| Fact | How it showed up |
+|---|---|
+| a BOM constrains only the configuration it is declared in, and the KSP processor classpath is its own configuration | `Could not find io.github.youndie:kompot-registry-processor:` — trailing colon, nothing after it |
+| excluding generated files from ktlint's **check** does not remove the generated directory from the task's **inputs** | Gradle's undeclared-dependency validation failed `runKtlintCheckOverCommonMainSourceSet` against `kspCommonMainKotlinMetadata` |
+| `platform(...)` does not exist on the receiver of a KMP source-set `dependencies { }` block | `Unresolved reference 'platform'`, which names the function rather than the receiver |
+| an installed simulator **runtime** with no simulator **device** still reads as a missing SDK | `Xcode does not support simulator tests for ios_simulator_arm64. Check that requested SDK is installed.` after `xcodebuild -downloadPlatform iOS` had succeeded |
+
+**Consequence 1.** `add("kspCommonMainMetadata", platform(libs.kompot.bom))` goes beside the processor
+coordinate. Without it the only alternative is writing a version literal for one coordinate, which is
+the single thing `B-01`'s rule exists to prevent — so the rule survives, at the cost of one line that
+looks redundant and is not.
+
+**Consequence 2.** The `dependsOn("kspCommonMainKotlinMetadata")` matcher covers ktlint tasks as well
+as compile and sources-jar tasks. The general shape: **anything that reads a generated directory has
+to declare the dependency, whether or not it acts on what it reads.**
+
+**Consequence 3.** Inside a source-set block the form is `project.dependencies.platform(...)`.
+
+**Consequence 4.** `xcodebuild -downloadPlatform iOS` is necessary and not sufficient. A device has to
+exist too — `xcrun simctl create <name> <devicetype> <runtime>` — and until one does, the error blames
+the SDK, which is installed. The two states are indistinguishable from the message, and only
+`xcrun simctl list devices available` separates them.
 
 
 ---
