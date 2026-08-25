@@ -27,6 +27,17 @@ class OrderScreen(
     val orderId: String,
 )
 
+@Resource("/api/v1/screens/history")
+class HistoryScreenResource {
+    // The next page. A resource of its own rather than a query parameter on the screen, because the
+    // two answer different things: one is a screen to draw, the other is a page of items to append.
+    @Resource("page")
+    class Page(
+        val parent: HistoryScreenResource = HistoryScreenResource(),
+        val cursor: String? = null,
+    )
+}
+
 @Serializable
 data class CreatePurchaseRequest(
     val planId: String,

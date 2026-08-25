@@ -3,11 +3,13 @@ package io.konekt.feature.purchase.server.data
 import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
+import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
 import io.konekt.feature.purchase.server.domain.LoadOrderScreenUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
+import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
@@ -30,6 +32,7 @@ fun Route.purchaseRoutes() {
     val confirmPurchase by inject<ConfirmPurchaseUseCase>()
     val findOrder by inject<FindOrderUseCase>()
     val loadOrderScreen by inject<LoadOrderScreenUseCase>()
+    val loadHistory by inject<LoadHistoryUseCase>()
     val json by inject<Json>()
 
     post<Purchases> {
@@ -52,6 +55,18 @@ fun Route.purchaseRoutes() {
             ).getOrThrow()
 
         call.respond(order.toResponse())
+    }
+
+    get<HistoryScreenResource> {
+        val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = null)).getOrThrow()
+        call.respondKompotComponent(json, HistoryScreen.build(page))
+    }
+
+    get<HistoryScreenResource.Page> { params ->
+        val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = params.cursor)).getOrThrow()
+        // A page response and not a component tree: the client appends items to a list it already
+        // has, and sending it a screen would replace one.
+        call.respond(HistoryScreen.page(page))
     }
 
     get<OrderScreen> { params ->

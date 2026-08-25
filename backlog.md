@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (27)
+## Open (26)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -63,7 +63,6 @@ so re-prioritising must never move a file.
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-34](docs/backlog/B-34-error-contract.md) `[~]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[~]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
-| [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
 | [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
@@ -73,7 +72,7 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (11)
+## Closed (12)
 
 **The wire and the shell**
 
@@ -90,6 +89,7 @@ so re-prioritising must never move a file.
 - [B-09](docs/backlog/B-09-outbox-guard.md) `[x]` - Refuse to boot on a repository that silently drops events
 - [B-10](docs/backlog/B-10-payment-mock.md) `[x]` - A payment mock that can refuse and can be slow
 - [B-11](docs/backlog/B-11-rollback-screen.md) `[x]` - The rollback screen states the reversal in money, not in apology
+- [B-12](docs/backlog/B-12-operation-history.md) `[x]` - Operation history, including the entries that did not happen
 
 **Upstream and the box**
 
