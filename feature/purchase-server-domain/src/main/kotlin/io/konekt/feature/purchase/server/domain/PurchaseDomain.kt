@@ -1,0 +1,84 @@
+package io.konekt.feature.purchase.server.domain
+
+import io.konekt.domain.Money
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import ru.workinprogress.petich.PetichPayload
+import ru.workinprogress.petich.PetichStatus
+
+// What a purchase is, on the saga. @SerialName is load-bearing rather than cosmetic: without it the
+// polymorphic discriminator is the fully qualified class name, which makes the STORAGE format depend
+// on where the package lives — moving a module would render already-persisted sagas unreadable.
+@Serializable
+@SerialName("purchase")
+data class PurchasePayload(
+    val subscriberId: String,
+    val accountId: String,
+    val planId: String,
+    val planTitle: String,
+    val price: Money,
+) : PetichPayload()
+
+const val PURCHASE_SAGA_TYPE = "purchase"
+
+// What the subscriber must do for the saga to continue.
+const val ACTION_CONFIRM = "CONFIRM"
+
+// The order as the product speaks about it, derived from the saga's status.
+//
+// THE INTERESTING ROW IS THE LAST ONE. petich ends a cleanly rolled-back saga in `FAILED`, and
+// showing a subscriber "failed" would be wrong twice over: nothing failed from their side, and the
+// hold was reversed, which is the fact the screen exists to state. A compensation that itself failed
+// does not reach `FAILED` — it stays `COMPENSATING` — so the word is unambiguous inside petich and
+// merely unfortunate outside it.
+enum class OrderStatus(
+    val wireName: String,
+) {
+    PENDING("pending"),
+    AWAITING_CONFIRMATION("awaiting_confirmation"),
+    COMPLETED("completed"),
+
+    // A `Reject`: a rule refused before anything happened, so there is nothing to reverse.
+    REJECTED("rejected"),
+
+    // Rolled back cleanly. petich calls this FAILED.
+    COMPENSATED("compensated"),
+
+    // In flight, or stuck because a compensating step itself failed — which is the one state that
+    // needs a person, and the reason it is not folded into COMPENSATED.
+    COMPENSATING("compensating"),
+    ;
+
+    companion object {
+        fun of(status: PetichStatus): OrderStatus =
+            when (status) {
+                PetichStatus.DRAFT, PetichStatus.PROCESSING -> PENDING
+                PetichStatus.PENDING_SIGNATURE -> AWAITING_CONFIRMATION
+                PetichStatus.COMPLETED -> COMPLETED
+                PetichStatus.REJECTED -> REJECTED
+                PetichStatus.FAILED -> COMPENSATED
+                PetichStatus.COMPENSATING -> COMPENSATING
+            }
+    }
+}
+
+data class Plan(
+    val id: String,
+    val title: String,
+    val price: Money,
+    val onSale: Boolean,
+)
+
+data class Entitlement(
+    val id: String,
+    val orderId: String,
+    val subscriberId: String,
+    val planId: String,
+    val status: String,
+) {
+    companion object {
+        const val PENDING = "pending"
+        const val ACTIVE = "active"
+        const val CANCELLED = "cancelled"
+    }
+}

@@ -60,10 +60,16 @@ include(":shared:components")
 // is two schemas that agree until they do not.
 include(":shared:db")
 
-// The HTTP contract every feature's routes share: who is acting, the owner check, and the mapping
-// from a refusal to a status. In a module rather than in :server because a feature's routing cannot
-// depend on the thing that composes it.
-include(":shared:server-http")
+// Server-side code every feature shares: who is acting, the owner check, the mapping from a refusal
+// to a status, and the money formatter. In a module rather than in :server because a feature cannot
+// depend on the thing that composes it — which is the constraint that put each of these here, one at
+// a time. Not in :shared:domain either: the client depends on that, and the point of the formatter
+// is that a client cannot reach it.
+// NOT `:shared:server`. Gradle allows two projects with the same simple NAME in one build — the
+// paths differ — and the Kotlin plugin then resolved a project dependency to the wrong one, which
+// surfaced as a circular dependency between `:server:compileKotlin` and `:server:jar`: an error
+// naming neither the collision nor this module.
+include(":shared:server-common")
 
 // The first feature vertical. Four modules rather than a package, because the layering is then the
 // compiler's business: -server-domain cannot see Exposed, so it cannot accidentally depend on it,
@@ -71,6 +77,12 @@ include(":shared:server-http")
 include(":feature:auth-shared-api")
 include(":feature:auth-server-domain")
 include(":feature:auth-server-data")
+
+// The second feature vertical: buying a package, which is where petich earns its place. Four
+// interceptors, one of them a wait for a human, and a compensated branch the canvas draws.
+include(":feature:purchase-shared-api")
+include(":feature:purchase-server-domain")
+include(":feature:purchase-server-data")
 
 // The wire specification of THIS build: the toolkit's spec modules plus konekt's own, and the
 // committed JSON Schema files another implementation would read. JVM-only, because kompot-spec is.

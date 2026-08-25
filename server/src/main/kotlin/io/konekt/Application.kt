@@ -13,7 +13,14 @@ import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.feature.auth.server.data.devOtpRoutes
 import io.konekt.feature.auth.server.data.sessionRoutes
+import io.konekt.feature.purchase.server.data.purchaseInterceptors
+import io.konekt.feature.purchase.server.data.purchaseModule
+import io.konekt.feature.purchase.server.data.purchaseRoutes
+import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
+import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.http.configureStatusPages
+import io.konekt.time.KonektClock
+import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -27,11 +34,28 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
+import ru.workinprogress.petich.EnrichedPayload
+import ru.workinprogress.petich.ExpiringPetichRepository
+import ru.workinprogress.petich.OutboxAwarePetichRepository
+import ru.workinprogress.petich.PetichEngine
+import ru.workinprogress.petich.PetichEngineConfig
+import ru.workinprogress.petich.PetichPayload
+import ru.workinprogress.petich.PetichRepository
+import ru.workinprogress.petich.ResumePayload
+import ru.workinprogress.petich.SimpleEnrichedPayload
+import ru.workinprogress.petich.SuspendedPetichSweeper
+import ru.workinprogress.petich.postgres.ExposedPetichRepository
+import ru.workinprogress.petich.postgres.OutboxEventsTable
+import ru.workinprogress.petich.postgres.PetichTable
 
 // The engine is CIO because the load-bearing endpoint of this server is SSE — many long-lived,
 // mostly idle streams, which is the profile a coroutine-per-connection engine is shaped for and a
@@ -93,6 +117,8 @@ fun Application.module(config: KonektConfig) {
         listOf(
             module { single { kompotJson } },
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
+            purchaseModule(database),
+            petichModule(database),
         ),
     )
 
@@ -106,6 +132,7 @@ fun Application.module(config: KonektConfig) {
         // while the shape of a token is the feature's business.
         authenticate(AUTH_JWT) {
             authenticatedSessionRoutes()
+            purchaseRoutes()
         }
 
         if (config.revealOtpCodes) {
@@ -113,6 +140,46 @@ fun Application.module(config: KonektConfig) {
         }
     }
 }
+
+// The saga engine and its storage.
+//
+// ONE ENGINE PER SAGA TYPE, sharing one table. The sweeper resolves the owning engine per saga rather
+// than taking one, because rolling a purchase back with another type's interceptor list would run the
+// wrong compensations — or none.
+//
+// requireOutbox is on. petich degrades quietly to a plain update when handed a repository that cannot
+// store events, and the saga still completes with correct state while nobody downstream is ever told.
+// Nothing about that is visible from a test that asserts the saga finished.
+private fun petichModule(database: Database) =
+    module {
+        single<PetichTable> { PetichTable(get()) }
+        single<OutboxEventsTable> { OutboxEventsTable() }
+        single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
+        single<PetichRepository> { get<OutboxAwarePetichRepository>() }
+
+        single {
+            PetichEngine(
+                interceptors =
+                    purchaseInterceptors(
+                        balances = get(),
+                        entitlements = get(),
+                        plans = get(),
+                        json = get(),
+                    ),
+                repository = get<OutboxAwarePetichRepository>(),
+                config = PetichEngineConfig(requireOutbox = true),
+                clock = get<KonektClock>().asPetichClock(),
+            )
+        }
+
+        single {
+            SuspendedPetichSweeper(
+                repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
+                engineFor = { get() },
+                clock = get<KonektClock>().asPetichClock(),
+            )
+        }
+    }
 
 // The application's Json: the toolkit's actions and components plus konekt's own dictionary. One
 // instance, bound in the graph, because two Json configurations that differ by one module produce a

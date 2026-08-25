@@ -101,8 +101,17 @@ needs lives in a shared module instead:
 |---|---|
 | `:shared:domain` | `Money`, `KonektException`, `suspendRunCatching`, `KonektClock` — KMP, no framework |
 | `:shared:db` | the tables no feature owns (`subscriber`, `account`), the migrations, `DatabaseFactory`, and the Postgres test harness as **test fixtures** |
-| `:shared:server-http` | the principal, `ownedOr404`, and the `StatusPages` mapping |
+| `:shared:server-common` | the principal, `ownedOr404`, the `StatusPages` mapping, `MoneyFormat`, the petich clock adapter |
 | `:shared:components` | the nine wire types of the component dictionary |
+
+Everything in `:shared:server-common` got there the same way: a feature needed it and could not see
+`:server`. That has happened four times now, so it is the rule rather than four accidents — anything a
+second feature would want goes there first, not into `:server`. Not into `:shared:domain` either: the
+client depends on that, and `MoneyFormat` is in `server-common` precisely because a client must not
+reach it.
+
+**Two Gradle projects may not share a simple name.** `:shared:server` beside `:server` produced a
+circular dependency inside `:server` naming neither module.
 
 ## Rules that are cheap to follow and expensive to discover
 
@@ -143,6 +152,17 @@ needs lives in a shared module instead:
 - **Time is a `KonektClock`, injected.** `ClockUsageTest` refuses `Clock.System` anywhere but
   `KonektClock.kt`. petich's clock comes from the same one through `asPetichClock()`, so a test that
   moves time moves it for the saga sweeper too.
+- **A saga test uses `runBlocking`, never `runTest`.** `runTest`'s virtual clock skips time forward
+  for a suspended coroutine, and the engine wraps every interceptor in `withTimeout` — so the first
+  real database call inside a step jumps past the phase timeout, the step is cancelled and the saga
+  compensates. petich swallows the cancellation into the compensation, so nothing is logged and what
+  you see is a saga that rolled itself back for no reason.
+- **Compensation only walks back through steps that actually ran.** An event announced from a step the
+  saga never reached is an event that never fires for the case it exists for. Announce a reversal from
+  the step whose work is being undone.
+- **Inside `Table.insert { }` the table is the receiver**, so a bare name resolves to the COLUMN. A
+  parameter wins that resolution and a class property does not — which is why it bites in a test seed
+  and not in a repository, and why the fix is a differently named local.
 - **A refusal is a `KonektException`**, and the `when` mapping it to a status has no `else` — add a
   case to the sealed hierarchy without mapping it and the build fails. A route answers
   `.getOrThrow()` and stops; `.onFailure` is for the one error that needs a body of its own.

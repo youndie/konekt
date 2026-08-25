@@ -43,10 +43,11 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(project(":shared:domain"))
     implementation(project(":shared:db"))
-    implementation(project(":shared:server-http"))
+    implementation(project(":shared:server-common"))
     implementation(project(":shared:components"))
     // The feature vertical. :server composes features; a feature never sees :server.
     implementation(project(":feature:auth-server-data"))
+    implementation(project(":feature:purchase-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.
     implementation(platform(libs.kompot.bom))

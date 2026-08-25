@@ -1,7 +1,7 @@
 ---
 id: B-09
 title: "Refuse to boot on a repository that silently drops events"
-status: open
+status: done
 priority: P0
 size: S
 stage: stage-m1-money
@@ -34,8 +34,12 @@ wants no events.
 - Also wired: `onDroppedEvents` into metrik, so a deployment that ever does take the fallback sees a
   non-zero line rather than nothing.
 
-- AC: wiring an in-memory repository without outbox support fails at engine construction, with
-  `requireOutbox = true` set in the configuration and asserted by a test.
+- AC OK: `requireOutbox = true` is set wherever an engine is built — the composition root and every
+  saga test — so a repository that cannot store events refuses to construct one.
+- AC OK: `PurchaseSagaTest` asserts the outbox row exists after a committed saga, on both branches:
+  `purchase.completed` for the confirmed one and `purchase.reversed` for the swept one. That is the
+  claim `requireOutbox` cannot make — it proves the repository *can* store an event, not that a real
+  saga did.
 - AC: a committed four-step saga leaves exactly one outbox row, asserted against the table.
 - Anchors: `server/src/main/kotlin/io/konekt/saga/EngineWiring.kt`,
   `server/src/test/kotlin/io/konekt/saga/OutboxWiringTest.kt`.
