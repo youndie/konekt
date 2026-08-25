@@ -258,6 +258,11 @@ circular dependency inside `:server` naming neither module.
   `AppleTestsAreNotClaimedTest` refuses it. Note that a guard reading a file outside the module is
   not a Gradle input: changing only that file leaves `:server:test` UP-TO-DATE, and locally it needs
   `--rerun-tasks` to be believed.
+- **An unknown component draws a block, and the block does not name the type.** konekt replaces the
+  toolkit's registry entry for `UnknownComponent` — the default reports and draws nothing, and a hole
+  is indistinguishable from a screen that failed to load. Which density is the screen's decision
+  (`LocalUnknownBlockDensity`), not the renderer's. The wire name goes to the degradation sink, where
+  an operator can count it; on the screen it is a word nobody can act on.
 - **The stand is the only thing that asks the application.** Four defects fatal to the running server
   survived 191 green tests, because every test below that level builds its own object graph and
   supplies what it needs: a broadcaster nothing bound (the server could not start), a `Json` missing

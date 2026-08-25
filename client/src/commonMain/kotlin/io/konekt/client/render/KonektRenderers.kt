@@ -3,6 +3,7 @@ package io.konekt.client.render
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotRegistry
+import io.github.youndie.kompot.UnknownComponent
 import io.github.youndie.kompot.kompotCoreRenderers
 import io.github.youndie.kompot.kompotStandardRenderers
 import io.konekt.components.EsimQrComponent
@@ -20,6 +21,10 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
     mapOf(
         UsageCounterCardComponent::class to UsageCounterCardRenderer(),
         EsimQrComponent::class to EsimQrRenderer(),
+        // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
+        // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
+        // server named no fallback, and a hole is indistinguishable from a screen that failed to load.
+        UnknownComponent::class to UnknownBlockRenderer(),
     )
 
 // The registry an application hands to `LocalKompotRegistry`: the toolkit's own renderers plus ours.

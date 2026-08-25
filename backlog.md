@@ -41,13 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (16)
+## Open (15)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
-| [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
@@ -62,7 +61,7 @@ so re-prioritising must never move a file.
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 | [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[ ]` | The feature, screen and API layers are empty, and the reason they were empty has expired | P2 | M | - |
 
-## Closed (24)
+## Closed (25)
 
 **The wire and the shell**
 
@@ -70,6 +69,7 @@ so re-prioritising must never move a file.
 - [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[x]` - Postgres, Flyway and the Exposed plugin, including the tables petich does not create
 - [B-03](docs/backlog/B-03-component-dictionary.md) `[x]` - Fix the component dictionary: nine own wire types in one KSP module
 - [B-04](docs/backlog/B-04-design-system-surface-guard.md) `[x]` - Guard that the design system keeps its surface roles after the theme arrives
+- [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[x]` - An unknown component draws a block and reports itself
 - [B-06](docs/backlog/B-06-otp-login.md) `[x]` - Number and OTP sign-in, written from scratch because kompot-auth is one action
 - [B-07](docs/backlog/B-07-home-screen.md) `[x]` - Home: balance and counters, drawn from the server
 - [B-31](docs/backlog/B-31-money-type.md) `[x]` - Money is a type, and only the server formats it

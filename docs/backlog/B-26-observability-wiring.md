@@ -29,6 +29,12 @@ over.
   and a katcher report if the route throws.
 - AC: an agent switched off is visible as absent data, not as healthy silence — asserted by a check
   that fails when a service reports nothing after a run.
+- AC, **carried from `B-05`**: konekt's `KompotDegradationSink` reaches tracy with `originalType` as
+  an indexed field, and leaves a katcher breadcrumb. The mechanism and the reported-once property are
+  done and tested; what is missing is where the record goes, which is this item's subject. Until it
+  lands, an unknown component is drawn correctly and counted nowhere — which is the exact blindness
+  kompot#81 was filed about.
+
 - Anchors: `server/src/main/kotlin/io/konekt/observability/`, `deploy/compose.yaml`.
 
 Background: [research-architecture](../research/research-architecture.md) §1.9.

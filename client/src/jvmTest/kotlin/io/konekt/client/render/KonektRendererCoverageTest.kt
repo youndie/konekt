@@ -49,9 +49,15 @@ class KonektRendererCoverageTest {
             "skeleton",
         )
 
+    // The toolkit's placeholder, and NOT a tenth entry in konekt's dictionary. `UnknownComponent` has
+    // no @SerialName because it is never sent — it is what a decode produces for a type nobody knows —
+    // and konekt registers a renderer for it to replace the toolkit's, which draws nothing. The design
+    // document says the same: "not a new wire type — a replacement renderer".
+    private val replacementRenderers = setOf(io.github.youndie.kompot.UnknownComponent::class)
+
     @Test
     fun `the registry contains exactly the renderers this build claims`() {
-        val actual = konektRenderers.keys.map { it.wireName() }.toSet()
+        val actual = (konektRenderers.keys - replacementRenderers).map { it.wireName() }.toSet()
 
         assertEquals(rendered, actual, "the renderer map and this test's list of what is drawn disagree")
     }
