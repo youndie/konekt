@@ -342,6 +342,41 @@ So `:client` is a **JVM-only module today** and says so in its build file. Repor
 set is two iOS targets and not three: Compose dropped `iosX64`, so `konekt.multiplatform`'s target
 list — which every other multiplatform module here uses — cannot be the client's.
 
+### 1.15 A live update is an overlay that nothing ever clears, and the cache cannot tell anyone it refreshed
+
+Verified on 2026-08-25 against `kompot-client-cache`, `kompot-realtime` and `kompot-client` at
+`0.31.0.74` — the pinned version — by reading the published artefacts. This is the observation
+[open question 1](#3-risks-and-open-questions) asked for; the decision it produced is
+[B-18](../backlog/B-18-cache-versus-realtime.md).
+
+| Fact | Where verified |
+|---|---|
+| `CachedKompotScreenProvider.getScreen(key)` is one-shot: on a hit it launches `revalidate` into its scope and **returns the stored payload immediately** | `kompot-client-cache-jvm-0.31.0.74`, `CachedKompotScreenProvider.getScreen` |
+| `revalidate` writes `store.put(...)` on `Modified`, nothing on `NotModified`, and returns `Unit` — **no flow, no callback, no listener** | same class, `revalidate` |
+| `CachedScreenEntry` carries `fetchedAt` and **nothing reads it**: no TTL, no expiry | same module; `getFetchedAt` has zero references in the provider |
+| the module depends on `kompot-core`, `kotlinx-serialization-json`, `kotlinx-coroutines-core` and **not on ktor** — `KompotScreenFetcher` is an interface, so the conditional request and the `ETag` are the application's | the module's `.module` metadata |
+| `UpdateComponentMessage` is `(componentId, component)` and `KompotScreenResponse` is `(screen, realtimeTopic)` — **neither carries a version, a sequence or a timestamp** | `kompot-realtime-jvm-0.31.0.74` |
+| `KompotRealtimeProvider` collects the source into `remember(topic) { mutableStateMapOf() }` — **keyed by topic, and by nothing else** — and provides it as `LocalKompotRealtimeUpdates` | `kompot-client-desktop-0.31.0.74` sources jar, `Realtime.kt` |
+| `CachedKompotScreenProvider` has a **second** public entry point, `suspend invalidate(key)` = `store.clear(key)`, whose own comment names the post-mutation case: revalidation "hands the result to the NEXT getScreen" | `kompot-client-cache-jvm-0.31.0.74` sources jar, `CachedKompotScreenProvider.kt:46` |
+| `KompotRegistry.RenderNode` draws `LocalKompotRealtimeUpdates.current[node.id] ?: node`, choosing the renderer from the **replacement's** class | same artefact, `KompotRegistry.RenderNode` |
+| nothing in that provider removes a map entry; the only eraser is the composition being discarded | same file — the map is written by `collect` and read by the composition local, and there is no other access |
+
+**Consequence 1 — the hypothesis was half right, and the wrong half is the load-bearing one.** The
+cache does store the screen as fetched and updates do apply on top in memory. But "a cold start shows
+the stale value for exactly one request" assumed something re-asks; nothing does. `getScreen` answers
+once and `revalidate` cannot deliver, so the stale screen stays on display until the screen is
+re-entered.
+
+**Consequence 2 — an update is not a replacement in a tree, it is an overlay above every tree.**
+Because the map is keyed by component id alone, an entry recorded before a stream gap keeps shadowing
+the correct component of a screen fetched after it — with a healthy network, a fresh fetch and no
+error anywhere. The map does have one eraser, `remember(topic)`, and it does not reach this case:
+konekt serves one topic per subscriber and `SseRealtimeSource` reconnects **inside** one flow, so the
+topic never changes and the key never fires. The overlay therefore lives as long as the composition. That defect belongs to the
+realtime half by itself: a build with no cache at all reproduces it, which is why the alternative of
+disabling the cache would have hidden it rather than fixed it. What ends it is clearing the overlay on
+`streamRestarted`, which is what that signal was built for.
+
 ---
 
 ## 2. Decisions
@@ -517,11 +552,22 @@ demo build only. Without it the frame is a picture of a state the product can ne
 For a reference build this is honest; for a boxed product it is a stated limitation, and it belongs in
 the operator-facing material rather than in a footnote.
 
-**Open question 1.** How does `kompot-client-cache`'s ETag revalidation interact with a realtime
-`UpdateComponentMessage` — does a cached screen replayed from disk carry a component that a live
-update has already replaced? Hypothesis: the cache stores the screen as fetched and the update applies
-on top in memory, so a cold start shows the stale value for one request. Check in M2, with the counter
-screen as the subject.
+**Open question 1 — answered 2026-08-25, and the hypothesis was half wrong.** *How does
+`kompot-client-cache`'s ETag revalidation interact with a realtime `UpdateComponentMessage` — does a
+cached screen replayed from disk carry a component that a live update has already replaced?
+Hypothesis: the cache stores the screen as fetched and the update applies on top in memory, so a cold
+start shows the stale value for one request.*
+
+Confirmed: the cache stores the screen as fetched and never sees an update; updates apply on top, in
+the composition. **Refuted: "for one request."** `getScreen` answers once and its background
+revalidation has no way to hand the refreshed screen back, so the stale value stays until the screen
+is re-entered. And the reading found a second interaction nobody was looking for, in the direction
+opposite to the one feared: because the update overlay is keyed by component id and is never cleared,
+a pre-gap entry shadows a correct post-fetch component permanently. The observation is §1.15; the
+decision, its rejected alternatives and what it does not cover are
+[B-18](../backlog/B-18-cache-versus-realtime.md). Both halves are still unwired — the cache has a
+catalogue entry and no module depends on it — so the decision is what the wiring must satisfy rather
+than a description of running code.
 
 **Open question 2.** Where does an OTP resend live relative to `Suspend(ttl)`? A resend that does not
 extend the TTL will roll a saga back under a subscriber who is still typing. Hypothesis: the resend is

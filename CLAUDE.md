@@ -40,11 +40,19 @@ from a registry rather than recalled, is [docs/research/research-stack.md](docs/
 3. [backlog.md](backlog.md) — the goal, the stages and the index. Items are one file each in
    `docs/backlog/`; the index between the markers is generated, so edit the item and run
    `python3 scripts/backlog_index.py`.
-4. The layer document the task belongs to — `docs/features/`, `docs/screens/`, `docs/api/`,
-   `docs/services/`. **These four are still empty**, and that is now a gap rather than a stage: they
-   were empty because there was no code, and there are four feature verticals now. `B-39` is the item.
-   Until it closes, the backlog item and the research documents are the whole written record, and the
-   auth tier of a route is readable only from `Application.kt`.
+4. The layer document the task belongs to — [`docs/features/`](docs/features/),
+   [`docs/screens/`](docs/screens/), [`docs/api/`](docs/api/),
+   [`docs/services/`](docs/services/). All four are filled in as of `B-39`, from the code rather than
+   from the backlog: four features with BDD scenarios, four screens, five endpoint documents carrying
+   **the auth tier of every route the server installs**, and three services. The map is
+   [docs/README.md](docs/README.md).
+
+   Two things to know before trusting a line in them. **They describe what exists** — anything not
+   built stays in its backlog item — and **what was read out of the code is separated from what was
+   not**: a document that cannot establish something says it does not cover it. If you find one that
+   blurs the two, that is a defect worth an item, because both halves then look equally
+   authoritative. The endpoint documents are also where a route's quirks live: which refusals are
+   status codes and which are screens, and which paths are spelled twice.
 
 For anything touching the interface, [docs/design/design-app-canvas.md](docs/design/design-app-canvas.md)
 carries the component dictionary and the three frames that describe states a naive implementation
@@ -153,8 +161,15 @@ circular dependency inside `:server` naming neither module.
   next person deletes it instead of inheriting it.
 - **No endpoint path exists as a string.** `@Resource` classes live in `<feature>-shared-api` and are
   the only place a path is written; `ktor-server-resources` on the server, `ktor-client-resources` in
-  the client. The check before a pull request is `grep` for `/api/` outside `*-shared-api` — it must
-  return nothing.
+  the client. The check before a pull request is `grep` for `/api/` outside `*-shared-api`. It does
+  **not** return nothing today, and the two reasons are worth telling apart: test sources spell paths
+  on purpose, and `HistoryScreen.pageUrl` spells `/api/v1/screens/history/page` in production code
+  beside the `@Resource` that already declares it — because `LoadPageAction` takes a URL string. That
+  is one path with two spellings and nothing holding them together; it is written down in
+  [endpoint-purchase](docs/api/endpoint-purchase.md) rather than quietly tolerated. Anything **new**
+  outside a `*-shared-api` is a defect.
+  The one honest exception is `/api/v1/realtime`: both halves of SSE take a plain string and
+  `ktor-client-resources` has no SSE builder, so the string lives once, in `feature/realtime-shared-api`.
 - **`singleOf(::XImpl)` resolves defaulted constructor parameters through the container.** The Kotlin
   default is ignored, and a parameter whose type has no binding throws `NoDefinitionFoundException` at
   runtime while the compiler says nothing. Such a repository is registered with an explicit lambda.
@@ -167,6 +182,15 @@ circular dependency inside `:server` naming neither module.
 - **A live update names the node it replaces.** The component id in an `UpdateComponentMessage` must
   be the id the screen already has — derive it from the subject (`counter-data`), never generate one.
   A random id is a frame that arrives and changes nothing, silently.
+  **It does not actually replace the node, and the difference is a defect rather than pedantry.**
+  kompot collects updates into a `Map<String, KompotComponent>` behind `LocalKompotRealtimeUpdates`,
+  and `KompotRegistry.RenderNode` draws `updates[node.id] ?: node` — an overlay above whatever tree is
+  being drawn, cached or freshly fetched, chosen per node at render time. **Nothing ever removes an
+  entry.** So a component recorded before a stream gap goes on shadowing the correct component of a
+  screen fetched after it, for the life of the composition, with a healthy network and no error
+  anywhere. Read out of `0.31.0.74` and written up in
+  [B-18](docs/backlog/B-18-cache-versus-realtime.md); the decision is that konekt owns the map and
+  empties it on `streamRestarted`.
 - **`KompotUpdateBroadcaster` must be started**, or it refuses to broadcast and says why. The failure
   it prevents is a publish reaching a bus nobody collects from.
 - **The broker's topics are fixed at startup and declared in two files** — `deploy/compose.yaml` and
@@ -289,7 +313,10 @@ circular dependency inside `:server` naming neither module.
   `markAsRefreshTokenRequest()` does not exist in Ktor 3.5.
 - **`Last-Event-ID` is deliberately not used.** It resumes a stream by replaying, which needs the
   server to number and keep frames; this one does neither, because an update is losable by design.
-  The client reconnects and announces the gap instead, and the screen refetches.
+  The client reconnects and announces the gap instead, on `SseRealtimeSource.streamRestarted` — and
+  **nothing consumes that signal yet**: its only collector is its own test, because no client screen
+  exists to refetch. Wiring it is not optional decoration, since clearing the update overlay is the
+  same event (see the bullet above and [B-18](docs/backlog/B-18-cache-versus-realtime.md)).
 - **MockEngine and the client's SSE plugin do not meet.** No frame ever arrives and the collector
   waits, so the failure is a timeout that names the test rather than the cause. Stream tests run an
   embedded CIO server on an ephemeral port.
@@ -307,5 +334,10 @@ pip install pyyaml
 make check
 ```
 
-`make check` is the gate and CI runs exactly it. `make report` is the two non-blocking reports; while
-there is no code, `code_anchors` reports every anchor as missing, which is correct.
+`make check` is the gate and CI runs exactly it — and it is green with the layers filled in.
+`make report` is the two non-blocking reports. Measured on 2026-08-25, after `B-39`: `bdd_report`
+counts 52 scenarios across the four features, 47 of them naming a test that exists; `code_anchors`
+resolves 150 of 224 paths, skips 62 as patterns, and calls 12 rotten — **all twelve in the research
+documents**, where the "anchors" are coordinates and artefacts in other repositories rather than code
+in this one. A rotten anchor in `features/`, `screens/`, `api/` or `services/` means a real rename and
+is worth chasing.

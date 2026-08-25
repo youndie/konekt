@@ -41,27 +41,24 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (15)
+## Open (12)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
+| [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[~]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
-| [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
-| [B-23](docs/backlog/B-23-openapi-document.md) `[ ]` | Publish an OpenAPI document, because the conformance kit reads one | P1 | S | B-07 |
+| [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[ ]` | A subscriber is created with nothing and there is no way to add any | P1 | M | - |
-| [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
 | [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |
 | [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[ ]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
-| [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
+| [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
-| [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[ ]` | The feature, screen and API layers are empty, and the reason they were empty has expired | P2 | M | - |
 
-## Closed (25)
+## Closed (28)
 
 **The wire and the shell**
 
@@ -95,6 +92,12 @@ so re-prioritising must never move a file.
 - [B-15](docs/backlog/B-15-sse-realtime.md) `[x]` - The realtime transport: an SSE endpoint and a client source
 - [B-16](docs/backlog/B-16-traffic-simulator.md) `[x]` - The traffic simulator: a consumer that moves the counters
 - [B-17](docs/backlog/B-17-esim-order-wizard.md) `[x]` - The eSIM order wizard, and an SM-DP+ mock that can be out of slots
+- [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[x]` - Answer in writing how the screen cache and a live update interact
+
+**Proof**
+
+- [B-23](docs/backlog/B-23-openapi-document.md) `[x]` - Publish an OpenAPI document, because the conformance kit reads one
+- [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[x]` - The feature, screen and API layers are empty, and the reason they were empty has expired
 
 **Upstream and the box**
 

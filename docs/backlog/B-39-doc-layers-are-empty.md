@@ -1,7 +1,7 @@
 ---
 id: B-39
 title: "The feature, screen and API layers are empty, and the reason they were empty has expired"
-status: open
+status: done
 priority: P2
 size: M
 stage: stage-m4-proof
@@ -32,3 +32,21 @@ sent that has nothing in it.
 
 Background: the layering and the templates are [docs-bootstrap](https://github.com/youndie/docs-bootstrap);
 the templates are copied into [`docs/templates/`](../templates/).
+
+**Closed 2026-08-25.** Written from the code: three services, four features with 52 BDD scenarios (47
+of them naming a test that exists), four screens and five endpoint documents — the last of which
+covers `GET /health`, because "every route the server installs" includes the one route nobody thinks
+of as an API. The map is [docs/README.md](../README.md).
+
+Three things were found in the writing and are recorded where a reader will meet them rather than
+here:
+
+- **no test asserts the tier a route actually sits at.** Every route test installs an authentication
+  provider of its own and the e2e suite always sends a token, so a route moved between the tiers
+  would keep the suite green ([endpoint-auth](../api/endpoint-auth.md), quirks);
+- **`/health` is the one route outside `konektRoutes`**, so anything reading that table to describe
+  the server does not see it ([endpoint-health](../api/endpoint-health.md));
+- **`HistoryScreen.pageUrl` spells an endpoint path in production code** outside a `*-shared-api`,
+  beside the `@Resource` that already declares it ([endpoint-purchase](../api/endpoint-purchase.md)).
+
+The generated OpenAPI document remains `B-23` and is deliberately not part of this.
