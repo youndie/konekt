@@ -337,7 +337,7 @@ make check
 `make check` is the gate and CI runs exactly it — and it is green with the layers filled in.
 `make report` is the two non-blocking reports. Measured on 2026-08-25, after `B-39`: `bdd_report`
 counts 52 scenarios across the four features, 47 of them naming a test that exists; `code_anchors`
-resolves 150 of 224 paths, skips 62 as patterns, and calls 12 rotten — **all twelve in the research
+resolves 158 of 233 paths, skips 63 as patterns, and calls 12 rotten — **all twelve in the research
 documents**, where the "anchors" are coordinates and artefacts in other repositories rather than code
 in this one. A rotten anchor in `features/`, `screens/`, `api/` or `services/` means a real rename and
 is worth chasing.
