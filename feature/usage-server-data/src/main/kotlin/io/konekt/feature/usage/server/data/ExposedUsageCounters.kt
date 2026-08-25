@@ -17,6 +17,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.upsert
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -121,11 +122,40 @@ class ExposedUsageCounters(
         grant(subscriberId, UsageCounter.Kind.DATA, dataMb)
     }
 
+    override suspend fun revokePlanAllowance(
+        subscriberId: String,
+        dataMb: Long,
+    ) {
+        dbQuery {
+            // Both columns, and both clamped in SQL. The limit falls because the allowance is gone;
+            // the remainder falls because what is left of it is gone too — and it may already be
+            // smaller than what was granted, which is why this is a `greatest(x, 0)` rather than a
+            // subtraction.
+            val row =
+                (UsageCounterTable.subscriberId eq subscriberId) and
+                    (UsageCounterTable.kind eq UsageCounter.Kind.DATA.wireName)
+
+            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq dataMb) }) {
+                it[limitUnits] = UsageCounterTable.limitUnits plus (-dataMb)
+            }
+            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less dataMb) }) {
+                it[limitUnits] = 0
+            }
+            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq dataMb) }) {
+                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-dataMb)
+            }
+            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less dataMb) }) {
+                it[remainingUnits] = 0
+            }
+        }
+    }
+
     private fun ResultRow.toDomain() =
         UsageCounter(
             subscriberId = this[UsageCounterTable.subscriberId],
             kind = UsageCounter.Kind.entries.first { it.wireName == this[UsageCounterTable.kind] },
             limitUnits = this[UsageCounterTable.limitUnits],
             remainingUnits = this[UsageCounterTable.remainingUnits],
+            startedAt = Instant.fromEpochMilliseconds(this[UsageCounterTable.createdAt]),
         )
 }

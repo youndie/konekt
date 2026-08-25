@@ -5,6 +5,8 @@ import io.konekt.feature.auth.server.data.authModule
 import io.konekt.feature.esim.server.data.esimModule
 import io.konekt.feature.esim.server.domain.SmDpPlus
 import io.konekt.feature.purchase.server.data.purchaseModule
+import io.konekt.feature.usage.server.data.usageModule
+import io.konekt.feature.usage.server.domain.UsageCounters
 import io.konekt.time.KonektClock
 import io.konekt.time.timeModule
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -39,6 +41,7 @@ class KoinGraphTest {
             authModule(NO_DATABASE, JwtConfig("s", "i", "a"), revealCodes = false),
             purchaseModule(NO_DATABASE),
             esimModule(NO_DATABASE),
+            usageModule(NO_DATABASE),
         )
 
     // Types a module takes and a DIFFERENT module provides. `verify()` inspects one module at a time,
@@ -57,6 +60,12 @@ class KoinGraphTest {
             // petichModule, which needs a live Database and so is not verified here
             ru.workinprogress.petich.PetichEngine::class,
             ru.workinprogress.petich.PetichRepository::class,
+            // NOT provided by anything, and the entry is still honest. Every feature module CAPTURES
+            // its Database in the closure that builds a repository rather than resolving one from
+            // the graph — `usageModule(database)` — and `verify()` cannot tell a captured value from
+            // a missing binding. It only ever asks when a definition is declared with its CONCRETE
+            // type, which is why this never came up while every binding named an interface.
+            org.jetbrains.exposed.v1.jdbc.Database::class,
         )
 
     @OptIn(KoinExperimentalAPI::class)
@@ -77,5 +86,8 @@ class KoinGraphTest {
         // defaulted constructor parameters — exactly the shape `verify()` alone would pass and a
         // resolution would not.
         assertNotNull(koin.get<SmDpPlus>(), "the profile manager is not in the graph")
+        // One instance behind two interfaces, and resolving one of them is what proves the
+        // aliasing rather than two separate singles.
+        assertNotNull(koin.get<UsageCounters>(), "the counters are not in the graph")
     }
 }

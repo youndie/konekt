@@ -60,6 +60,10 @@ kotlin {
         jvmTest.dependencies {
             // Compose UI tests render a real off-screen tree through Skiko, so they need the current
             // OS's runtime rather than only the test framework's API.
+            // Reading a component's @SerialName back off the class needs the full reflection
+            // runtime; without it the annotation lookup compiles to a warning and answers empty,
+            // which would make the coverage guard agree with whatever it found.
+            implementation(kotlin("reflect"))
             implementation(compose.desktop.currentOs)
             implementation(libs.compose.uiTest)
 

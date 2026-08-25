@@ -49,5 +49,8 @@ dependencies {
     // a status code with no cause anywhere. That cost twenty minutes once.
     testRuntimeOnly(libs.logback.classic)
     testImplementation(project(":feature:auth-server-data"))
+    // The real UsageGrants for the saga tests: a completed purchase grants the plan's
+    // allowance, and asserting that against a double would assert the double.
+    testImplementation(project(":feature:usage-server-data"))
     testImplementation(libs.mockk)
 }

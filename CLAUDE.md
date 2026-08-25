@@ -241,6 +241,15 @@ circular dependency inside `:server` naming neither module.
   A refusal thrown as an exception is a wizard that is neither here nor there.
 - **Anything that reads a generated directory must declare the dependency**, ktlint included —
   excluding generated files from the *check* does not remove the directory from the task's *inputs*.
+- **A feature that is built is not a feature that runs.** The usage feature shipped complete and
+  tested and was installed by nothing: five imports in `Application.kt` with no use beneath them, so
+  a completed purchase granted no allowance and no route could read a counter. `KoinGraphTest`
+  cannot see this — it verifies the modules it is GIVEN. `FeatureModulesReachTheGraphTest` reads the
+  composition root as text instead. A worker nobody starts is the same defect and is still open
+  (`B-16`).
+- **Never `call.respond` a component tree, and there is now a test that says so.**
+  `CallRespondUsageTest` reads the sources, because `call.respond(anything)` compiles. It was proved
+  to bite by rewriting a real route.
 - **A green check that visited nothing is the failure mode here**, twice over: the conformance kit
   passes silently when it finds no targets, and petich completes sagas silently when it is dropping
   their events. Both have their own backlog item and both assert on coverage rather than on a verdict.

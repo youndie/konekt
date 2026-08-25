@@ -1,5 +1,6 @@
 package io.konekt.feature.purchase.server.domain
 
+import io.konekt.feature.usage.server.domain.UsageGrants
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -129,6 +130,9 @@ class ProvisionInterceptor(
     private val balances: AccountBalances,
     private val entitlements: Entitlements,
     private val payments: PaymentGateway,
+    // The usage feature's port, named from here on purpose. What an allowance is made of is that
+    // domain's business — see UsageGrants — and a purchase only knows it bought a plan.
+    private val grants: UsageGrants,
 ) : PetichInterceptor<PurchasePayload> {
     override val phase = PetichPhase.EXECUTION
 
@@ -150,6 +154,13 @@ class ProvisionInterceptor(
 
         balances.capture(payload.accountId, petich.id, payload.price)
         entitlements.activate(petich.id)
+
+        // THE ALLOWANCE LANDS HERE, in the same step as the capture and the activation, because they
+        // are one thing from the product's side — "make it real". A purchase that captured the money
+        // and granted nothing is a subscriber who paid for ten gigabytes and has a home screen that
+        // says zero.
+        if (payload.dataMb > 0) grants.grantPlanAllowance(payload.subscriberId, payload.dataMb)
+
         return InterceptorResult.Proceed()
     }
 
@@ -161,6 +172,9 @@ class ProvisionInterceptor(
         // here as well would return the money twice — which is the shape of mistake a saga makes
         // easy, because every step can see everything.
         entitlements.cancel(petich.id)
+        // Including the allowance, which is the half that is easy to forget: money that comes back
+        // while the gigabytes stay is a rollback that costs the operator rather than nobody.
+        if (payload.dataMb > 0) grants.revokePlanAllowance(payload.subscriberId, payload.dataMb)
     }
 }
 

@@ -17,6 +17,11 @@ data class PurchasePayload(
     val planId: String,
     val planTitle: String,
     val price: Money,
+    // Recorded on the payload rather than re-read from the catalogue at EXECUTION time, for the same
+    // reason the price is: the payload is what was AGREED, and a catalogue that moved between the
+    // validation and the settlement would grant an allowance nobody was shown. Defaulted so sagas
+    // written before this field decode — and they grant nothing, which is what they intended.
+    val dataMb: Long = 0,
 ) : PetichPayload()
 
 const val PURCHASE_SAGA_TYPE = "purchase"
@@ -67,6 +72,10 @@ data class Plan(
     val title: String,
     val price: Money,
     val onSale: Boolean,
+    // What the plan is made of, in the usage feature's own unit. A field rather than something read
+    // out of `title`: "Turkey · 10 GB · 30 days" is copy, and parsing copy for a number is how a
+    // renamed plan silently grants nothing.
+    val dataMb: Long,
 )
 
 data class Entitlement(

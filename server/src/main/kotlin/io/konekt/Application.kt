@@ -25,14 +25,11 @@ import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
-import io.konekt.feature.usage.server.data.ExposedUsageCounters
-import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
-import io.konekt.feature.usage.server.domain.LoadCountersUseCase
-import io.konekt.feature.usage.server.domain.UsageCounters
-import io.konekt.feature.usage.server.domain.UsageGrants
+import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
+import io.konekt.screens.homeRoutes
 import io.konekt.time.KonektClock
 import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
@@ -145,6 +142,10 @@ fun Application.module(config: KonektConfig) {
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
             purchaseModule(database, config.paymentMode, config.paymentDelay),
             esimModule(database),
+            // Bound here for the first time in B-07. The counters existed, were tested, and were
+            // reachable from nothing: five imports of this feature sat in this file with no use
+            // beneath them.
+            usageModule(database),
             petichModule(database, config),
         ),
     )
@@ -177,6 +178,7 @@ fun Application.module(config: KonektConfig) {
             authenticatedSessionRoutes()
             purchaseRoutes()
             esimWizardRoutes()
+            homeRoutes()
             realtimeRoutes()
         }
 
@@ -212,6 +214,7 @@ private fun Application.petichModule(
                     entitlements = get(),
                     plans = get(),
                     payments = get(),
+                    grants = get(),
                     json = get(),
                 ),
             repository = get<OutboxAwarePetichRepository>(),

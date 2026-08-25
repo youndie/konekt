@@ -49,12 +49,17 @@ dependencies {
     implementation(project(":feature:auth-server-data"))
     implementation(project(":feature:purchase-server-data"))
     implementation(project(":feature:esim-server-data"))
+    implementation(project(":feature:usage-shared-api"))
     implementation(project(":feature:usage-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.
     implementation(platform(libs.kompot.bom))
     implementation(libs.kompot.core)
     implementation(libs.kompot.standard)
+    // The token constants the screens name — M3Colors, M3Typography. The SERVER names a role
+    // and the client resolves it, which is the whole point of a token: a brand kit repaints a
+    // screen the server never saw.
+    implementation(libs.kompot.dsMaterial)
     implementation(libs.kompot.ktor)
     implementation(libs.kompot.auth)
     implementation(libs.kompot.realtime)

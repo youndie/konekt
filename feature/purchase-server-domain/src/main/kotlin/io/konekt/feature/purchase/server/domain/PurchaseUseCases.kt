@@ -60,6 +60,7 @@ class StartPurchaseUseCase(
                             planId = plan.id,
                             planTitle = plan.title,
                             price = plan.price,
+                            dataMb = plan.dataMb,
                         ),
                     enrichedPayload = SimpleEnrichedPayload(),
                 ),

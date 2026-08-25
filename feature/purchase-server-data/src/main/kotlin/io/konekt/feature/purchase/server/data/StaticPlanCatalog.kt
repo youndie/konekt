@@ -20,15 +20,30 @@ class StaticPlanCatalog(
     override suspend fun find(planId: String): Plan? = plans.firstOrNull { it.id == planId }
 
     companion object {
+        private const val MB_PER_GB = 1_024L
+
         val DEFAULT =
             listOf(
-                Plan("tr-10gb-30d", "Turkey · 10 GB · 30 days", Money.ofMajor(12, Currency.DEFAULT), onSale = true),
-                Plan("eu-5gb-14d", "Europe · 5 GB · 14 days", Money.ofMajor(9, Currency.DEFAULT), onSale = true),
+                Plan(
+                    "tr-10gb-30d",
+                    "Turkey · 10 GB · 30 days",
+                    Money.ofMajor(12, Currency.DEFAULT),
+                    onSale = true,
+                    dataMb = 10 * MB_PER_GB,
+                ),
+                Plan(
+                    "eu-5gb-14d",
+                    "Europe · 5 GB · 14 days",
+                    Money.ofMajor(9, Currency.DEFAULT),
+                    onSale = true,
+                    dataMb = 5 * MB_PER_GB,
+                ),
                 Plan(
                     "us-20gb-30d",
                     "United States · 20 GB · 30 days",
                     Money.ofMajor(24, Currency.DEFAULT),
                     onSale = false,
+                    dataMb = 20 * MB_PER_GB,
                 ),
             )
     }

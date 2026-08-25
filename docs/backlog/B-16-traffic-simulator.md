@@ -1,7 +1,7 @@
 ---
 id: B-16
 title: "The traffic simulator: a consumer that moves the counters"
-status: done
+status: wip
 priority: P2
 size: S
 stage: stage-m2-live
@@ -36,6 +36,15 @@ back to an open screen through the realtime channel.
   reason `state` is on the wire at all.
 - Also: usage for a subscriber who has bought nothing is ignored rather than failing. The simulator
   does not know who owns what, and a consumer that threw there would stop the poll for everybody else.
+- AC PENDING, found in `B-07`: **nothing starts the simulator or its consumer.** Both classes exist,
+  both are covered end to end against a real broker, and the running server constructs neither — the
+  chain is reachable only from `TrafficChainTest`. That is not a gap in this item's ACs, which is the
+  point worth keeping: every one of them was about the chain being *tested*, and a chain that is
+  tested and never started passes all of them. `FeatureModulesReachTheGraphTest` now catches the DI
+  half of this class of defect; a worker nobody starts is the half it does not catch yet.
+- Also carried: the usage feature's own wiring landed in `B-07` rather than here — the counters were
+  in the graph of nothing, and a completed purchase granted no allowance.
+
 - Anchors: `server/src/main/kotlin/io/konekt/mocks/traffic/`,
   `feature/usage-server-domain/`, `feature/usage-server-data/`,
   `shared/db/src/main/resources/db/migration/V7__usage_counter.sql`,

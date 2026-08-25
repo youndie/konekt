@@ -2,7 +2,10 @@ package io.konekt.feature.usage.server.data
 
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
+import io.konekt.feature.usage.server.domain.UsageAddOns
 import io.konekt.feature.usage.server.domain.UsageCounter
+import io.konekt.money.MoneyFormat
+import io.konekt.time.KonektClock
 
 // A counter as the component that draws it.
 //
@@ -10,23 +13,23 @@ import io.konekt.feature.usage.server.domain.UsageCounter
 // replaces: `UpdateComponentMessage(componentId, component)` finds the node by that id in a tree the
 // client already has. A random id would replace nothing, silently — the update arrives, the client
 // looks for a node that is not there, and the screen simply does not change.
-object UsageCounterCards {
-    fun idOf(counter: UsageCounter): String = "counter-${counter.kind.wireName}"
-
+//
+// A class rather than an object since the copy became a projection: the caption needs the time and a
+// price list, and reaching for either through a global is how a screen becomes untestable without
+// waiting for tomorrow.
+class UsageCounterCards(
+    private val addOns: UsageAddOns,
+    private val clock: KonektClock,
+) {
     fun of(counter: UsageCounter): UsageCounterCardComponent =
         UsageCounterCardComponent(
             id = idOf(counter),
             title = counter.kind.title(),
-            valueText = "${counter.remainingUnits} ${counter.kind.unit} left",
-            // The copy CHANGES with the state, not only the colour. That is the canvas's rule and the
-            // reason `state` is on the wire at all: a subscriber who is nearly out is told what to do
-            // about it, and one who has run out is told plainly.
-            captionText =
-                when {
-                    counter.isExhausted -> "You have used all of your ${counter.kind.title().lowercase()}."
-                    counter.isLow -> "Running low — under a tenth of your ${counter.kind.title().lowercase()} is left."
-                    else -> null
-                },
+            valueText = "${UsageUnits.remaining(counter)} left",
+            // THE COPY CHANGES WITH THE STATE, not only the colour. That is the canvas's rule and the
+            // reason `state` is on the wire at all: a subscriber who is nearly out is told when they
+            // will run out and what it costs to fix, and one who has run out is told plainly.
+            captionText = captionFor(counter),
             progress = counter.progress,
             state =
                 when {
@@ -36,10 +39,55 @@ object UsageCounterCards {
                 },
         )
 
+    private fun captionFor(counter: UsageCounter): String? {
+        // Nothing to say in the ordinary state, and saying something anyway is how a caption stops
+        // being read by the time it matters.
+        if (!counter.isLow && !counter.isExhausted) return null
+
+        val offer = offerFor(counter)
+
+        if (counter.isExhausted) {
+            return listOfNotNull("You have used all of your ${counter.kind.title().lowercase()}.", offer)
+                .joinToString(" ")
+        }
+
+        // The projection, when there is one. It is absent for an allowance nothing has been spent
+        // from yet and for one granted moments ago — and in those cases the card falls back to the
+        // fact rather than inventing a date, because "runs out today" is what a naive zero would say.
+        val running =
+            counter
+                .daysRemaining(clock.now())
+                ?.let { "${counter.kind.runsOut()} in ${UsageUnits.approximately(it)} at your current pace." }
+                ?: "Running low — under a tenth of your ${counter.kind.title().lowercase()} is left."
+
+        return listOfNotNull(running, offer).joinToString(" ")
+    }
+
+    // "A 100-minute add-on costs $4." Absent when nothing is sold for that counter, which leaves the
+    // card a warning rather than an offer — worse, and honest.
+    private fun offerFor(counter: UsageCounter): String? =
+        addOns.forKind(counter.kind)?.let { addOn ->
+            "A ${UsageUnits.size(counter.kind, addOn.units)} add-on costs ${MoneyFormat.format(addOn.price)}."
+        }
+
+    // "Data runs out", "Minutes run out". The verb follows the noun's number, and getting it wrong
+    // is the kind of thing that reads as a machine wrote the screen — which, on a backend-driven
+    // product, is exactly the impression the copy is there to avoid.
+    private fun UsageCounter.Kind.runsOut(): String =
+        when (this) {
+            UsageCounter.Kind.DATA -> "Data runs out"
+            UsageCounter.Kind.MINUTES -> "Minutes run out"
+            UsageCounter.Kind.MESSAGES -> "Messages run out"
+        }
+
     private fun UsageCounter.Kind.title(): String =
         when (this) {
             UsageCounter.Kind.DATA -> "Data"
             UsageCounter.Kind.MINUTES -> "Minutes"
             UsageCounter.Kind.MESSAGES -> "Messages"
         }
+
+    companion object {
+        fun idOf(counter: UsageCounter): String = "counter-${counter.kind.wireName}"
+    }
 }

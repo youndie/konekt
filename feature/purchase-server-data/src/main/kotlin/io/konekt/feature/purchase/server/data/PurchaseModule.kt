@@ -16,6 +16,7 @@ import io.konekt.feature.purchase.server.domain.ProvisionInterceptor
 import io.konekt.feature.purchase.server.domain.PurchaseEvents
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.ValidatePurchaseInterceptor
+import io.konekt.feature.usage.server.domain.UsageGrants
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.dsl.module
@@ -29,6 +30,7 @@ fun purchaseInterceptors(
     entitlements: Entitlements,
     plans: PlanCatalog,
     payments: PaymentGateway,
+    grants: UsageGrants,
     json: Json,
     confirmationTtl: Duration = DEFAULT_CONFIRMATION_TTL,
 ): List<PetichInterceptor<*>> {
@@ -36,7 +38,7 @@ fun purchaseInterceptors(
     return listOf(
         ValidatePurchaseInterceptor(plans, balances),
         HoldFundsInterceptor(balances, entitlements, events, confirmationTtl),
-        ProvisionInterceptor(balances, entitlements, payments),
+        ProvisionInterceptor(balances, entitlements, payments, grants),
         AnnouncePurchaseInterceptor(events),
     )
 }

@@ -107,6 +107,9 @@ include(":feature:esim-shared-api")
 include(":feature:esim-server-domain")
 include(":feature:esim-server-data")
 
+// The home screen's path. A shared-api with no server-domain beside it, because the screen it names
+// is assembled in the composition root out of two features rather than owned by one.
+include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")
 

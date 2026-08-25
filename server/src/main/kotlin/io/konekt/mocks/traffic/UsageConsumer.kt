@@ -33,6 +33,10 @@ class UsageConsumer(
     private val connection: BooblikConnection,
     private val consume: ConsumeUsageUseCase,
     private val push: ComponentBroadcaster,
+    // The card builder rather than its output, because the caption it writes now depends on the time
+    // and on a price list. Injected for the same reason the clock is: a screen whose copy is decided
+    // by a global is a screen no test can put in the low state on purpose.
+    private val cards: UsageCounterCards,
     private val json: Json = Json,
     private val pollInterval: Duration = 200.milliseconds,
 ) {
@@ -78,6 +82,6 @@ class UsageConsumer(
 
         // Pushed by the component id the screen already has, so the client replaces a node rather
         // than reloading a screen. That is the whole difference a live update makes.
-        push.push(subscriberId, UsageCounterCards.idOf(updated), UsageCounterCards.of(updated))
+        push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated))
     }
 }

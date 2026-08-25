@@ -46,7 +46,6 @@ so re-prioritising must never move a file.
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-06](docs/backlog/B-06-otp-login.md) `[~]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
-| [B-07](docs/backlog/B-07-home-screen.md) `[ ]` | Home: balance and counters, drawn from the server | P0 | M | B-03, B-04, B-06 |
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-32](docs/backlog/B-32-testcontainers-harness.md) `[~]` | Repository tests run against a real Postgres, and use cases against MockK | P0 | S | B-01 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
@@ -60,6 +59,7 @@ so re-prioritising must never move a file.
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
 | [B-34](docs/backlog/B-34-error-contract.md) `[~]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-37](docs/backlog/B-37-ios-tests-run-nowhere.md) `[~]` | No iOS test is executed by anything, and the build says nothing about it | P1 | S | B-01 |
+| [B-16](docs/backlog/B-16-traffic-simulator.md) `[~]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
@@ -77,6 +77,7 @@ so re-prioritising must never move a file.
 - [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[x]` - Postgres, Flyway and the Exposed plugin, including the tables petich does not create
 - [B-03](docs/backlog/B-03-component-dictionary.md) `[x]` - Fix the component dictionary: nine own wire types in one KSP module
 - [B-04](docs/backlog/B-04-design-system-surface-guard.md) `[x]` - Guard that the design system keeps its surface roles after the theme arrives
+- [B-07](docs/backlog/B-07-home-screen.md) `[x]` - Home: balance and counters, drawn from the server
 - [B-31](docs/backlog/B-31-money-type.md) `[x]` - Money is a type, and only the server formats it
 - [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[x]` - Time is injected, because four different deadlines depend on it
 - [B-38](docs/backlog/B-38-refresh-and-logout.md) `[x]` - Refresh and logout: a token pair that can be ended
@@ -93,7 +94,6 @@ so re-prioritising must never move a file.
 
 - [B-13](docs/backlog/B-13-booblik-topics.md) `[x]` - booblik in the compose file, with its three topics declared at startup
 - [B-14](docs/backlog/B-14-outbox-to-booblik-bridge.md) `[x]` - The bridge from the petich outbox to booblik
-- [B-16](docs/backlog/B-16-traffic-simulator.md) `[x]` - The traffic simulator: a consumer that moves the counters
 
 **Upstream and the box**
 

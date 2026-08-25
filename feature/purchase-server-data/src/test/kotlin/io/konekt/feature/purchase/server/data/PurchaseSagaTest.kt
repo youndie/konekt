@@ -10,6 +10,7 @@ import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
+import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
 import io.konekt.time.asPetichClock
@@ -90,13 +91,18 @@ class PurchaseSagaTest {
     private val entitlements = ExposedEntitlements(PostgresHarness.database, clock)
     private val plans = StaticPlanCatalog()
 
+    // The usage feature's port, real rather than stubbed: a completed purchase grants the
+    // plan's allowance, and a double here would hide the one write that makes the home screen
+    // show anything at all.
+    private val grants = ExposedUsageCounters(PostgresHarness.database, clock)
+
     private val ttl = 5.minutes
 
     private val payments = MockPaymentGateway()
 
     private val engine =
         PetichEngine(
-            interceptors = purchaseInterceptors(balances, entitlements, plans, payments, json, ttl),
+            interceptors = purchaseInterceptors(balances, entitlements, plans, payments, grants, json, ttl),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             clock = clock.asPetichClock(),

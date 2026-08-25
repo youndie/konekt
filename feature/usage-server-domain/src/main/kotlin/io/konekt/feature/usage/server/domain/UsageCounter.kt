@@ -1,6 +1,8 @@
 package io.konekt.feature.usage.server.domain
 
+import io.konekt.domain.Money
 import io.konekt.domain.suspendRunCatching
+import kotlin.time.Instant
 
 // What a subscriber has left, and of what.
 //
@@ -13,6 +15,10 @@ data class UsageCounter(
     val kind: Kind,
     val limitUnits: Long,
     val remainingUnits: Long,
+    // When the allowance started. Carried because the projection below is the only thing that can be
+    // said about a rate of use without a table of every decrement — and the canvas asks for exactly
+    // that sentence.
+    val startedAt: Instant,
 ) {
     enum class Kind(
         val wireName: String,
@@ -36,6 +42,45 @@ data class UsageCounter(
     // Below a tenth, which is a judgement the SERVER makes because it is the side that knows the
     // subscriber's rate of use. A client deciding "low" from the number alone would have to guess.
     val isLow: Boolean get() = !isExhausted && limitUnits > 0 && remainingUnits * 10 <= limitUnits
+
+    // How long what is left will last at the pace so far, in days. Null when the question cannot be
+    // answered rather than zero when it cannot: nothing used yet, or an allowance that started this
+    // instant, is not "runs out today".
+    //
+    // A MEAN AND NOT A TREND, and the difference is worth stating because the sentence it produces
+    // sounds more certain than it is. The rate is everything used divided by the whole time the
+    // allowance has existed, so a subscriber who watched a film on the first day and nothing since
+    // is told they have two days left when they have a fortnight. A trend needs a history of
+    // decrements, which is a table this product does not have and would not read twice — the screen
+    // shows what is left, and the ledger already records what was paid for. The word "about" in the
+    // copy is doing real work.
+    fun daysRemaining(now: Instant): Double? {
+        if (isExhausted || usedUnits <= 0) return null
+
+        val elapsedDays = (now - startedAt).inWholeMinutes / MINUTES_PER_DAY
+        if (elapsedDays <= 0.0) return null
+
+        val perDay = usedUnits / elapsedDays
+        if (perDay <= 0.0) return null
+
+        return remainingUnits / perDay
+    }
+
+    private companion object {
+        const val MINUTES_PER_DAY = 24.0 * 60.0
+    }
+}
+
+// What a subscriber can buy to top one counter up. The BSS is outside the boundary, so this is a
+// price list rather than a catalogue — and it is the usage feature's rather than the purchase
+// feature's, because what an allowance is made of is this domain's business.
+data class UsageAddOn(
+    val units: Long,
+    val price: Money,
+)
+
+interface UsageAddOns {
+    fun forKind(kind: UsageCounter.Kind): UsageAddOn?
 }
 
 interface UsageCounters {
@@ -71,6 +116,18 @@ interface UsageCounters {
 // an allowance is this feature's business — the purchase only knows it bought a plan.
 interface UsageGrants {
     suspend fun grantPlanAllowance(
+        subscriberId: String,
+        dataMb: Long,
+    )
+
+    // The other half, and it exists because the granting step sits inside a saga. A purchase that is
+    // rolled back after the allowance landed would otherwise leave the subscriber holding data they
+    // did not pay for — the money returns and the gigabytes stay, which is the asymmetry a
+    // compensation exists to prevent.
+    //
+    // Clamped at zero like every other decrement here: some of it may already have been spent, and a
+    // negative allowance is a screen that says minus four hundred megabytes.
+    suspend fun revokePlanAllowance(
         subscriberId: String,
         dataMb: Long,
     )

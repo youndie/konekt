@@ -10,6 +10,8 @@ import io.konekt.db.tables.SubscriberTable
 import io.konekt.events.BrokerHarness
 import io.konekt.events.EventTopics
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
+import io.konekt.feature.usage.server.data.StaticUsageAddOns
+import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.mocks.traffic.TrafficSimulator
@@ -66,6 +68,11 @@ class TrafficChainTest {
     private val broadcaster = KompotUpdateBroadcaster().also { it.start(scope) }
     private val push = ComponentBroadcaster(broadcaster, json)
 
+    // The card builder the consumer pushes through. Its caption is a projection now, so it needs
+    // the same clock the counters were granted on — a card built on the real clock would read
+    // "runs out in about 19 000 days" against a counter stamped in 2023.
+    private val cards = UsageCounterCards(StaticUsageAddOns(), clock)
+
     @AfterTest
     fun stop() {
         scope.cancel()
@@ -112,7 +119,14 @@ class TrafficChainTest {
                 simulator.tick(handle)
 
                 val consumer = Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first(), start)
-                val applied = UsageConsumer(connection, ConsumeUsageUseCase(counters), push, json).drain(consumer)
+                val applied =
+                    UsageConsumer(
+                        connection,
+                        ConsumeUsageUseCase(counters),
+                        push,
+                        cards,
+                        json,
+                    ).drain(consumer)
 
                 assertEquals(1, applied, "the simulator's event did not reach the consumer")
                 assertEquals(9_975, assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA)).remainingUnits)
@@ -122,7 +136,9 @@ class TrafficChainTest {
                 val frame = assertNotNull(listener.tryReceive().getOrNull(), "the counter moved and nothing was pushed")
                 val message = json.decodeFromString(UpdateComponentMessage.serializer(), frame)
                 assertEquals("counter-data", message.componentId)
-                assertEquals("9975 MB left", (message.component as UsageCounterCardComponent).valueText)
+                // "9.7 GB left" and not "9975 MB left": a subscriber does not read megabytes past a
+                // thousand, and the formatting is the server's because it is the only side that can.
+                assertEquals("9.7 GB left", (message.component as UsageCounterCardComponent).valueText)
             } finally {
                 connection.close()
             }
@@ -132,7 +148,7 @@ class TrafficChainTest {
     fun `stopping the traffic stops the movement and nothing else changes`() =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, json)
+            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
 
             consumer.apply(event(units = 100))
             val afterOne = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA)).remainingUnits
@@ -148,7 +164,7 @@ class TrafficChainTest {
     fun `a counter is floored at zero rather than going negative`() =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 10)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, json)
+            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
 
             consumer.apply(event(units = 400))
 
@@ -164,15 +180,13 @@ class TrafficChainTest {
     fun `the copy changes with the state and not only the colour`() =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, json)
+            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
 
             consumer.apply(event(units = 950))
             val low = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA))
             assertTrue(low.isLow, "50 of 1000 left is not being called low")
 
-            val card =
-                io.konekt.feature.usage.server.data.UsageCounterCards
-                    .of(low)
+            val card = cards.of(low)
             assertEquals(CounterStates.LOW, card.state)
             // The canvas's rule: a subscriber who is nearly out is told what that means, not shown a
             // different colour and left to work it out.
@@ -182,7 +196,7 @@ class TrafficChainTest {
     @Test
     fun `usage for a subscriber who bought nothing is ignored rather than failing`() =
         runBlocking {
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, json)
+            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
 
             // No counter exists. The simulator does not know who has bought what, and a consumer that
             // threw here would stop the whole poll for everybody else.
