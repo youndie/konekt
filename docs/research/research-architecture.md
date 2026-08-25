@@ -22,6 +22,10 @@ There is no code yet. "Verified" therefore means *read in the dependency at the 
 pin*, not *read in konekt* — and that distinction is the whole reason this document exists before
 the first commit: five of the eleven facts below contradict something the brief assumed.
 
+What is built *on top* of the toolkits — versions, module layout, the layer rules inside a module —
+is [research-stack](research-stack.md); decisions there are numbered from D11 so the two documents
+share one sequence.
+
 The brief is preserved verbatim as [source-draft](source-draft.md); it is in Russian and is not
 edited, because a draft rewritten to agree with its research stops recording what was believed
 first. The interface design is [design-app-canvas](../design/design-app-canvas.md). Upstream gaps
@@ -431,6 +435,8 @@ out to be platform-bound.
 The order of work and the acceptance criteria live in [backlog.md](../../backlog.md). The first
 things that have to be nailed down, because everything else rests on them:
 
+0. **The build** (`B-01`). Every decision in [research-stack](research-stack.md) is expressed in a
+   build file, so nothing below can start first.
 1. **The component dictionary** (§1.5, M0). Nine own components with their wire names, in one KSP
    module. Backend-driven UI means the dictionary is the API; renaming a type later is a coordinated
    release of both sides. It is fixed before the first screen, not after the third.

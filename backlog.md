@@ -41,11 +41,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (30)
+## Open (34)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[ ]` | Gradle skeleton on Java 25, with the six dependency lines pinned separately | P0 | M | - |
+| [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[ ]` | Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately | P0 | M | - |
 | [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and Exposed, including the tables petich does not create | P0 | M | B-01 |
 | [B-03](docs/backlog/B-03-component-dictionary.md) `[ ]` | Fix the component dictionary: nine own wire types in one KSP module | P0 | L | B-01 |
 | [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | The design system must keep its surface roles after the theme arrives | P0 | S | B-01 |
@@ -54,6 +54,8 @@ so re-prioritising must never move a file.
 | [B-08](docs/backlog/B-08-purchase-saga.md) `[ ]` | The purchase saga: four interceptors, with the confirmation as a suspend | P0 | L | B-02 |
 | [B-09](docs/backlog/B-09-outbox-guard.md) `[ ]` | Refuse to boot on a repository that silently drops events | P0 | S | B-02 |
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
+| [B-31](docs/backlog/B-31-money-type.md) `[ ]` | Money is a type, and only the server formats it | P0 | S | B-01 |
+| [B-32](docs/backlog/B-32-testcontainers-harness.md) `[ ]` | Repository tests run against a real Postgres, and use cases against MockK | P0 | S | B-01 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-10](docs/backlog/B-10-payment-mock.md) `[ ]` | A payment mock that can refuse and can be slow | P1 | S | B-08 |
 | [B-11](docs/backlog/B-11-rollback-screen.md) `[ ]` | The rollback screen states the reversal in money, not in apology | P1 | S | B-10 |
@@ -66,6 +68,8 @@ so re-prioritising must never move a file.
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[ ]` | Write down that the iOS build reports no crashes | P1 | XS | B-26 |
 | [B-29](docs/backlog/B-29-file-upstream-issues.md) `[~]` | File U1–U5 upstream and record what came back | P1 | S | - |
+| [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[ ]` | Time is injected, because four different deadlines depend on it | P1 | XS | B-01 |
+| [B-34](docs/backlog/B-34-error-contract.md) `[ ]` | One error contract: Result out of use cases, StatusPages into status codes | P1 | S | B-01 |
 | [B-12](docs/backlog/B-12-operation-history.md) `[ ]` | Operation history, including the entries that did not happen | P2 | M | B-08 |
 | [B-16](docs/backlog/B-16-traffic-simulator.md) `[ ]` | The traffic simulator: a consumer that moves the counters | P2 | S | B-14, B-15 |
 | [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[?]` | Answer in writing how the screen cache and a live update interact | P2 | S | B-15 |
@@ -95,6 +99,13 @@ exists, and [B-04](docs/backlog/B-04-design-system-forwards-surface.md) fixes th
 wrapper before any theme work. Both are cheap now and both are structural later — the dictionary
 because it is the API, the wrapper because the defect it guards against is invisible once there is
 enough styling to hide in.
+
+**The technical stack is settled in `B-01`, not per feature.** Versions, the module layout, the layer
+rules, the test harness and `Money` are all expressed in build files and in four types, and
+[research-stack](docs/research/research-stack.md) records why each one is what it is. Two of those
+decisions look like preferences and are not: any module touching Exposed is `kotlin("jvm")` because
+`exposed-core` publishes no common metadata, and MockK is unavailable in any module that targets iOS
+or Android because it publishes `common` and `jvm` and nothing else.
 
 **Two guards are worth more than the features they guard.**
 [B-09](docs/backlog/B-09-outbox-guard.md) and [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md)

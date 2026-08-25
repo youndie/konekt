@@ -65,10 +65,12 @@ The list below is **checked** against the files on disk: a document missing here
 file behind it, fails `coverage_map.py`. The grouping and the descriptions are written by a person —
 the machine only guards the membership.
 
-### Research (3)
+### Research (4)
 
 - [x] [research-architecture](research/research-architecture.md) — verified facts about the six
   toolkits, the decisions taken, and the risks; the entry point
+- [x] [research-stack](research/research-stack.md) — the versions read from the registries, the module
+  layout, the layer rules, and the four types that exist before any feature does
 - [x] [research-upstream-proposals](research/research-upstream-proposals.md) — five gaps found in the
   toolkits and the issues drafted for them
 - [x] [source-draft](research/source-draft.md) — the original brief, in Russian, preserved verbatim
