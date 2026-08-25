@@ -98,6 +98,10 @@ symptom of it not being ignored is a build error that reads like a compilation f
   apart resolve into a combination nobody ever built.
 - **katcher is three version lines**, not one: server, `client`, and `client-android` plus the Gradle
   plugin. They are separate entries in the catalogue and the catalogue says why.
+- **An issue outside `youndie/*` is asked about first.** Our own repositories are the working
+  arrangement and need no permission; anybody else's tracker costs them time and cannot be quietly
+  withdrawn. Write the finding into
+  [research-upstream-proposals](docs/research/research-upstream-proposals.md) and ask.
 - **Do not fork a toolkit.** A gap goes upstream as an issue
   ([docs/research/research-upstream-proposals.md](docs/research/research-upstream-proposals.md)),
   konekt works around it locally, and the workaround carries a comment naming the issue — so that the

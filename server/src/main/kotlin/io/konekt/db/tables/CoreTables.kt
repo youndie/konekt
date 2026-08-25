@@ -24,8 +24,9 @@ object AccountTable : Table("account") {
     val id = varchar("id", 64)
     val subscriberId = varchar("subscriber_id", 64).references(SubscriberTable.id).index("idx_account_subscriber_id")
 
-    // The two halves of a Money, and they are never separated: a balance read without its currency
-    // is a number that means nothing, and the type that reunites them is B-31.
+    // The two halves of a Money (io.konekt.domain.Money), and they are never separated: a balance
+    // read without its currency is a number that means nothing, and the exponent that turns it into
+    // an amount belongs to the currency rather than to whoever divides by a hundred.
     val balanceMinor = long("balance_minor").default(0)
     val currency = char("currency", 3)
 

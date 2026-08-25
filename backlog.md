@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (33)
+## Open (32)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -51,7 +51,6 @@ so re-prioritising must never move a file.
 | [B-08](docs/backlog/B-08-purchase-saga.md) `[ ]` | The purchase saga: four interceptors, with the confirmation as a suspend | P0 | L | B-02 |
 | [B-09](docs/backlog/B-09-outbox-guard.md) `[ ]` | Refuse to boot on a repository that silently drops events | P0 | S | B-02 |
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
-| [B-31](docs/backlog/B-31-money-type.md) `[ ]` | Money is a type, and only the server formats it | P0 | S | B-01 |
 | [B-32](docs/backlog/B-32-testcontainers-harness.md) `[~]` | Repository tests run against a real Postgres, and use cases against MockK | P0 | S | B-01 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[ ]` | Expand and contract: a migration is compatible with the code already running | P0 | M | B-02 |
@@ -79,13 +78,14 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (4)
+## Closed (5)
 
 **The wire and the shell**
 
 - [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[x]` - Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately
 - [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[x]` - Postgres, Flyway and the Exposed plugin, including the tables petich does not create
 - [B-03](docs/backlog/B-03-component-dictionary.md) `[x]` - Fix the component dictionary: nine own wire types in one KSP module
+- [B-31](docs/backlog/B-31-money-type.md) `[x]` - Money is a type, and only the server formats it
 
 **Upstream and the box**
 

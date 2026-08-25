@@ -399,6 +399,13 @@ Decision: every gap this project finds in kompot, petich, booblik, katcher, metr
 as an issue on that repository. Where a gap blocks work, konekt works around it in its own code, and
 the workaround carries a comment naming the issue so that it can be removed rather than inherited.
 
+**Amended 2026-08-25**: a repository that is not ours is asked about first. `youndie/*` is the
+working arrangement below and needs no permission; anything else — JetBrains/Exposed, Ktor, a
+third party — gets the finding written into
+[research-upstream-proposals](research-upstream-proposals.md) and a question, not a filing. A report
+into somebody else's tracker spends their time and cannot be quietly withdrawn, and the first one
+sent out from here named a symptom as a mechanism.
+
 Why: this is the instruction under which the research was done, and it is also the arrangement that
 makes the reference build worth anything to the toolkits — a second implementation reading a
 published contract finds what the author cannot, and an issue records the finding where the next

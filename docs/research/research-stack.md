@@ -213,6 +213,7 @@ target.
 | excluding generated files from ktlint's **check** does not remove the generated directory from the task's **inputs** | Gradle's undeclared-dependency validation failed `runKtlintCheckOverCommonMainSourceSet` against `kspCommonMainKotlinMetadata` |
 | `platform(...)` does not exist on the receiver of a KMP source-set `dependencies { }` block | `Unresolved reference 'platform'`, which names the function rather than the receiver |
 | an installed simulator **runtime** with no simulator **device** still reads as a missing SDK | `Xcode does not support simulator tests for ios_simulator_arm64. Check that requested SDK is installed.` after `xcodebuild -downloadPlatform iOS` had succeeded |
+| a backtick test name containing a **comma** compiles on the JVM and fails on Kotlin/Native | `Name contains illegal characters: ","` from `compileTestKotlinIosX64`, on a suite that was green on `jvmTest` |
 
 **Consequence 1.** `add("kspCommonMainMetadata", platform(libs.kompot.bom))` goes beside the processor
 coordinate. Without it the only alternative is writing a version literal for one coordinate, which is
@@ -229,6 +230,12 @@ to declare the dependency, whether or not it acts on what it reads.**
 exist too — `xcrun simctl create <name> <devicetype> <runtime>` — and until one does, the error blames
 the SDK, which is installed. The two states are indistinguishable from the message, and only
 `xcrun simctl list devices available` separates them.
+
+**Consequence 5.** Kotlin/Native's identifier rules are stricter than the JVM's even inside backticks,
+and a comma is one of the characters it refuses. So a `commonTest` suite can be entirely green on
+`jvmTest` and not compile for iOS at all — which is the same shape as §1.7 seen from the other side,
+and the practical reason the iOS run is a step of its own rather than something `build` is trusted to
+have covered.
 
 
 ### 1.9 The migration generator omits a table and says nothing, and it cannot run where its output is wanted
