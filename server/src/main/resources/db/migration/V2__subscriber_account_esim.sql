@@ -19,10 +19,15 @@ CREATE UNIQUE INDEX uq_subscriber_msisdn ON subscriber (msisdn);
 CREATE TABLE account (
     id             VARCHAR(64) NOT NULL,
     subscriber_id  VARCHAR(64) NOT NULL,
-    -- Money as two columns, matching the wire form of the Money type (B-31): minor units and an ISO
-    -- code, never a decimal and never a formatted string. The exponent belongs to the currency —
-    -- a hundred is right for the rouble and wrong for the yen — and nothing in a BIGINT says which
-    -- one it is holding, which is exactly why the code travels beside it.
+    -- Money as two columns, matching the wire form of the Money type: minor units and an ISO code,
+    -- never a decimal and never a formatted string. The exponent belongs to the currency — a hundred
+    -- is right for the dollar and wrong for the yen — and nothing in a BIGINT says which one it is
+    -- holding, which is exactly why the code travels beside it.
+    --
+    -- No DEFAULT on the currency, deliberately. This build runs in USD (Currency.DEFAULT) and an
+    -- account is always created with a currency by code; a column default would quietly fill in a
+    -- row that a bug had failed to give one, and a balance in the wrong currency is worse than a
+    -- write that fails.
     balance_minor  BIGINT      NOT NULL DEFAULT 0,
     currency       CHAR(3)     NOT NULL,
     created_at     BIGINT      NOT NULL,

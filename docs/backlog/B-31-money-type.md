@@ -54,6 +54,18 @@ and once in a client view model, each dividing by a hard-coded `100`
   `server/src/main/kotlin/io/konekt/money/MoneyFormat.kt`,
   `server/src/test/kotlin/io/konekt/money/MoneyFormatTest.kt`.
 
+**Amended 2026-08-25**: the product currency is `Currency.DEFAULT` = **USD**, and `MoneyFormat` gained
+a per-currency layout — symbol placement, group and decimal separators, and whether a space sits
+before the symbol. `$1,190.50` and `1 190,50 ₽` are the same amount written by two sets of rules, and
+neither is a property of the amount. The canvas is drawn in roubles and now differs from the running
+product in the shape of every amount; that is recorded in
+[design-app-canvas](../design/design-app-canvas.md) rather than reconciled by pretending.
+
+Not `java.text.NumberFormat`, though this module is JVM-only and could: its output is CLDR data that
+moves between JDK releases — the space character in a currency format has changed more than once — so
+a test asserting the exact string a subscriber reads would break on a toolchain upgrade with no change
+here.
+
 ## The decision worth not re-litigating
 
 `Currency` is a **closed enum**, which is the opposite of the rule the component dictionary follows,

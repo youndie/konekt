@@ -270,7 +270,12 @@ Three tables with no foreign keys between them lose nothing — their descriptio
 share one version, which is the same flaw in a case where Flyway catches it instead.
 
 Reported as [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897), rewritten
-after this check.
+after this check, and still open.
+
+*Amended 2026-08-25.* The index half of this — petich declaring none of the indexes its comments
+asked for — closed in petich `0.1.0.8`, so `KonektSchemaTest` no longer exempts `DROP INDEX` and
+asserts strict equality. Retiring an exemption is worth as much attention as adding one: while it
+stood, an index that genuinely should have been dropped was invisible to the same check.
 
 **The lesson is not about Exposed.** A reproducible symptom was published as a mechanism, in a public
 report, where it would have sent a maintainer to the wrong part of the code. The distance between

@@ -64,11 +64,11 @@ the shapes petich's repositories read, and the domain schema sits beside them.
 
 ## What this item ran into
 
-**petich's Exposed repositories are unreachable.** All four compile into the default package, so no
-file in a named package can reference them — the module's whole purpose, unusable from any
-application. Filed as [petich#8](https://github.com/youndie/petich/issues/8); konekt constructs the
-repository by name and casts to the packaged interface (`PetichRepositories`), three lines with the
-issue named in a comment.
+**petich's Exposed repositories were unreachable.** All four compiled into the default package, so no
+file in a named package could reference them — the module's whole purpose, unusable from any
+application. Filed as [petich#8](https://github.com/youndie/petich/issues/8) and **closed the same
+day in `0.1.0.8`**; the reflective bridge konekt had written is deleted and the compiler checks the
+constructor again.
 
 **The migration generator omits a table and reports success.** With two tables referencing the same
 parent, one of them is simply not emitted — [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897).
@@ -81,10 +81,11 @@ Linux box, and it writes files, which the one-way mutagen replica reverts. `scri
 runs it there and reads the drafts back here — and corrects
 [research-stack](../research/research-stack.md) D23, which had said the task was Mac-local.
 
-**petich declares no index its own comments ask for**, so an Exposed-driven diff proposes dropping
-them ([petich#9](https://github.com/youndie/petich/issues/9)). The schema check ignores `DROP INDEX`
-for that reason and asserts each index's presence by name instead, so the exemption cannot hide a
-missing one.
+**petich declared no index its own comments ask for**, so an Exposed-driven diff proposed dropping
+them ([petich#9](https://github.com/youndie/petich/issues/9)). Also closed in `0.1.0.8`, under the
+same index names, so the `DROP INDEX` exemption the schema check had carried is gone and the
+assertion is strict again — which matters, because while the exemption stood an index that genuinely
+should have been dropped was invisible to the same check.
 
 Background: [research-architecture](../research/research-architecture.md) §1.7,
 [research-stack](../research/research-stack.md) §1.2, §1.5, §1.9, D16, D23.

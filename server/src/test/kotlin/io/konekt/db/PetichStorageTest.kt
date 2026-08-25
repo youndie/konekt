@@ -18,6 +18,9 @@ import ru.workinprogress.petich.PetichPayload
 import ru.workinprogress.petich.PetichPhase
 import ru.workinprogress.petich.PetichStatus
 import ru.workinprogress.petich.SimpleEnrichedPayload
+import ru.workinprogress.petich.postgres.ExposedPetichRepository
+import ru.workinprogress.petich.postgres.OutboxEventsTable
+import ru.workinprogress.petich.postgres.PetichTable
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,10 +70,12 @@ class PetichStorageTest {
                 }
         }
 
-    // Through the factory rather than the constructor, because the constructor is not reachable from
-    // a packaged file — see PetichRepositories and youndie/petich#8. This test is also what checks
-    // the reflective call, since the compiler has stopped doing it.
-    private val repository = PetichRepositories.exposed(PostgresHarness.database, json)
+    private val repository =
+        ExposedPetichRepository(
+            db = PostgresHarness.database,
+            table = PetichTable(json),
+            outboxTable = OutboxEventsTable(),
+        )
 
     private val engine =
         PetichEngine(
@@ -125,7 +130,12 @@ class PetichStorageTest {
             // A fresh repository over the same database: the first assertion could pass on a cached
             // object, and this one cannot. It is the difference between "the engine returned
             // something" and "Postgres holds it".
-            val fresh = PetichRepositories.exposed(PostgresHarness.database, json).findById("probe-2")
+            val fresh =
+                ExposedPetichRepository(
+                    db = PostgresHarness.database,
+                    table = PetichTable(json),
+                    outboxTable = OutboxEventsTable(),
+                ).findById("probe-2")
 
             assertEquals(ProbePayload(note = "second"), assertNotNull(fresh).payload)
         }

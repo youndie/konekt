@@ -12,7 +12,6 @@ import ru.workinprogress.petich.postgres.PetichTable
 import ru.workinprogress.petich.postgres.ScheduledJobsTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 // The hand-written SQL and the Exposed table definitions are two descriptions of one schema, and
 // this is what holds them to each other.
@@ -46,51 +45,22 @@ class KonektSchemaTest {
                 MigrationUtils.statementsRequiredForDatabaseMigration(*(petichTables + konektCoreTables).toTypedArray())
             }
 
-        // DROP INDEX is filtered out, and the reason is a finding rather than a convenience.
+        // Strict equality, with no exemption.
         //
-        // MigrationUtils answers "what would make the database EQUAL to these definitions", which is
-        // a stronger claim than the one worth asserting: that the schema has everything the code
-        // needs. An index the definitions do not mention is not a defect — it is a deliberate
-        // addition for the query planner, and three of ours are asked for by petich's own column
-        // comments while being absent from its Table objects (youndie/petich#9). Asserting
-        // equality would delete exactly the indexes upstream told us to create.
+        // There used to be one: DROP INDEX was filtered out, because petich asked for three indexes
+        // in column comments and declared none, so Exposed's view of the schema did not contain them
+        // and wanted ours dropped. youndie/petich#9 closed that in 0.1.0.8 — the three are declared
+        // now, under the same names — so the exemption is no longer earned and is gone.
         //
-        // Everything else stays a failure, including a column type, a length, a nullability, a
-        // default and a constraint name — which is the half nobody would catch by eye.
-        val insufficient = required.filterNot { it.trimStart().startsWith("DROP INDEX", ignoreCase = true) }
-
+        // Removing it matters more than adding it did. An exemption in a completeness check describes
+        // the one case it was written for and is blind to the next thing that looks like it; while
+        // DROP INDEX was ignored here, an index that genuinely should have gone would have been
+        // ignored too.
         assertEquals(
             emptyList(),
-            insufficient,
-            "Flyway's schema does not satisfy the Exposed tables; still required:\n" +
-                insufficient.joinToString("\n"),
+            required,
+            "Flyway's schema does not match the Exposed tables; still required:\n" + required.joinToString("\n"),
         )
-    }
-
-    @Test
-    fun `the indexes the definitions do not know about are actually there`() {
-        // The guard on the filter above. Dropping DROP INDEX from the comparison means an index that
-        // is MISSING would also go unnoticed, so each one is checked by name — per index rather than
-        // by count, because a count passes on three indexes of which two are the wrong ones.
-        val expected =
-            listOf(
-                "idx_petiches_status_suspended_until",
-                "idx_outbox_events_status_created_at",
-                "idx_scheduled_jobs_active_next_run_at",
-            )
-
-        val present = mutableSetOf<String>()
-        PostgresHarness.dataSource.connection.use { connection ->
-            connection.createStatement().use { statement ->
-                statement.executeQuery("SELECT indexname FROM pg_indexes WHERE schemaname = 'public'").use { rows ->
-                    while (rows.next()) present += rows.getString(1)
-                }
-            }
-        }
-
-        expected.forEach { index ->
-            assertTrue(index in present, "$index is missing from the migrated schema")
-        }
     }
 
     @Test

@@ -28,7 +28,7 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
             PlanCardComponent(
                 id = "plan-tr-10",
                 title = "Turkey",
-                priceText = "1 190 ₽",
+                priceText = "$1,190",
                 quotaTexts = listOf("10 GB", "30 days"),
                 zoneText = "Turkey",
                 badgeText = "Popular",
@@ -57,10 +57,10 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                 reference = "5b17-7702",
                 title = "Turkey · 10 GB · 30 days",
                 dateText = "26 Jun",
-                amountText = "−450 ₽",
+                amountText = "−$450",
                 status = OrderStatuses.COMPENSATED,
                 statusText = "Reversed",
-                noteText = "450 ₽ returned to balance on 28 Jun — profile never activated.",
+                noteText = "$450 returned to balance on 28 Jun — profile never activated.",
                 action = NavigateAction("app://orders/5b17-7702"),
             ),
         "banner" to

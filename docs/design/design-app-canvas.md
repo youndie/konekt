@@ -98,6 +98,22 @@ subject, one line when it sits among known rows. The canvas labels the example
 `type: esim_transfer_widget`. A client that registers everything the server sends can never draw this
 frame, which is Risk 5 in the research and its own backlog item.
 
+## The canvas is drawn in roubles and the product runs in dollars
+
+Every amount on the canvas is a rouble — `1 190 ₽`, `2 480,50 ₽`. The product's currency is
+`Currency.DEFAULT`, which is **USD**, so the same screens render `$1,190` and `$1,190.50`.
+
+Recorded rather than quietly reconciled, because the difference is not only the symbol. A dollar is
+written with the symbol in front, groups separated by commas and a fraction after a point; a rouble
+is the mirror of all three. So a frame photographed from the canvas and a frame from the running
+application differ in the shape of every amount, and a reviewer comparing them should expect that
+rather than file it.
+
+What the canvas still decides, and what `MoneyFormatTest` asserts: a whole amount drops its zero
+fraction, and a history row carries an explicit sign while a balance does not. Those are product
+rules and they survive the change of currency. Re-drawing the canvas in dollars is worth doing before
+anyone uses it as an acceptance reference for a screen; it is not on the critical path of any item.
+
 ## Typography and shape
 
 Manrope for the interface, Space Grotesk for figures, ICCIDs and activation codes. Both are Google

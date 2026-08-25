@@ -46,7 +46,7 @@ ktlint = "1.8.0"
 # combination cannot be written down — which is why no kompot library below carries a version.
 kompot = "0.31.0.74"
 
-petich = "0.1.0.6"
+petich = "0.1.0.8"
 booblik = "0.3.0"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing

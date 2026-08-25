@@ -42,4 +42,16 @@ enum class Currency(
             repeat(exponent) { result *= 10 }
             return result
         }
+
+    companion object {
+        // The currency this reference build runs in, named once so it is not spelled into every
+        // fixture, seed and screen.
+        //
+        // It is a CONSTANT here and configuration in a boxed product: an operator selling in another
+        // currency changes it, and that change is a row in the operator material (B-30) rather than
+        // something a formatter guesses. There is deliberately no default on the `currency` column in
+        // the database — an account is always created with a currency by code, and a column default
+        // would quietly fill in a row that a bug had failed to give one.
+        val DEFAULT: Currency = USD
+    }
 }

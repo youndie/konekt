@@ -309,11 +309,22 @@ konekt's own plan; the amendments are in [research-architecture](research-archit
 Found by doing the work rather than by reading, which is the difference between these three and the
 first five: each one blocked or corrupted something that was being built at the time.
 
-| | Repository | Ask | Blocks konekt | Filed |
+| | Repository | Ask | Filed | Reply |
 |---|---|---|---|---|
-| U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | **yes** — worked around reflectively | [petich#8](https://github.com/youndie/petich/issues/8) |
-| U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | no — filtered in our schema check | [petich#9](https://github.com/youndie/petich/issues/9) |
-| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | no — the draft is reviewed anyway | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) |
+| U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | [petich#8](https://github.com/youndie/petich/issues/8) | closed, packaged in `0.1.0.8`; our reflective bridge deleted |
+| U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
+| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open |
+
+**Both petich asks landed in `0.1.0.8` and both workarounds are gone**, verified in the published jar
+rather than in the issue state: `ExposedPetichRepository.class` now sits under
+`ru/workinprogress/petich/postgres/`, and the three indexes are declared — including the
+`outbox_events` one, which the issue mentioned only in passing as having the same shape without the
+comment.
+
+Removing the second workaround mattered more than adding it did. `KonektSchemaTest` had been ignoring
+`DROP INDEX` in its completeness comparison, which is an exemption written for one case and blind to
+the next thing that looks like it: while it stood, an index that genuinely should have gone would
+have been ignored too. The assertion is strict again.
 
 **U6 is the one that mattered.** `ExposedPetichRepository` and its three siblings compile into the
 default package — in `petich-postgres-0.1.0.6.jar` the classes sit at the root of the archive with no

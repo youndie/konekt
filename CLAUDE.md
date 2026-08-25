@@ -140,17 +140,16 @@ symptom of it not being ignored is a build error that reads like a compilation f
   for the whole JVM and `truncateAll()` runs between tests.
 - **`KonektSchemaTest` is what proves the migrations are complete**, not review: it asks Exposed,
   after Flyway has run, whether any DDL is still required for petich's four tables and konekt's
-  three. It ignores `DROP INDEX` (petich declares no index its own comments ask for —
-  youndie/petich#9) and asserts each such index by name instead, so the exemption cannot hide one.
+  three, and asserts the answer is empty. It has no exemptions and should not grow one.
+- **Money is `io.konekt.domain.Money`, and only `:server` can format it.** The product runs in
+  `Currency.DEFAULT` (USD). A currency added to the enum needs a row in `MoneyFormat`'s layout table
+  or the screen cannot be built.
 - **Never write a migration by hand from the generator's output.** `scripts/generate-migration.sh`
   drafts one; the draft breaks a rolling deploy by construction, and it overwrites its own files —
   each is named from its first statement plus a version stamped to the second, so tables sharing a
   parent collide and one is lost silently (JetBrains/Exposed#2897). Rewrite it as an expand/contract
   pair, renumber it, and let the tests decide: `MigrationFilesTest` on the names, `KonektSchemaTest`
   on what they produce.
-- **`ExposedPetichRepository` cannot be imported** — it is in the default package
-  (youndie/petich#8). Go through `io.konekt.db.PetichRepositories`, and delete that file when the
-  upstream fix lands.
 - **A BOM does not reach the KSP processor classpath.** That configuration needs its own
   `add("kspCommonMainMetadata", platform(libs.kompot.bom))`, or the coordinate resolves with no
   version and the error ends in a bare colon.
