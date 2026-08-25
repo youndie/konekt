@@ -37,13 +37,17 @@ dependencies {
 val pkg = (findProperty("pkg") as String?) ?: "p3"
 val out = (findProperty("out") as String?) ?: "gen"
 val fmt = (findProperty("fmt") as String?)
+// The plugin's own separator. Settable because the generated version and the separator
+// interact: an index appended with the same character the separator uses is not
+// distinguishable from it, and Flyway reads the version up to the FIRST separator.
+val sep = (findProperty("sep") as String?) ?: "__"
 
 exposed {
     migrations {
         tablesPackage.set(pkg)
         testContainersImageName.set("postgres:18-alpine")
         fileDirectory.set(layout.buildDirectory.dir(out))
-        filePrefix.set("V"); fileSeparator.set("__"); fileExtension.set(".sql")
+        filePrefix.set("V"); fileSeparator.set(sep); fileExtension.set(".sql")
         if (fmt != null) fileVersionFormat.set(VersionFormat.valueOf(fmt))
     }
 }

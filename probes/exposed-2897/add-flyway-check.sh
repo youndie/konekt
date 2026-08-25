@@ -10,7 +10,15 @@ fun main(args: Array<String>) {
     val flyway = Flyway.configure()
         .dataSource(args[0], "postgres", "pw")
         .locations("filesystem:" + args[1])
+        // MATCHED TO THE GENERATOR'S SEPARATOR, and this is not a detail. Flyway recognises a file
+        // as a versioned migration only by ITS OWN separator: pointed at files written with "_"
+        // while configured with the default "__", it reports "applied 0 migrations" and finds no
+        // fault — a run that measures the harness rather than the output.
+        .sqlMigrationSeparator(if (args.size > 2 && args[2].isNotEmpty()) args[2] else "__")
         .load()
+    // Printed before migrate(), because how Flyway PARSED each name is the question when a version
+    // and a separator interact — and a failing migrate() says nothing about it.
+    flyway.info().all().forEach { println("SEEN version=" + it.version + " desc=" + it.description) }
     val applied = flyway.migrate()
     println("FLYWAY OK: applied " + applied.migrationsExecuted + " migrations")
 }
@@ -30,7 +38,11 @@ tasks.register<JavaExec>("flywayProbe") {
     mainClass.set("fw.MainKt")
     classpath = sourceSets["main"].runtimeClasspath
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
-    args((findProperty("url") as String?) ?: "", (findProperty("dir") as String?) ?: "")
+    args(
+        (findProperty("url") as String?) ?: "",
+        (findProperty("dir") as String?) ?: "",
+        (findProperty("fwsep") as String?) ?: "",
+    )
     isIgnoreExitValue = true
 }
 '''

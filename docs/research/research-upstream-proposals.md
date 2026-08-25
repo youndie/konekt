@@ -313,8 +313,22 @@ first five: each one blocked or corrupted something that was being built at the 
 |---|---|---|---|---|
 | U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | [petich#8](https://github.com/youndie/petich/issues/8) | closed, packaged in `0.1.0.8`; our reflective bridge deleted |
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
-| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open |
+| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open; fix proposed in [#2898](https://github.com/JetBrains/Exposed/pull/2898) and verified here |
 | U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | open |
+
+**U8's fix was verified rather than read.** [#2898](https://github.com/JetBrains/Exposed/pull/2898)
+appends an index to the version of every migration after the first, and the contributor asked for a
+run against this repository's reproduction. Built into `mavenLocal` and measured: all four shapes come
+out complete, and Flyway 13.3.0 applies every one against Postgres 18 — where the reported shape used
+to yield one file and lose a table, it yields three and loses none.
+
+The same run found one configuration where the fix does not hold: with `fileSeparator = "_"` the index
+is written with the separator's own character, Flyway reads the version up to the first separator, and
+`Found more than one migration with version …` comes back. Reported in the issue as a measurement.
+**Not reviewed as a patch** — the code is not ours, and the line between "you asked us to run it, here
+is what we measured" and "here is how to write it" is where an upstream report stops being welcome.
+The recipe is [`probes/exposed-2897/verify-a-patch.sh`](../../probes/exposed-2897/verify-a-patch.sh),
+committed because the next fix will want it too.
 
 **U9 has no workaround and that is the finding.** The renderers are the toolkit's, so there is
 nothing to work around locally: `:client` is a JVM-only module until it closes, and the brief's

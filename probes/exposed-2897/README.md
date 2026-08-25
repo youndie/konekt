@@ -20,8 +20,12 @@ the script rather than synced.
 ```
 
 `-Ppkg` selects the table shape, `-Pout` the output directory under `build/`, `-Pfmt` an optional
-`VersionFormat`. Each run starts its own Postgres 18 container and therefore diffs against an empty
-database.
+`VersionFormat`, and `-Psep` the plugin's `fileSeparator`. Each run starts its own Postgres 18
+container and therefore diffs against an empty database.
+
+`-Psep` is not decoration: the version and the separator interact. Flyway reads a version up to the
+**first** separator, so an index appended with the same character the separator uses disappears into
+the description.
 
 The second script adds a Flyway 13.3.0 runner and starts a Postgres on port 55432, for checking
 whether generated output can actually be applied:
@@ -48,3 +52,16 @@ Measured 2026-08-25 against Exposed and the plugin at 1.4.0, Gradle 9.7.1, JVM 2
 Flyway 13.3.0. The `p4` row is the one that is not in the issue body: it is the shape that trips both
 defects at once, and the reason a regression test must assert the union of `CREATE TABLE` statements
 rather than anything about filenames.
+
+## Verifying a proposed fix
+
+[`verify-a-patch.sh`](verify-a-patch.sh) builds a branch of the plugin into `mavenLocal` and points
+the probe at it. It carries three things about Exposed's own build that each cost a run to find —
+its Gradle refuses JDK 25 and says so as a bare `25.0.3`, it needs a JDK 17 toolchain that is not
+installed, and the plugin modules version themselves independently of the root property.
+
+Used on [PR #2898](https://github.com/JetBrains/Exposed/pull/2898) on 2026-08-25. With it applied,
+all four shapes come out complete and Flyway 13.3.0 applies every one — 3 files for `p3`, 4 for
+`p4`, three distinct versions for `pflat`. The one case where it does not hold is `-Psep=_`, where
+the index is written with the separator's own character and Flyway collapses the versions again;
+reported in the issue as a measurement rather than as a request, since the patch is not ours.
