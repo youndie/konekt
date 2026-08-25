@@ -33,6 +33,13 @@ exposed {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    // MigrationFilesTest reads src/main/resources/db/migration as a directory, so it needs the
+    // module root. Stated rather than assumed: a Gradle default that moved would make the test read
+    // an empty directory, which is why it also asserts it found something.
+    workingDir = projectDir
+}
+
 dependencies {
     implementation(project(":shared:domain"))
 

@@ -240,11 +240,36 @@ against Postgres 18 through `testContainersImageName`.
 |---|---|
 | the plugin id is `org.jetbrains.exposed.plugin`, **not** `…plugin.gradle` | `Plugin … was not found`; the marker artefact is `org.jetbrains.exposed.plugin:org.jetbrains.exposed.plugin.gradle.plugin` |
 | the output directory property is `fileDirectory`, and `fileExtension` needs the dot — `"sql"` yields `…SUBSCRIBERsql` | `Unresolved reference 'migrationsDir'`, then a file Flyway would not pick up |
-| with **two tables referencing the same parent, one of them is not emitted**, exit code 0 | three tables in, two out; removing the sibling brings the missing one back |
-| versioned filenames are stamped to the **second**, so one run writes several files with the same version | `V20260825104001__CREATE_TABLE_PROBE.sql` beside `V20260825104001__CREATE_TABLE_SUBSCRIBER.sql`, which Flyway refuses outright |
+| **the generator overwrites its own output**, losing a table, with exit code 0 | three tables in, two out — see the mechanism below |
+| versioned filenames are stamped to the **second**, so one run writes several files with the same version | `V20260825104001__CREATE_TABLE_PROBE.sql` beside `V20260825104001__CREATE_TABLE_SUBSCRIBER.sql`; Flyway then answers `Found more than one migration with version …` (verified against 13.3.0) |
 | the plugin's own Flyway step did not find `db/migration` | `No migrations found. Are your locations set up correctly?` — so it diffed against an empty database and drafted a schema that already exists |
 
-Reported as [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897).
+**The mechanism, and a correction to how this was first written down.** The first version of this
+section — and of the upstream report — said "a table is omitted when two tables reference the same
+parent". That is the trigger, not the cause, and it was an inference from black-box behaviour in this
+project rather than something isolated. Isolating it changed the answer:
+
+- `MigrationUtils.statementsRequiredForDatabaseMigration(parent, childOne, childTwo)` against the same
+  empty database returns **all three** `CREATE TABLE` statements, in dependency order, in any
+  argument order. The diffing is correct and was never at fault;
+- the plugin writes **one file per table, each containing that table's whole dependency closure**, and
+  takes the file's description from its **first statement** — which for a child is the parent. So
+  every child of one parent yields a file described `CREATE_TABLE_<PARENT>`;
+- with the default second-resolution version, version *and* description are then identical, the files
+  resolve to one name, and they overwrite each other. What survives is the last one written.
+
+Changing nothing but `fileVersionFormat` to `MAJOR_MINOR` shows all three files and makes it plain.
+Three tables with no foreign keys between them lose nothing — their descriptions differ — but still
+share one version, which is the same flaw in a case where Flyway catches it instead.
+
+Reported as [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897), rewritten
+after this check.
+
+**The lesson is not about Exposed.** A reproducible symptom was published as a mechanism, in a public
+report, where it would have sent a maintainer to the wrong part of the code. The distance between
+"three tables in, two out" and "the diffing drops a table" is one experiment — running `MigrationUtils`
+directly — and it was not done before writing. Anything stated as a cause has to be separated from
+the observation it was inferred from, and the check is cheap exactly when it feels unnecessary.
 
 **Consequence 1.** The draft is a draft in a second sense. D22 already said the generator's *form* is
 unsafe — the shortest SQL that equalises two schemas is `DROP COLUMN` and `RENAME`, which is what

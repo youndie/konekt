@@ -313,7 +313,7 @@ first five: each one blocked or corrupted something that was being built at the 
 |---|---|---|---|---|
 | U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | **yes** — worked around reflectively | [petich#8](https://github.com/youndie/petich/issues/8) |
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | no — filtered in our schema check | [petich#9](https://github.com/youndie/petich/issues/9) |
-| U8 | Exposed | `generateMigrations` omits a table when two tables reference the same parent, and its filenames collide | no — the draft is reviewed anyway | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) |
+| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | no — the draft is reviewed anyway | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) |
 
 **U6 is the one that mattered.** `ExposedPetichRepository` and its three siblings compile into the
 default package — in `petich-postgres-0.1.0.6.jar` the classes sit at the root of the archive with no
@@ -330,6 +330,13 @@ konekt constructs the repository by name and casts to `OutboxAwarePetichReposito
 packaged. Three lines, no duplicated logic; the alternative was reimplementing the optimistic lock,
 the outbox batch insert and the expiry query. What it costs is the compiler's opinion on the
 constructor, which is why `PetichStorageTest` builds a real repository rather than a double.
+
+**U8 was reported wrong the first time and rewritten.** It went out saying a table is omitted when
+two tables reference the same parent — a symptom published as a mechanism, which would have sent a
+maintainer to the diffing. The diffing is correct: `MigrationUtils` returns all three statements. The
+plugin names each file from its first statement plus a second-resolution version, so files collide
+and overwrite. See [research-stack](research-stack.md) §1.9; the cost of finding this out was one
+experiment that should have been run before the issue was filed.
 
 **U7 and U8 compound.** petich asks for two indexes in column comments and declares neither, so
 Exposed's view of the schema does not contain them — and Exposed's view is what `generateMigrations`

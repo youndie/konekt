@@ -13,10 +13,12 @@
 # into an expand/contract pair is yours; see docs/backlog/B-36 for the table of what each kind of
 # change becomes.
 #
-# AND CHECK IT IS COMPLETE. The generator omits a table when two tables reference the same parent
-# (JetBrains/Exposed#2897), silently and with exit code 0. The gate that catches it is
-# KonektSchemaTest, which asks Exposed after Flyway has run whether any DDL is still required —
-# so run the tests before believing a draft.
+# AND CHECK IT IS COMPLETE, AND RENUMBER IT. The generator names each file by a version stamped to
+# the second plus a description taken from its FIRST statement — which, for a table with a foreign
+# key, is the parent. So several tables produce one filename, the files overwrite each other, and a
+# table goes missing with exit code 0 (JetBrains/Exposed#2897). Even when nothing is lost the shared
+# version is a set Flyway refuses outright. Two gates catch this: MigrationFilesTest on the names,
+# and KonektSchemaTest on what they produce. Run the tests before believing a draft.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
