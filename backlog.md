@@ -41,12 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (34)
+## Open (36)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[ ]` | Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately | P0 | M | - |
-| [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and Exposed, including the tables petich does not create | P0 | M | B-01 |
+| [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[ ]` | Postgres, Flyway and the Exposed plugin, including the tables petich does not create | P0 | M | B-01 |
 | [B-03](docs/backlog/B-03-component-dictionary.md) `[ ]` | Fix the component dictionary: nine own wire types in one KSP module | P0 | L | B-01 |
 | [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | The design system must keep its surface roles after the theme arrives | P0 | S | B-01 |
 | [B-06](docs/backlog/B-06-otp-login.md) `[ ]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
@@ -56,6 +56,8 @@ so re-prioritising must never move a file.
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-31](docs/backlog/B-31-money-type.md) `[ ]` | Money is a type, and only the server formats it | P0 | S | B-01 |
 | [B-32](docs/backlog/B-32-testcontainers-harness.md) `[ ]` | Repository tests run against a real Postgres, and use cases against MockK | P0 | S | B-01 |
+| [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
+| [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[ ]` | Expand and contract: a migration is compatible with the code already running | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
 | [B-10](docs/backlog/B-10-payment-mock.md) `[ ]` | A payment mock that can refuse and can be slow | P1 | S | B-08 |
 | [B-11](docs/backlog/B-11-rollback-screen.md) `[ ]` | The rollback screen states the reversal in money, not in apology | P1 | S | B-10 |

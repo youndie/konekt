@@ -112,6 +112,62 @@ Also read there and worth knowing: that build wired its server graph by hand, wi
 all. Koin on a Ktor server is therefore new here rather than inherited, and the reference for it is
 the toolkit-side family (`koin-ktor` with `by inject<T>()` inside `Route.xxxRoutes()`), not that one.
 
+### 1.5 The Exposed Gradle plugin generates migrations from a diff, and a diff is destructive by default
+
+Verified in the plugin's published coordinates and in JetBrains' own documentation for it.
+
+| Fact | Where verified |
+|---|---|
+| the plugin id is `org.jetbrains.exposed.plugin.gradle`, at `1.4.0` — the same line as Exposed itself | `org/jetbrains/exposed/plugin/org.jetbrains.exposed.plugin.gradle.plugin/maven-metadata.xml` |
+| it is published to **Maven Central, not the Gradle Plugin Portal** | absent from `plugins.gradle.org/m2/…`; present in `repo1.maven.org` |
+| its task is `generateMigrations`: it compares `Table` definitions against a live schema and writes the SQL difference | jetbrains.com/help/exposed/exposed-gradle-plugin.html |
+| it is configured by an `exposed.migrations` block needing `tablesPackage` plus either a database URL or `testContainersImageName` | same |
+| given Testcontainers it applies the existing Flyway migrations first, then diffs against that | same |
+| it **does not apply** anything — applying stays Flyway's job | same |
+| the Flyway Gradle plugin `org.flywaydb.flyway` is at `13.3.0`, the same version as `flyway-core` | `plugins.gradle.org/m2/org/flywaydb/flyway/…` |
+| Exposed also publishes `exposed-money` at `1.4.0` | `org/jetbrains/exposed/exposed-money/maven-metadata.xml` |
+
+**Consequence 1.** The source of truth moves: the `Table` objects describe the schema, and the Flyway
+files under `db/migration` become **generated drafts** that are read, edited and committed — not
+hand-authored and not applied unread. `settings.gradle.kts` needs `mavenCentral()` inside
+`pluginManagement.repositories`, which is not the default and whose absence reads as "plugin not
+found".
+
+**Consequence 2, and it is the important one.** A schema differ emits the shortest SQL that makes the
+two schemas equal: `ALTER TABLE … DROP COLUMN`, `RENAME`, `ALTER … TYPE`. Those are precisely the
+statements that break a rolling deploy, because during a roll the old code is still reading the
+column the diff just dropped. So `generateMigrations` produces a **draft**, and turning it into an
+expand/contract pair is a manual step with a rule behind it (D22). The two things asked for in the
+same breath — a generator and no downtime — pull against each other, and this is where the pull is
+resolved.
+
+**Consequence 3.** `tablesPackage` is a single package root, so every `Table` has to live under one.
+With a per-feature module split the tables are scattered across `feature/*-server-data`, which is
+fine as long as they share `io.konekt` as a root — and whether the plugin scans recursively is
+checked at `B-02` rather than assumed.
+
+**Consequence 4.** `exposed-money` is **not** taken. It is a column type over JSR-354 `javax.money`,
+which is JVM-only, and `Money` has to live in the shared domain and cross the wire (D15). The column
+mapping is two columns — a `BIGINT` of minor units and a `CHAR(3)` code — written once.
+
+### 1.6 A concurrent index needs two Flyway settings, and getting one of them wrong is a hang
+
+`CREATE INDEX CONCURRENTLY` is how an index is added to a live table without blocking writes, and it
+cannot run inside a transaction block.
+
+| Fact | Where verified |
+|---|---|
+| a migration opts out of the transaction through a sidecar config file `V<n>__<desc>.sql.conf` containing `executeInTransaction=false` | Flyway configuration documentation |
+| that alone is not enough on PostgreSQL: Flyway's own lock is transactional, and it deadlocks against the concurrent index build | flyway/flyway issues [#3840](https://github.com/flyway/flyway/issues/3840), [#3854](https://github.com/flyway/flyway/issues/3854) |
+| the second setting is session-level locking — `flyway.postgresql.transactional.lock=false` | same |
+
+**Consequence.** The failure mode of getting this wrong is not an error but a **hang**: the migration
+never returns. In a deployment that runs migrations before the application starts, a hang is
+indistinguishable from a slow rollout, and the instinct is to wait longer. So the migration step gets
+a deadline of its own, shorter than the deploy's, and the deadline exists to convert the hang into a
+failure that names itself.
+
+
 ---
 
 ## 2. Decisions
@@ -235,6 +291,121 @@ Why: petich's `Suspend(ttl)` and its sweeper, a package's expiry, a counter's pe
 billing boundary are four separate clocks-in-disguise, and every one of them is untestable without
 moving time. The alternative — a test that waits — is the reason suites get slow and then get skipped.
 
+### D19. The server engine is CIO
+
+Decision: `io.ktor.server.cio.CIO`, closing open question 4.
+
+Why: the load-bearing case is SSE (D7) — many long-lived, mostly idle streams rather than high
+request throughput, which is the profile CIO's coroutine-per-connection model is shaped for, and the
+profile Netty's thread pool is not shaped for. The price is that CIO is the less-trodden of the two on
+the JVM; the mitigation is that the realtime endpoint has its own test (`B-15`) rather than being
+covered incidentally.
+
+**The import alias is not optional** wherever a file also constructs an `HttpClient`:
+`io.ktor.server.cio.CIO` and `io.ktor.client.engine.cio.CIO` are the same simple name, and without an
+alias `embeddedServer` receives the client engine (§1.4).
+
+### D20. The build runs on the Linux box; everything Apple stays on the Mac
+
+Decision, closing open question 5: this repository is a mutagen session — one-way replica, alpha
+`~/Documents/GitHub/konekt`, beta `konekt` on the WSL machine, ignoring `build`, `.gradle`, `.kotlin`,
+`.idea`, `.DS_Store` and VCS. `:server:*`, the JVM test tasks and anything Docker run there through
+the `wsl-run` wrapper. `iosSimulatorArm64Test`, `xcodebuild`, the simulator and any screenshot run
+stay local.
+
+Why: the Mac has 16 GB and 41 GB of disk against the Linux box's 20 cores and 23 GB, and this build
+compiles a server, an Android client and three iOS targets. The price is two hazards that are
+properties of one-way replication and are named here so they are not rediscovered:
+
+- **the replica's `build/` is deleted whenever it does not exist on the Mac.** It is in the ignore
+  list for that reason, and the symptom when it is not is a build error that reads like a
+  compilation failure;
+- **anything a tool writes on the replica is reverted.** A formatter, a code generator or a
+  `generateMigrations` run must happen on the Mac, or its output is rolled back on the next sync and
+  the run looks like it did nothing. This one directly constrains D23.
+
+`git` operations happen on the Mac. The replica has its own `HEAD` and a diff taken there proves
+nothing about what will be committed.
+
+### D21. End-to-end is a docker-compose stand, run by one command in both places
+
+Decision: `deploy/compose.yaml` brings up Postgres, the booblik broker with its three topics, the
+server, and the three observability binaries. The end-to-end suite drives it over HTTP and is the
+same command locally and in CI.
+
+Why:
+
+- the scenario worth proving is the one that crosses every process — a purchase goes through a form,
+  a saga, the outbox, the broker and back to an open SSE stream — and it is exactly the scenario no
+  single-process test can reach. Every component test in this build can pass while that chain is
+  broken at a seam;
+- a stand that only CI knows how to start is a stand nobody debugs. One command, one file.
+
+Shape, taken from the nearest working example of a compose stand on this stack:
+
+- **`depends_on` uses `condition: service_healthy`, and the healthcheck asks a question the process
+  must answer.** A TCP check passes on a hung process, because the kernel accepts a connection into
+  the backlog with no help from it;
+- topics are declared to the broker as configuration at startup — `BOOBLIK_TOPICS:
+  orders:1,usage:1,notifications:1` — because booblik fixes its topic set then and never again
+  ([research-architecture](research-architecture.md) §1.8). One partition each: ordering inside a
+  topic is worth more here than parallelism nobody measures;
+- host ports are overridable through environment variables. 8080 is the most contested port there is,
+  and the stand should not be the thing that refuses to start;
+- optional pieces sit behind compose profiles, so the default `up` is the shortest path to the
+  scenario.
+
+The price: end-to-end is the slowest and most fragile layer of any suite, so it stays small on
+purpose — the sagas' happy path, the compensated path, and the live update. Everything else is proved
+lower down.
+
+### D22. No downtime means expand/contract, and the generated migration is a draft
+
+Decision: a release never changes a column in place. Every schema change is a pair of releases —
+**expand**, then **contract** — and each individual migration is compatible with the code that is
+already running when it lands.
+
+| Change | Release N | Release N+1 |
+|---|---|---|
+| add a field | add the column nullable, write it, keep reading the old source | make it `NOT NULL`, stop reading the old source |
+| rename a field | add the new column, dual-write, backfill | read the new one only, then drop the old |
+| drop a field | stop writing it | drop the column |
+| change a type | add the new column, dual-write, backfill | switch reads, drop the old |
+| add an index | `CREATE INDEX CONCURRENTLY` with both settings of §1.6 | — |
+| add `NOT NULL` | add a `CHECK … NOT VALID`, then `VALIDATE CONSTRAINT` | `SET NOT NULL`, which the validated check makes cheap |
+
+Why: during a rolling deploy both versions of the code run against one schema, and there is no moment
+at which only one of them does. A migration that assumes otherwise works in staging, where one pod is
+replaced instantly, and fails in production, where two are not.
+
+- `generateMigrations` (§1.5) emits the destructive form, because the shortest SQL that makes two
+  schemas equal is not the safe one. Its output is a draft; splitting it into the pair above is the
+  reviewer's job and it is the reason the generated file is committed rather than applied.
+- Every DDL statement carries a `lock_timeout`. An `ALTER TABLE` that waits for a lock queues every
+  reader behind it, and a migration that blocks the table is downtime whatever the deploy does.
+- The migration step runs **separately from and before** the application starts — the same image with
+  a migrate-only switch, so the schema is already current when the first new process comes up and
+  no two processes race to migrate. It gets a deadline shorter than the deploy's, per §1.6.
+- The rule is checked, not trusted: the end-to-end stand of D21 runs the **previous** release's server
+  image against the **new** schema, which is the state a rolling deploy actually passes through.
+
+Not covered: data migrations large enough to need batching. When one appears it is a background job
+with a resumable cursor, not a Flyway script, and that decision is taken then.
+
+### D23. Flyway applies, the Exposed plugin drafts, and the plugin runs on the Mac
+
+Decision: the Flyway Gradle plugin (`org.flywaydb.flyway:13.3.0`) plus `flyway-database-postgresql`
+for applying, and the Exposed plugin (`org.jetbrains.exposed.plugin.gradle:1.4.0`) for drafting.
+`mavenCentral()` goes into `pluginManagement.repositories` because the Exposed plugin is not on the
+Plugin Portal (§1.5).
+
+`generateMigrations` is a **Mac-local task**, for the reason in D20: it writes files, and files
+written on the replica are reverted on the next sync. Its Testcontainers mode is what makes it usable
+at all — it applies the committed migrations to a throwaway Postgres and diffs against that, so the
+draft accounts for everything already in `db/migration` instead of against whatever a developer's
+local database happens to hold.
+
+
 ---
 
 ## 3. Risks and open questions
@@ -252,16 +423,21 @@ pull request with a diff rather than a surprise across every file.
 that resolves the whole graph, run as an ordinary unit test — the graph is small and the failure it
 catches is otherwise found by a user.
 
-**Open question 4.** Netty or CIO for the server engine? The nearest prior art uses CIO with an import
-alias (§1.4), and SSE (D7) is the load-bearing case. Hypothesis: CIO, because the connection profile is
-many idle long-lived streams rather than high request throughput. Settled in `B-15` with the SSE
-endpoint in front of it, and the alias gotcha applies from the first line either way.
+**Risk 10. The migration generator writes the unsafe migration.** A schema differ emits
+`DROP COLUMN` and `RENAME` because they are the shortest way to make two schemas equal, and both break
+a rolling deploy (§1.5). Mitigation: the generated file is a draft that is edited into the
+expand/contract pair of D22 before it is committed, and the check is the previous-release-against-new-schema
+run in the end-to-end stand — a rule enforced only by review is a rule that holds until the week
+somebody is in a hurry.
 
-**Open question 5.** Does konekt join the mutagen set so that JVM and server builds run on the Linux
-box? It cannot join entirely: `iosSimulatorArm64Test`, `xcodebuild` and the simulator only exist on the
-Mac, and the client is half of this repository. Hypothesis: yes for `:server:*` and the JVM test tasks,
-Mac-local for everything Apple. Settled at `B-01`, and if the answer is yes the replica's `build/`
-directory becomes a known hazard rather than a discovered one.
+**Risk 11. A concurrent index migration hangs rather than failing** (§1.6), and a hang during a deploy
+reads as a slow rollout. Mitigation: the migration step's own deadline, shorter than the deploy's, so
+the hang becomes a failure that names itself.
+
+**Open question 4 — settled.** The server engine is CIO; see D19.
+
+**Open question 5 — settled.** This repository is a mutagen session; the server and the JVM tests
+build on the Linux box, everything Apple stays on the Mac. See D20.
 
 ---
 

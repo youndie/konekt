@@ -21,6 +21,10 @@ the broadcaster and an in-memory bus, which is the whole requirement for one pro
   multi-instance case.
 - The rejected alternative, WebSocket, buys a client→server channel the product does not need: every
   subscriber action is already an HTTP action.
+- **The engine is CIO** (`io.ktor.server.cio.CIO`), and this endpoint is why: many long-lived, mostly
+  idle streams is the profile a coroutine-per-connection engine is shaped for and a thread pool is
+  not. Any file here that also builds an `HttpClient` needs an import alias — the client's `CIO` has
+  the same simple name, and without one `embeddedServer` silently takes the client engine.
 - Not covered: delivery guarantees. A component update is losable by design — the client gets current
   state with its next screen request.
 
@@ -29,4 +33,5 @@ the broadcaster and an in-memory bus, which is the whole requirement for one pro
 - Anchors: `server/src/main/kotlin/io/konekt/realtime/`,
   `client/src/commonMain/kotlin/io/konekt/realtime/SseRealtimeSource.kt`.
 
-Background: [research-architecture](../research/research-architecture.md) §1.6, D7.
+Background: [research-architecture](../research/research-architecture.md) §1.6, D7;
+[research-stack](../research/research-stack.md) D19.

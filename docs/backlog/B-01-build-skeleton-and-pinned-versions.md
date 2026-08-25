@@ -35,8 +35,13 @@ Gradle plugin `0.4.92`). Java 25 is mandatory for every consumer of kompot or pe
   resolves nothing: the first `katcher` coordinate fails with a message naming the artefact rather
   than the mistake.
 - Not covered: publishing. konekt consumes and publishes nothing, so no `maven-publish`, no api dump.
-- Settles [research-stack](../research/research-stack.md) open question 5 — whether this repository
-  joins the mutagen set, and with which task set staying on the Mac.
+- **The build runs on the Linux box.** This repository is already a mutagen session (one-way replica,
+  ignoring `build`, `.gradle`, `.kotlin`, `.idea`, `.DS_Store` and VCS), so `:server:*`, the JVM tests
+  and anything Docker go through the `wsl-run` wrapper; `iosSimulatorArm64Test`, `xcodebuild`, the
+  simulator, the screenshot tasks and `generateMigrations` stay on the Mac. Two hazards come with
+  one-way replication and are worth knowing before they are met: the replica's `build/` is deleted
+  whenever it is absent on the Mac, which is why it is ignored; and anything a tool writes on the
+  replica is reverted on the next sync, which is why every file-writing task is Mac-local.
 
 - AC: `./gradlew dependencies` shows every kompot coordinate at one version, and no version literal
   for any of them exists in any build file.
@@ -44,6 +49,8 @@ Gradle plugin `0.4.92`). Java 25 is mandatory for every consumer of kompot or pe
   `katcher-android`, and a comment saying why they are three.
 - AC: `./gradlew ktlintCheck` runs in every module from one root declaration, and formatting is
   identical before and after a plugin-only bump.
+- AC: `wsl-run ./gradlew :server:test` runs on the Linux box; the iOS test tasks are absent there
+  and present locally.
 - Anchors: `gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`,
   `settings.gradle.kts`, `build-logic/src/main/kotlin/`, `.editorconfig`.
 

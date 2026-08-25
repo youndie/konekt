@@ -4,7 +4,7 @@ A white-label subscriber account for an eSIM MVNO: Ktor on Kotlin/JVM, Compose M
 Android and iOS, backend-driven UI. Built as a reference for six toolkits — kompot, petich, booblik,
 katcher, metrik, tracy — with every external system (BSS/OCS, SM-DP+, payments, SMSC) mocked.
 
-Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 is mandatory
+Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 is mandatory
 rather than chosen: kompot and petich publish variants tagged `org.gradle.jvm.version = 25`, and
 Gradle refuses to build a module on anything lower against them. The full version table, each row read
 from a registry rather than recalled, is [docs/research/research-stack.md](docs/research/research-stack.md) §1.1.
@@ -48,6 +48,24 @@ For anything touching the interface, [docs/design/design-app-canvas.md](docs/des
 carries the component dictionary and the three frames that describe states a naive implementation
 cannot reach.
 
+## Where things build
+
+This repository is a mutagen session (one-way replica, alpha here, beta `konekt` on the WSL box).
+**The server and the JVM tests build there**, through the wrapper:
+
+```bash
+~/.claude/bin/wsl-run ./gradlew :server:test
+```
+
+**Everything Apple stays on the Mac** — `iosSimulatorArm64Test`, `xcodebuild`, the simulator, the
+screenshot tasks. So does **`generateMigrations`**, and so does every other task that writes files:
+one-way replication reverts anything a tool writes on the replica, so a run there looks like it did
+nothing. Edits and `git` happen on the Mac too; the replica has its own `HEAD` and a diff taken there
+proves nothing.
+
+`build/` is in the ignore list because the replica deletes whatever the Mac does not have, and the
+symptom of it not being ignored is a build error that reads like a compilation failure.
+
 ## Rules that are cheap to follow and expensive to discover
 
 - **Never `call.respond` a `KompotComponent`.** It drops the `"type"` discriminator on the root of the
@@ -77,6 +95,14 @@ cannot reach.
   domain exception; a `failure` nested inside a `success` travels past the error handler in silence.
 - **`io.ktor.server.cio.CIO` collides by name with the client's `CIO`.** Any file that also builds an
   `HttpClient` needs an import alias, or `embeddedServer` receives the client engine.
+- **A migration is compatible with the code already running.** During a roll both versions talk to
+  one schema. Expand then contract, one release apart — the table of changes is in
+  [research-stack](docs/research/research-stack.md) D22. `generateMigrations` emits the destructive
+  form because it is the shortest; its output is a draft.
+- **A concurrent index needs two Flyway settings.** `V<n>__x.sql.conf` with
+  `executeInTransaction=false`, *and* `flyway.postgresql.transactional.lock=false`. With only the
+  first, Flyway's own lock deadlocks against the index build and the migration hangs — which during a
+  deploy reads as a slow rollout.
 - **A green check that visited nothing is the failure mode here**, twice over: the conformance kit
   passes silently when it finds no targets, and petich completes sagas silently when it is dropping
   their events. Both have their own backlog item and both assert on coverage rather than on a verdict.
