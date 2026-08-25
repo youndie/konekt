@@ -349,6 +349,14 @@ plugin names each file from its first statement plus a second-resolution version
 and overwrite. See [research-stack](research-stack.md) §1.9; the cost of finding this out was one
 experiment that should have been run before the issue was filed.
 
+**U8 is moving upstream.** A contributor offered to take it on 2026-08-25, proposing regression tests
+for the filename collision and the duplicate versions plus a naming change that guarantees uniqueness
+within one run. That direction closes the data loss — verified here, since changing nothing but
+`fileVersionFormat` to `MAJOR_MINOR` already produces all three tables — so konekt has nothing to add
+and is not adding it. What stays ours either way is
+`scripts/generate-migration.sh` and `MigrationFilesTest`: a draft is renumbered by hand and checked,
+whatever the generator learns to do.
+
 **U7 and U8 compound.** petich asks for two indexes in column comments and declares neither, so
 Exposed's view of the schema does not contain them — and Exposed's view is what `generateMigrations`
 and `MigrationUtils` compare against. A consumer who follows the comments and then adopts the
