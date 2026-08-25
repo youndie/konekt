@@ -79,6 +79,10 @@ dependencies {
     // catalogue entry, which is the same guarantee by a longer route.
     implementation(libs.petich.core)
     implementation(libs.petich.postgres)
+    implementation(libs.petich.outboxCore)
+    // The transport petich deliberately does not provide. JVM only — booblik-client is a
+    // src/main/kotlin source set.
+    implementation(libs.booblik.client)
 
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
@@ -100,6 +104,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.koin.test)
+    testImplementation(libs.testcontainers.core)
     testImplementation(testFixtures(project(":shared:db")))
     testImplementation(libs.testcontainers.junit)
 }

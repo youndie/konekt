@@ -152,6 +152,11 @@ circular dependency inside `:server` naming neither module.
 - **Time is a `KonektClock`, injected.** `ClockUsageTest` refuses `Clock.System` anywhere but
   `KonektClock.kt`. petich's clock comes from the same one through `asPetichClock()`, so a test that
   moves time moves it for the saga sweeper too.
+- **The broker's topics are fixed at startup and declared in two files** — `deploy/compose.yaml` and
+  `EventTopics`. booblik creates nothing on demand, so an event routed to a topic that does not exist
+  is a publish that fails forever and a stuck outbox. Two tests pair the halves.
+- **The broker publishes no host port, and a test enforces it.** It has neither TLS nor
+  authentication — both deliberately absent — so reachability is the whole of its security model.
 - **A saga test uses `runBlocking`, never `runTest`.** `runTest`'s virtual clock skips time forward
   for a suspended coroutine, and the engine wraps every interceptor in `withTimeout` — so the first
   real database call inside a step jumps past the phase timeout, the step is cancelled and the saga

@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (26)
+## Open (24)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -53,8 +53,6 @@ so re-prioritising must never move a file.
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[ ]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-36](docs/backlog/B-36-zero-downtime-migrations.md) `[ ]` | Expand and contract: a migration is compatible with the code already running | P0 | M | B-02 |
 | [B-05](docs/backlog/B-05-unknown-component-renderer.md) `[ ]` | An unknown component draws a block and reports itself | P1 | S | B-03 |
-| [B-13](docs/backlog/B-13-booblik-topics.md) `[ ]` | booblik in the compose file, with its three topics declared at startup | P1 | S | - |
-| [B-14](docs/backlog/B-14-outbox-to-booblik-bridge.md) `[ ]` | The bridge from the petich outbox to booblik | P1 | M | B-09, B-13 |
 | [B-15](docs/backlog/B-15-sse-realtime.md) `[ ]` | The realtime transport: an SSE endpoint and a client source | P1 | M | B-07 |
 | [B-17](docs/backlog/B-17-esim-order-wizard.md) `[ ]` | The eSIM order wizard, and an SM-DP+ mock that can be out of slots | P1 | L | B-08 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[ ]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
@@ -72,7 +70,7 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[ ]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (12)
+## Closed (14)
 
 **The wire and the shell**
 
@@ -90,6 +88,11 @@ so re-prioritising must never move a file.
 - [B-10](docs/backlog/B-10-payment-mock.md) `[x]` - A payment mock that can refuse and can be slow
 - [B-11](docs/backlog/B-11-rollback-screen.md) `[x]` - The rollback screen states the reversal in money, not in apology
 - [B-12](docs/backlog/B-12-operation-history.md) `[x]` - Operation history, including the entries that did not happen
+
+**Live**
+
+- [B-13](docs/backlog/B-13-booblik-topics.md) `[x]` - booblik in the compose file, with its three topics declared at startup
+- [B-14](docs/backlog/B-14-outbox-to-booblik-bridge.md) `[x]` - The bridge from the petich outbox to booblik
 
 **Upstream and the box**
 

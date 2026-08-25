@@ -1,0 +1,81 @@
+# The stand: Postgres, the broker, and the server.
+#
+# One command, the same one locally and in CI. A stand only CI knows how to start is a stand nobody
+# debugs, and the failures worth catching here are the ones that only appear between processes.
+
+name: konekt
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: konekt
+      POSTGRES_USER: konekt
+      POSTGRES_PASSWORD: konekt
+    healthcheck:
+      # `pg_isready` asks the server a question. A TCP check would pass against a Postgres still
+      # replaying its WAL, and the migration job would then fail against a database that is up and
+      # not yet listening for work.
+      test: ["CMD-SHELL", "pg_isready -U konekt -d konekt"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      # Overridable because 5432 is contested on any machine that has ever run Postgres, and the
+      # stand should not be the thing that refuses to start.
+      - "${POSTGRES_PORT:-55432}:5432"
+
+  broker:
+    image: ghcr.io/youndie/booblik:0.3.0
+    # Published for amd64 only. Named explicitly so an arm64 host emulates it with a warning rather
+    # than failing with "no matching manifest", which reads like a broken tag.
+    platform: ${BROKER_PLATFORM:-linux/amd64}
+    environment:
+      # THE TOPICS ARE FIXED HERE AND NOWHERE ELSE. booblik does not create topics — the set is
+      # decided at startup, on purpose — so adding a fourth is a broker restart, which makes topic
+      # naming an architectural decision rather than a runtime one.
+      #
+      # One partition each. Ordering inside a topic is worth more to this product than parallelism
+      # nobody has measured a need for: every event about one order must arrive in the order it
+      # happened, and an order exists only inside a partition.
+      BOOBLIK_TOPICS: orders:1,usage:1,notifications:1
+    volumes:
+      - broker-data:/var/lib/booblik
+    # NO PORTS. The broker speaks a plaintext protocol with neither TLS nor authentication — both
+    # deliberately absent, being incompatible with its zero-copy read path — so it must never be
+    # reachable from outside this network. That is the whole of its security model, and it is one
+    # line of YAML away from not being true.
+
+  # Needs the distribution built first — see deploy/Dockerfile for why it is not built inside the
+  # image:
+  #
+  #     ./gradlew :server:installDist
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/konekt
+      DB_USER: konekt
+      DB_PASSWORD: konekt
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      BROKER_HOST: broker
+      BROKER_PORT: "9092"
+      # Development only: the endpoint that reads back a one-time code. Absent means closed, which is
+      # why the default is not "true".
+      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
+      PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+
+volumes:
+  postgres-data:
+  broker-data:

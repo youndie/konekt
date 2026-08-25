@@ -6,6 +6,8 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.db.DatabaseFactory
+import io.konekt.events.BooblikOutboxPublisher
+import io.konekt.events.BrokerConnection
 import io.konekt.feature.auth.server.data.AUTH_JWT
 import io.konekt.feature.auth.server.data.authModule
 import io.konekt.feature.auth.server.data.authRoutes
@@ -25,6 +27,8 @@ import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStarted
+import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.cio.CIO
@@ -34,6 +38,10 @@ import io.ktor.server.resources.Resources
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -55,6 +63,9 @@ import ru.workinprogress.petich.PetichRepository
 import ru.workinprogress.petich.ResumePayload
 import ru.workinprogress.petich.SimpleEnrichedPayload
 import ru.workinprogress.petich.SuspendedPetichSweeper
+import ru.workinprogress.petich.outbox.OutboxPublisher
+import ru.workinprogress.petich.outbox.OutboxRelayWorker
+import ru.workinprogress.petich.postgres.ExposedOutboxRepository
 import ru.workinprogress.petich.postgres.ExposedPetichRepository
 import ru.workinprogress.petich.postgres.OutboxEventsTable
 import ru.workinprogress.petich.postgres.PetichTable
@@ -120,11 +131,26 @@ fun Application.module(config: KonektConfig) {
             module { single { kompotJson } },
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
             purchaseModule(database, config.paymentMode, config.paymentDelay),
-            petichModule(database),
+            petichModule(database, config),
         ),
     )
 
     configureAuthentication(config.jwt)
+
+    // The workers. Started when the application starts and cancelled when it stops, so a test that
+    // builds an application does not leave a poller running against a database it is about to drop.
+    val workers = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    monitor.subscribe(ApplicationStarted) {
+        val koin = getKoin()
+        koin.get<SuspendedPetichSweeper>().start(workers)
+        koin.get<OutboxRelayWorker>().start(workers)
+    }
+    monitor.subscribe(ApplicationStopping) {
+        workers.cancel()
+        // Closed explicitly rather than left to the process ending: the producer holds a coroutine
+        // and a socket, and a test that builds an application leaves both behind otherwise.
+        getKoin().get<BrokerConnection>().close()
+    }
 
     routing {
         authRoutes()
@@ -152,55 +178,71 @@ fun Application.module(config: KonektConfig) {
 // requireOutbox is on. petich degrades quietly to a plain update when handed a repository that cannot
 // store events, and the saga still completes with correct state while nobody downstream is ever told.
 // Nothing about that is visible from a test that asserts the saga finished.
-private fun petichModule(database: Database) =
-    module {
-        single<PetichTable> { PetichTable(get()) }
-        single<OutboxEventsTable> { OutboxEventsTable() }
-        single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
-        single<PetichRepository> { get<OutboxAwarePetichRepository>() }
+private fun Application.petichModule(
+    database: Database,
+    config: KonektConfig,
+) = module {
+    single<PetichTable> { PetichTable(get()) }
+    single<OutboxEventsTable> { OutboxEventsTable() }
+    single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
+    single<PetichRepository> { get<OutboxAwarePetichRepository>() }
 
-        single {
-            PetichEngine(
-                interceptors =
-                    purchaseInterceptors(
-                        balances = get(),
-                        entitlements = get(),
-                        plans = get(),
-                        payments = get(),
-                        json = get(),
-                    ),
-                repository = get<OutboxAwarePetichRepository>(),
-                config =
-                    PetichEngineConfig(
-                        requireOutbox = true,
-                        // The canvas tells the subscriber a settlement "usually takes under 15
-                        // seconds", and petich's default EXECUTION bound is 10 — so the screen
-                        // describes a provider the engine would cancel. Raised rather than the copy
-                        // lowered: a timeout that fires before the provider has answered turns a slow
-                        // approval into a rollback nobody asked for.
-                        // The defaults, with one entry replaced. `PetichPhase.timeoutMs` is not
-                        // visible from outside petich, so the defaults are taken from a default
-                        // config rather than rebuilt — which is also the form that keeps every other
-                        // phase on whatever petich decides next.
-                        phaseTimeoutsMs =
-                            PetichEngineConfig().phaseTimeoutsMs +
-                                (
-                                    PetichPhase.EXECUTION to
-                                        MockPaymentGateway.EXECUTION_PHASE_TIMEOUT.inWholeMilliseconds
-                                ),
-                    ),
-                clock = get<KonektClock>().asPetichClock(),
-            )
-        }
-
-        single {
-            SuspendedPetichSweeper(
-                repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
-                engineFor = { get() },
-                clock = get<KonektClock>().asPetichClock(),
-            )
-        }
+    single {
+        PetichEngine(
+            interceptors =
+                purchaseInterceptors(
+                    balances = get(),
+                    entitlements = get(),
+                    plans = get(),
+                    payments = get(),
+                    json = get(),
+                ),
+            repository = get<OutboxAwarePetichRepository>(),
+            config =
+                PetichEngineConfig(
+                    requireOutbox = true,
+                    // The canvas tells the subscriber a settlement "usually takes under 15
+                    // seconds", and petich's default EXECUTION bound is 10 — so the screen
+                    // describes a provider the engine would cancel. Raised rather than the copy
+                    // lowered: a timeout that fires before the provider has answered turns a slow
+                    // approval into a rollback nobody asked for.
+                    // The defaults, with one entry replaced. `PetichPhase.timeoutMs` is not
+                    // visible from outside petich, so the defaults are taken from a default
+                    // config rather than rebuilt — which is also the form that keeps every other
+                    // phase on whatever petich decides next.
+                    phaseTimeoutsMs =
+                        PetichEngineConfig().phaseTimeoutsMs +
+                            (
+                                PetichPhase.EXECUTION to
+                                    MockPaymentGateway.EXECUTION_PHASE_TIMEOUT.inWholeMilliseconds
+                            ),
+                ),
+            clock = get<KonektClock>().asPetichClock(),
+        )
     }
+
+    // The broker connection and the relay that feeds it. petich provides at-least-once delivery
+    // with backoff and dead-lettering and says outright that the transport is the application's
+    // — this is where that sentence is answered.
+    single { ExposedOutboxRepository(database, get()) }
+    single { BrokerConnection(config.brokerHost, config.brokerPort) }
+    single<OutboxPublisher> { BooblikOutboxPublisher(get<BrokerConnection>().producer, get()) }
+
+    single {
+        OutboxRelayWorker(
+            repository = get<ExposedOutboxRepository>(),
+            publisher = get(),
+        )
+    }
+
+    single {
+        SuspendedPetichSweeper(
+            repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
+            engineFor = { get() },
+            clock = get<KonektClock>().asPetichClock(),
+        )
+    }
+}
 
 // The application's Json: the toolkit's actions and components plus konekt's own dictionary. One
 // instance, bound in the graph, because two Json configurations that differ by one module produce a
