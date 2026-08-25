@@ -121,6 +121,16 @@ circular dependency inside `:server` naming neither module.
   tree; nested children serialise perfectly, which is what makes it easy to miss, and the client then
   receives an unknown component for the whole screen and draws nothing. Use
   `call.respondKompotComponent`.
+- **The client is JVM-only, and that is upstream rather than a choice.** kompot's Compose half —
+  `kompot-client`, `kompot-theme-client`, `kompot-ds-material-compose`, `kompot-forms-client`,
+  `kompot-wizard-client`, `kompot-images-client-coil` — publishes `-android`, `-desktop`,
+  `-wasm-js` and **no iOS artefact**, while the protocol half publishes the three iOS targets. So
+  `:client` does not use `konekt.multiplatform`. youndie/kompot#84. And when it closes the answer is
+  two iOS targets, not three: Compose stopped publishing `iosX64` after `1.11.0-alpha01`.
+- **Compose versions are matched to the toolkit's binaries, not to the newest release.** The client
+  pins `1.11.1` with material3 `1.11.0-alpha07`, named by coordinate rather than through the
+  plugin's `compose.*` accessors. A newer foundation beside the toolkit's material3 resolves and
+  compiles and then throws `AbstractMethodError` inside a renderer.
 - **Never name a kompot version.** One `platform("io.github.youndie:kompot-bom")` and no version on
   any kompot coordinate. The tail digit of a version is the CI run number, so two coordinates one run
   apart resolve into a combination nobody ever built.

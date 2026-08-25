@@ -314,6 +314,13 @@ first five: each one blocked or corrupted something that was being built at the 
 | U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | [petich#8](https://github.com/youndie/petich/issues/8) | closed, packaged in `0.1.0.8`; our reflective bridge deleted |
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
 | U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open |
+| U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | open |
+
+**U9 has no workaround and that is the finding.** The renderers are the toolkit's, so there is
+nothing to work around locally: `:client` is a JVM-only module until it closes, and the brief's
+"Compose Multiplatform on Android and iOS" is half-available. It was found by pointing a module with
+`iosArm64()` at `kompot-client` — which is the only way to find it, because the wire half publishes
+iOS and the failure therefore looks like a coordinate problem rather than a missing platform.
 
 **Both petich asks landed in `0.1.0.8` and both workarounds are gone**, verified in the published jar
 rather than in the issue state: `ExposedPetichRepository.class` now sits under

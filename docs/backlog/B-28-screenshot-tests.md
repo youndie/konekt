@@ -26,6 +26,11 @@ and exhausted, the four purchase states, and one screen in each brand.
 
 - AC: `./gradlew :client:viddikVerify` compares the named subjects and reports a non-zero case count.
 - AC: changing brand A's `lg` radius fails only the brand A goldens.
+- Also, carried from `B-04`: **the golden pair for the design system itself.** B-04's guard compares
+  two frames within one run, which catches a theme that moves geometry and cannot catch konekt's own
+  surfaces drifting — both frames move together. A committed golden of the brand-A controls is what
+  notices that, and it needs the screenshot harness this item brings.
+
 - Anchors: `client/build.gradle.kts`, `client/src/commonTest/kotlin/io/konekt/screenshots/`.
 
 Background: [design-app-canvas](../design/design-app-canvas.md).

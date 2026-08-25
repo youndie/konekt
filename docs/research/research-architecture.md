@@ -321,6 +321,27 @@ arrives as a 400 or a 500 on a body the server itself wrote. konekt's one action
 is covered by `EsimWizardActionTest` for the round trip and by `EsimWizardRoutingTest`, which drives
 the whole wizard by posting back the buttons the server drew rather than by composing requests.
 
+### 1.14 The toolkit's wire is multiplatform and its renderers are not — iOS has no Compose client
+
+| Fact | Where verified |
+|---|---|
+| `kompot-client`, `kompot-theme-client`, `kompot-ds-material-compose`, `kompot-forms-client`, `kompot-wizard-client` and `kompot-images-client-coil` publish `-android`, `-desktop` and `-wasm-js` and **no iOS artefact** | the published artefact names under `io/github/youndie` at `0.31.0.74` |
+| the same six declare `jvm("desktop")`, `androidLibrary { }`, `wasmJs { browser() }` and no Apple target | each module's `build.gradle.kts` |
+| every protocol module — `kompot-core`, `kompot-standard`, `kompot-forms`, `kompot-wizard`, `wizard-core`, `kompot-theme`, `kompot-navigation`, `kompot-client-cache` — does publish the three iOS targets | same listing |
+| the README states that "every protocol and client module publishes for JVM, Android, the three iOS targets and `wasmJs`" and names three deliberate exceptions, none of which is one of the six | `kompot/README.md` §Targets |
+| `org.jetbrains.compose.runtime:runtime-iosx64` was last published at `1.11.0-alpha01`; `runtime-iosarm64` and `runtime-iossimulatorarm64` are current at `1.12.0` | `repo1.maven.org` maven-metadata, 2026-08-25 |
+
+**Consequence, and it reaches the product rather than the build.** konekt's brief says the client is
+Compose Multiplatform on **Android and iOS**. The Android half is available; the iOS half is not, and
+no amount of code here changes that — the renderers are the toolkit's. What exists for iOS instead is
+`kompot-swift-interop`, which is a bridge for a **native SwiftUI** client rather than a Compose one,
+and that is a different product with a different client codebase.
+
+So `:client` is a **JVM-only module today** and says so in its build file. Reported as
+[youndie/kompot#84](https://github.com/youndie/kompot/issues/84). Even when it closes, the reachable
+set is two iOS targets and not three: Compose dropped `iosX64`, so `konekt.multiplatform`'s target
+list — which every other multiplatform module here uses — cannot be the client's.
+
 ---
 
 ## 2. Decisions

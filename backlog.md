@@ -41,11 +41,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (24)
+## Open (23)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-04](docs/backlog/B-04-design-system-forwards-surface.md) `[ ]` | Guard that the design system keeps its surface roles after the theme arrives | P0 | S | B-01 |
 | [B-06](docs/backlog/B-06-otp-login.md) `[~]` | Number and OTP sign-in, written from scratch because kompot-auth is one action | P0 | L | B-02 |
 | [B-07](docs/backlog/B-07-home-screen.md) `[ ]` | Home: balance and counters, drawn from the server | P0 | M | B-03, B-04, B-06 |
 | [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[ ]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
@@ -70,13 +69,14 @@ so re-prioritising must never move a file.
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 | [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[ ]` | The feature, screen and API layers are empty, and the reason they were empty has expired | P2 | M | - |
 
-## Closed (15)
+## Closed (16)
 
 **The wire and the shell**
 
 - [B-01](docs/backlog/B-01-build-skeleton-and-pinned-versions.md) `[x]` - Gradle skeleton: 9.7.1 on Java 25, convention plugins, ktlint, and six dependency lines pinned separately
 - [B-02](docs/backlog/B-02-postgres-flyway-exposed.md) `[x]` - Postgres, Flyway and the Exposed plugin, including the tables petich does not create
 - [B-03](docs/backlog/B-03-component-dictionary.md) `[x]` - Fix the component dictionary: nine own wire types in one KSP module
+- [B-04](docs/backlog/B-04-design-system-surface-guard.md) `[x]` - Guard that the design system keeps its surface roles after the theme arrives
 - [B-31](docs/backlog/B-31-money-type.md) `[x]` - Money is a type, and only the server formats it
 - [B-33](docs/backlog/B-33-clock-as-a-dependency.md) `[x]` - Time is injected, because four different deadlines depend on it
 - [B-38](docs/backlog/B-38-refresh-and-logout.md) `[x]` - Refresh and logout: a token pair that can be ended
@@ -112,8 +112,8 @@ finding into a private diff where it dies. See
 
 **The order of the first three items is not arbitrary.**
 [B-03](docs/backlog/B-03-component-dictionary.md) fixes the component dictionary before any screen
-exists, and [B-04](docs/backlog/B-04-design-system-forwards-surface.md) fixes the design system
-wrapper before any theme work. Both are cheap now and both are structural later — the dictionary
+exists, and [B-04](docs/backlog/B-04-design-system-surface-guard.md) guards the design system
+against the theme before any theme work. Both are cheap now and both are structural later — the dictionary
 because it is the API, the wrapper because the defect it guards against is invisible once there is
 enough styling to hide in.
 

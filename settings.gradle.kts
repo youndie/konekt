@@ -14,6 +14,14 @@ pluginManagement {
         // without this line it fails with "plugin not found" — which reads like a wrong id.
         mavenCentral()
         google()
+
+        // viddik's Gradle plugin is published here and nowhere else. Filtered like every
+        // third-party repository in this file: an unfiltered one takes part in resolving EVERY
+        // plugin, and when it is unreachable Gradle disables it and fails plugins it never served.
+        maven("https://reposilite.kotlin.website/snapshots") {
+            name = "wip-snapshots"
+            content { includeGroupByRegex("ru\\.workinprogress.*") }
+        }
     }
 }
 
@@ -41,6 +49,12 @@ dependencyResolutionManagement {
         }
     }
 }
+
+// The Compose Multiplatform client: the design system, the renderers of konekt's own components,
+// and nothing else. JVM plus the three iOS targets; ANDROID IS NOT HERE YET, deliberately — the
+// convention plugin says it joins with "the item that first needs an .aar", and drawing a design
+// system and diffing two renders of it does not. B-26/B-27 do.
+include(":client")
 
 // The server: Ktor on CIO, the sagas, the mocks, the screens.
 include(":server")

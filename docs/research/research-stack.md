@@ -301,6 +301,34 @@ unsatisfiable*, and the discovery cost was one failed run each way.
 
 ---
 
+### 1.10 The client's Compose version is not a free choice, and the wrong one fails at render time
+
+| Fact | Where verified |
+|---|---|
+| the toolkit's Compose modules are built against Compose Multiplatform `1.11.1` and material3 `1.11.0-alpha07` | `kompot-forms-client-desktop-0.31.0.74.pom`, and `kompot/gradle/libs.versions.toml` |
+| `org.jetbrains.compose:compose-gradle-plugin` released `1.12.0`, so a fresh module picks it up by default | `repo1.maven.org` maven-metadata, 2026-08-25 |
+| `org.jetbrains.compose.material3:material3` has **no stable release in either line** — `<latest>1.12.0-alpha03` | same |
+| with the plugin at `1.12.0`, `foundation` and `runtime` resolve to `1.12.0` while material3 resolves to the toolkit's `1.11.0-alpha07` | `:client:dependencies --configuration jvmTestRuntimeClasspath` |
+
+**Consequence.** Nothing fails to resolve and nothing fails to compile. The first screen containing a
+text field dies at render time:
+
+```
+java.lang.AbstractMethodError: Receiver class androidx.compose.material3.OutlinedTextFieldDefaults$$Lambda
+  does not define or inherit an implementation of the resolved method
+  'abstract void applyStyle(androidx.compose.foundation.style.CustomStyleScope)'
+  of interface androidx.compose.foundation.style.CustomStyle
+```
+
+That is a mixed pair rather than a bug in either half: material3 moves on its own version line, and
+the plugin's `compose.material3` accessor is pinned to a version that loses the resolution to
+whatever the toolkit asks for. So `:client` pins **the versions the toolkit's binaries were compiled
+against** — `composeMultiplatform = "1.11.1"`, `composeMaterial3 = "1.11.0-alpha07"` — and names
+material3 by coordinate rather than through the accessor. Newest is the wrong default here; matched
+is the requirement. Raised upstream as the second half of
+[youndie/kompot#84](https://github.com/youndie/kompot/issues/84), since nothing in the toolkit says
+which versions it was built against.
+
 ## 2. Decisions
 
 ### D11. Gradle 9.7.1 on a Java 25 toolchain *(deviation: 9.7.1, not the 9.7.0 that was asked for)*

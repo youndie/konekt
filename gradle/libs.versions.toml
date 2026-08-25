@@ -16,6 +16,22 @@ ksp = "2.3.11"
 # `com.android.library`. See docs/research/research-stack.md §1.1.
 agp = "9.3.1"
 
+# Compose Multiplatform. NOT the newest — 1.12.0 was released — and the difference is not caution.
+# The toolkit's Compose modules are compiled against 1.11.1, and mixing a newer foundation with the
+# material3 they carry fails at RUNTIME, inside a renderer:
+#   AbstractMethodError: OutlinedTextFieldDefaults$$Lambda does not define ... CustomStyle.applyStyle
+# Nothing fails to resolve and nothing fails to compile. See research-stack §1.10.
+#
+# Its COMPILER is not this version either: `org.jetbrains.kotlin.plugin.compose` ships with Kotlin
+# and is versioned with it, which is why the two plugin aliases below point at different refs.
+composeMultiplatform = "1.11.1"
+
+# Material3 moves on its OWN line, exactly as it does in the toolkit's catalogue: it has no stable
+# release in either train (`<latest>1.12.0-alpha03` on 2026-08-25), so tying it to the line above
+# would ask for a version that was never published. This is the one the toolkit's binaries were
+# built against, which is the whole requirement.
+composeMaterial3 = "1.11.0-alpha07"
+
 ktor = "3.5.2"
 coroutines = "1.11.0"
 serialization = "1.11.0"
@@ -162,6 +178,30 @@ kompot-formsClient = { module = "io.github.youndie:kompot-forms-client" }
 kompot-wizardClient = { module = "io.github.youndie:kompot-wizard-client" }
 kompot-themeClient = { module = "io.github.youndie:kompot-theme-client" }
 kompot-dsMaterialCompose = { module = "io.github.youndie:kompot-ds-material-compose" }
+
+# --- the client's own Compose dependencies ------------------------------------------------------
+#
+# Everything else Compose comes through the `compose.*` accessors the Compose plugin installs
+# (compose.runtime, compose.material3, compose.desktop.currentOs). ui-test has no accessor, so it is
+# the one that needs a coordinate.
+# Named by coordinate rather than through the plugin's `compose.runtime` / `compose.ui` /
+# `compose.foundation` accessors, which 1.11.1 deprecates in favour of exactly this ("Specify
+# dependency directly"). It also removes the whole class of mismatch that material3 fell into: an
+# accessor carries a version of its own, and which one it carries is not visible from the build file.
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
+# Named by coordinate rather than taken from the plugin's `compose.material3` accessor, because that
+# accessor is pinned to a version of its own and loses to whatever the toolkit asks for — which is
+# how foundation 1.12.0 came to sit beside material3 1.11.0-alpha07 and throw at render time.
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
+
+# The screenshot tester. `viddik-annotations` and `viddik-testing-core` are added by its Gradle
+# plugin, so these entries exist only for the day a module opts out of that with
+# `addDependencies = false`; the plugin's own version is the one that decides what it pulls.
+viddik-annotations = { module = "ru.workinprogress:viddik-annotations", version.ref = "viddik" }
+viddik-testingCore = { module = "ru.workinprogress:viddik-testing-core", version.ref = "viddik" }
 kompot-clientTck = { module = "io.github.youndie:kompot-client-tck" }
 
 # --- petich ------------------------------------------------------------------------------------
@@ -227,6 +267,19 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+
+# TWO plugins and they are versioned apart. `org.jetbrains.compose` is the Compose Multiplatform
+# distribution; `org.jetbrains.kotlin.plugin.compose` is the compiler plugin, which ships with Kotlin
+# and therefore follows `kotlin`. Pointing both at one ref is how a build ends up asking for a
+# compiler version that was never released.
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+# The screenshot tester's plugin. It exists because the wiring it replaces is silently wrong when
+# hand-written: the right KSP configuration and snapshot directory depend on how the target is
+# declared, and getting one wrong makes KSP report SKIPPED while the screenshot task passes with no
+# tests in it. Published to reposilite, which is why pluginManagement names that repository too.
+viddik = { id = "ru.workinprogress.viddik", version.ref = "viddik" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 # Published to Maven Central, not to the Gradle Plugin Portal.
