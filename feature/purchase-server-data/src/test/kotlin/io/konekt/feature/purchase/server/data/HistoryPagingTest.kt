@@ -132,7 +132,7 @@ class HistoryPagingTest {
         }
 
     @Test
-    fun `an exactly full page still knows whether there is more`() =
+    fun `an exactly full page still knows whether there is more`(): Unit =
         runBlocking {
             // The off-by-one every keyset gets wrong once: three rows, three per page. There is no
             // fourth, so the first page is the last — and a naive "a full page means there is more"

@@ -177,14 +177,14 @@ class TrafficChainTest {
         }
 
     @Test
-    fun `the copy changes with the state and not only the colour`() =
+    fun `the copy changes with the state and not only the colour`(): Unit =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
             val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
 
             consumer.apply(event(units = 950))
             val low = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA))
-            assertTrue(low.isLow, "50 of 1000 left is not being called low")
+            assertTrue(low.isLow, "left ${low.remainingUnits} of ${low.limitUnits} and it is not being called low")
 
             val card = cards.of(low)
             assertEquals(CounterStates.LOW, card.state)

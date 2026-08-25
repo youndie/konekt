@@ -98,24 +98,36 @@ class ExposedUsageCounters(
         units: Long,
     ): UsageCounter? =
         dbQuery {
-            // TWO MUTUALLY EXCLUSIVE UPDATES rather than one clever expression, because the clamp
-            // has to happen in SQL: `remaining = remaining - units` alone goes negative under a
-            // burst, and a screen that says minus four hundred megabytes is worse than one that says
-            // zero. A CHECK constraint would refuse the write instead, leaving the caller to handle a
-            // failure that has an obvious right answer.
+            // TWO UPDATES rather than one clever expression, because the clamp has to happen in SQL:
+            // `remaining = remaining - units` alone goes negative under a burst, and a screen that
+            // says minus four hundred megabytes is worse than one that says zero. A CHECK constraint
+            // would refuse the write instead, leaving the caller to handle a failure that has an
+            // obvious right answer.
             //
-            // The conditions are what make it safe under two consumers. Exactly one of the two
-            // applies to any row, and the second of two simultaneous decrements takes only what the
-            // first left, because Postgres re-evaluates the predicate at READ COMMITTED.
+            // THE CLAMP GOES FIRST, AND THAT ORDER IS THE WHOLE CORRECTNESS. Written the other way
+            // round — subtract, then clamp — the two are not mutually exclusive at all: the subtract
+            // changes the row, and the clamp's predicate then reads the NEW value. Consuming 950 of
+            // 1000 left 50 and the clamp immediately zeroed it, because 50 < 950. Every consumption
+            // taking more than half of what was left wiped the rest, silently, with no negative
+            // number to notice and no error anywhere.
+            //
+            // In this order they really are exclusive: if the clamp fires the row is 0 and `0 >= units`
+            // is false for any positive amount, and if it does not fire the subtract cannot go
+            // negative. The old comment claimed exclusivity as a fact; it is a consequence of the
+            // order, which is why the order is stated here rather than assumed.
+            //
+            // The predicates are also what make it safe under two consumers: the second of two
+            // simultaneous decrements takes only what the first left, because Postgres re-evaluates
+            // the predicate at READ COMMITTED.
             val enough =
                 (UsageCounterTable.subscriberId eq subscriberId) and (UsageCounterTable.kind eq kind.wireName)
 
-            UsageCounterTable.update({ enough and (UsageCounterTable.remainingUnits greaterEq units) }) {
-                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-units)
-            }
-
             UsageCounterTable.update({ enough and (UsageCounterTable.remainingUnits less units) }) {
                 it[remainingUnits] = 0
+            }
+
+            UsageCounterTable.update({ enough and (UsageCounterTable.remainingUnits greaterEq units) }) {
+                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-units)
             }
 
             UsageCounterTable
@@ -146,17 +158,25 @@ class ExposedUsageCounters(
                 (UsageCounterTable.subscriberId eq subscriberId) and
                     (UsageCounterTable.kind eq UsageCounter.Kind.DATA.wireName)
 
-            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq dataMb) }) {
-                it[limitUnits] = UsageCounterTable.limitUnits plus (-dataMb)
-            }
+            // CLAMP FIRST, both columns, for the reason `consume` above spells out at length: written
+            // subtract-then-clamp the pair is not exclusive, because the subtract changes the row the
+            // clamp then reads. Revoking 1000 of a 1800 limit left 800 and the clamp zeroed it, since
+            // 800 < 1000 — so a rolled-back purchase took away the subscriber's OTHER allowance too.
+            //
+            // Two columns and therefore four statements. They are not one pair repeated: the limit and
+            // the remainder move independently, because the remainder may already be smaller than what
+            // was granted.
             UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less dataMb) }) {
                 it[limitUnits] = 0
             }
-            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq dataMb) }) {
-                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-dataMb)
+            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq dataMb) }) {
+                it[limitUnits] = UsageCounterTable.limitUnits plus (-dataMb)
             }
             UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less dataMb) }) {
                 it[remainingUnits] = 0
+            }
+            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq dataMb) }) {
+                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-dataMb)
             }
         }
     }
