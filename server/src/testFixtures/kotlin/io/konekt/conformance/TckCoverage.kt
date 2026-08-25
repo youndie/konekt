@@ -1,6 +1,10 @@
 package io.konekt.conformance
 
+import io.konekt.feature.auth.shared.api.AuthOtp
+import io.konekt.feature.purchase.shared.api.OrderScreen
+import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.openapi.EndpointKind
+import io.konekt.openapi.resourceAddress
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -128,16 +132,31 @@ data class TckWalkPlan(
 
 // WHAT KONEKT SUPPLIES TODAY, WHICH IS NOTHING, AND THAT IS THE HONEST VALUE OF THIS FILE.
 //
-// There is no `TckGate` yet — running the kit needs `kompot-tck` on `:server`'s test classpath, and
-// B-24 could not add it (see the item). Until then the plan is empty, the walk reaches three of the
-// fifteen endpoints this server serves, and the declarations below say so out loud instead of a
-// green tick saying nothing. Every entry here moving from empty to non-empty makes the gate stricter
-// on its own: the checks it unlocks leave `KONEKT_CHECKS_WITH_NOTHING_TO_VISIT` and the endpoints it
-// unlocks leave `KONEKT_UNWALKED_ENDPOINTS`, and the gate fails until both lists are corrected.
+// The walk itself lives in `:e2e` (`TckWalkTest`), because its subject is a DEPLOYMENT: a run against
+// an object graph a test assembled answers about that graph. This plan is the half that can be read
+// without a stand, and the kit's own `TckConfig` is DERIVED from it there rather than written a
+// second time — a second list of what the walk supplies is a second thing to forget to update.
+//
+// Every entry here moving from empty to non-empty makes the gate stricter on its own: the checks it
+// unlocks leave `KONEKT_CHECKS_WITH_NOTHING_TO_VISIT`, the endpoints it unlocks leave
+// `KONEKT_UNWALKED_ENDPOINTS`, and the gate fails until both lists are corrected. That is what makes
+// the two lists admissions rather than exemptions — an exemption outlives its reason, and these
+// cannot.
 val KONEKT_WALK_PLAN =
     TckWalkPlan(
-        loginPath = null,
-        pathParameters = emptyMap(),
+        // The kit authenticates itself and takes no token, so the way in has to be an address it can
+        // POST to. konekt's is not a kompot form — `kompot-auth` is one action and the OTP exchange is
+        // this product's own (research-architecture §1.5) — so the walk adapts the envelope at the
+        // transport and nowhere else. Addressed through the @Resource class, like everything here.
+        loginPath = resourceAddress<AuthOtp.Verify>(),
+        // The two addresses that name a thing. What is declared is WHICH placeholder has a value; the
+        // value itself is only ever correct against a running deployment and comes from an order the
+        // walk creates before it starts.
+        pathParameters =
+            mapOf(
+                resourceAddress<OrderScreen>() to setOf("orderId"),
+                resourceAddress<Purchases.ById>() to setOf("orderId"),
+            ),
         recordedUpdateStreams = emptySet(),
         submitPayloads = emptySet(),
         allowStateChangingChecks = false,

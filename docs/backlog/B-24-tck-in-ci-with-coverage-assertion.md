@@ -1,7 +1,7 @@
 ---
 id: B-24
 title: "The TCK gate asserts what it visited, not that it was clean"
-status: wip
+status: done
 priority: P0
 size: M
 stage: stage-m4-proof
@@ -31,13 +31,19 @@ walk never reached.
 
 Background: [research-architecture](../research/research-architecture.md) §1.10, Risk 2.
 
-## What landed, and the half that did not
+## What landed
 
-**`wip` and not `done`, because the walk does not happen yet.** Both acceptance criteria above are
-observably met and the gate was proved to bite — see below — but the item's own decision paragraph
-says *the CI step parses the per-check target counts of a run*, and there is no run. Running
-`kompot-tck` needs `testImplementation(libs.kompot.tck)` in `server/build.gradle.kts`, and that file
-was outside the lane that did this work. Everything else was possible without it, so it was done.
+Two gates rather than one, because they need different things and only one of them needs a stand.
+
+| | Where | Subject | Runs |
+|---|---|---|---|
+| coverage | `:server:test`, `make tck` | the committed `docs/api/openapi.json` | every build |
+| the walk | `:e2e`, `TckWalkTest` | the running deployment | `make stand-up && make e2e`, and the CI job that does the same |
+
+The declarations both read live in `server/src/testFixtures` so the two cannot drift, and the kit's
+`TckConfig` is **derived** from `KONEKT_WALK_PLAN` rather than written a second time. The drift that
+matters is invisible in exactly one direction: a walk supplying MORE than the plan declares makes the
+coverage assertion under-claim while staying green.
 
 ### The gate that exists
 
@@ -93,3 +99,53 @@ that has lost them, and each line disappears by itself the day the surface behin
 4. Replacing the transcription. `conformanceEndpoints` and the eleven selection predicates were read
    in `kompot-tck 0.31.0.74` and copied; they are a second opinion about the kit's own target
    selection and are deleted the moment the kit is on the classpath.
+
+## What the first real walk found
+
+Two defects, both fatal to a client and both invisible to 108 green tests.
+
+**Every route that receives a body answered 500 for a malformed one.** `configureStatusPages` maps
+`KonektException` — a sealed hierarchy, so the `when` has no `else` and the compiler enforces
+completeness — and everything else falls to the handler that answers `internal_error`. Ktor's
+`BadRequestException`, which `call.receive<T>()` throws when a body will not deserialise and a typed
+`@Resource` parameter throws when it will not parse, is not a `KonektException`. So a caller who sent
+the wrong shape was told the server broke. The completeness the sealed `when` guarantees is
+completeness over **our** refusals, and it reads as completeness over all of them.
+
+**`GET /api/v1/screens/history/page` answered 500 for every client that scrolled.** The two screen
+routes beside it answer through `respondKompotComponent(json, …)`; the page route used a plain
+`call.respond`, which serialises through ContentNegotiation's `Json` — the default one, carrying none
+of this build's dictionary. `SerializationException: Serializer for subclass 'OrderRowComponent' is
+not found in the polymorphic scope of 'KompotComponent'`.
+
+`CallRespondUsageTest` existed to prevent exactly this and did not, for two reasons worth separating.
+Its pattern named `Screen.build` and not `Screen.page`, because a page response is not a
+`KompotComponent` — but its `items` are, so the rule was never about the root type. And its positive
+half asked whether the FILE mentions `respondKompotComponent`; `PurchaseRouting.kt` does, for the two
+routes above. It now asks per call site, over a window rather than a line so a broken argument list
+is not a false positive. Both halves were proved by putting the defect back.
+
+## What the walk still cannot reach, and it is not a formality
+
+Five of the eleven checks have no target, and the two that matter are named here rather than left in
+the declarations file:
+
+- **`updates`** — the check validates a RECORDING of an event stream and never opens a connection.
+  Nothing records one. The live channel is the load-bearing endpoint of this server and is held to
+  nothing at all. The capture is now the only missing piece, and it is a separate item.
+- **`idempotency`** — konekt implements no `Idempotency-Key` contract, so there is nothing to
+  exercise. `allowStateChangingChecks` is off and the check returns before its counter exists, which
+  is why an ABSENT counter is treated apart from a zero.
+
+## The kit assumes the way in is a kompot form
+
+`TckRunner.authenticate` posts a fixed `{formId, fieldId, values}` envelope to `TckConfig.loginPath`
+and offers no way to hand it a token. konekt's login is not a form — `kompot-auth` is one
+`update_session` action, so the OTP exchange is this product's own (research-architecture §1.5) — and
+`POST /api/v1/auth/otp/verify` takes a plain `VerifyOtpRequest`.
+
+The envelope is therefore unwrapped in a `TckTransport` decorator, which is the seam the kit itself
+names as the only thing its checks know about transport. What that decorator deliberately does NOT do
+is add a header: `securedEndpointsRejectAnonymous` asks a secured endpoint for a 401 with no token,
+and a transport quietly carrying one would turn that check green while proving the opposite. Filed as
+an upstream proposal — see [research-upstream-proposals](../research/research-upstream-proposals.md).

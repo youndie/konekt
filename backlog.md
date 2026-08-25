@@ -41,11 +41,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (12)
+## Open (11)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[~]` | The TCK gate asserts what it visited, not that it was clean | P0 | M | B-23 |
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[ ]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
@@ -58,7 +57,7 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (28)
+## Closed (29)
 
 **The wire and the shell**
 
@@ -97,6 +96,7 @@ so re-prioritising must never move a file.
 **Proof**
 
 - [B-23](docs/backlog/B-23-openapi-document.md) `[x]` - Publish an OpenAPI document, because the conformance kit reads one
+- [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[x]` - The TCK gate asserts what it visited, not that it was clean
 - [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[x]` - The feature, screen and API layers are empty, and the reason they were empty has expired
 
 **Upstream and the box**

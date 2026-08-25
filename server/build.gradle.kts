@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.exposedMigrations)
     application
+    // The conformance declarations are shared by two consumers that cannot see each other's test
+    // sources: :server's own coverage gate, which needs no stand, and :e2e's walk, which needs one.
+    // A fixture rather than a copy — two copies of "what this deployment offers a conformance kit"
+    // is exactly the drift the gate exists to catch.
+    `java-test-fixtures`
 }
 
 application {
@@ -121,6 +126,19 @@ dependencies {
     testImplementation(libs.ktor.client.core)
     testImplementation(testFixtures(project(":shared:db")))
     testImplementation(libs.testcontainers.junit)
+
+    // The conformance fixtures. `api` and not `implementation`: :e2e writes no address as a string
+    // either, so it needs the same @Resource classes these declarations are keyed by.
+    //
+    // The fixtures see :server's main output automatically, which is where `io.konekt.openapi`
+    // lives — the endpoint kinds and `endpointKey` are the vocabulary the declarations are written
+    // in, and re-deriving them here would be the second spelling of the contract.
+    testFixturesApi(project(":feature:auth-shared-api"))
+    testFixturesApi(project(":feature:purchase-shared-api"))
+    testFixturesApi(project(":feature:esim-shared-api"))
+    testFixturesApi(project(":feature:realtime-shared-api"))
+    testFixturesApi(project(":feature:usage-shared-api"))
+    testFixturesApi(libs.kotlinx.serialization.json)
 }
 
 // ── the OpenAPI document ────────────────────────────────────────────────────────────────────────

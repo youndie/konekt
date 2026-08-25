@@ -1,6 +1,10 @@
 package io.konekt.conformance
 
+import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
+import io.konekt.feature.purchase.shared.api.OrderScreen
+import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.OpenApiFiles
 import io.konekt.openapi.endpointKey
 import kotlinx.serialization.json.Json
@@ -56,9 +60,16 @@ class TckCoverageTest {
 
         assertEquals(
             setOf(
+                // The way in. Visited by `authenticate` and claimed by no check — a precondition
+                // rather than a check, which is why it is walked and still counts for nothing.
+                endpointKey<AuthOtp.Verify>("POST"),
                 endpointKey<HistoryScreenResource>("GET"),
                 endpointKey<HistoryScreenResource.Page>("GET"),
-                "GET /api/v1/screens/home",
+                endpointKey<HomeScreenResource>("GET"),
+                // Both addressed by naming an order, and both reachable only because the walk creates
+                // one first. The second is the largest component tree this server emits.
+                endpointKey<Purchases.ById>("GET"),
+                endpointKey<OrderScreen>("GET"),
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",

@@ -22,6 +22,17 @@ dependencies {
     testImplementation(libs.kompot.auth)
     testImplementation(libs.kompot.realtime)
 
+    // THE CONFORMANCE KIT, and it lives here rather than in :server:test because its subject is a
+    // DEPLOYMENT. `assertTheWalkVisitedEveryTarget` asks what a run reached, and a run that reaches
+    // an in-process object graph assembled by a test answers about that graph. The coverage gate
+    // over the committed document stays in :server:test, where it needs no stand.
+    testImplementation(libs.kompot.tck)
+    // The declarations both gates read: which check claims which endpoint, and what this deployment
+    // admits it cannot feed. One copy, so the two cannot drift.
+    testImplementation(testFixtures(project(":server")))
+    // The wire specification of this build — the schemas the kit validates every response against.
+    testImplementation(project(":shared:spec"))
+
     testImplementation(libs.ktor.client.core)
     testImplementation(libs.ktor.client.cio)
     testImplementation(libs.ktor.client.resources)

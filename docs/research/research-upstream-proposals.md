@@ -315,6 +315,27 @@ first five: each one blocked or corrupted something that was being built at the 
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
 | U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open; fix proposed in [#2898](https://github.com/JetBrains/Exposed/pull/2898) and verified here |
 | U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | open |
+| U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | open |
+
+**U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
+`{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
+an ordinary kompot form. The toolkit does not require that anywhere — `kompot-auth` is one
+`update_session` action and everything around it is the application's, which is §1.5 of
+[research-architecture](research-architecture.md) — so konekt's OTP exchange takes a plain DTO and the
+walk cannot log in.
+
+The cost is not one check. Without a token every secured endpoint answers 401, and `schema`,
+`component-id`, `perform`, `text-spans` and `pagination` all report findings about a server that has
+none of those defects: six findings across four endpoints, of which exactly one was true. A
+conformance kit that cannot authenticate does not fail loudly — it produces a page of confident,
+wrong ones.
+
+Worked around locally in a `TckTransport` decorator that unwraps the envelope on the one login path
+([`e2e/.../TckWalkTest.kt`](../../e2e/src/test/kotlin/io/konekt/e2e/TckWalkTest.kt)), which is the seam
+the interface's own comment names. **What the decorator deliberately does not do is add a header**:
+`securedEndpointsRejectAnonymous` asks a secured endpoint for a 401 with no token, and a transport
+quietly carrying one would turn that check green while proving the opposite. That is the trap the
+issue asks upstream not to fall into either.
 
 **U8's fix was verified rather than read.** [#2898](https://github.com/JetBrains/Exposed/pull/2898)
 appends an index to the version of every migration after the first, and the contributor asked for a

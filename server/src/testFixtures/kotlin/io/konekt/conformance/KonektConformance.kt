@@ -44,8 +44,10 @@ val KONEKT_CHECKS_WITH_NOTHING_TO_VISIT: Map<String, String> =
             "is not part of this build — the client's navigation is its own.",
         "updates" to
             "the check reads a RECORDING of an update stream from TckConfig.recordedUpdateStreams and never " +
-            "opens a connection. Nothing records one, because recording it needs a run against a stand " +
-            "and there is no conformance run at all yet.",
+            "opens a connection, and nothing records one. The walk against the stand exists now, so what " +
+            "is missing is only the capture: hold GET /api/v1/realtime open, push one counter through the " +
+            "broker, keep the frames. Until then the live channel — the load-bearing endpoint of this " +
+            "server — is held to nothing at all.",
         "idempotency" to
             "it needs a state-changing endpoint declaring both 400 and 409 together with a body to POST, and " +
             "it performs a REAL operation. Neither of konekt's two `submit` endpoints declares 400, no " +
@@ -64,16 +66,18 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         // A stream. The kit checks it from a recording, and there is none — see the `updates` entry
         // above.
         "GET ${RealtimeStream.PATH}",
-        // Addressed by naming a thing. Without an order id in TckConfig.pathParameters these have no
-        // walkable address, and the order screen is the largest tree this server emits — which is
-        // precisely the "green because it skipped the hardest screen" case the kit warns about.
-        endpointKey<Purchases.ById>("GET"),
-        endpointKey<OrderScreen>("GET"),
+        // Addressed by naming a thing AND state-changing, so a blind GET walk leaves it alone whatever
+        // the plan supplies. Its two GET siblings used to sit here for the other reason — no order id
+        // — and they are gone from this list now that the walk creates an order before it starts.
+        // That took the largest tree this server emits out of the skipped set, which was precisely
+        // the "green because it skipped the hardest screen" case the kit warns about.
         endpointKey<Purchases.ById.Confirm>("POST"),
         // A blind walk is GET only. These change state, and what to send is the application's
         // domain rather than anything the kit can invent.
         endpointKey<AuthOtp.Request>("POST"),
-        endpointKey<AuthOtp.Verify>("POST"),
+        // AuthOtp.Verify is NOT here: the walk reaches it as the way in. The kit records it as visited
+        // without a counter, because `authenticate` is a precondition of the other checks rather than
+        // a check itself — so it is walked and no check claims it, which are different things.
         endpointKey<AuthSession.Refresh>("POST"),
         endpointKey<AuthSession.Logout>("POST"),
         endpointKey<Purchases>("POST"),

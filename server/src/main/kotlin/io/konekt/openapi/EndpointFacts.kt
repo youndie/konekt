@@ -76,7 +76,12 @@ object ResourceAddresses {
 
 // "POST /api/v1/auth/otp/verify", assembled rather than typed. Public because `inline reified` is
 // the only way to reach a serializer from a type parameter, and internal would not be enough.
-inline fun <reified T : Any> endpointKey(method: String): String = "$method ${ResourceAddresses.of(serializer<T>())}"
+inline fun <reified T : Any> endpointKey(method: String): String = "$method ${resourceAddress<T>()}"
+
+// The declared address on its own, placeholders and all. `TckConfig` keys its path parameters by it,
+// and the conformance walk plan has to name the same string the HTTP description prints — which is
+// exactly the string a reader would otherwise copy out of the document by hand.
+inline fun <reified T : Any> resourceAddress(): String = ResourceAddresses.of(serializer<T>())
 
 // The declared half, by "METHOD path".
 //
