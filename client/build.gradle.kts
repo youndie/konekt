@@ -92,6 +92,13 @@ kotlin {
             implementation(libs.katcher.client)
         }
 
+        // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop
+        // artefacts to open a window at all.
+        jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.ktor.client.cio)
+        }
+
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
@@ -170,6 +177,22 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().con
         "compileIosMainKotlinMetadata" -> compilerOptions.allWarningsAsErrors.set(false)
 
         else -> compilerOptions.allWarningsAsErrors.set(true)
+    }
+}
+
+// THE DESKTOP RUNNER, and it is a runner rather than the product.
+//
+// `./gradlew :client:run` opens a window against the stand. That is what B-43's first acceptance
+// criterion asks for, and it is the cheapest place where "the application draws what the server sent"
+// becomes something a person can look at — the JVM target already renders through Skiko, so nothing
+// new is being asked of the toolchain.
+//
+// It is NOT the shipped application: it signs in through the development endpoint that reads back a
+// one-time code, which exists only where `DEV_REVEAL_OTP` is set and must never ship. `Main.kt` says
+// so at the top, where somebody copying it will read it.
+compose.desktop {
+    application {
+        mainClass = "io.konekt.client.MainKt"
     }
 }
 

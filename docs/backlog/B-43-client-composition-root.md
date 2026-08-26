@@ -93,14 +93,51 @@ privately and empties it only when the topic changes, which konekt never does: o
 subscriber. So the map has to be ours for the clear to be possible at all. Reported upstream rather
 than forked, per D9.
 
+## The runner, and the wiring under it
+
+`KonektScreenSource` is the real source behind the holder — four operations over the client this
+module already builds — and `:client:run` exists: a `compose.desktop.application` block and a
+`Main.kt` that signs in against the stand and opens a window on the home screen.
+
+**It is a runner and not the product, and the difference is one route.** It signs in through
+`/api/v1/dev/otp`, which reads back a one-time code and exists only where `DEV_REVEAL_OTP` is set. A
+machine endpoint revealing any subscriber's code IS the authentication system; a real client draws a
+login screen and the subscriber types what they were sent.
+
+`KonektScreenSourceTest` closes the write-and-never-call gap the interface would otherwise have left:
+an embedded server sends a real encoded tree, the source decodes it, the holder draws it, and the
+assertion is on text the SERVER composed — the client has no formatter for money or for gigabytes,
+deliberately (D15), so "9.7 GB left" on screen can only have been given to it. Proved by mangling the
+component's wire name in the response and watching it fail.
+
+Two things the harness taught, both worth keeping:
+
+- `waitForIdle` returns while the fetch is still in flight. Idleness is about composition, not about
+  somebody else's suspending call, so the assertion needs `waitUntil`. The first failure here was the
+  harness — the fetch was already correct, which a separate direct call proved before anything was
+  changed.
+- an embedded server rather than `MockEngine`, for the reason the SSE tests in this module already
+  record: the two never meet, and the collector simply waits.
+
 ## `wip`, and what is left
 
-- **AC 1 and the entry point.** `./gradlew :client:run` does not exist: there is no
-  `compose.desktop.application` block, no `Main.kt`, and no `ScreenSource` implementation over the
-  HTTP client this module already builds. The interface is the shape that implementation has to take;
-  writing it without an entry point to run it would be the write-and-never-call shape this repository
-  keeps catching.
+- **AC 1 is met in substance and not in form.** The command exists and the wiring under it is
+  covered, but nobody has watched the window: WSL has no display, so `:client:run` has been compiled
+  and never launched. That is exactly the class of claim this repository refuses to make on a green
+  compile, so it is written here instead.
 - **AC 2** waits on `B-25` for a route that sends an unknown component on purpose.
-- **AC 4** waits on the entry point too: goldens of a server-produced tree need a recorded response,
-  and the recording is the running application's.
+- **AC 4** waits on a recorded response from the running application.
 - iOS remains after the desktop one, and it is the part with no Kotlin in it — an Xcode project.
+
+## Two findings the composition root surfaced, which is what it was for
+
+**A client cannot learn its own subscriber id.** `UpdateSessionAction` carries an access token and a
+refresh token and nothing else, which is why the e2e stand reads the id out of the database. Nothing
+breaks today because the realtime topic turns out not to need it — see below — but any screen
+addressed by subscriber would.
+
+**The realtime topic is a local key, not an address.** `SseRealtimeSource.subscribe` ignores the topic
+it is given: the path is fixed and the SERVER derives the topic from the caller's token. So the
+`topic` parameter keys the overlay map and nothing else. That is a sound design — the client cannot
+subscribe to somebody else's stream even by mistake — and it is invisible from either side alone,
+which is why it took a composition root to notice.
