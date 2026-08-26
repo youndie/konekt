@@ -41,9 +41,14 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (4)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-44](docs/backlog/B-44-undrawable-components-are-invisible.md) `[ ]` | A component that decodes and cannot be drawn is invisible from every guard | P1 | S | - |
+| [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[ ]` | The client draws one screen of a product that has four | P1 | L | B-44 |
+| [B-46](docs/backlog/B-46-no-login-screen.md) `[ ]` | Both runners sign in through a route that must never ship | P1 | M | - |
+| [B-47](docs/backlog/B-47-first-release-tag.md) `[ ]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 
 ## Closed (43)
 

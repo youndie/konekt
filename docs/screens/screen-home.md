@@ -154,3 +154,13 @@ expected to refetch. *Which component does that refetch is not implemented in th
 - **The card's shape comes from the design system, not from the renderer.** A brand's radii are a
   client build constant; a renderer that rounded its own corners would be a second shape scale nobody
   could find.
+- **The "no plan" banner drew a red error for most of this build's life, and nothing knew.** `banner`
+  was in the dictionary with no renderer, so the registry's own fallback took it — "Unknown component",
+  in red, on the first screen every subscriber sees. It is not covered by the degradation story either:
+  that block, its sink and the whole forward-compatibility argument are about types the client cannot
+  DECODE, and a type that decodes and cannot be DRAWN never reaches them.
+
+  **Every test missed it for one reason: they all top up and buy first**, so this screen always had a
+  counter and the banner was never sent. It took running the iOS application against the stand with a
+  fresh account. `ClientAgainstStandTest` now signs in and asserts nothing else — the state a real
+  first-time subscriber gets is the one that had never been exercised.

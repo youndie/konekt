@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: client
-tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.11.1, kompot client, Ktor client CIO, JVM only today]
+tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.11.1, kompot client, Ktor client CIO on JVM and Darwin on iOS, JVM + iosArm64 + iosSimulatorArm64]
 owner: unassigned
 depends_on:
   - konekt-server
@@ -60,12 +60,21 @@ The same `@Resource` classes the server uses, through `ktor-client-resources`: t
 
 ## 3. How it is built
 
-**JVM only, and that is upstream rather than a choice.** `client/build.gradle.kts` does not use the
-`konekt.multiplatform` convention plugin: kompot's Compose half (`kompot-client`,
-`kompot-theme-client`, `kompot-ds-material-compose`, and the forms/wizard/images clients) publishes
-`-android`, `-desktop` and `-wasm-js` and **no iOS artefact**, while the protocol half publishes the
-three iOS targets. youndie/kompot#84. When it closes the answer is two iOS targets and not three —
-Compose stopped publishing `iosX64` after `1.11.0-alpha01`.
+**JVM and two iOS targets, and the module names its own rather than using the `konekt.multiplatform`
+convention plugin.** It was JVM only, and that was upstream rather than a choice: kompot's Compose half
+published `-android`, `-desktop` and `-wasm-js` and no iOS artefact while the protocol half published
+the three iOS targets. [kompot#84](https://github.com/youndie/kompot/issues/84) closed it in
+`0.31.0.76`.
+
+Two targets and not three, and the reason changed completely while the conclusion did not: Compose
+stopped publishing `iosX64` after `1.11.0-alpha01`, so `iosArm64` and `iosSimulatorArm64` are what
+exist. Verified in the module metadata of `kompot-client`, `kompot-theme-client` and
+`kompot-ds-material-compose` rather than read off the issue.
+
+**And it runs there.** `scripts/ios-home-app.sh` assembles a simulator `.app` from a Kotlin/Native
+executable — no Xcode project, because what an iOS application needs is a `UIApplicationMain`, a
+delegate that owns a window and a root view controller, and `platform.UIKit` has all three. The
+application that draws is built by the same compiler, from the same source set, as everything in it.
 
 **Compose versions are matched to the toolkit's binaries**, not to the newest release: `1.11.1` with
 material3 `1.11.0-alpha07`, named by coordinate. A newer foundation beside the toolkit's material3

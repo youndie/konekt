@@ -115,7 +115,14 @@ is the profile a coroutine-per-connection engine is shaped for. See
   not at build.
 - **Health:** `GET /health` → `200 ok`. The container healthcheck runs it through `bash` and not `sh`
   — see §8.
-- **Metrics / version:** none. Observability wiring is `B-26`.
+- **Observability:** all three agents, and each measured at the COLLECTOR rather than at its own
+  configuration — metrik as latency per route, tracy as a purchase findable by `orderId`, katcher as a
+  report when a route throws. All three answer a missing key or an unreachable collector by doing
+  nothing, so a deployment that meant to be observed and is silent looks exactly like one that is
+  working; `ObservabilityScenarioTest` is what tells them apart. A half-configured agent is refused at
+  startup rather than switched off quietly.
+- **Version:** none on the wire. The release reaches the collectors through `RELEASE` and appears on
+  every record; nothing serves it over HTTP.
 
 ## 6. Local setup
 
