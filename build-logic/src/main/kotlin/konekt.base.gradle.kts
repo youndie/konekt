@@ -63,7 +63,7 @@ tasks.withType<Test>().configureEach {
         //
         // Announced rather than skipped quietly. A check that silently declines to check is the same
         // shape of silence it exists to catch.
-        val included = (this as Test).filter.includePatterns
+        val included = (this as Test).filter.includePatterns + DeclaredTests.commandLinePatterns(filter)
         if (included.isNotEmpty()) {
             logger.lifecycle("$taskName: filtered to ${included.joinToString()} — not checked for unrun tests")
             return@doLast

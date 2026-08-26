@@ -88,6 +88,18 @@ the target reported every `commonTest` class in every multiplatform module as ne
 guard that cries wolf over a whole module is one that gets deleted in the week it first gets in the
 way.
 
+**A `--tests` run is filtered too, and knowing only about the build script's filter turned the
+default branch red.** `TestFilter.includePatterns` carries what a build file set and nothing else;
+what `--tests` sets lives on `DefaultTestFilter`, which is Gradle internal. CI's conformance step is
+`:server:test --tests 'io.konekt.conformance.*'` — so the first version of this check condemned every
+class in `:server` the moment it reached CI, having passed locally on every run that happened not to
+use `--tests`. The property is now read reflectively, and a filter it cannot read counts as filtered
+rather than as absent: the alternative is condemning a whole module on every filtered run.
+
+The mistake underneath it is worth naming, because it was not the missing property. The property
+failed to compile under the name I first guessed, and I deleted the line rather than finding the right
+one — trading a red build for a green one by removing the check that was doing the work.
+
 **A filtered task is running a subset on purpose.** `:client:viddikVerify` is a `Test` task narrowed
 to the generated screenshot fixtures, and it reported six classes as unrun — correctly, and
 meaninglessly, because the unfiltered `jvmTest` beside it covers them. Filtered tasks are skipped and

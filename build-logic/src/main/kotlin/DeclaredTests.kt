@@ -36,6 +36,26 @@ object DeclaredTests {
             }.toMap()
     }
 
+    // `--tests` ON THE COMMAND LINE, WHICH IS A DIFFERENT FILTER FROM THE BUILD SCRIPT'S.
+    //
+    // `TestFilter.includePatterns` carries only what a build file set. What `--tests` sets lives on
+    // `DefaultTestFilter`, which is Gradle internal — so it is reached reflectively rather than by a
+    // cast, and a Gradle version that renames it makes this return null instead of failing to compile
+    // in a place nobody is looking.
+    //
+    // NOT SILENT WHEN IT CANNOT TELL. A run whose filter is unknown is treated as filtered, because
+    // the alternative is condemning every class in the module on every `--tests` run — and the caller
+    // says so on the console either way. This cost a red default branch: CI's conformance step is
+    // `:server:test --tests 'io.konekt.conformance.*'`, and the first version of this check knew only
+    // about the build-script filter.
+    fun commandLinePatterns(filter: Any): Set<String> =
+        runCatching {
+            @Suppress("UNCHECKED_CAST")
+            filter.javaClass
+                .getMethod("getCommandLineIncludePatterns")
+                .invoke(filter) as Set<String>
+        }.getOrElse { setOf("<filter could not be read: ${it.javaClass.simpleName}>") }
+
     fun reportedIn(resultsDir: File): Map<String, Int> {
         if (!resultsDir.isDirectory) return emptyMap()
 
