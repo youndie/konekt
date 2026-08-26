@@ -1,0 +1,39 @@
+# THE PREVIOUS RELEASE, BESIDE THE CURRENT SCHEMA.
+#
+# An overlay rather than a service in `compose.yaml`, because it is not part of the stand: it exists
+# for one check and needs a build context that only `scripts/rolling-check.sh` produces.
+#
+# What it falsifies is B-36's claim. Expand-and-contract says a migration must leave the RUNNING
+# version working, because during a rolling deploy the new schema and the old code are live at the
+# same time — and every other test here runs new code against a new schema, which is the one
+# combination that cannot fail.
+services:
+  server-previous:
+    build:
+      # The tree `rolling-check.sh` extracted with `git archive`, already built there: the Dockerfile
+      # copies a distribution rather than compiling one, so the context has to be the tree whose
+      # `installDist` output is wanted.
+      context: ../.rolling/previous
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_started
+      # THE CURRENT MIGRATIONS, and that is the entire point. This container is the old code; the
+      # schema it meets is the new one, applied by the migrate service of the CURRENT tree.
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/konekt
+      DB_USER: konekt
+      DB_PASSWORD: konekt
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      BROKER_HOST: broker
+      BROKER_PORT: "9092"
+      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      # No traffic and no observability from this one. It is here to answer requests against a schema
+      # it has never seen, and a second simulator would spend the counters the other server measures.
+      SIMULATE_TRAFFIC: "false"
+    ports:
+      - "${PREVIOUS_SERVER_PORT:-8082}:8080"

@@ -7,3 +7,8 @@ __pycache__/
 
 # Machine-local: the Android SDK path differs on the Mac and on the Linux replica.
 local.properties
+
+# The previous release's tree, extracted by `scripts/rolling-check.sh` so the old server can be built
+# and run against the new schema. Inside the repository rather than in /tmp because it has to be
+# visible on the build machine, which sees this directory and nothing else.
+.rolling/

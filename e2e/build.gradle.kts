@@ -85,6 +85,37 @@ val e2e by tasks.registering(Test::class) {
     systemProperty("konekt.stand.compose", rootProject.file("deploy/compose.yaml").absolutePath)
 }
 
+// THE PREVIOUS RELEASE'S SERVER, against the CURRENT schema — B-35's last acceptance criterion.
+//
+// A task of its own rather than a scenario inside `e2e`, because it needs a stand the ordinary run
+// does not have: `scripts/rolling-check.sh` builds an old server and starts it beside the new one.
+// Wired into `e2e` it would fail every ordinary run for want of a container nobody asked for.
+val rollingCheck by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Drives the PREVIOUS release's server against the current schema. Use scripts/rolling-check.sh"
+    testClassesDirs =
+        sourceSets.test
+            .get()
+            .output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    outputs.upToDateWhen { false }
+
+    filter { includeTestsMatching("io.konekt.e2e.RollingDeployTest") }
+
+    // THE OLD SERVER IS THE SUBJECT, so it is what `konekt.stand.server` points at. Every helper in
+    // `Stand` then drives it without knowing which of the two it is talking to — which is the point:
+    // the old code must serve the product, not merely start.
+    systemProperty(
+        "konekt.stand.server",
+        System.getenv("KONEKT_STAND_PREVIOUS") ?: "http://127.0.0.1:8082",
+    )
+    systemProperty(
+        "konekt.stand.jdbc",
+        System.getenv("KONEKT_STAND_JDBC") ?: "jdbc:postgresql://127.0.0.1:55432/konekt",
+    )
+    systemProperty("konekt.stand.compose", rootProject.file("deploy/compose.yaml").absolutePath)
+}
+
 tasks.named<Test>("test") {
     // The ordinary test task runs nothing here. Everything in this module needs the stand.
     enabled = false

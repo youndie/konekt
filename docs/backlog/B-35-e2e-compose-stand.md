@@ -1,7 +1,7 @@
 ---
 id: B-35
 title: "An end-to-end stand on docker-compose, driven by one command in both places"
-status: wip
+status: done
 priority: P0
 size: M
 stage: stage-m2-live
@@ -43,11 +43,20 @@ thing that owns the whole.
 - AC OK: the same two commands run in CI, in a job of their own that asks for Docker before Gradle
   does, and prints the stand's logs on failure. A stand whose logs are not in the job that failed
   sends somebody to reproduce it locally.
-- AC PENDING, moved here from `B-36`: the stand runs the **previous release's image** against the new
-  schema. The stand exists now; the previous release does not — nothing has ever been tagged or
-  published, so there is no image to point at and a run against the previous COMMIT would compare two
-  schemas that are identical. It becomes real with the first release, and it is written here rather
-  than left implicit because that is the only place it can be done.
+- AC OK, and it was pending on a premise that expired: the stand runs the **previous release's image**
+  against the new schema. Nothing is tagged yet, and the second half of the old reason — that two
+  commits would compare identical schemas — stopped being true when `V10__roaming_package.sql` landed.
+  A commit before it has a server built against V9, and this stand runs V10. So the check is real now,
+  with a commit standing in for a tag, and it becomes the tag's business the day there is one.
+
+  `make rolling-check PREVIOUS=<ref>` extracts that commit with `git archive`, builds its server,
+  starts it beside the current stand on the schema the CURRENT tree migrated, and drives the product
+  through it: a sign-in and a whole purchase saga. `konekt.stand.server` points at the OLD server, so
+  every helper in `Stand` drives it without knowing which of the two it is talking to.
+
+  **It refuses to be vacuous.** With no ref and no tag it says so and stops; with a ref whose
+  migrations are identical to HEAD's it stops too, because a green run of the same code against the
+  same schema is a claim about rolling deploys backed by nothing.
 
 **FOUR DEFECTS, EVERY ONE OF THEM FATAL TO THE RUNNING SERVER, found the first time this stand came
 up — with 191 unit and integration tests green.** They are listed because the pattern matters more
@@ -73,3 +82,39 @@ cross a mount-point boundary.
 
 Background: [research-stack](../research/research-stack.md) D21,
 [research-architecture](../research/research-architecture.md) §1.8.
+
+## The combination every other test here cannot produce
+
+Expand-and-contract is a claim about a rolling deploy: during one, the new schema and the previous
+version's code are live at the same time, and the migration must leave that version working. Every
+test in this repository runs the **new code against the new schema** — precisely the pair that cannot
+fail. A migration that dropped a column, renamed one, or added a `NOT NULL` without a default would be
+green in all of them and take the running fleet down on deploy.
+
+Proved to bite, both directions, and the container proved to be the old one rather than the new one
+wearing a different name: `/api/v1/dev/fail` answers 500 on the current server and **404 on the
+previous**, because that route did not exist at that commit.
+
+| | Result |
+|---|---|
+| the real V10 against the 8c8c958 server | green — sign-in and a full purchase saga on old code |
+| a `RENAME COLUMN subscriber.msisdn` added on top | red, both tests |
+
+## The check had the defect it exists to catch
+
+The first mutation run left the renamed column behind, and **deleting the migration file did not
+un-rename it**. The next run measured what the last one had left rather than what the tree said, and
+stayed red on a tree that was fine. So the script tears the stand down first: a schema is cumulative
+and a stand is not torn down between runs, so "start from the tree's schema" has to be done rather
+than assumed.
+
+That is the same shape as the stale evidence that made a tracy assertion vacuous earlier the same day,
+arriving from the opposite direction — there a leftover made a broken thing look green, here it made a
+working thing look broken.
+
+## Why it is not in `check` or in `e2e`
+
+It tears the stand down and rebuilds an old server: minutes rather than seconds. And its subject is a
+PAIR of versions rather than this one, so it belongs with a release rather than with every commit — a
+suite that fails for reasons unrelated to the change is a suite people mute, and this one would fail
+on every branch whose ref has no migrations of its own.

@@ -41,13 +41,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (0)
 
-| Task | | Priority | Size | Blocked by |
-|---|---|---|---|---|
-| [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
+No open tasks.
 
-## Closed (42)
+## Closed (43)
 
 **The wire and the shell**
 
@@ -82,6 +80,7 @@ so re-prioritising must never move a file.
 - [B-16](docs/backlog/B-16-traffic-simulator.md) `[x]` - The traffic simulator: a consumer that moves the counters
 - [B-17](docs/backlog/B-17-esim-order-wizard.md) `[x]` - The eSIM order wizard, and an SM-DP+ mock that can be out of slots
 - [B-18](docs/backlog/B-18-cache-versus-realtime.md) `[x]` - Answer in writing how the screen cache and a live update interact
+- [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[x]` - An end-to-end stand on docker-compose, driven by one command in both places
 
 **The rest of the product**
 

@@ -81,7 +81,7 @@ tck:
 
 COMPOSE := docker compose -f deploy/compose.yaml
 
-.PHONY: stand-up stand-down stand-logs e2e
+.PHONY: stand-up stand-down stand-logs e2e rolling-check
 
 # The distribution is built OUTSIDE the image — see deploy/Dockerfile for why — so it has to exist
 # before the image does. Forgetting that step gives a container running whatever was built last time,
@@ -111,3 +111,14 @@ stand-logs:
 # change is a suite people learn to ignore.
 e2e:
 	./gradlew :e2e:e2e :client:standTest
+
+# THE ROLLING-DEPLOY CHECK: the previous release's server against the current schema.
+#
+# Deliberately not part of `e2e` and not part of `check`. It tears the stand down and rebuilds an old
+# server, which is minutes rather than seconds, and it is the one check whose subject is a PAIR of
+# versions rather than this one — so it belongs with a release, not with every commit.
+#
+#     make rolling-check                 # against the newest tag; refuses if nothing is tagged
+#     make rolling-check PREVIOUS=<ref>  # against a commit, while there are no tags
+rolling-check:
+	scripts/rolling-check.sh $(PREVIOUS)
