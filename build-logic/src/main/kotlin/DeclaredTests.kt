@@ -18,7 +18,13 @@ object DeclaredTests {
     fun declaredIn(
         sourceRoot: File,
         testClassesDirs: Iterable<File>,
+        excluded: Set<String> = emptySet(),
     ): Map<String, Int> {
+        // MATCHED AGAINST THE FULLY QUALIFIED NAME, because that is what Gradle's patterns are about.
+        // Taking the tail after the last dot instead turns `io.konekt.client.stand.*` into `*`, which
+        // matches every class in the module and silently switches the whole check off — measured, by
+        // watching `:client:jvmTest` stop reporting anything at all.
+        val excludedNames = excluded.map { pattern -> Regex(Regex.escape(pattern).replace("*", "\\E.*\\Q")) }
         val compiled =
             testClassesDirs
                 .filter { it.isDirectory }
@@ -31,6 +37,14 @@ object DeclaredTests {
             .mapNotNull { file ->
                 val simpleName = file.name.removeSuffix(".kt")
                 if (simpleName !in compiled) return@mapNotNull null
+                // The package from the path: everything under `.../kotlin/`, which is where every
+                // source set in this repository roots its packages.
+                val qualified =
+                    file.invariantSeparatorsPath
+                        .substringAfterLast("/kotlin/")
+                        .removeSuffix(".kt")
+                        .replace('/', '.')
+                if (excludedNames.any { it.matches(qualified) }) return@mapNotNull null
                 val count = annotation.findAll(file.readText()).count()
                 if (count == 0) null else simpleName to count
             }.toMap()

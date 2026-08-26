@@ -226,6 +226,35 @@ tasks.named<Test>("jvmTest") {
         .dir(layout.projectDirectory.dir("src/jvmTest/snapshots"))
         .withPropertyName("viddikGoldens")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    // The stand-driven suite is not part of an ordinary build: it needs a deployment that is already
+    // up, and wired into `check` it would fail every build on a machine that has not started one.
+    // The same reasoning `:e2e` carries, and the same answer — a named task, below.
+    filter { excludeTestsMatching("io.konekt.client.stand.*") }
+}
+
+// THE CLIENT AGAINST A RUNNING DEPLOYMENT, and it is the only place the two halves of this product
+// meet with nothing simulated between them.
+//
+// `:e2e` drives the server over HTTP and asserts about JSON. This drives the CLIENT — the real
+// screen source, the real registry, the real holder — against the same stand, and asserts about what
+// is on screen. The difference matters for one claim in particular: that the text a subscriber reads
+// was composed by the server. A JSON assertion cannot tell a field that reached the screen from one
+// that was dropped by a renderer.
+val standTest by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Drives the client against a running stand. Bring it up first: make stand-up"
+
+    val jvmTest = tasks.named<Test>("jvmTest").get()
+    testClassesDirs = jvmTest.testClassesDirs
+    classpath = jvmTest.classpath
+    useJUnitPlatform()
+
+    filter { includeTestsMatching("io.konekt.client.stand.*") }
+    // Never up to date: the stand is the input and Gradle cannot see it.
+    outputs.upToDateWhen { false }
+
+    systemProperty("konekt.stand.server", System.getenv("KONEKT_STAND_SERVER") ?: "http://127.0.0.1:8080")
 }
 
 // THE CASE COUNT, REPORTED — AND WHY THAT IS ALL THIS IS.

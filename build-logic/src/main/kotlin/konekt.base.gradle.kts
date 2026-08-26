@@ -63,17 +63,23 @@ tasks.withType<Test>().configureEach {
         //
         // Announced rather than skipped quietly. A check that silently declines to check is the same
         // shape of silence it exists to catch.
+        // AN INCLUDE SELECTS AND AN EXCLUDE NARROWS, and treating them the same was a regression
+        // that cost this check the whole of `:client:jvmTest`. A task with an include pattern is
+        // deliberately running a subset, so there is nothing to compare; a task with an exclude runs
+        // everything else, so it is still worth checking — with the excluded classes taken out of
+        // what is expected rather than the check taken out of the build.
         val included = (this as Test).filter.includePatterns + DeclaredTests.commandLinePatterns(filter)
         if (included.isNotEmpty()) {
             logger.lifecycle("$taskName: filtered to ${included.joinToString()} — not checked for unrun tests")
             return@doLast
         }
+        val excluded = filter.excludePatterns
 
         // READ AT EXECUTION TIME. Captured in the `configureEach` above it comes back empty: the
         // Kotlin plugin has not set the source set's output when this block is configured, and a
         // FileCollection captured then resolves to nothing rather than to the classes — a check that
         // silently sees no test classes and passes.
-        val declared = DeclaredTests.declaredIn(sourceRoot, testClassesDirs)
+        val declared = DeclaredTests.declaredIn(sourceRoot, testClassesDirs, excluded)
         if (declared.isEmpty()) return@doLast
 
         val reported = DeclaredTests.reportedIn(resultsDir.get().asFile)

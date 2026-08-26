@@ -53,10 +53,9 @@ the type: `expected: <2> but was: <0>`, which is the day somebody moves the decl
 - AC MET: the route is absent from the production route table, asserted over `konektRoutes` itself
   rather than over a flag — a development route reaches a deployment by being in the list every
   deployment mounts.
-- AC PARTIAL: "the placeholder in both densities with the rest of the screen intact" is proved on the
-  WIRE — both components arrive unknown, both keep their `originalType`, both neighbours survive — and
-  not yet on a screen. Drawing it needs the client's composition root to point at this address, which
-  is `B-43`'s remaining half.
+- AC PARTIAL, and the reason changed. Drawing it is done: `:client:standTest` renders this screen
+  through the real holder against the running stand and asserts both blocks and both neighbours. What
+  cannot be met is "both densities", and not for want of a fixture — see below.
 
 ## Not covered, and now demonstrable
 
@@ -64,3 +63,22 @@ The degradation record still reaches nothing: `KompotDegradationSink` counts an 
 konekt binds no sink, so this screen makes the blindness kompot#81 was filed about visible for the
 first time rather than fixing it. That is `B-26`'s third acceptance criterion, and this route is what
 will finally exercise it.
+
+## The CARD density is unreachable, and that is a finding rather than a gap in this item
+
+`UnknownBlockRenderer` chooses between a LINE and a CARD by reading `LocalUnknownBlockDensity`, whose
+default is LINE. Its own comment says the density is "chosen by where the block sits".
+
+**Nothing chooses.** `grep` over the repository finds the composition local declared, read once by the
+renderer, and provided by exactly one caller: `UnknownBlockRendererTest`, which sets it by hand. No
+production code path can reach the CARD branch, so a screen cannot demonstrate both densities however
+its components are arranged — this one included.
+
+That is the `written-but-never-called` shape applied to a decision rather than to a function: the
+branch exists, it is tested by a fixture that supplies the condition itself, and the condition is
+never supplied anywhere else. It was invisible until a real screen tried to produce it.
+
+Deciding WHO provides it is the open question and it is a design decision rather than a fix: the
+candidates are a container renderer (a block alone in a column is a card, a block among rows is a
+line) or the screen holder (which knows the screen and not the neighbourhood). Neither is obviously
+right, which is why this item records the finding instead of guessing.

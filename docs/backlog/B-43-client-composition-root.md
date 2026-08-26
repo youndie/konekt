@@ -121,11 +121,15 @@ Two things the harness taught, both worth keeping:
 
 ## `wip`, and what is left
 
-- **AC 1 is met in substance and not in form.** The command exists and the wiring under it is
-  covered, but nobody has watched the window: WSL has no display, so `:client:run` has been compiled
-  and never launched. That is exactly the class of claim this repository refuses to make on a green
-  compile, so it is written here instead.
-- **AC 2** waits on `B-25` for a route that sends an unknown component on purpose.
+- **AC 1 is met in substance and not in form.** `:client:standTest` drives the real holder, the real
+  source and the real registry against the running stand, and asserts the home screen draws `$0` —
+  which the SERVER composed, because the client owns no formatter for money (D15). What nobody has
+  done is watch the window: WSL has no display, so `:client:run` is compiled and never launched. That
+  is exactly the claim this repository refuses to make on a green compile.
+- **AC 2 is met**, through the same suite: the development screen from `B-25` renders and both
+  unknown components draw the block with their neighbours intact. Asserted as TWO blocks rather than
+  "at least one", because one block plus one silently dropped component is the failure that screen
+  exists to make visible.
 - **AC 4** waits on a recorded response from the running application.
 - iOS remains after the desktop one, and it is the part with no Kotlin in it — an Xcode project.
 
@@ -141,3 +145,19 @@ it is given: the path is fixed and the SERVER derives the topic from the caller'
 `topic` parameter keys the overlay map and nothing else. That is a sound design — the client cannot
 subscribe to somebody else's stream even by mistake — and it is invisible from either side alone,
 which is why it took a composition root to notice.
+
+## The stand suite is a task of its own, for the reason `:e2e` already had
+
+`:client:standTest` needs a deployment that is already up. Wired into `check` it would fail every
+ordinary build on a machine that has not started one, and a suite that fails for reasons unrelated to
+the change is a suite people mute. So `jvmTest` excludes the package and `make e2e` runs both.
+
+That exclusion taught the unrun-test guard something: an EXCLUDE is a filter too. Without it the check
+demanded that `jvmTest` report a class it had been told not to run — the same false positive `--tests`
+produced, arriving from the other direction.
+
+**Two assertions were wrong the first time, and both were wrong about the product rather than about
+the code.** The balance renders as `$0` and not `0.00`; and the degradation block deliberately does
+NOT put `originalType` on screen — the canvas's copy says what to do instead of what is missing, and
+the wire name is for the sink an operator reads. Both were fixed by looking at what the stand actually
+serves and at what the renderer actually draws.

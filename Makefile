@@ -100,4 +100,4 @@ stand-logs:
 # build on a machine that has not started one, and a suite that fails for reasons unrelated to the
 # change is a suite people learn to ignore.
 e2e:
-	./gradlew :e2e:e2e
+	./gradlew :e2e:e2e :client:standTest
