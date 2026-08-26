@@ -128,6 +128,26 @@ The default output is named `KonektApp.RECORDS_NOTHING` rather than written as `
 an empty lambda reads as "nothing to do here", and a deployment reporting nothing should be one that
 chose to rather than one that forgot.
 
+## The record fired on every recomposition, and the test that said otherwise passed for another reason
+
+This item's third AC said "the mechanism and the reported-once property are done and tested". The
+mechanism was; the property was not. `UnknownBlockRenderer` called the sink **in the composable body**,
+so it reported on every recomposition — the count an operator reads was a function of how often
+Compose redrew rather than of how many components failed to render.
+
+`UnknownBlockRendererTest` asserted `1` and passed, because its fixture composes once and never again.
+It was right about the number and wrong about the reason, which is the shape worth catching: a test
+that cannot fail proves nothing about the property it names.
+
+It surfaced in CI rather than locally, and the difference is the whole story: a theme arriving
+mid-composition — `B-22`, landed the same day — caused one extra pass, and the stand assertion of
+exactly two records saw three. A looser assertion would have hidden it.
+
+The report is inside a `LaunchedEffect` keyed by the component now, so a redraw of the same one is not
+a second degradation while a node replaced by a live update is. `a redraw of the same component is not
+a second degradation` nudges a real state three times and asserts the count did not move; proved by
+putting the call back in the body.
+
 ## `wip`, and what is left
 
 - **AC 1's katcher half.** "a katcher report if the route throws" is unproved: nothing in this stand

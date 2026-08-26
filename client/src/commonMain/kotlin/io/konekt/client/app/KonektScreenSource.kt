@@ -17,6 +17,8 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 // THE REAL SOURCE BEHIND THE HOLDER: four operations over the client this module already builds, and
@@ -37,9 +39,21 @@ class KonektScreenSource(
     // in the default palette, which is a coherent thing to be; making it fatal would stop an
     // application from starting over a colour.
     override suspend fun brandTheme(): KompotTheme? =
-        runCatching {
+        // A PRECISE `try`, never `runCatching`. Plain `runCatching` swallows `CancellationException`,
+        // and this runs inside a `LaunchedEffect` — so a composable leaving the tree would find its
+        // cancellation eaten here, which is a coroutine that will not stop and nobody attributing it
+        // to a theme fetch. `RunCatchingUsageTest` refuses it outright, and refused this.
+        try {
             json.decodeFromString(KompotTheme.serializer(), http.get(BrandTheme.PATH).bodyAsText())
-        }.getOrNull()
+        } catch (e: IOException) {
+            // The deployment serves no kit, or cannot be reached for one. Neither is worth failing to
+            // start over: a client in the default palette is a coherent thing to be.
+            null
+        } catch (e: SerializationException) {
+            // A kit that arrived and is not one. Same answer, different cause, and both are worth
+            // catching by name rather than by `Throwable`.
+            null
+        }
 
     override fun updates(topic: String): Flow<ComponentUpdate> =
         realtime.subscribe(topic).map { ComponentUpdate(it.componentId, it.component) }

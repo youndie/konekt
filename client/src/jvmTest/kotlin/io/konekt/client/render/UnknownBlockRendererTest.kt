@@ -2,6 +2,9 @@ package io.konekt.client.render
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -32,6 +35,58 @@ import kotlin.test.assertTrue
 // mechanism, and a test that skips it proves the drawing and not the degradation.
 @OptIn(ExperimentalTestApi::class)
 class UnknownBlockRendererTest {
+    // THE TEST THAT WOULD HAVE CAUGHT IT, and the one the fixture above cannot be.
+    //
+    // Every other case here composes once and never again, so "reported once" was true of them
+    // whatever the renderer did — the report sat in the composable body and fired on every
+    // recomposition, and the count an operator reads was a function of how often Compose redrew. It
+    // was found by a stand test on a slower machine, where a theme arriving mid-composition caused
+    // one more pass and one more record.
+    @Test
+    fun `a redraw of the same component is not a second degradation`() {
+        val sink = Recording()
+
+        runComposeUiTest {
+            // A state the test can change, so the recomposition is real rather than hoped for.
+            var nudge by mutableStateOf(0)
+
+            setContent {
+                MaterialTheme {
+                    CompositionLocalProvider(
+                        LocalKompotDesignSystem provides KonektDesignSystem(),
+                        LocalKompotRegistry provides konektRegistry(),
+                        LocalKompotDegradationSink provides sink,
+                        LocalUnknownBlockDensity provides UnknownBlockDensity.LINE,
+                    ) {
+                        // Read so the composition actually depends on it.
+                        @Suppress("UNUSED_EXPRESSION")
+                        nudge
+                        ColumnRenderer().Render(
+                            component =
+                                konektClientJson.decodeKompotComponent(
+                                    screenWithSomethingNew,
+                                ) as ColumnComponent,
+                            actionHandler = KompotActionHandler { },
+                            formController = FormController(FormSchema(formId = "u", fields = emptyList())),
+                        )
+                    }
+                }
+            }
+
+            waitForIdle()
+            assertEquals(1, sink.reports.size, "the first composition reported ${sink.reports.size} times")
+
+            repeat(3) { nudge++ }
+            waitForIdle()
+        }
+
+        assertEquals(
+            1,
+            sink.reports.size,
+            "three redraws produced ${sink.reports.size} records — the count follows Compose, not the screen",
+        )
+    }
+
     private class Recording : KompotDegradationSink {
         val reports = mutableListOf<Triple<KompotDegradationKind, String, Boolean>>()
 

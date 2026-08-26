@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,12 +72,23 @@ class UnknownBlockRenderer(
         // Reported through the toolkit's sink rather than a channel of ours, so a deployment sets one
         // sink and hears about all three kinds. `drawnAsFallback = false`: we drew a placeholder, not
         // the thing itself, and a hole and a placeholder are different facts about a screen.
-        io.github.youndie.kompot.LocalKompotDegradationSink.current
-            .onUnknown(
+        //
+        // INSIDE A `LaunchedEffect`, AND THAT IS THE FIX FOR A REAL DEFECT. Called in the composable
+        // body it fired on every RECOMPOSITION, so the count an operator reads was a function of how
+        // often Compose redrew rather than of how many components failed to render. The test that
+        // claimed "reported once" passed because its fixture composed once and never again — it was
+        // right about the number and wrong about the reason, which is the shape worth catching.
+        //
+        // Keyed by the component rather than by nothing: a node replaced by a live update is a
+        // different degradation and should be counted again, while a redraw of the same one is not.
+        val sink = io.github.youndie.kompot.LocalKompotDegradationSink.current
+        LaunchedEffect(component.id, component.originalType) {
+            sink.onUnknown(
                 io.github.youndie.kompot.KompotDegradationKind.UNKNOWN_COMPONENT,
                 component.originalType,
                 drawnAsFallback = false,
             )
+        }
 
         when (LocalUnknownBlockDensity.current) {
             UnknownBlockDensity.CARD -> Card()
