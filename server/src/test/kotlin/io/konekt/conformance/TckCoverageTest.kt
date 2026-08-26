@@ -5,6 +5,7 @@ import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
+import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.OpenApiFiles
 import io.konekt.openapi.endpointKey
@@ -74,6 +75,10 @@ class TckCoverageTest {
                 // Reachable because the walk tops up before it buys, which is the same reason the
                 // stand no longer writes a balance straight into the database.
                 endpointKey<TopUps.ById>("GET"),
+                // The brand kit: a public GET answering JSON, so a blind walk reaches it without
+                // being given anything. It is also the only walked endpoint that is not secured,
+                // which is why `auth-required` claims one fewer than the rest.
+                "GET ${BrandTheme.PATH}",
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",

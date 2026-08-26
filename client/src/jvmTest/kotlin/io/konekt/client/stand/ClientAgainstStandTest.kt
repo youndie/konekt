@@ -32,6 +32,7 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 // THE CLIENT AGAINST THE RUNNING DEPLOYMENT, which is the only place these two halves meet with
@@ -101,6 +102,24 @@ class ClientAgainstStandTest {
             // one component and lost the rest.
             onNodeWithText("Balance").assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun `the brand kit is fetched over HTTP and names the served brand`() {
+        // B-22's remaining AC. The two kits have existed as files since that item's first half; what
+        // was missing was any way to ASK for one — the endpoint's path had to live in a
+        // `*-shared-api` module and there was none.
+        val http = signedInClient()
+        val theme = runBlocking { sourceOver(http).brandTheme() }
+
+        assertNotNull(theme, "the deployment served no brand kit")
+        // The id is what a client resolves a shape scale by, so a kit that arrives without one is a
+        // kit that silently falls back to brand A's radii.
+        assertEquals("brand-a", theme.id, "the stand serves brand A unless BRAND says otherwise")
+        // The light palette, because that is the one every kit must carry: `dark` is nullable by
+        // design — a brand that described no dark theme leaves the client on its built-in palette
+        // rather than putting dark text on a near-white brand background.
+        assertTrue(theme.light.colors.isNotEmpty(), "the kit carries no colours — it would repaint nothing")
     }
 
     @Test

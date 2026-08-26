@@ -64,6 +64,11 @@ fun KonektApp(
     // recomposition does not build a new sink and, with it, a new "reported once" state.
     val sink = remember(onDegradation) { KonektDegradationSink(onDegradation) }
 
+    // FETCHED WHEN NOT SUPPLIED. A caller that hands one in — a screenshot fixture, a test — keeps
+    // control; everything else gets the deployment's brand without having to ask for it.
+    var fetchedTheme by remember { mutableStateOf<KompotTheme?>(null) }
+    LaunchedEffect(theme) { if (theme == null) fetchedTheme = screens.brandTheme() }
+
     LaunchedEffect(address) { tree = screens.fetch(address) }
 
     LaunchedEffect(topic) {
@@ -82,7 +87,7 @@ fun KonektApp(
         }
     }
 
-    KonektTheme(theme = theme, darkMode = darkMode) {
+    KonektTheme(theme = theme ?: fetchedTheme, darkMode = darkMode) {
         CompositionLocalProvider(
             LocalKompotRealtimeUpdates provides updates,
             LocalKompotDegradationSink provides sink,
@@ -100,6 +105,12 @@ fun KonektApp(
 // already builds.
 interface ScreenSource {
     suspend fun fetch(address: String): KompotComponent
+
+    // THE BRAND KIT, and it is on the source rather than left to each entry point on purpose. Every
+    // root would otherwise have to remember to fetch it, and a root that forgot would draw the
+    // application in Material's default purple — which looks like a design decision rather than like
+    // a missing call. `null` when the deployment serves none.
+    suspend fun brandTheme(): KompotTheme?
 
     fun updates(topic: String): Flow<ComponentUpdate>
 

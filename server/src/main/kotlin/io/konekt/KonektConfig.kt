@@ -3,6 +3,7 @@ package io.konekt
 import io.konekt.db.DatabaseConfig
 import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
+import io.konekt.feature.theme.shared.api.BrandTheme
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -32,6 +33,10 @@ data class KonektConfig(
     // render. Separate from `revealOtpCodes` rather than folded into it: they are two different
     // decisions with two different consequences, and a deployment might reasonably want the OTP
     // readback in a test environment without a demonstration screen in its route table.
+    // Which brand kit this deployment serves. Defaulted rather than required: an operator who has not
+    // chosen still gets a coherent application, and `brand-a` is the one the design canvas is drawn
+    // in — so an unconfigured deployment looks like the product rather than like a fallback.
+    val brand: String,
     val devScreens: Boolean,
     val migrateOnly: Boolean,
 ) {
@@ -63,6 +68,7 @@ data class KonektConfig(
                     },
                 paymentDelay = (System.getenv("PAYMENT_MOCK_DELAY_MS")?.toLongOrNull() ?: 0L).milliseconds,
                 simulateTraffic = System.getenv("SIMULATE_TRAFFIC") == "true",
+                brand = System.getenv(BrandTheme.BRAND_ENV) ?: BrandTheme.DEFAULT_BRAND,
                 devScreens = System.getenv("DEV_SCREENS") == "true",
                 migrateOnly = System.getenv("MIGRATE_ONLY") == "true",
             )

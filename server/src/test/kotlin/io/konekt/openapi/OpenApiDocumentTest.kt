@@ -9,6 +9,8 @@ import io.konekt.feature.auth.server.data.RevealedCodes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.konektRoutes
 import io.konekt.mountKonektRoutes
+import io.konekt.productionRouteGroups
+import io.konekt.theme.BrandThemeCatalogue
 import io.ktor.server.routing.RoutingNode
 import io.ktor.server.routing.routing
 import io.ktor.server.routing.routingRoot
@@ -38,7 +40,7 @@ import kotlin.test.assertTrue
 class OpenApiDocumentTest {
     @Test
     fun `the generated document matches what is committed`() {
-        val document = documentOf(konektRoutes, konektEndpointFacts)
+        val document = documentOf(productionRouteGroups(BrandThemeCatalogue("brand-a")), konektEndpointFacts)
 
         // Vacuity first. A generator that produced an empty `paths` would satisfy every comparison
         // below, and the committed file could then be empty too and nothing would say so. An exact
@@ -98,7 +100,8 @@ class OpenApiDocumentTest {
     fun `the development document builds too, so its description cannot rot`() {
         val document =
             documentOf(
-                konektRoutes + devOtpRouteGroup { RevealedCodes() } + devScreensRouteGroup,
+                productionRouteGroups(BrandThemeCatalogue("brand-a")) +
+                    devOtpRouteGroup { RevealedCodes() } + devScreensRouteGroup,
                 konektEndpointFacts + devOtpEndpointFacts + devScreensEndpointFacts,
             )
 
@@ -179,6 +182,6 @@ class OpenApiDocumentTest {
         val DESCRIBING_JWT = JwtConfig(secret = "openapi-generator", issuer = "konekt", audience = "konekt-app")
 
         // Fifteen: the whole product surface plus /health, and without the development route.
-        const val EXPECTED_OPERATIONS = 17
+        const val EXPECTED_OPERATIONS = 18
     }
 }

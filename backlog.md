@@ -41,12 +41,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (11)
+## Open (10)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
-| [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04, B-43 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[~]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[~]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26, B-43 |
 | [B-43](docs/backlog/B-43-client-composition-root.md) `[~]` | The client has every part of an application and no application | P1 | L | - |
@@ -57,7 +56,7 @@ so re-prioritising must never move a file.
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22, B-43 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (32)
+## Closed (33)
 
 **The wire and the shell**
 
@@ -95,6 +94,7 @@ so re-prioritising must never move a file.
 
 **The rest of the product**
 
+- [B-22](docs/backlog/B-22-brand-b.md) `[x]` - Brand B: the colour kit ships from the server, the shape scale ships with the client
 - [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[x]` - A subscriber is created with nothing and there is no way to add any
 
 **Proof**

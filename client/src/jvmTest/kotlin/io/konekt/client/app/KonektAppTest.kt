@@ -47,6 +47,10 @@ class KonektAppTest {
         val frames = MutableSharedFlow<ComponentUpdate>(extraBufferCapacity = 8)
         var fetches = 0
 
+        // No kit: this fixture is about the ORDER of clear-then-refetch, and a theme fetch would
+        // add a second suspending call to reason about for nothing.
+        override suspend fun brandTheme(): io.github.youndie.kompot.theme.KompotTheme? = null
+
         override suspend fun fetch(address: String): KompotComponent {
             fetches++
             return current

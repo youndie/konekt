@@ -103,6 +103,9 @@ services:
       # separate switch from the OTP readback because they are separate decisions, and on here
       # because a stand that cannot show the degradation cannot demonstrate it.
       DEV_SCREENS: ${DEV_SCREENS:-true}
+      # Which brand kit this deployment serves. One variable, and switching it is a redeploy rather
+      # than a rebuild — which is the claim B-22 exists to demonstrate and the line an operator reads.
+      BRAND: ${BRAND:-brand-a}
       PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
       PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
       # Fictional usage against real counters, which is what makes a live update visible without

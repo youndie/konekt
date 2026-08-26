@@ -9,7 +9,9 @@ import io.github.youndie.kompot.KompotScreen
 import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.form.FormSchema
+import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.realtime.SseRealtimeSource
+import io.konekt.feature.theme.shared.api.BrandTheme
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -30,6 +32,14 @@ class KonektScreenSource(
 ) : ScreenSource {
     override suspend fun fetch(address: String): KompotComponent =
         json.decodeKompotComponent(http.get(address).bodyAsText())
+
+    // A missing kit is `null` and not a failure. A deployment that serves no theme is a deployment
+    // in the default palette, which is a coherent thing to be; making it fatal would stop an
+    // application from starting over a colour.
+    override suspend fun brandTheme(): KompotTheme? =
+        runCatching {
+            json.decodeFromString(KompotTheme.serializer(), http.get(BrandTheme.PATH).bodyAsText())
+        }.getOrNull()
 
     override fun updates(topic: String): Flow<ComponentUpdate> =
         realtime.subscribe(topic).map { ComponentUpdate(it.componentId, it.component) }

@@ -1,7 +1,7 @@
 ---
 id: B-22
 title: "Brand B: the colour kit ships from the server, the shape scale ships with the client"
-status: wip
+status: done
 priority: P1
 size: M
 stage: stage-m3-product
@@ -85,3 +85,42 @@ holding a single class under any other name.
 
 Background: [research-architecture](../research/research-architecture.md) §1.2, D2;
 [design-brand-kit](../design/design-brand-kit.md).
+
+## The HTTP half, which was the whole of what was missing
+
+Both kits have existed as the files the server ships since this item's first half. What did not exist
+was any way to ASK for one: the endpoint's path has to live in a `*-shared-api` module — one spelling,
+seen by both sides — and no such module existed. `feature/theme-shared-api` is it, holding the path,
+the `BRAND` variable's name and the default brand, because all three are half of a contract an
+operator reads and a developer implements.
+
+- AC MET: switching `BRAND` repaints the application with no client rebuild. The route is mounted
+  unconditionally and public — the first screen a subscriber sees is the sign-in screen, and a
+  rebrand that only takes effect after a token exists fails visibly at the one moment every user
+  passes through.
+- AC MET, from before: brand B's radii ship with the client, because the wire has no vocabulary for
+  shape.
+
+**The client fetches the kit itself rather than each entry point remembering to.** `ScreenSource`
+grew `brandTheme()` and `KonektApp` calls it whenever no theme was handed in. A root that forgot would
+draw the application in Material's default purple — which looks like a design decision rather than
+like a missing call. A missing kit is `null` and not a failure: a deployment serving no theme is a
+coherent thing to be, and making it fatal would stop an application starting over a colour.
+
+Proved against the running stand rather than a fixture: `:client:standTest` fetches the kit over HTTP,
+asserts the `id` the shape scale resolves by, and asserts the light palette is not empty. Then
+unmounted the route and watched it fail.
+
+## Two guards objected, and both were right
+
+**The document generator refused a described-and-not-served route.** The theme is mounted
+unconditionally but is not in `konektRoutes`, because it needs a constructed catalogue — so the
+generator was being fed a different list from the one the server mounts. `productionRouteGroups()` is
+now the single answer to "what does a deployment mount", used by the composition root and by both
+document builders.
+
+**`CompositionRootRoutesTest` refused the name.** That function was called `productionRoutes` first,
+and the guard rejects anything shaped `somethingRoutes(` inside `routing { }` — which is how a route
+gets registered outside the table and out of the document. It returns a list and registers nothing,
+and renaming it was still the right answer: an exemption would have taught the guard to ignore the
+exact shape it exists to catch.

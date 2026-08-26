@@ -58,6 +58,7 @@ kotlin {
             // The wire this client speaks to, so a path is never written as a string here either.
             api(project(":feature:auth-shared-api"))
             api(project(":feature:realtime-shared-api"))
+            api(project(":feature:theme-shared-api"))
             api(project(":feature:usage-shared-api"))
             api(project(":feature:esim-shared-api"))
 

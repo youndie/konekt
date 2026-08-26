@@ -72,6 +72,7 @@ class KoinGraphTest {
                         database = io.konekt.db.DatabaseConfig("", "", ""),
                         jwt = JwtConfig("s", "i", "a"),
                         revealOtpCodes = false,
+                        brand = "brand-a",
                         devScreens = false,
                         brokerHost = "broker",
                         brokerPort = 9092,

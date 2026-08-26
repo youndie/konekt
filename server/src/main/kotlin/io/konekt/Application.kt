@@ -32,6 +32,7 @@ import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
 import io.konekt.mocks.traffic.TrafficChain
@@ -43,6 +44,8 @@ import io.konekt.realtime.realtimeRoutes
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
+import io.konekt.theme.BrandThemeCatalogue
+import io.konekt.theme.themeRoutes
 import io.konekt.time.KonektClock
 import io.konekt.time.SystemClock
 import io.konekt.time.asPetichClock
@@ -200,6 +203,31 @@ val konektRoutes: List<RouteGroup> =
 // container: the composition root passes `{ getKoin().get() }` and the document generator passes a
 // plain instance. A parameter here would have made the whole table need a Koin, and a Koin needs a
 // database.
+// The brand kit, PUBLIC and deliberately so. The first screen an operator's subscriber sees is the
+// sign-in screen, and a sign-in screen painted in Material's default purple until a token exists is a
+// rebrand that visibly fails at the only moment every user passes through. A kit carries no
+// subscriber data — the palette is on the outside of the building already.
+//
+// A function taking the catalogue rather than a value, for the reason `devOtpRouteGroup` gives: the
+// document generator mounts this table with no Koin and no database behind it.
+fun brandThemeRouteGroup(catalogue: BrandThemeCatalogue): RouteGroup =
+    RouteGroup(AuthTier.PUBLIC) { themeRoutes(BrandTheme.PATH, catalogue) }
+
+// WHAT A DEPLOYMENT MOUNTS, in one function, because the document has to be built from the same list.
+//
+// `konektRoutes` is the groups that need nothing constructed; the brand kit needs a catalogue, the way
+// the development OTP route needs a `RevealedCodes`. Feeding the generator `konektRoutes` while the
+// server mounted `konektRoutes + something` is how a served route stops being described — and the
+// generator's own check caught exactly that, in the other direction, the moment this route was added.
+//
+// `RouteGroups` AND NOT `Routes` IN THE NAME, which is not fussiness. `CompositionRootRoutesTest`
+// refuses anything shaped `somethingRoutes(` inside `routing { }`, because that is how a route gets
+// registered outside the table and out of the document. This returns a LIST and registers nothing —
+// but it was called `productionRoutes` first, the guard objected, and renaming it is the right answer:
+// an exemption would have taught the guard to ignore the exact shape it exists to catch.
+fun productionRouteGroups(catalogue: BrandThemeCatalogue): List<RouteGroup> =
+    konektRoutes + brandThemeRouteGroup(catalogue)
+
 // The development screens, in an entry of their own for the same reason: their existence is a
 // configuration decision rather than a fact about the build. Public, because the screen carries no
 // subscriber's data — two invented counters and a component nobody can render.
@@ -289,7 +317,9 @@ fun Application.module(config: KonektConfig) {
     // way.
     routing {
         mountKonektRoutes(
-            konektRoutes +
+            // Constructed once, here: the catalogue reads a resource and validates it, so a missing or
+            // mis-named kit is a startup failure rather than a 500 on the first request.
+            productionRouteGroups(BrandThemeCatalogue(config.brand)) +
                 (if (config.revealOtpCodes) listOf(devOtpRouteGroup { getKoin().get() }) else emptyList()) +
                 (if (config.devScreens) listOf(devScreensRouteGroup) else emptyList()),
         )

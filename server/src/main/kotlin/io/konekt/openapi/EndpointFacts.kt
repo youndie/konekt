@@ -9,6 +9,7 @@ import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
+import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.screens.dev.ForwardCompatScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
@@ -99,6 +100,17 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 summary = "Answer while the process is alive",
                 successContentType = "text/plain",
                 successBodyType = "the two-letter string ok",
+            ),
+        // The brand kit. Keyed by the constant rather than by a `@Resource`, like `/health` above and
+        // for the same reason: the address exists as a string in `:feature:theme-shared-api` because
+        // the client fetches it before it has any typed routing, and one spelling is the whole point.
+        "GET ${BrandTheme.PATH}" to
+            EndpointFacts(
+                summary = "The colour kit this deployment is branded with",
+                // NOT `screen`. It answers a `KompotTheme` — the values a client resolves design-system
+                // tokens into — which is neither a component tree nor an action, and borrowing the
+                // nearest-looking kind is how a conformant server becomes a page of findings.
+                successBodyType = "io.github.youndie.kompot.theme.KompotTheme",
             ),
         endpointKey<AuthOtp.Request>("POST") to
             EndpointFacts(

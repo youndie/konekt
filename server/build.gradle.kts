@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":feature:purchase-server-data"))
     implementation(project(":feature:esim-server-data"))
     implementation(project(":feature:realtime-shared-api"))
+    implementation(project(":feature:theme-shared-api"))
     implementation(project(":feature:usage-shared-api"))
     implementation(project(":feature:usage-server-data"))
 

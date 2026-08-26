@@ -735,6 +735,35 @@
                 }
             }
         },
+        "/api/v1/theme": {
+            "get": {
+                "summary": "The colour kit this deployment is branded with",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The colour kit this deployment is branded with",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.theme.KompotTheme"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/top-ups": {
             "post": {
                 "summary": "Put money on the account",

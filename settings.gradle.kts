@@ -117,6 +117,10 @@ include(":feature:esim-server-data")
 // The update stream's path and topic. A module for one object, because SSE takes a plain string on
 // both sides and the rule that a path exists once has to be kept somewhere both can see.
 include(":feature:realtime-shared-api")
+
+// The brand kit's address and the variable that chooses it. A module for one object, for the same
+// reason as the one above: the path has to exist once and both halves have to be able to see it.
+include(":feature:theme-shared-api")
 include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")
