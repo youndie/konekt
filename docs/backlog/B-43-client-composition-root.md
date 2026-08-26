@@ -119,7 +119,7 @@ Two things the harness taught, both worth keeping:
 - an embedded server rather than `MockEngine`, for the reason the SSE tests in this module already
   record: the two never meet, and the collector simply waits.
 
-## `wip`, and what is left
+## What is left, and it is one thing
 
 - **AC 1 is met in substance and not in form.** `:client:standTest` drives the real holder, the real
   source and the real registry against the running stand, and asserts the home screen draws `$0` —
@@ -130,7 +130,21 @@ Two things the harness taught, both worth keeping:
   unknown components draw the block with their neighbours intact. Asserted as TWO blocks rather than
   "at least one", because one block plus one silently dropped component is the failure that screen
   exists to make visible.
-- **AC 4** waits on a recorded response from the running application.
+- **AC 4 is met.** `Screen - Recorded home` is a golden of a tree decoded from a response recorded
+  off the running stand — sign in, top up, buy the home plan, confirm, read `/api/v1/screens/home` —
+  committed verbatim and decoded with the CLIENT's own `Json`, so a type this build cannot draw shows
+  the degradation block rather than a fixture's idea of the screen.
+
+  Every other golden in that package photographs values assembled in the test, which is right for what
+  they are for and means none of them can fail when the SERVER stops sending what they draw. This one
+  can. `RecordedScreenIsRealTest` is what keeps it honest: a recording that decoded into two
+  degradation blocks would draw a perfectly good picture and be filed as the home screen, so the
+  assertion is that NOTHING in it is unknown, and that it carries text only the server could have
+  composed — a formatted amount and a formatted allowance, neither of which the client can produce
+  (D15). Mutation-proved by renaming a wire type in the recording.
+
+  Refreshing it is deliberate work rather than a build step: a recording that regenerated itself would
+  agree with whatever the server does today, and agreeing with today is what a golden must not do.
 - iOS remains after the desktop one, and it is the part with no Kotlin in it — an Xcode project.
 
 ## Two findings the composition root surfaced, which is what it was for

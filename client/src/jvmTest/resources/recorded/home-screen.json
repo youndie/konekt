@@ -1,0 +1,28 @@
+{
+  "type": "column",
+  "id": "home",
+  "children": [
+    {
+      "type": "text",
+      "id": "balance-label",
+      "text": "Balance",
+      "style": "label_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "text",
+      "id": "balance-amount",
+      "text": "$35",
+      "style": "display_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "usage_counter_card",
+      "id": "counter-data",
+      "title": "Data",
+      "valueText": "20 GB left",
+      "progress": 0.0012207031
+    }
+  ],
+  "spacing": 16
+}

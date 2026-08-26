@@ -45,6 +45,11 @@ class ScreenshotCasesTest {
             "Brand - A Dark",
             "Brand - B",
             "Brand - B Dark",
+            // The only frame here photographing a tree this test did not assemble: it is decoded from
+            // a response recorded off the running stand. Every other case is values written in a
+            // fixture, which cannot fail when the SERVER stops sending what it draws.
+            "Screen - Recorded home",
+            "Screen - Recorded home Dark",
         )
 
     @Test
