@@ -4,6 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
+import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
@@ -65,6 +66,7 @@ fun main() {
         session.adopt(SessionTokens(action.accessToken, action.refreshToken))
     }
 
+    val buy = BuyPlan(http)
     val screens =
         KonektScreenSource(
             http = http,
@@ -115,7 +117,16 @@ fun main() {
                 routes = mapOf(PLANS_DEEPLINK to plansAddress()),
                 // Announced rather than swallowed: a handler that silently did nothing would make a
                 // button that does nothing indistinguishable from one whose handler is missing.
-                onAction = { action -> println("konekt: no handler for $action") },
+                onAction = { action ->
+                    // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
+                    // about purchases is this application's holder rather than a reusable one. What
+                    // comes back is the order screen's address, and the holder moves to it exactly as
+                    // it moves for a `navigate`.
+                    buy.addressFor(action) ?: run {
+                        println("konekt: no handler for $action")
+                        null
+                    }
+                },
             )
         }
     }

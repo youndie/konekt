@@ -12,6 +12,9 @@ dependencies {
     // travels on it. An action left out is an action a second implementation is never told about,
     // while the conformance kit reports a clean run.
     api(project(":feature:esim-shared-api"))
+    // And the purchase feature's, for `buy_plan`. One spec module per Gradle module means one
+    // dependency per Gradle module that puts something on the wire.
+    api(project(":feature:purchase-shared-api"))
 
     implementation(platform(libs.kompot.bom))
     // kompot-spec depends on every protocol module of the toolkit, which is what lets

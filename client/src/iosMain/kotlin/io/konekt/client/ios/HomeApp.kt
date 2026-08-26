@@ -3,6 +3,7 @@ package io.konekt.client.ios
 import androidx.compose.ui.window.ComposeUIViewController
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
+import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
@@ -87,6 +88,7 @@ fun homeViewController(): UIViewController {
         )
     observability.start()
 
+    val buy = BuyPlan(http)
     val screens =
         KonektScreenSource(
             http = http,
@@ -105,7 +107,16 @@ fun homeViewController(): UIViewController {
             topic = "konekt-ios",
             darkMode = false,
             routes = mapOf(PLANS_DEEPLINK to plansAddress()),
-            onAction = { action -> println("konekt-ios: no handler for $action") },
+            onAction = { action ->
+                // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
+                // about purchases is this application's holder rather than a reusable one. What
+                // comes back is the order screen's address, and the holder moves to it exactly as
+                // it moves for a `navigate`.
+                buy.addressFor(action) ?: run {
+                    println("konekt-ios: no handler for $action")
+                    null
+                }
+            },
             onDegradation = observability.recorder(),
         )
     }

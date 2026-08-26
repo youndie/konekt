@@ -41,15 +41,14 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[ ]` | The client draws one screen of a product that has four | P1 | L | B-44 |
 | [B-46](docs/backlog/B-46-no-login-screen.md) `[ ]` | Both runners sign in through a route that must never ship | P1 | M | - |
 | [B-47](docs/backlog/B-47-first-release-tag.md) `[ ]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 
-## Closed (44)
+## Closed (45)
 
 **The wire and the shell**
 
@@ -94,6 +93,7 @@ so re-prioritising must never move a file.
 - [B-22](docs/backlog/B-22-brand-b.md) `[x]` - Brand B: the colour kit ships from the server, the shape scale ships with the client
 - [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[x]` - A subscriber is created with nothing and there is no way to add any
 - [B-43](docs/backlog/B-43-client-composition-root.md) `[x]` - The client has every part of an application and no application
+- [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[x]` - The client draws one screen of a product that has four
 
 **Proof**
 

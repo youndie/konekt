@@ -33,11 +33,11 @@ class KonektSchemaGoldenTest {
         // index is built by walking the modules in order and konekt's file refers to types the
         // toolkit defines — dropping them would change our own schema, not just skip theirs.
         val ours = generated.filter { it.fileName.startsWith("konekt-") }
-        // Two: the component dictionary and the eSIM feature's action. An exact number rather than a
-        // floor, because the failure worth catching here is a spec module that stopped being
-        // assembled — which shrinks this set silently and takes a whole vocabulary off the wire
-        // specification while every test about the remaining one still passes.
-        assertEquals(2, ours.size, "expected two konekt schema files, got ${ours.map { it.fileName }}")
+        // Three: the component dictionary, the eSIM feature's action and the purchase feature's. An
+        // exact number rather than a floor, because the failure worth catching here is a spec module
+        // that stopped being assembled — which shrinks this set silently and takes a whole vocabulary
+        // off the wire specification while every test about the remaining ones still passes.
+        assertEquals(3, ours.size, "expected three konekt schema files, got ${ours.map { it.fileName }}")
 
         if (SchemaFiles.recordMode) {
             ours.forEach { SchemaFiles.write(it.fileName, it.document) }
@@ -94,6 +94,15 @@ class KonektSchemaGoldenTest {
         assertTrue(
             describes(actions, "esim_wizard_step"),
             "esim_wizard_step is missing from this build's profile",
+        )
+        // BOTH VERBS, and the second is why this assertion is worth naming each one rather than
+        // counting them. `buy_plan` reached the plans screen before it reached the profile, and what
+        // said so was the conformance walk refusing three actions on one screen — not this test,
+        // which passed on a profile describing the other verb.
+        assertTrue(
+            describes(actions, "buy_plan"),
+            "buy_plan is missing from this build's profile, so the conformance walk refuses every " +
+                "plan card that carries one",
         )
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
+import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektDegradation
 import io.konekt.client.app.KonektScreenSource
@@ -216,6 +217,69 @@ class ClientAgainstStandTest {
             // The sold-out plan is SHOWN and marked, rather than omitted: a subscriber told about a
             // plan should find it rather than find nothing.
             onNodeWithText("Sold out").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `buying a plan from the catalogue reaches the order it created`() {
+        // THE PRODUCT'S CENTRAL FLOW, on the client, end to end: home → plans → buy → the order.
+        // `:e2e` has driven the saga over HTTP since B-08 and says nothing about whether a subscriber
+        // can get to it; this is the same claim one layer up, where the presses happen.
+        val http = signedInClient()
+        val buy = BuyPlan(http)
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/screens/home",
+                    topic = "stand",
+                    darkMode = false,
+                    routes = mapOf(PLANS_DEEPLINK to "/api/v1/screens/plans"),
+                    onAction = { action -> buy.addressFor(action) },
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("See plans").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("See plans").performClick()
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Home · 20 GB · 30 days").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Home · 20 GB · 30 days").performClick()
+
+            // THE ORDER SCREEN, and the address it moved to was not known when the press happened —
+            // it is the id the server assigned. That is the difference between this and a `navigate`,
+            // and the reason buying needed an action of its own.
+            //
+            // Asserted on the copy the SERVER composed. A new subscriber has no money, so the saga is
+            // rejected before anything is held and the screen says exactly that — which is the state
+            // worth landing on rather than the happy one: it is what a first-time subscriber pressing
+            // the first thing they see actually gets.
+            //
+            // NOT asserted by the plan title disappearing: the order screen carries the plan too, so
+            // that condition would have waited out its timeout on a screen that had already arrived.
+            // It did, which is how this assertion got written twice.
+            waitUntil(timeoutMillis = 20_000) {
+                onAllNodesWithText("This purchase could not be started, and nothing was charged.")
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+
+            // Whatever the order screen says, it must not be a degradation block: `order_row`,
+            // `banner` and `step_meter` all appear on it and all had no renderer until B-45.
+            assertEquals(
+                0,
+                onAllNodesWithText(UnknownBlockRenderer.HEADLINE).fetchSemanticsNodes().size,
+                "the order screen drew degradation blocks",
+            )
+            assertEquals(
+                0,
+                onAllNodesWithText(UnknownBlockRenderer.LINE_TEXT).fetchSemanticsNodes().size,
+                "the order screen drew degradation blocks",
+            )
         }
     }
 

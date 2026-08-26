@@ -6,6 +6,7 @@ import io.github.youndie.kompot.spec.KompotSpec
 import io.github.youndie.kompot.spec.KompotSpecModule
 import io.github.youndie.kompot.spec.KompotToolkitSpec
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
+import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import kotlinx.serialization.json.JsonObject
 
 // konekt's own contribution to the wire specification: the nine component types of
@@ -38,11 +39,26 @@ fun konektEsimSpecModule(): KompotSpecModule =
         serializersModule = esimActionsSerializersModule,
     )
 
+// The purchase feature's contribution: `buy_plan`, konekt's second application-level verb.
+//
+// A module of its own for the same two reasons the eSIM one is: the toolkit's rule is one spec module
+// per Gradle module, and it is the easiest thing in this build to forget. The conformance kit found
+// exactly that — a `plan_card` carrying an action the profile did not declare, three times on one
+// screen, the first time the walk saw the plans screen.
+fun konektPurchaseSpecModule(): KompotSpecModule =
+    KompotSpecModule(
+        name = "konekt-purchase",
+        description = "Buying a plan: the one verb whose destination is not knowable before it happens.",
+        serializersModule = purchaseActionsSerializersModule,
+    )
+
 // The spec of THIS build. The order matters — whoever comes first owns a shared definition — and
 // konekt's modules go last because they define nothing the toolkit also defines and refer to plenty
 // that it does.
 object KonektSpec {
-    val modules: List<KompotSpecModule> get() = KompotToolkitSpec.modules + konektSpecModule() + konektEsimSpecModule()
+    val modules: List<KompotSpecModule> get() =
+        KompotToolkitSpec.modules + konektSpecModule() + konektEsimSpecModule() +
+            konektPurchaseSpecModule()
 
     fun generateAll(): List<GeneratedSchema> = KompotSpec.generateAll(modules)
 

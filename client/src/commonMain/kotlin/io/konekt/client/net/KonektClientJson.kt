@@ -8,6 +8,7 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
+import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 
@@ -32,6 +33,7 @@ val konektClientJson: Json =
             generatedKonektSerializersModule +
             kompotAuthSerializersModule +
             esimActionsSerializersModule +
+            purchaseActionsSerializersModule +
             // BOTH FORM MODULES, and a client with only one of them decodes the screen and then dies
             // on `$.schema.fields[0]` — which is exactly what the stand found the first time it asked
             // for a form. `generatedFormsSerializersModule` carries the form COMPONENTS, the inputs

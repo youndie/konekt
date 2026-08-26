@@ -44,7 +44,7 @@ object KonektApp {
     val RECORDS_NOTHING: (KonektDegradation) -> Unit = { }
 
     // Named for the same reason: a deployment that handles no action should be one that chose to.
-    val HANDLES_NOTHING: (KompotAction) -> Unit = { }
+    val HANDLES_NOTHING: suspend (KompotAction) -> String? = { null }
 }
 
 @Composable
@@ -67,15 +67,34 @@ fun KonektApp(
     // that the address is a value the holder can be handed AGAIN, which is the whole of navigation
     // until there is a back stack.
     routes: Map<String, String> = emptyMap(),
-    // Everything that is not a transition. A handler that silently did nothing would make a button
-    // with no handler indistinguishable from one whose handler is missing.
-    onAction: (KompotAction) -> Unit = KonektApp.HANDLES_NOTHING,
+    // Everything that is not a transition, and it may ANSWER WITH AN ADDRESS.
+    //
+    // `routes` is the synchronous half — a deeplink the server chose in advance. This is the other:
+    // an action whose destination is not knowable until it has happened. Buying is the example and
+    // the reason the shape is this one — a purchase creates an order, and where the subscriber goes
+    // next is that order's screen. The holder still owns the movement; what it does not own is the
+    // verb, which is why the answer comes back rather than the holder posting anything.
+    //
+    // `null` means the action was handled and moves nothing, or was not handled at all. A handler that
+    // silently did nothing would make a button with no handler indistinguishable from one whose
+    // handler is missing.
+    onAction: suspend (KompotAction) -> String? = KonektApp.HANDLES_NOTHING,
 ) {
     // THE ADDRESS IS STATE NOW, seeded from the parameter. `remember(address)` on the seed rather
     // than `remember { }`: a caller that changes the address it passes still moves the holder, which
     // is what every existing test does.
     var current by remember(address) { mutableStateOf(address) }
     var tree by remember(current) { mutableStateOf<KompotComponent?>(null) }
+    // KEYED BY A PRESS COUNT AND NOT BY THE ACTION, and that is a fix rather than a flourish.
+    //
+    // A `LaunchedEffect(pending)` that clears `pending` inside itself changes its own key, which
+    // cancels the coroutine mid-flight — before the request it was launched to make has answered.
+    // Nothing about that looks wrong: the press registers, the effect starts, and the screen simply
+    // never moves. Counting the presses gives every one of them a key of its own and needs no
+    // clearing at all, so there is nothing to cancel except by pressing again — which is exactly
+    // when cancelling is right.
+    var presses by remember { mutableStateOf(0) }
+    var pending by remember { mutableStateOf<KompotAction?>(null) }
 
     // OUR OWN MAP, not `KompotRealtimeProvider`'s. That composable holds its `SnapshotStateMap`
     // privately and empties it only when the topic changes, which konekt never does — so the map has
@@ -93,6 +112,14 @@ fun KonektApp(
     LaunchedEffect(theme) { if (theme == null) fetchedTheme = screens.brandTheme() }
 
     LaunchedEffect(current) { tree = screens.fetch(current) }
+
+    LaunchedEffect(presses) {
+        val action = pending ?: return@LaunchedEffect
+        onAction(action)?.let { destination ->
+            updates.clear()
+            current = destination
+        }
+    }
 
     LaunchedEffect(topic) {
         launch {
@@ -127,7 +154,12 @@ fun KonektApp(
                     updates.clear()
                     current = destination
                 } else {
-                    onAction(action)
+                    // HANDED TO AN EFFECT RATHER THAN LAUNCHED HERE. `onAction` suspends — buying is a
+                    // request — and a renderer's click handler does not. Routing it through state
+                    // means the work is cancelled with the composition rather than outliving it, and
+                    // it needs no scope of its own to be cancelled with.
+                    pending = action
+                    presses += 1
                 }
             }
 

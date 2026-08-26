@@ -35,6 +35,7 @@ import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
@@ -566,5 +567,8 @@ private val kompotJson: Json =
             // Hand-written, because actions are not generated: @KompotComponentMarker covers
             // components and the KompotAction hierarchy is registered by hand. Omitting it
             // fails nothing at build time and fails every wizard step at runtime.
-            esimActionsSerializersModule
+            esimActionsSerializersModule +
+            // Buying, konekt's second action. Registered by hand like the first: nothing fails at
+            // build time if it is missing, the press simply cannot be decoded.
+            purchaseActionsSerializersModule
     }

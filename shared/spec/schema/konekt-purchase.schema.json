@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kompot.workinprogress.ru/schema/konekt-purchase.schema.json",
+  "title": "konekt-purchase",
+  "description": "Buying a plan: the one verb whose destination is not knowable before it happens.",
+  "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
+  "x-kompot-contributes": {
+    "KompotAction": {
+      "buy_plan": "#/$defs/KompotActionBuyPlan"
+    }
+  },
+  "$defs": {
+    "KompotActionBuyPlan": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "buy_plan",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "buy_plan"
+        },
+        "planId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "planId"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

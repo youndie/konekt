@@ -10,6 +10,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.PlanCardComponent
 import io.konekt.components.PlanStates
 import io.konekt.feature.purchase.server.domain.Plan
+import io.konekt.feature.purchase.shared.api.BuyPlanAction
 import io.konekt.money.MoneyFormat
 import io.konekt.roaming.RoamingZoneNames
 
@@ -73,9 +74,11 @@ object PlansScreen {
             // deliberately in the catalogue: the refusal path needs a fixture, and a subscriber who
             // was told about a plan should find it rather than find nothing.
             state = if (plan.onSale) PlanStates.AVAILABLE else PlanStates.SOLD_OUT,
-            // No action yet. Buying from here is the next half of B-45 and needs a screen to land on;
-            // a card that navigates nowhere is the defect this screen exists to fix, one level down.
-            action = null,
+            // BUYING, and only for what is on sale. A card that accepts a press and then refuses is
+            // worse than one that does not accept it — the renderer refuses the press too, and both
+            // halves are needed: the client decides what is pressable and the server decides what is
+            // sold, and neither may be the only one that knows.
+            action = if (plan.onSale) BuyPlanAction(plan.id) else null,
         )
 
     // What the plan is made of, said in the units a person uses. Built from `dataMb` rather than
