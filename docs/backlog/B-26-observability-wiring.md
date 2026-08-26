@@ -148,14 +148,65 @@ a second degradation while a node replaced by a live update is. `a redraw of the
 a second degradation` nudges a real state three times and asserts the count did not move; proved by
 putting the call back in the body.
 
+## AC 3 is met: the degradation reaches tracy, findable by wire type
+
+tracy `0.1.13` publishes `ios_arm64`, `ios_simulator_arm64` and `ios_x64` — U11 / youndie/tracy#16,
+fixed the same day this item's blocker was written down. Verified in the module metadata rather than
+read off a commit message, and then by compiling `:client` for both Apple targets with the agent in
+`commonMain`.
+
+So `KonektClientObservability` is `commonMain` and the record goes to the same two places from a
+desktop window and from a phone: a tracy line whose `originalType` is **indexed**, and a katcher
+breadcrumb attached to whatever crashes next. Both agents moved out of `iosMain` — katcher because a
+breadcrumb is not a crash and has to be left wherever a screen degrades.
+
+**Measured at the far end.** `DegradationReachesTracyTest` renders B-25's forward-compat screen with a
+real agent pointed at the stand's tracy, and tracy then holds:
+
+```
+{"name":"konekt-client","storedRecords":2,"entityRefs":{"originalType":2}}
+```
+
+**And the first version of that test was vacuous, which a mutation proved rather than a suspicion.**
+Removing `indexed = true` left it green: tracy's service row is CUMULATIVE, so "has it any refs" was
+answered by the previous run's data. The assertion is a DELTA now — two more than the baseline read
+before anything is rendered — and the same mutation kills it. A collector that accumulates cannot be
+asked "did it happen", only "did it happen again".
+
+## AC 1's katcher half: the wiring was missing, and it was invisible from every angle
+
+The route that throws is `/api/v1/dev/fail`, behind `DEV_SCREENS` like every other demonstration
+control and for a sharper reason: a route that reliably answers 500 is a denial-of-service primitive
+if it ships.
+
+Adding it found something the address check could never have shown. **`Katcher.start` installs an
+uncaught-exception handler, and a route's exception never reaches one** — `StatusPages` catches it and
+answers 500, which is that plugin's entire purpose. So the server's katcher was correctly configured,
+correctly started, answered on its ingest address, and was structurally unable to receive anything a
+route did. The handler that swallows the exception is the only place that can report it, and it does
+now: `Katcher.catch(cause, context = route + method)`, guarded by
+`StatusPagesReportsToKatcherTest` — which also refuses the reverse mistake, a domain refusal reported
+as a crash. A 404 for somebody else's order is an ANSWER, and crash groups full of the product working
+correctly are crash groups an operator learns to ignore.
+
+## What delivery to katcher still needs, measured rather than guessed
+
+The report is produced and cannot yet arrive, and the two reasons are specific:
+
+- **The stand's katcher has no application and no user.** Read out of its own database:
+  `apps: 0`, `app_keys: 0`, `users: 0`, `reports: 0`. An ingest carrying `konekt-server` names an app
+  key that katcher does not know, so it is refused. Provisioning one at stand startup is the missing
+  piece, and it is a fixture rather than a line of product code.
+- **Its data volume is mounted where it does not write.** `compose.yaml` mounts `katcher-data:/data`;
+  `docker diff` shows the database at `/app/data/local.db`. The volume is empty and the stand's
+  katcher therefore loses everything on recreate. Harmless for a demonstration and wrong, and it was
+  found by measuring the wrong directory first — the volume showed zero files both before and after a
+  deliberate crash, which is what a working pipeline would also have shown there.
+
 ## `wip`, and what is left
 
-- **AC 1's katcher half.** "a katcher report if the route throws" is unproved: nothing in this stand
-  throws on purpose, so what is checked is that the ingest address answers rather than 404s. The
-  missing piece is a route that fails on demand, in the shape of `PAYMENT_MOCK_MODE`.
-- **AC 3, carried from `B-05`.** `KompotDegradationSink` still reaches nothing: an unknown component
-  is drawn correctly and counted nowhere, which is the exact blindness kompot#81 was filed about. The
-  handle it needs now exists (`KonektTrace`), so this is a sink implementation rather than plumbing.
+- **AC 1's katcher half is produced but not delivered**, for the two reasons above. What changed is
+  that "unproved" now names a fixture gap rather than "nothing throws on purpose".
 - **The read path trusts `X-Auth-Request-User`.** metrik and tracy sit behind a reverse proxy in a
   real deployment; the stand has none, so the header is simply believed. Fine for reading a stand and
   not fine for anything else — and worth stating because the same header on an INGEST route would be

@@ -74,6 +74,17 @@ kotlin {
             api(libs.kompot.formStandard)
 
             api(project(":shared:components"))
+
+            // FOR THE CLOCK, and it is worth saying what this does and does not open up. B-33 makes
+            // every timestamp in this build take a `KonektClock`, and a source guard reads the files
+            // to keep it that way — it caught the client's tracy agent the hour it was written. There
+            // is exactly one definition of that interface, and duplicating it here to avoid a
+            // dependency would be a second concept with one name, which is worse than the dependency.
+            //
+            // It also makes `Money` visible, and that does NOT weaken D15: what the client must not
+            // have is a FORMATTER, and `MoneyFormat` lives in `:shared:server-common`, which this
+            // module still cannot see.
+            api(project(":shared:domain"))
             // The wire this client speaks to, so a path is never written as a string here either.
             api(project(":feature:auth-shared-api"))
             api(project(":feature:realtime-shared-api"))
@@ -102,14 +113,22 @@ kotlin {
             api(libs.compose.ui)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
-        }
 
-        // THE APPLE HALF'S CRASH REPORTER. `iosMain` rather than `commonMain` because the JVM half of
-        // this module is a desktop preview and the server has its own reporter to come (B-26) — and
-        // because katcher publishes the platform hook as an `actual` in its `nativeMain`, so what is
-        // wired here is genuinely a native concern.
-        iosMain.dependencies {
+            // THE TWO AGENTS, AND BOTH MOVED HERE FROM `iosMain`.
+            //
+            // katcher was Apple-only with a reason: the JVM half of this module was a desktop preview
+            // and the crash reporter was genuinely a native concern. B-26's third acceptance criterion
+            // ends that — a degradation record leaves a katcher breadcrumb, and a breadcrumb is not a
+            // crash. It has to be left wherever a screen degrades, which is every platform.
+            //
+            // TRACY COULD NOT BE HERE UNTIL TODAY. `agent` published `jvm`, `linux_arm64`, `linux_x64`
+            // and `macos_arm64` and no iOS target at all — filed as U11 / youndie/tracy#16 — so
+            // structured logging was unavailable on the platform where an out-of-date build is
+            // likeliest: a phone updates on the subscriber's schedule, a desktop build on ours.
+            // `0.1.13` publishes `ios_arm64`, `ios_simulator_arm64` and `ios_x64`, and the module
+            // metadata was read rather than the commit message believed.
             implementation(libs.katcher.client)
+            implementation(libs.tracy.agent)
         }
 
         // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop

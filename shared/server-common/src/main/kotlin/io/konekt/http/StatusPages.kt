@@ -10,7 +10,9 @@ import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
+import io.ktor.util.AttributeKey
 import org.slf4j.LoggerFactory
+import ru.workinprogress.katcher.Katcher
 
 private val logger = LoggerFactory.getLogger("io.konekt.http.StatusPages")
 
@@ -72,6 +74,34 @@ fun Application.configureStatusPages() {
             // for whoever wrote the code — it carries table names, identifiers, sometimes a query —
             // and a subscriber is not that reader. The trace id is what connects the two halves.
             logger.error("unhandled failure on ${call.request.local.uri}", cause)
+
+            // AND REPORTED, which it was not, and could not have been.
+            //
+            // `Katcher.start` installs an uncaught-exception handler. A route's exception never
+            // reaches one: THIS handler catches it and answers 500, which is the whole purpose of
+            // StatusPages. So the server's katcher was correctly configured, correctly started, and
+            // structurally unable to receive anything a route did — the ingest address answered and
+            // nothing was ever going to be sent to it.
+            //
+            // `catch` is the manual half of the same library, and calling it here is the only place
+            // that can. It is a no-op when katcher was never started (`appKey` empty), so a
+            // deployment that chose not to report is unaffected rather than made to care.
+            Katcher.catch(
+                cause,
+                context =
+                    mapOf(
+                        // The route as declared, not as requested: a path with an id in it would make
+                        // every failing order its own crash group, and a group of one is a group
+                        // nobody triages.
+                        "route" to
+                            (
+                                call.attributes.getOrNull(
+                                    AttributeKey<String>("RouteTemplate"),
+                                ) ?: call.request.local.uri
+                            ),
+                        "method" to call.request.local.method.value,
+                    ),
+            )
             call.respond(
                 HttpStatusCode.InternalServerError,
                 ApiError("internal_error", "something went wrong on our side"),

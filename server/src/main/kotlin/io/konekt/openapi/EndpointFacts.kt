@@ -15,6 +15,7 @@ import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.roaming.dev.ArriveResource
+import io.konekt.screens.dev.FailingResource
 import io.konekt.screens.dev.ForwardCompatScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.serialization.KSerializer
@@ -329,5 +330,14 @@ val devScreensEndpointFacts: Map<String, EndpointFacts> =
                 // consumer polls, so the package is not started by the time this answers.
                 successStatus = 202,
                 successContentType = null,
+            ),
+        endpointKey<FailingResource>("GET") to
+            EndpointFacts(
+                summary = "Fail on purpose, so a crash report has something to report (development only)",
+                // NO SUCCESS, and the document says so by describing the only thing it does. There is
+                // no shape of answer here that is not the refusal below.
+                successStatus = 500,
+                successContentType = "application/json",
+                successBodyType = "io.konekt.domain.ApiError",
             ),
     )

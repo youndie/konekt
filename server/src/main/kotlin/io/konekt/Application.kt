@@ -49,6 +49,7 @@ import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.dev.roamingArriveRoutes
 import io.konekt.screens.dev.EsimTransferWidgetComponent
+import io.konekt.screens.dev.failingRoutes
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
 import io.konekt.tariff.ConfirmTariffChangeUseCase
@@ -257,6 +258,9 @@ val devScreensRouteGroup: RouteGroup =
         // The arrival route rides the same gate: it is a demonstration control, and a build that ships
         // one that starts other people's packages has shipped a way to spend their data.
         roamingArriveRoutes()
+        // And the route that throws, for the same reason and with a sharper one of its own: a route
+        // that reliably answers 500 is a denial-of-service primitive if it ever ships.
+        failingRoutes()
     }
 
 fun devOtpRouteGroup(revealed: () -> RevealedCodes): RouteGroup =

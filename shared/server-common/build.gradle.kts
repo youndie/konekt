@@ -8,6 +8,11 @@ dependencies {
     // calling `logger(...)` needs the type.
     api(libs.tracy.agent)
 
+    // KATCHER, AND IT IS HERE RATHER THAN IN `:server` FOR ONE REASON: this is where the exception is
+    // caught. `Katcher.start` installs an uncaught-exception handler, and a route's exception never
+    // reaches one — StatusPages catches it first and answers 500. So the only place a server-side crash
+    // can be reported from is the handler that swallows it.
+    api(libs.katcher.client)
     // The refusals every route can raise, and the error body they become.
     api(project(":shared:domain"))
 

@@ -1,3 +1,6 @@
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.jvm.application.tasks.CreateStartScripts
+
 plugins {
     id("konekt.jvm")
     alias(libs.plugins.kotlinSerialization)
@@ -12,6 +15,62 @@ plugins {
 
 application {
     mainClass.set("io.konekt.ApplicationKt")
+}
+
+// TWO DIFFERENT JARS WANT THE SAME FILE NAME IN `lib/`, and the distribution cannot hold both.
+//
+// metrik and tracy each publish a Kotlin Multiplatform `agent`, whose JVM artifact is called
+// `agent-jvm-<version>.jar`. The two libraries are independent and happen to be on the same version
+// number today, so `ru.workinprogress.metrik:agent-jvm:0.1.13` and
+// `ru.workinprogress.tracy:agent-jvm:0.1.13` are two different files with one name. `installDist`
+// refuses, and it is right to.
+//
+// WHAT MUST NOT BE DONE IS SETTING A `duplicatesStrategy`. Every value of it resolves the clash by
+// keeping one file and dropping the other, and the one that is dropped is an observability agent that
+// then reports nothing — from inside a running deployment, indistinguishable from one that is working.
+// This repository has met that failure four times and has a stand assertion whose whole purpose is to
+// catch it; silently packaging half the observability to make a build succeed is the same defect with
+// a build script in front of it.
+//
+// So both are kept, and the colliding ones are renamed by their group. Only the colliding ones: a
+// rename applied to everything would churn every jar name in the image for one pair.
+val collidingLibNames: Provider<Map<String, String>> =
+    configurations.runtimeClasspath
+        .flatMap { it.incoming.artifacts.resolvedArtifacts }
+        .map { artifacts ->
+            val shared = artifacts.groupBy { it.file.name }.filterValues { it.size > 1 }.keys
+            artifacts
+                .filter { it.file.name in shared }
+                .mapNotNull { artifact ->
+                    val id = artifact.id.componentIdentifier
+                    if (id is ModuleComponentIdentifier) {
+                        artifact.file.absolutePath to "${id.group}-${artifact.file.name}"
+                    } else {
+                        null
+                    }
+                }.toMap()
+        }
+
+// A WILDCARD CLASSPATH, so the start script does not name each jar. The generated script normally
+// lists every file, which would have to be renamed in step with the copy below — two places holding
+// one mapping, and the second is discovered by a container that starts and cannot find a class.
+tasks.named<CreateStartScripts>("startScripts") {
+    classpath = files("lib/*")
+}
+
+distributions {
+    named("main") {
+        contents {
+            // Captured into a local FIRST. Referring to the property directly inside the lambda makes
+            // the copy action hold the build script itself, which the configuration cache refuses to
+            // serialise — "cannot serialize Gradle script object references".
+            val renames = collidingLibNames
+            eachFile {
+                val unique = renames.get()[file.absolutePath]
+                if (unique != null) name = unique
+            }
+        }
+    }
 }
 
 // `generateMigrations` drafts a Flyway script by diffing the Table definitions against a schema. See

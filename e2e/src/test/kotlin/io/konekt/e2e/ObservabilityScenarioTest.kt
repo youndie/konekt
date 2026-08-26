@@ -104,6 +104,34 @@ class ObservabilityScenarioTest {
         }
 
     @Test
+    fun `a route that throws answers the error contract rather than leaking the exception`(): Unit =
+        runBlocking {
+            // THE HALF OF B-26's FIRST CRITERION THAT HAD NOTHING TO EXERCISE IT. "A katcher report if
+            // the route throws" needed a route that throws, and until `/api/v1/dev/fail` nothing in
+            // this stand failed on purpose — so what was checked was that katcher's address is not a
+            // 404, which is also true of an address nobody posts to.
+            //
+            // Adding the route found the real defect immediately, and it was not the missing route:
+            // `Katcher.start` installs an uncaught-exception handler, `StatusPages` catches every
+            // route exception before one can run, and so a correctly configured katcher was
+            // structurally unable to receive anything a route did. The handler reports explicitly now.
+            Stand.client().use { client ->
+                val response = client.get("${Stand.serverUrl}/api/v1/dev/fail")
+
+                assertEquals(500, response.status.value)
+                val body = response.bodyAsText()
+                // The error CONTRACT, not the exception. An unexpected failure's message is written
+                // for whoever wrote the code — it carries identifiers and sometimes a query — and a
+                // subscriber is not that reader.
+                assertTrue("internal_error" in body, "the failing route did not answer the error contract: $body")
+                assertTrue(
+                    "deliberate failure" !in body,
+                    "the exception message reached the client: $body",
+                )
+            }
+        }
+
+    @Test
     fun `katcher's ingest is a real endpoint rather than a name in a config`() =
         runBlocking {
             // The weakest of the three assertions, and it says so. A crash report needs something to

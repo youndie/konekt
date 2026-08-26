@@ -83,7 +83,7 @@ katcher = "0.6.2"
 katcherAndroid = "0.4.92"
 
 metrikAgent = "0.1.13"
-tracyAgent = "0.1.12"
+tracyAgent = "0.1.13"
 viddik = "0.1.2.13"
 
 # The QR encoder behind esim_qr. See the coordinate below for why an encoder rather than a widget.

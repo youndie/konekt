@@ -8,6 +8,7 @@ import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
+import io.konekt.client.observability.KonektClientObservability
 import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
@@ -18,6 +19,7 @@ import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
 import io.konekt.feature.usage.shared.api.HomeScreenResource
+import io.konekt.time.SystemClock
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.resources.get
@@ -25,6 +27,9 @@ import io.ktor.client.plugins.resources.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.resources.serialization.ResourcesFormat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.serializer
 
@@ -70,10 +75,34 @@ fun main() {
             onAction = { action -> println("konekt: no handler for $action") },
         )
 
+    // OBSERVABILITY, and the runner is where it is decided rather than inside the holder. A client
+    // reports to whatever its deployment was built against, and a library that picked its own
+    // collector would be a library nobody could point somewhere else.
+    //
+    // Both variables absent is a decision — no tracy, and the katcher breadcrumb still works. One
+    // absent is refused, because a build that meant to be observed and is silent looks exactly like
+    // one that is working.
+    val observabilityScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val observability =
+        KonektClientObservability.of(
+            endpoint = System.getenv("TRACY_ENDPOINT"),
+            apiKey = System.getenv("TRACY_KEY"),
+            release = System.getenv("KONEKT_RELEASE") ?: "desktop-dev",
+            instanceId = System.getenv("HOSTNAME") ?: "desktop",
+            scope = observabilityScope,
+            clock = SystemClock,
+        )
+    observability.start()
+
     application {
         Window(onCloseRequest = ::exitApplication, title = "konekt") {
             KonektApp(
                 screens = screens,
+                // THE SINK'S OUTPUT, which was `RECORDS_NOTHING` until tracy could be reached from
+                // every platform this client builds for. An unknown component was drawn correctly and
+                // counted nowhere — the exact blindness kompot#81 was filed about, surviving its own
+                // fix upstream.
+                onDegradation = observability.recorder(),
                 address = homeAddress(),
                 // A LOCAL KEY, NOT AN ADDRESS, and that is worth knowing before somebody goes looking
                 // for where it is sent. `SseRealtimeSource.subscribe` ignores its topic: the path is
