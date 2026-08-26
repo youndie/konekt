@@ -24,7 +24,7 @@ import ru.workinprogress.katcher.Katcher
 // pointed at a stand or at nothing without being rebuilt — and so a run that forgot to configure it
 // fails at the reporter's own refusal rather than by reporting into the void.
 @OptIn(ExperimentalForeignApi::class)
-fun main() {
+fun crashMain() {
     val env = NSProcessInfo.processInfo.environment
 
     fun setting(name: String): String = (env[name] as? String).orEmpty()

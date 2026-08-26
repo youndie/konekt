@@ -159,6 +159,40 @@ class ClientAgainstStandTest {
     }
 
     @Test
+    fun `a subscriber who has bought nothing is told so, not shown an error`() {
+        // THE FIRST SCREEN EVERY SUBSCRIBER SEES, and no test in this repository had ever looked at
+        // it. They all top up and buy before asserting, so the home screen always had a counter and
+        // the "no plan is active" banner was never sent — the state a real first-time subscriber gets
+        // was the one state nothing exercised.
+        //
+        // What it actually drew was a red "Unknown component". `banner` is in the dictionary and had
+        // no renderer, and a component that DECODES and cannot be DRAWN is not an `UnknownComponent`:
+        // it never reaches konekt's degradation block, so the registry's own fallback took it. Found
+        // by running the iOS application against the stand with a fresh account.
+        val http = signedInClient()
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/screens/home",
+                    topic = "stand",
+                    darkMode = false,
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("No plan is active on this line yet.").fetchSemanticsNodes().isNotEmpty()
+            }
+
+            onNodeWithText("No plan is active on this line yet.").assertIsDisplayed()
+            // And somewhere to go. A banner that states a fact and offers nothing is the empty screen
+            // it was written to replace, with a sentence on it.
+            onNodeWithText("See plans").assertIsDisplayed()
+        }
+    }
+
+    @Test
     fun `an unknown component draws the block, and its neighbours survive`() {
         // B-25's remaining half. Its own test proves both components arrive unknown and both
         // neighbours survive ON THE WIRE; this is the same claim one layer up, where the renderer

@@ -9,6 +9,7 @@ import io.github.youndie.kompot.kompotCoreRenderers
 import io.github.youndie.kompot.kompotStandardRenderers
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
+import io.konekt.components.BannerComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.reflect.KClass
@@ -24,6 +25,11 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
     mapOf(
         UsageCounterCardComponent::class to UsageCounterCardRenderer(),
         EsimQrComponent::class to EsimQrRenderer(),
+        // The banner the home screen sends to a subscriber who has bought nothing — which is every
+        // subscriber's FIRST screen, and which drew a red "Unknown component" until an application
+        // on a phone showed it. See `BannerRenderer`: a type that decodes and has no renderer is not
+        // an `UnknownComponent`, so the degradation block never covered it.
+        BannerComponent::class to BannerRenderer(),
         // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.

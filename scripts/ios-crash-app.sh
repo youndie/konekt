@@ -24,7 +24,7 @@ KONEKT_RELEASE="${KONEKT_RELEASE:-ios-dev}"
 
 # LOCAL=1: an Apple target does not build on the Linux box, which is the one exception the repository's
 # build rules name.
-LOCAL=1 ./gradlew :client:linkDebugExecutableIosSimulatorArm64 -q
+LOCAL=1 ./gradlew :client:linkCrashDebugExecutableIosSimulatorArm64 -q
 
 BIN="client/build/bin/iosSimulatorArm64/debugExecutable/KonektCrash.kexe"
 [ -f "$BIN" ] || { echo "no executable at $BIN"; exit 1; }

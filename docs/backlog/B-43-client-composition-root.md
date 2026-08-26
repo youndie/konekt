@@ -1,7 +1,7 @@
 ---
 id: B-43
 title: "The client has every part of an application and no application"
-status: wip
+status: done
 priority: P1
 size: L
 stage: stage-m3-product
@@ -121,11 +121,13 @@ Two things the harness taught, both worth keeping:
 
 ## What is left, and it is one thing
 
-- **AC 1 is met in substance and not in form.** `:client:standTest` drives the real holder, the real
-  source and the real registry against the running stand, and asserts the home screen draws `$0` —
-  which the SERVER composed, because the client owns no formatter for money (D15). What nobody has
-  done is watch the window: WSL has no display, so `:client:run` is compiled and never launched. That
-  is exactly the claim this repository refuses to make on a green compile.
+- **AC 1 is met, and somebody finally watched it.** `:client:standTest` drives the real holder, the
+  real source and the real registry against the running stand. What was missing was a window anybody
+  had seen — WSL has no display, so `:client:run` was compiled and never launched, which is exactly
+  the claim this repository refuses to make on a green compile.
+  
+  The window that was watched is an iOS one, on the simulator, drawing "Balance", "$0" and the
+  "No plan is active on this line yet" banner — every string of it composed by the server.
 - **AC 2 is met**, through the same suite: the development screen from `B-25` renders and both
   unknown components draw the block with their neighbours intact. Asserted as TWO blocks rather than
   "at least one", because one block plus one silently dropped component is the failure that screen
@@ -145,7 +147,19 @@ Two things the harness taught, both worth keeping:
 
   Refreshing it is deliberate work rather than a build step: a recording that regenerated itself would
   agree with whatever the server does today, and agreeing with today is what a golden must not do.
-- iOS remains after the desktop one, and it is the part with no Kotlin in it — an Xcode project.
+- **iOS is done, and it turned out to have Kotlin in it after all.** This item said it was "the part
+  with no Kotlin in it — an Xcode project". What an iOS application actually needs is a
+  `UIApplicationMain`, a delegate that owns a window and a root view controller, and Kotlin/Native has
+  all three through `platform.UIKit`. So `HomeEntryPoint.kt` is twelve lines of platform between a
+  `@Composable` and a phone, and `scripts/ios-home-app.sh` assembles the bundle — no `.pbxproj`, and
+  the application built by the same compiler, from the same source set, as everything it draws.
+
+  Three things stood between "it links" and "it draws", none of them visible from the code: UIKit
+  instantiates the delegate with `init`, which a Kotlin class does not export without `@OverrideInit`
+  (the app dies before any of our code runs, and the only evidence is the device log); Compose refuses
+  to start without `CADisableMinimumFrameDurationOnPhone` in the plist, which Xcode's templates carry
+  and a hand-written bundle does not; and `simctl` passes environment only through
+  `SIMCTL_CHILD_`-prefixed variables, so the first run had nothing configured at all.
 
 ## Two findings the composition root surfaced, which is what it was for
 
@@ -175,3 +189,25 @@ the code.** The balance renders as `$0` and not `0.00`; and the degradation bloc
 NOT put `originalType` on screen — the canvas's copy says what to do instead of what is missing, and
 the wire name is for the sink an operator reads. Both were fixed by looking at what the stand actually
 serves and at what the renderer actually draws.
+
+## What the application found in its first minute, which nothing below it could
+
+**The first screen every subscriber sees was drawing a red error.** `HomeScreen` sends a `banner` when
+a subscriber has no counters — "No plan is active on this line yet", with somewhere to go — precisely
+so an empty home screen is not indistinguishable from one that failed to load. `banner` was in the
+dictionary and had no renderer, so what appeared was the registry's own fallback, in red, saying
+"Unknown component".
+
+**Every test missed it for one reason: they all top up and buy first.** The home screen therefore
+always had a counter, and the banner was never sent. The one state a real first-time subscriber gets
+was the one state nothing exercised — on either platform.
+
+**And konekt's degradation story does not cover it.** The block, the sink and the whole
+forward-compatibility argument are about types the client cannot DECODE. A type that decodes and has
+no renderer is not an `UnknownComponent`: it never reaches the block, and the sink never hears about
+it. `KonektRendererCoverageTest` knew `banner` was unrendered and recorded it as a decision rather than
+a defect, which is exactly what it was until a screen sent one.
+
+Both halves are closed: `BannerRenderer` draws it, and `ClientAgainstStandTest` signs in as a fresh
+subscriber and asserts the sentence and its action are on screen. Mutation-proved by taking the
+renderer back out.

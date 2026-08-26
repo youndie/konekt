@@ -35,7 +35,12 @@ import kotlin.test.assertTrue
 // that would be right on the day it was written.
 class KonektRendererCoverageTest {
     // Every wire type this build can draw. One entry, and the list grows one screen at a time.
-    private val rendered = setOf("usage_counter_card", "esim_qr")
+    // `banner` joined these after an iOS build drew a red "Unknown component" where the home screen's
+    // "no plan is active" message should have been. It was in `notYetRendered` below, which recorded
+    // the fact and treated it as a decision — and the decision was invisible, because a type that
+    // DECODES and has no renderer is not an `UnknownComponent` and never reaches konekt's degradation
+    // block. Every test missed it by topping up first, so the banner was never sent.
+    private val rendered = setOf("usage_counter_card", "esim_qr", "banner")
 
     // The rest, each waiting for the screen that needs it. B-05 is the block a client draws instead.
     private val notYetRendered =
@@ -43,7 +48,6 @@ class KonektRendererCoverageTest {
             "plan_card",
             "esim_card",
             "order_row",
-            "banner",
             "snackbar",
             "step_meter",
             "skeleton",

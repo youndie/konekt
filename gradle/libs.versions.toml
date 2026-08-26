@@ -158,6 +158,10 @@ ktor-client-contentNegotiation = { module = "io.ktor:ktor-client-content-negotia
 # from the server side, where `ktor-server-sse` IS one.
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+# The Apple engine. `ktor-client-cio` covers JVM and the Linux/Windows native targets and NOT the
+# Apple ones — a fact that surfaces as an unresolved `CIO` in `iosMain` rather than as a version
+# conflict, which is why it is worth a line here rather than a guess at the call site.
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 
 # --- kompot ------------------------------------------------------------------------------------
 #

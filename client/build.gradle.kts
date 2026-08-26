@@ -46,9 +46,19 @@ kotlin {
         // an `Info.plist` and a binary in it. `scripts/ios-crash-app.sh` assembles one. What that
         // buys is that the thing which crashes is built by the same compiler, from the same source
         // set, as the reporter it is testing — rather than by a toolchain kept in step by hand.
-        binaries.executable {
-            entryPoint = "io.konekt.client.ios.main"
-            baseName = "KonektCrash"
+        binaries {
+            // TWO EXECUTABLES AND NOT ONE WITH A SWITCH, because they are two different claims and
+            // one of them is about a crash. The harness must link the reporter and as little else as
+            // possible — a binary that also carried Compose would make "the reporter runs on a real
+            // Apple target" a statement about a much larger program.
+            executable("crash") {
+                entryPoint = "io.konekt.client.ios.crashMain"
+                baseName = "KonektCrash"
+            }
+            executable("home") {
+                entryPoint = "io.konekt.client.ios.homeMain"
+                baseName = "KonektHome"
+            }
         }
     }
 
@@ -144,6 +154,12 @@ kotlin {
             // metadata was read rather than the commit message believed.
             implementation(libs.katcher.client)
             implementation(libs.tracy.agent)
+        }
+
+        // The Apple half's own needs: an engine that exists on Apple targets, and Compose's UIKit
+        // host so a `@Composable` can be put inside a `UIViewController`.
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
 
         // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop
