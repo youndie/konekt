@@ -116,6 +116,10 @@ kotlin {
             api(project(":feature:theme-shared-api"))
             api(project(":feature:usage-shared-api"))
             api(project(":feature:esim-shared-api"))
+            // For the plans screen's address and the deeplink that reaches it. The client needs the
+            // CONTRACT of the purchase feature and none of its server halves — which is the whole
+            // reason a  module exists per feature.
+            api(project(":feature:purchase-shared-api"))
 
             // The session lives behind ktor's bearer plugin: it holds the tokens and refreshes them
             // on a 401, which is why `KonektSession` is a store rather than an interceptor.

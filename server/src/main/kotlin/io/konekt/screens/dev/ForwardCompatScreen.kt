@@ -87,15 +87,16 @@ object ForwardCompatScreen {
                         id = "forward-compat-card",
                         headline = "And again, standing on its own",
                     ),
-                    // THE OTHER WAY A CLIENT FAILS TO RENDER, and this screen could not demonstrate it
-                    // until B-44. `step_meter` is in konekt's OWN dictionary — every client decodes it
-                    // into its own class — and this build has no renderer for it. That is not an
-                    // `UnknownComponent`: before B-44 it reached no block and no sink, and the
-                    // toolkit's red fallback drew it while nothing counted it.
+                    // A THIRD KNOWN NEIGHBOUR, and it was briefly the demonstration of the other way a
+                    // client fails to render. `step_meter` had no renderer when B-44 landed — a type
+                    // this build DECODES and could not DRAW, which reached no block and no sink — and
+                    // B-45 gave it one along with the other five. So the case it demonstrated is now
+                    // unreachable from any served screen, which is the right outcome and the reason
+                    // `UndrawableComponentRendererTest` supplies its own condition rather than a
+                    // screen doing it.
                     //
-                    // A screen carrying one of each is the only place the two are ever drawn side by
-                    // side, and the point is that a subscriber cannot tell them apart while the RECORD
-                    // can.
+                    // It stays because a wizard's step meter beside two blocks is one more thing that
+                    // must survive them.
                     StepMeterComponent(
                         id = "forward-compat-undrawable",
                         current = 2,

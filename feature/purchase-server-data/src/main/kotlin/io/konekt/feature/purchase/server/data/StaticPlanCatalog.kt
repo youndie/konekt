@@ -19,6 +19,11 @@ class StaticPlanCatalog(
 ) : PlanCatalog {
     override suspend fun find(planId: String): Plan? = plans.firstOrNull { it.id == planId }
 
+    // In the order they are declared, which is the order the canvas draws them: the home bundle first
+    // and the roaming packages after it. A screen that sorted by price would put the cheapest trip
+    // above the plan the subscriber actually lives on.
+    override suspend fun all(): List<Plan> = plans
+
     companion object {
         private const val MB_PER_GB = 1_024L
 

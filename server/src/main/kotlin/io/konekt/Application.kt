@@ -52,6 +52,7 @@ import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
+import io.konekt.screens.plansRoutes
 import io.konekt.tariff.ConfirmTariffChangeUseCase
 import io.konekt.tariff.ExposedTariffChanges
 import io.konekt.tariff.StartTariffChangeUseCase
@@ -211,6 +212,7 @@ val konektRoutes: List<RouteGroup> =
             topUpRoutes()
             esimWizardRoutes()
             homeRoutes()
+            plansRoutes()
             customPackageRoutes()
             tariffRoutes()
             realtimeRoutes()

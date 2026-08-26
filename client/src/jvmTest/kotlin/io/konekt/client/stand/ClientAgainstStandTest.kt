@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
@@ -22,6 +23,7 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -73,7 +75,6 @@ class ClientAgainstStandTest {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
-            onAction = { },
         )
 
     @Test
@@ -142,37 +143,80 @@ class ClientAgainstStandTest {
                 )
             }
 
-            waitUntil(timeoutMillis = 15_000) { recorded.size >= 3 }
+            waitUntil(timeoutMillis = 15_000) { recorded.size >= 2 }
         }
 
-        // THREE, and by type AND cause. A count alone would be satisfied by three records of the same
+        // TWO, and by type AND cause. A count alone would be satisfied by two records of the same
         // wrong thing, and the whole point of `originalType` is answering WHICH type went unrendered.
-        assertEquals(3, recorded.size, "expected one record per component that could not be rendered")
+        assertEquals(2, recorded.size, "expected one record per component that could not be rendered")
 
-        // TWO CAUSES ON ONE SCREEN, which is what this screen exists to put side by side since B-44.
-        // The two are the same to a subscriber — same block, same sentence, because "update to see
-        // it" is the only move either leaves them — and they must be different to whoever reads the
-        // record: one says the client is behind the server, the other says this build shipped a
-        // dictionary entry it never wired up.
-        val undecodable = recorded.filter { it.cause == KonektDegradation.Cause.UNDECODABLE }
-        val undrawable = recorded.filter { it.cause == KonektDegradation.Cause.UNDRAWABLE }
-
-        assertEquals(2, undecodable.size, "expected both esim_transfer_widget blocks: $recorded")
+        // BOTH UNDECODABLE, and that is now the only cause a served screen can produce. `step_meter`
+        // was the UNDRAWABLE one until B-45 gave every dictionary type a renderer — so the case is
+        // unreachable by construction rather than untested, and what guards it is
+        // `every dictionary type is registered` plus `UndrawableComponentRendererTest`.
         assertTrue(
-            undecodable.all { it.originalType == "esim_transfer_widget" },
-            "the records lost the type: ${undecodable.map { it.originalType }}",
+            recorded.all { it.cause == KonektDegradation.Cause.UNDECODABLE },
+            "a served screen produced an undrawable component, so a dictionary type lost its renderer: $recorded",
         )
-
-        // The one this repository could not report at all until B-44: a type in konekt's own
-        // dictionary with no renderer. It reached no block and no sink, and the toolkit's red
-        // fallback drew it while nothing counted it.
-        assertEquals(1, undrawable.size, "the undrawable component was not recorded: $recorded")
-        assertEquals("step_meter", undrawable.single().originalType)
+        assertTrue(
+            recorded.all { it.originalType == "esim_transfer_widget" },
+            "the records lost the type: ${recorded.map { it.originalType }}",
+        )
 
         assertTrue(
             recorded.none { it.drawnAsFallback },
             "a placeholder was reported as a fallback — a hole and a substitution are different facts",
         )
+    }
+
+    @Test
+    fun `pressing See plans reaches a plans screen the server built`() {
+        // THE ONE TRANSITION THIS BUILD HAS, and until B-45 it went nowhere: the home screen has
+        // offered `app://plans` since B-07 and the screen document said so outright — "a destination
+        // that does not exist in this build".
+        //
+        // Driven through the REAL holder, so what is asserted is the seam rather than a map: a
+        // `navigate` reaching the handler, the handler resolving the deeplink, the holder fetching the
+        // new address, and the tree that comes back being drawn by renderers that exist.
+        val http = signedInClient()
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/screens/home",
+                    topic = "stand",
+                    darkMode = false,
+                    routes = mapOf(PLANS_DEEPLINK to "/api/v1/screens/plans"),
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("See plans").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("See plans").performClick()
+
+            // The plans screen, by a plan's title and its price — both composed by the SERVER, which
+            // is what makes them evidence: this client owns no formatter for money.
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Plans").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Home · 20 GB · 30 days").assertIsDisplayed()
+            onNodeWithText("$15").assertIsDisplayed()
+
+            // AND IT IS A PLAN CARD, not a degradation block. `plan_card` had no renderer until B-45,
+            // so a screen of them drew blocks — which would satisfy "the transition happened" and
+            // nothing else.
+            assertEquals(
+                0,
+                onAllNodesWithText(UnknownBlockRenderer.HEADLINE).fetchSemanticsNodes().size,
+                "the plans screen drew degradation blocks, so its cards have no renderer",
+            )
+
+            // The sold-out plan is SHOWN and marked, rather than omitted: a subscriber told about a
+            // plan should find it rather than find nothing.
+            onNodeWithText("Sold out").assertIsDisplayed()
+        }
     }
 
     @Test
@@ -251,15 +295,10 @@ class ClientAgainstStandTest {
                 onAllNodesWithText(UnknownBlockRenderer.LINE_TEXT).fetchSemanticsNodes().size,
                 "the block inside the row did not draw the line density",
             )
-            // TWO cards: the second `esim_transfer_widget` and the `step_meter`, which sits in the
-            // column too. The step meter is the other CAUSE rather than another density — a type this
-            // build decodes and cannot draw — and on screen it is deliberately identical to the block
-            // beside it. That identity is the claim: the record tells them apart and the subscriber
-            // does not have to.
             assertEquals(
-                2,
+                1,
                 onAllNodesWithText(UnknownBlockRenderer.HEADLINE).fetchSemanticsNodes().size,
-                "the blocks standing in the column did not draw the card density",
+                "the block standing in the column did not draw the card density",
             )
         }
     }

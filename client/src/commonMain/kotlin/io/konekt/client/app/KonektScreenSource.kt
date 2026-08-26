@@ -38,7 +38,6 @@ class KonektScreenSource(
     private val realtime: SseRealtimeSource,
     private val registry: KompotRegistry,
     private val json: Json,
-    private val onAction: (KompotAction) -> Unit,
 ) : ScreenSource {
     override suspend fun fetch(address: String): KompotComponent =
         json.decodeKompotComponent(http.get(address).bodyAsText())
@@ -100,7 +99,10 @@ class KonektScreenSource(
     override val streamRestarted: Flow<Unit> get() = realtime.streamRestarted
 
     @Composable
-    override fun render(tree: KompotComponent) {
+    override fun render(
+        tree: KompotComponent,
+        onAction: (KompotAction) -> Unit,
+    ) {
         KompotScreen(
             rootComponent = tree,
             registry = registry,

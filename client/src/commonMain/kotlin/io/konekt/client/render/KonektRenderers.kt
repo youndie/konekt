@@ -32,12 +32,10 @@ import kotlin.reflect.KClass
 // exactly like a type from a newer server, and to an operator like neither.
 private val undrawn: Map<KClass<out KompotComponent>, KompotComponentRenderer<out KompotComponent>> =
     mapOf(
-        PlanCardComponent::class to UndrawableComponentRenderer<PlanCardComponent>("plan_card"),
-        EsimCardComponent::class to UndrawableComponentRenderer<EsimCardComponent>("esim_card"),
-        OrderRowComponent::class to UndrawableComponentRenderer<OrderRowComponent>("order_row"),
-        SnackbarComponent::class to UndrawableComponentRenderer<SnackbarComponent>("snackbar"),
-        StepMeterComponent::class to UndrawableComponentRenderer<StepMeterComponent>("step_meter"),
-        SkeletonComponent::class to UndrawableComponentRenderer<SkeletonComponent>("skeleton"),
+        // EMPTY, AND THE MAP IS KEPT. Every one of the nine dictionary types has a renderer of its
+        // own now (`B-45`), so nothing draws the block on purpose any more — but the mechanism is
+        // what makes the NEXT type added to the dictionary visible rather than silent, and deleting
+        // it would take the guard with it.
     )
 
 // konekt's own renderers, and the list is deliberately short of the dictionary.
@@ -56,6 +54,14 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         // on a phone showed it. See `BannerRenderer`: a type that decodes and has no renderer is not
         // an `UnknownComponent`, so the degradation block never covered it.
         BannerComponent::class to BannerRenderer(),
+        // The six that drew the degradation block deliberately until B-45. Each is the screen it was
+        // waiting for arriving, and every string on every one of them is composed by the server.
+        PlanCardComponent::class to PlanCardRenderer(),
+        EsimCardComponent::class to EsimCardRenderer(),
+        OrderRowComponent::class to OrderRowRenderer(),
+        SnackbarComponent::class to SnackbarRenderer(),
+        StepMeterComponent::class to StepMeterRenderer(),
+        SkeletonComponent::class to SkeletonRenderer(),
         // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.

@@ -59,3 +59,14 @@ data class PurchaseOrderResponse(
     // ring support about.
     val reversalText: String? = null,
 )
+
+// THE CATALOGUE AS A SCREEN, and it is what `app://plans` has pointed at since B-07 without anything
+// being there. It lives with the purchase feature because the subject is the plans; the home screen's
+// banner is what sends a subscriber here.
+@Resource("/api/v1/screens/plans")
+class PlansScreenResource
+
+// The deeplink the server puts on that banner, spelled once. Three parties use it — the screen that
+// sends it, the client that resolves it, and the test that proves the two agree — and a fourth
+// spelling is a button that goes nowhere in exactly one of them.
+const val PLANS_DEEPLINK: String = "app://plans"

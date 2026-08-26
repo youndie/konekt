@@ -18,6 +18,8 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.time.SystemClock
 import io.ktor.client.call.body
@@ -69,10 +71,6 @@ fun main() {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
-            // Announced rather than swallowed. Nothing here handles an action yet, and a handler that
-            // silently did nothing would make a button that does nothing indistinguishable from one
-            // whose handler is missing.
-            onAction = { action -> println("konekt: no handler for $action") },
         )
 
     // OBSERVABILITY, and the runner is where it is decided rather than inside the holder. A client
@@ -112,6 +110,12 @@ fun main() {
                 // the e2e stand reads it out of the database.
                 topic = "konekt-session",
                 darkMode = false,
+                // THE ONE TRANSITION THIS BUILD HAS. The home screen's banner offers "See plans" and
+                // the deeplink is spelled once, in the shared module both sides read.
+                routes = mapOf(PLANS_DEEPLINK to plansAddress()),
+                // Announced rather than swallowed: a handler that silently did nothing would make a
+                // button that does nothing indistinguishable from one whose handler is missing.
+                onAction = { action -> println("konekt: no handler for $action") },
             )
         }
     }
@@ -120,7 +124,14 @@ fun main() {
 // The address, derived from the `@Resource` rather than typed again. The three lines are a copy of
 // `io.konekt.openapi.ResourceAddresses`; the ADDRESS is not — it is still spelled once, in the
 // annotation. The server's copy lives in `:server`, which a client cannot see.
-private fun homeAddress(): String =
+private fun homeAddress(): String = addressOf<HomeScreenResource>()
+
+private fun plansAddress(): String = addressOf<PlansScreenResource>()
+
+// Derived from the `@Resource` rather than typed again. The ADDRESS is still spelled once, in the
+// annotation; this is a copy of the three lines in `io.konekt.openapi.ResourceAddresses`, which lives
+// in `:server` and a client cannot see.
+private inline fun <reified T : Any> addressOf(): String =
     ResourcesFormat()
-        .encodeToPathPattern(serializer<HomeScreenResource>())
+        .encodeToPathPattern(serializer<T>())
         .let { if (it.startsWith("/")) it else "/$it" }

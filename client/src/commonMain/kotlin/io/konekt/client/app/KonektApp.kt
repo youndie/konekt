@@ -8,11 +8,13 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.theme.KonektTheme
 import kotlinx.coroutines.CancellationException
@@ -40,6 +42,9 @@ import kotlinx.coroutines.launch
 // as "nothing to do here"; a constant with this name reads as what it is.
 object KonektApp {
     val RECORDS_NOTHING: (KonektDegradation) -> Unit = { }
+
+    // Named for the same reason: a deployment that handles no action should be one that chose to.
+    val HANDLES_NOTHING: (KompotAction) -> Unit = { }
 }
 
 @Composable
@@ -53,8 +58,24 @@ fun KonektApp(
     // by passing this explicitly; the default records nothing and is named for what it is, so a
     // deployment reporting nothing is a deployment that chose to rather than one that forgot.
     onDegradation: (KonektDegradation) -> Unit = KonektApp.RECORDS_NOTHING,
+    // WHERE A `navigate` GOES, as a map from deeplink to address. Empty means this holder shows one
+    // screen and refuses to move, which is what it did before `B-45` and is still the right answer for
+    // a fixture.
+    //
+    // A MAP AND NOT `kompot-navigation`: research §1.11 records why this build does not use the
+    // toolkit's graph, and the shape is unchanged — one screen at a time, addressed. What changes is
+    // that the address is a value the holder can be handed AGAIN, which is the whole of navigation
+    // until there is a back stack.
+    routes: Map<String, String> = emptyMap(),
+    // Everything that is not a transition. A handler that silently did nothing would make a button
+    // with no handler indistinguishable from one whose handler is missing.
+    onAction: (KompotAction) -> Unit = KonektApp.HANDLES_NOTHING,
 ) {
-    var tree by remember(address) { mutableStateOf<KompotComponent?>(null) }
+    // THE ADDRESS IS STATE NOW, seeded from the parameter. `remember(address)` on the seed rather
+    // than `remember { }`: a caller that changes the address it passes still moves the holder, which
+    // is what every existing test does.
+    var current by remember(address) { mutableStateOf(address) }
+    var tree by remember(current) { mutableStateOf<KompotComponent?>(null) }
 
     // OUR OWN MAP, not `KompotRealtimeProvider`'s. That composable holds its `SnapshotStateMap`
     // privately and empties it only when the topic changes, which konekt never does — so the map has
@@ -71,7 +92,7 @@ fun KonektApp(
     var fetchedTheme by remember { mutableStateOf<KompotTheme?>(null) }
     LaunchedEffect(theme) { if (theme == null) fetchedTheme = screens.brandTheme() }
 
-    LaunchedEffect(address) { tree = screens.fetch(address) }
+    LaunchedEffect(current) { tree = screens.fetch(current) }
 
     LaunchedEffect(topic) {
         launch {
@@ -85,7 +106,7 @@ fun KonektApp(
             // pre-gap tree with no overlay, which is stale and honest; the other way round it shows a
             // fresh tree wearing a stale overlay, which is wrong and looks fine.
             updates.clear()
-            tree = screens.fetch(address)
+            tree = screens.fetch(current)
         }
     }
 
@@ -94,7 +115,23 @@ fun KonektApp(
             LocalKompotRealtimeUpdates provides updates,
             LocalKompotDegradationSink provides sink,
         ) {
-            tree?.let { screens.render(it) }
+            // THE HANDLER IS THE HOLDER'S, because navigation is. A source constructed with its own
+            // handler could not move the screen it is a source for — which is why `render` takes one
+            // rather than the source keeping it.
+            val handle: (KompotAction) -> Unit = { action ->
+                val destination = (action as? NavigateAction)?.let { routes[it.deeplink] }
+                if (destination != null) {
+                    // Clearing the overlay is not optional. It is keyed by component id and the ids
+                    // of two different screens can collide — `counter-data` on one and on another —
+                    // so an update recorded before a move would shadow a node on the screen after it.
+                    updates.clear()
+                    current = destination
+                } else {
+                    onAction(action)
+                }
+            }
+
+            tree?.let { screens.render(it, handle) }
         }
     }
 }
@@ -131,7 +168,10 @@ interface ScreenSource {
     val streamRestarted: Flow<Unit>
 
     @Composable
-    fun render(tree: KompotComponent)
+    fun render(
+        tree: KompotComponent,
+        onAction: (KompotAction) -> Unit,
+    )
 }
 
 data class ComponentUpdate(

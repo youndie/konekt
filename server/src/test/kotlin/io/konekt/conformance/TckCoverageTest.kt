@@ -4,6 +4,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.theme.shared.api.BrandTheme
@@ -69,6 +70,9 @@ class TckCoverageTest {
                 endpointKey<HistoryScreenResource>("GET"),
                 endpointKey<HistoryScreenResource.Page>("GET"),
                 endpointKey<HomeScreenResource>("GET"),
+                // The catalogue, reachable blind: a public-shaped GET answering one JSON document,
+                // and the second screen this build serves that a subscriber can actually get to.
+                endpointKey<PlansScreenResource>("GET"),
                 // Both addressed by naming an order, and both reachable only because the walk creates
                 // one first. The second is the largest component tree this server emits.
                 endpointKey<Purchases.ById>("GET"),

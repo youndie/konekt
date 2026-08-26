@@ -107,7 +107,6 @@ class CustomPackageFormStandTest {
                 realtime = SseRealtimeSource(http, konektClientJson),
                 registry = konektRegistry(),
                 json = konektClientJson,
-                onAction = { },
             )
 
         // FETCHED ONCE, outside the composition, and that is load-bearing rather than tidy: a form

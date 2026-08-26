@@ -9,6 +9,7 @@ import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.domain.Money
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
@@ -51,7 +52,7 @@ object HomeScreen {
                                 text = "No plan is active on this line yet.",
                                 tone = MessageTones.INFO,
                                 actionText = "See plans",
-                                action = NavigateAction("app://plans"),
+                                action = NavigateAction(PLANS_DEEPLINK),
                             ),
                         )
                     } else {

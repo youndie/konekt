@@ -8,6 +8,7 @@ import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
@@ -239,6 +240,12 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
         endpointKey<HomeScreenResource>("GET") to
             EndpointFacts(
                 summary = "The home screen: balance and counters",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
+        endpointKey<PlansScreenResource>("GET") to
+            EndpointFacts(
+                summary = "The catalogue: every plan, with the sold-out ones marked rather than hidden",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
             ),

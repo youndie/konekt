@@ -888,6 +888,49 @@
                 }
             }
         },
+        "/api/v1/screens/plans": {
+            "get": {
+                "summary": "The catalogue: every plan, with the sold-out ones marked rather than hidden",
+                "x-kompot-endpoint-kind": "screen",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The catalogue: every plan, with the sold-out ones marked rather than hidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "kompot.profile.schema.json#/$defs/KompotComponent"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No session, or one that no longer means anything.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/tariff-changes": {
             "post": {
                 "summary": "Ask to change tariff, from the next billing boundary",

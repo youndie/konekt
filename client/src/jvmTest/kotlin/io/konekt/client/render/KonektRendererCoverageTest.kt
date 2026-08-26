@@ -40,18 +40,14 @@ class KonektRendererCoverageTest {
     // the fact and treated it as a decision — and the decision was invisible, because a type that
     // DECODES and has no renderer is not an `UnknownComponent` and never reaches konekt's degradation
     // block. Every test missed it by topping up first, so the banner was never sent.
-    private val rendered = setOf("usage_counter_card", "esim_qr", "banner")
-
-    // The rest, each waiting for the screen that needs it — and each now REGISTERED, drawing the
-    // degradation block on purpose.
-    //
-    // The distinction this list used to hide: having no renderer is not the same as drawing a block.
-    // With none, `RenderNode` found nothing, the toolkit's own fallback drew red text, and no sink
-    // heard about it — so a screen made of these was silent from an operator's side. This test passed
-    // throughout, because it holds the two lists apart and treats "not yet rendered" as a decision.
-    // It was one, until a served screen sent a `banner`.
-    private val notYetRendered =
+    // ALL NINE, and the second list below is empty for the first time. `banner` joined after an iOS
+    // build drew a red "Unknown component" where the home screen's "no plan is active" message should
+    // have been; the other six joined with `B-45`, which is the screens they were waiting for.
+    private val rendered =
         setOf(
+            "usage_counter_card",
+            "esim_qr",
+            "banner",
             "plan_card",
             "esim_card",
             "order_row",
@@ -59,6 +55,11 @@ class KonektRendererCoverageTest {
             "step_meter",
             "skeleton",
         )
+
+    // EMPTY, AND KEPT. The list is what says "somebody decided this one does not draw yet" as opposed
+    // to "nobody noticed" — and its emptiness is now an assertion rather than a gap: a tenth component
+    // added to the dictionary lands in one of the two lists or fails the test below.
+    private val notYetRendered = emptySet<String>()
 
     // The toolkit's placeholder, and NOT a tenth entry in konekt's dictionary. `UnknownComponent` has
     // no @SerialName because it is never sent — it is what a decode produces for a type nobody knows —

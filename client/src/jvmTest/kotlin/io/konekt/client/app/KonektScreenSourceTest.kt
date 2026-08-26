@@ -88,7 +88,6 @@ class KonektScreenSourceTest {
                     realtime = SseRealtimeSource(http, konektClientJson),
                     registry = konektRegistry(),
                     json = konektClientJson,
-                    onAction = { },
                 )
 
             runComposeUiTest {

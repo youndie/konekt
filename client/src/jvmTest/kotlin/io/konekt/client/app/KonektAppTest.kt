@@ -77,7 +77,10 @@ class KonektAppTest {
         // over the node, and the renderer is chosen from the REPLACEMENT. Reproduced rather than
         // called so the assertion is about the holder's map and not about the toolkit's registry.
         @Composable
-        override fun render(tree: KompotComponent) {
+        override fun render(
+            tree: KompotComponent,
+            onAction: (io.github.youndie.kompot.KompotAction) -> Unit,
+        ) {
             val effective = LocalKompotRealtimeUpdates.current[(tree as UsageCounterCardComponent).id] ?: tree
             Text((effective as UsageCounterCardComponent).valueText)
         }

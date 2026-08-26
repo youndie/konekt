@@ -7,6 +7,12 @@ import kotlin.time.Instant
 // with prices that move is B-19's business. What a purchase needs from it is two questions.
 interface PlanCatalog {
     suspend fun find(planId: String): Plan?
+
+    // WHAT IS ON SALE, in the order the screen shows it. Added for the plans screen (`B-45`), and it
+    // returns every plan rather than only the ones on sale: a plan that is sold out is drawn as sold
+    // out, because a catalogue that silently omits what it cannot sell leaves a subscriber wondering
+    // where the plan they were told about went.
+    suspend fun all(): List<Plan>
 }
 
 // Money moving on one account, as three operations rather than a setter.

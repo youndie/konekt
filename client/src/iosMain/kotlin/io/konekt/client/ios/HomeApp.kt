@@ -17,6 +17,8 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.time.SystemClock
 import io.ktor.client.call.body
@@ -91,7 +93,6 @@ fun homeViewController(): UIViewController {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
-            onAction = { action -> println("konekt-ios: no handler for $action") },
         )
 
     return ComposeUIViewController {
@@ -103,6 +104,8 @@ fun homeViewController(): UIViewController {
             // the overlay map. The client cannot learn its own subscriber id at all.
             topic = "konekt-ios",
             darkMode = false,
+            routes = mapOf(PLANS_DEEPLINK to plansAddress()),
+            onAction = { action -> println("konekt-ios: no handler for $action") },
             onDegradation = observability.recorder(),
         )
     }
@@ -110,7 +113,14 @@ fun homeViewController(): UIViewController {
 
 // The address, derived from the `@Resource` rather than typed again — the same three lines the
 // desktop runner has, and the ADDRESS itself is still spelled once, in the annotation.
-private fun homeAddress(): String =
+private fun homeAddress(): String = addressOf<HomeScreenResource>()
+
+private fun plansAddress(): String = addressOf<PlansScreenResource>()
+
+// Derived from the `@Resource` rather than typed again. The ADDRESS is still spelled once, in the
+// annotation; this is a copy of the three lines in `io.konekt.openapi.ResourceAddresses`, which lives
+// in `:server` and a client cannot see.
+private inline fun <reified T : Any> addressOf(): String =
     ResourcesFormat()
-        .encodeToPathPattern(serializer<HomeScreenResource>())
+        .encodeToPathPattern(serializer<T>())
         .let { if (it.startsWith("/")) it else "/$it" }
