@@ -48,20 +48,29 @@ merely unfinished.
 ### 👁 What is observed, and on which platform
 
 Stated as a table because "we have crash reporting" is the sentence that hides which half of a
-product is silent — and this one was silent on iOS for a reason no amount of local code could fix:
-katcher published no Apple target until [katcher#25](https://github.com/youndie/katcher/issues/25)
-closed it.
+product is silent — and this one was silent in three different places for three different reasons, none
+of which a local test could have found.
 
 | | Server (JVM) | Compose client (iOS) | Compose client (desktop) |
 |---|---|---|---|
-| crashes (katcher) | not wired yet — `B-26` | **wired**, uncaught and caught | not wired |
-| logs and traces (tracy) | not wired yet — `B-26` | — | — |
-| latency and errors (metrik) | not wired yet — `B-26` | — | — |
+| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | breadcrumbs only |
+| logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS |
+| latency and errors (metrik) | **delivered** — latency per route | — | — |
 
-The iOS row is the only one that says "wired" and it stops short of the whole claim: what is proved
-is that the reporter refuses to start half-configured and that it links and runs on a real Apple
-target. A crash travelling from a running application to a katcher deployment needs both of those to
-exist, and `B-27` says which items they are.
+"Delivered" is a stronger word than "wired" on purpose: every row above was measured at the COLLECTOR
+after driving the product, not at the agent's configuration. That distinction is the whole reason for
+this table — all three of these libraries answer a missing key, a missing endpoint or an unreachable
+collector by doing nothing, so a deployment that meant to be observed and is silent looks exactly like
+one that is working, from inside.
+
+Each row cost something different to reach. tracy published no Apple target until
+[tracy#16](https://github.com/youndie/tracy/issues/16); katcher published none until
+[katcher#25](https://github.com/youndie/katcher/issues/25); and the server's katcher was correctly
+configured and structurally unable to receive anything, because `StatusPages` catches every route
+exception before an uncaught-exception handler could run.
+
+The remaining blank is metrik on the client, which measures route latency and has no routes to
+measure there.
 
 ### 🎨 What "white-label" actually covers
 

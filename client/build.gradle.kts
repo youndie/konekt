@@ -35,7 +35,22 @@ kotlin {
     // Android joins with the item that first needs an .aar.
     jvm()
     iosArm64()
-    iosSimulatorArm64()
+    iosSimulatorArm64 {
+        // AN EXECUTABLE, AND THEREFORE NO XCODE PROJECT. B-27 asks for a deliberate crash in the iOS
+        // build to produce a report in katcher, which needs something that runs on a device. The
+        // ordinary route is a `.framework` plus an Xcode project linking it — several thousand lines
+        // of `.pbxproj` that no Kotlin change can keep correct, for an application whose entire job is
+        // to start a reporter and throw.
+        //
+        // Kotlin/Native emits a Mach-O executable directly, and a simulator `.app` is a directory with
+        // an `Info.plist` and a binary in it. `scripts/ios-crash-app.sh` assembles one. What that
+        // buys is that the thing which crashes is built by the same compiler, from the same source
+        // set, as the reporter it is testing — rather than by a toolchain kept in step by hand.
+        binaries.executable {
+            entryPoint = "io.konekt.client.ios.main"
+            baseName = "KonektCrash"
+        }
+    }
 
     compilerOptions {
         allWarningsAsErrors.set(true)

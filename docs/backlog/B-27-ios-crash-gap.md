@@ -1,7 +1,7 @@
 ---
 id: B-27
 title: "Wire katcher into the iOS build, now that it has an Apple target"
-status: wip
+status: done
 priority: P1
 size: S
 stage: stage-m4-proof
@@ -66,21 +66,64 @@ refuses instead, where it is configured, and refuses a blank `release` too: `Kat
 defaults to the string "Unspecified", and a crash group that cannot name its build is one nobody can
 act on. That is why this item's acceptance asks for a report NAMING the release.
 
-## `wip`, and precisely why
+## AC 1 is met: the crash happened on a simulator and the report is in katcher
 
-AC 2 is met — the README carries a platform table, and it says "not wired yet" for the three server
-rows because that is true.
+What was missing was never code in this item — it was an application. `:client` is a library, and a
+library cannot crash on a device. Two things supplied the rest: `B-26` seeded katcher with an
+application and a key for each half of the product, and this item now has something to run.
 
-**AC 1 cannot be met from here, and it needs two things this repository does not have**, neither of
-which is a line of code in this item:
+**No Xcode project, and that is the decision worth keeping.** The ordinary route is a `.framework`
+plus a project linking it — several thousand lines of `.pbxproj` that no Kotlin change can keep
+correct, for an application whose entire job is to start a reporter and throw. Kotlin/Native emits a
+Mach-O executable, and a simulator `.app` is a directory with an `Info.plist` and a binary in it;
+`scripts/ios-crash-app.sh` assembles one. So the thing that crashes is built by the same compiler,
+from the same source set, as the reporter it is testing — rather than by a toolchain kept in step by
+hand.
 
-- **an iOS application to crash.** `:client` is a library: there is no `App.kt`, no entry point and no
-  Xcode project. B-22 met the same wall from the other side — its brand kit has nothing to fetch it.
-- **a katcher to receive.** There are nine applications registered in the katcher this account runs
-  and konekt is not among them, and the compose stand runs no katcher. That is `B-26`, which this item
-  already declares as its blocker, and it turns out to be a real dependency rather than a formality.
+No UI either, deliberately. None of what is proved is visual: that the reporter starts on a real
+Apple target, that Kotlin/Native's unhandled-exception hook fires, and that a report reaches a
+collector over the network from inside a simulator. A screen would add ways to fail that have nothing
+to do with any of them.
 
-What is proved without them: the reporter links and runs on a real Apple target, and it refuses to
-start in the three configurations that would make it silently useless. What is not proved is delivery.
-Saying that plainly is the point — an observability agent that is switched off looks exactly like one
-that is working.
+Measured, in katcher's own database:
+
+```
+(2, 'konekt-client', 'kotlin.IllegalStateException: deliberate crash from the', 2)
+releases on reports: ('ios-b27', 'simulator')
+```
+
+The release is named, which is what this item's acceptance asks for and why `KonektCrashReporter`
+refuses a blank one.
+
+## Three things the run taught, each invisible from the code
+
+**The refusal fired first, and it was right.** The very first launch printed
+`katcher appKey is blank — the iOS build would report nothing and say nothing` and died there. The
+cause was `simctl`: trailing `NAME=value` arguments to `simctl launch` are arguments to the PROCESS,
+not environment, and only `SIMCTL_CHILD_`-prefixed variables in simctl's own environment reach the
+app. Without that refusal the run would have started a reporter pointed at nothing and looked
+identical to a working one — which is the exact failure `KonektCrashReporter` exists to prevent, met
+on its first real launch.
+
+**A crash reporter cannot upload the crash it is reporting.** The process is dying. katcher saves to
+disk on `catch` and uploads on the NEXT start, which is what every crash reporter does. This binary
+has no run loop, so `main` throwing ends the process before the uploader finishes; it waits four
+seconds before crashing, and a real application does not need that because its run loop outlives the
+launch by minutes.
+
+**And the script was deleting the evidence.** It ran `simctl uninstall` before `install`, which wipes
+the app's data container — where the saved report lives. So the next launch had nothing to upload
+while printing `Worker woke up. Checking disk...` to say it had looked. Two runs in a row left two
+reports and delivered neither. `install` over an existing bundle replaces the binary and keeps the
+container.
+
+## Still not covered
+
+- **Symbolication of an iOS crash.** Android has the Gradle plugin uploading its R8 mapping; the
+  Apple equivalent is not in this release and is its own question. The stack in the report above is
+  the Kotlin/Native one, which names functions and not source lines.
+- **A device rather than a simulator.** Signing, provisioning and a physical phone are a different
+  problem from the one this item is about, and nothing here depends on which of the two ran it.
+- **A shipped application.** This is a crash harness, not the product: no UI, no screens, no session.
+  The desktop runner is where the product is assembled (`B-43`), and iOS gets one when a screen needs
+  to be on a phone.
