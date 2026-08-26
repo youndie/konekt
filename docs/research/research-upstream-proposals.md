@@ -318,7 +318,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | closed, released in `0.32.0.77`; our transport decorator deleted |
 | U11 | tracy | the agent publishes no Apple target, so an iOS client cannot log through tracy | [tracy#16](https://github.com/youndie/tracy/issues/16) | closed, released in `0.1.13`; `agent` declares `ios_arm64`, `ios_simulator_arm64` and `ios_x64` in its module metadata and `:client` compiles for both of ours |
 | U12 | kompot | a form patch cannot reach a non-editable field, so a server-computed value is editable or stale | [kompot#89](https://github.com/youndie/kompot/issues/89) | closed, released in `0.33.0.86` as an optional `fieldId` on `read_only_field`; B-20's first acceptance criterion met and the form's refetch deleted |
-| U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | open |
+| U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is

@@ -127,15 +127,28 @@ The stand test went green quickly enough to distrust. Two mutations, both restor
 The second is the one worth keeping: it reproduces the state kompot#89 described, and the test fails
 in it. So this feature genuinely rests on the upstream fix rather than merely coinciding with it.
 
-## What is still unchecked, and it is named rather than implied
+## What was unchecked here is checked now, and upstream
 
-The conformance kit reads four endpoint kinds and a `FormPatch` is none of them, so the patch route is
-walked by nothing and **no protocol check verifies that the fields a patch updates, and the one it
-focuses, are declared**. That is the same class of defect `form-fields` catches on the form itself, and
-it is silent: `FormController` keys by string, so a misspelling applies cleanly and the screen simply
-stops updating. `CustomPackageFormTest.a patch names only fields the schema declares` holds it here —
-a unit test standing in for a protocol check. Filed as
+This section used to say that the conformance kit read four endpoint kinds, that a `FormPatch` was
+none of them, and that consequently **no protocol check verified that the fields a patch updates, and
+the one it focuses, are declared**. That was the same class of defect `form-fields` catches on the
+form itself, and it was silent: `FormController` keys by string, so a misspelling applies cleanly and
+the screen simply stops updating. It was filed as
 [youndie/kompot#93](https://github.com/youndie/kompot/issues/93), recorded as U13.
+
+**Closed, and released in `0.33.1.91`.** The kit grew a fifth kind — `patch` — a
+`TckConfig.patchEndpoints` pairing of the patch address with the address of the form it patches, and
+`patchesNameDeclaredFields`, which fetches the form for the declared set and holds the answer against
+it. So this endpoint leaves `KONEKT_UNWALKED_ENDPOINTS` and is the only one the walk reaches by a
+pairing rather than by a blind GET.
+
+Proved by two mutations rather than by the run being green. Dropping the patch's body from
+`submitPayloads` makes the kit report "the patch was never asked for" rather than passing quietly —
+which is the failure mode the whole coverage gate exists for. And misspelling `price` as `prise` in
+the patch the SERVER builds makes it report "updates a field the form does not declare": the exact
+defect this section used to say nothing could see. `CustomPackageFormTest` keeps its own assertion —
+it is faster and it fails at the unit rather than at the stand — but it is no longer standing in for
+anything.
 
 ## Two things the client half taught, both about registration
 

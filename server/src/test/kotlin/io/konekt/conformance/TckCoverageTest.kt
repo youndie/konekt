@@ -4,6 +4,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
+import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
@@ -96,6 +97,10 @@ class TckCoverageTest {
                 // The custom package form. The first endpoint of kind `form` this build has served,
                 // and the reason `form-fields` left the declared-empty list.
                 endpointKey<CustomPackageForm>("GET"),
+                // Its patch, and the only endpoint here the walk does not reach by a blind GET: it is
+                // a POST, and what reaches it is the pairing in `TckWalkPlan.patchEndpoints`. It
+                // arrived the day `kompot-tck` grew a kind for it — U13, youndie/kompot#93.
+                endpointKey<CustomPackagePatch>("POST"),
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",

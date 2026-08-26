@@ -232,10 +232,12 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
         endpointKey<CustomPackagePatch>("POST") to
             EndpointFacts(
                 summary = "Reprice the custom package without redrawing it",
-                // NO KIND, and that is the honest answer rather than the nearest-looking word. The
-                // kit reads four — form, page, submit, graph — and a `FormPatch` is none of them: it
-                // carries neither a schema, nor a tree, nor an action. Calling it `form` would put it
-                // in front of the `form-fields` check, which would find no schema and quietly pass.
+                // `patch`, and it had no kind at all until the kit grew one. The old comment here was
+                // right about the vocabulary of the day — form, page, submit, graph, and a `FormPatch`
+                // is none of them — and the answer was to file the gap rather than borrow the
+                // nearest-looking word, which would have entered `form-fields` and passed on a body
+                // with no schema in it. youndie/kompot#93, released in `0.33.1.91`.
+                kind = EndpointKind.PATCH,
                 successBodyType = "io.github.youndie.kompot.form.FormPatch",
                 // 422 for a quantity outside the steps, the same refusal the GET makes and for the
                 // same reason: the client picks from the list the server prices.

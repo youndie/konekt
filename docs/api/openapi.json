@@ -473,6 +473,7 @@
         "/api/v1/forms/custom-package/patch": {
             "post": {
                 "summary": "Reprice the custom package without redrawing it",
+                "x-kompot-endpoint-kind": "patch",
                 "security": [
                     {
                         "bearerAuth": []

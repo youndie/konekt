@@ -1,6 +1,8 @@
 package io.konekt.conformance
 
 import io.konekt.feature.auth.shared.api.AuthOtp
+import io.konekt.feature.packages.shared.api.CustomPackageForm
+import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
@@ -124,6 +126,12 @@ data class TckWalkPlan(
     val recordedUpdateStreams: Set<String>,
     // `TckConfig.submitPayloads`. What to POST is the application's domain.
     val submitPayloads: Set<String>,
+    // `TckConfig.patchEndpoints`: the patch address paired with the address of the form it patches.
+    // BOTH halves are needed and neither is derivable — the check fetches the form to learn which
+    // fields the schema declares, and posts the body `submitPayloads` holds under the patch address.
+    // So a patch endpoint named here without a payload there is a finding rather than a skip, which
+    // is the kit refusing to look like it checked something.
+    val patchEndpoints: Map<String, String>,
     // `TckConfig.allowStateChangingChecks`. False is not a smaller number in one counter: the check
     // returns before its counter is ever recorded, so `idempotency` is ABSENT from `exercised`
     // rather than zero — which is the one way a per-check floor written as `counts.all { it > 0 }`
@@ -160,7 +168,11 @@ val KONEKT_WALK_PLAN =
                 resourceAddress<TopUps.ById>() to setOf("topUpId"),
             ),
         recordedUpdateStreams = emptySet(),
-        submitPayloads = emptySet(),
+        // The custom package patch, whose body the walk supplies: a quantity the form declares as a
+        // step, so the answer is a repricing rather than a 422. Named here and valued in the e2e
+        // suite, like every other address in this plan.
+        submitPayloads = setOf(resourceAddress<CustomPackagePatch>()),
+        patchEndpoints = mapOf(resourceAddress<CustomPackagePatch>() to resourceAddress<CustomPackageForm>()),
         allowStateChangingChecks = false,
     )
 
@@ -222,6 +234,20 @@ val TCK_CHECKS: List<TckCheck> =
             name = "text-spans",
             claims = "every walkable GET",
         ) { endpoints, plan -> plan.probeable(endpoints) },
+        TckCheck(
+            name = "patch",
+            claims = "a pairing in TckConfig.patchEndpoints, with a body for the patch in submitPayloads",
+            // NOT filtered by `probeable`, and that is the whole shape of this check: a patch is a
+            // POST, so the blind walk never reaches it. What selects it is the PAIRING the plan
+            // declares — an endpoint of kind `patch` that nobody paired is skipped with the kit's own
+            // reason and this counter never learns it existed.
+            //
+            // Held against the DOCUMENT rather than counted off the map, so a pairing naming an
+            // address this server does not serve cannot inflate the target list into something the
+            // walk could never visit.
+        ) { endpoints, plan ->
+            endpoints.filter { it.method == "POST" && it.kind == EndpointKind.PATCH && it.path in plan.patchEndpoints }
+        },
         TckCheck(
             name = "idempotency",
             claims = "a state-changing endpoint declaring both 400 and 409, with a body in TckConfig.submitPayloads",
@@ -316,6 +342,10 @@ private fun TckWalkPlan.reasonNotWalked(endpoint: ConformanceEndpoint): String =
 
         endpoint.method != "GET" && endpoint.kind == EndpointKind.SUBMIT -> {
             "no body for it in TckConfig.submitPayloads"
+        }
+
+        endpoint.kind == EndpointKind.PATCH -> {
+            "no pairing for it in TckConfig.patchEndpoints, so the form it patches is unknown"
         }
 
         endpoint.method != "GET" -> {

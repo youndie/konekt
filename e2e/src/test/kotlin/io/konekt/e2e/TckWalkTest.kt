@@ -1,5 +1,7 @@
 package io.konekt.e2e
 
+import io.github.youndie.kompot.form.standard.EntityValue
+import io.github.youndie.kompot.forms.FormPatchRequest
 import io.github.youndie.kompot.spec.KompotProtocol
 import io.github.youndie.kompot.tck.RemoteTckTransport
 import io.github.youndie.kompot.tck.TckConfig
@@ -13,6 +15,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
+import io.konekt.feature.packages.shared.api.CustomPackageFields
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
@@ -171,6 +174,38 @@ class TckWalkTest {
             // nine component types of `:shared:components` plus the eSIM wizard's one action, which is
             // konekt's whole application-level verb set.
             extensionTypes = konektWireNames.toSet() + "esim_wizard_step",
+            // THE PATCH, paired with the form it patches. Derived from the plan like everything else
+            // here: the plan names the addresses, and this supplies what only a running deployment can.
+            //
+            // Both halves are needed. The check fetches the FORM to learn which fields the schema
+            // declares, then posts this body to the PATCH and holds the answer against that set — so
+            // a pairing without a payload is a finding rather than a skip, which is the kit refusing
+            // to look as though it checked something.
+            patchEndpoints = KONEKT_WALK_PLAN.patchEndpoints,
+            submitPayloads =
+                KONEKT_WALK_PLAN.submitPayloads.associateWith {
+                    // BUILT FROM THE TYPE, not written as JSON. `FormPatchRequest` is the shape the
+                    // client actually posts, and a hand-spelled body here would be a second spelling
+                    // of the contract that a renamed field could not break.
+                    //
+                    // The smallest step rather than a middling quantity: it is on the list the form
+                    // declares, so the answer is a repricing rather than the 422 an off-step value
+                    // earns, and it is affordable from any balance — this check must not start
+                    // failing because the walk's subscriber spent their money earlier in the run.
+                    //
+                    // `Stand.json` and NOT a plain `Json`: a `FieldValue` is polymorphic, and the
+                    // default encoder has none of the forms module in its scope — it fails while
+                    // BUILDING the body, which reads as a broken test rather than as a missing
+                    // module. The same trap the custom package's own routing carries a note about.
+                    Stand.json.encodeToJsonElement(
+                        FormPatchRequest.serializer(),
+                        FormPatchRequest(
+                            formId = CustomPackageFields.FORM_ID,
+                            fieldId = CustomPackageFields.DATA_GB,
+                            values = mapOf(CustomPackageFields.DATA_GB to EntityValue(id = "1", title = "1")),
+                        ),
+                    )
+                },
             // Off. The idempotency check performs a REAL operation, and konekt implements no
             // Idempotency-Key contract for it to exercise — see B-24 for the item that would give it
             // one.

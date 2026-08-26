@@ -37,6 +37,13 @@ object EndpointKind {
     // one of the five checks with nothing to visit.
     const val FORM = "form"
 
+    // Answers a `FormPatch` — updates, cleared fields and a focus, and no tree at all. It had NO KIND
+    // here until `0.33.1.91`, and the absence was honest rather than an oversight: the kit read four
+    // kinds and a patch was none of them, so the nearest-looking word would have entered the
+    // `form-fields` check, found no schema in the body and passed. youndie/kompot#93 is what closed
+    // the gap; `TckRunner.patchesNameDeclaredFields` is what reads this constant.
+    const val PATCH = "patch"
+
     // Read in the kit and NOT used by this server, listed so the next person need not go back to the
     // jar to learn whether the vocabulary is closed: `graph`, `live_screen`, `wizard_resume`.
     // A route of ours grows one of these the day it starts answering the matching shape.

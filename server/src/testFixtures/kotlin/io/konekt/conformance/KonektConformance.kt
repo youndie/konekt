@@ -6,7 +6,6 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
-import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
@@ -92,18 +91,15 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         endpointKey<TopUps>("POST"),
         endpointKey<EsimWizardResource>("POST"),
         endpointKey<EsimWizardResource.Step>("POST"),
-        // The form patch, and this one is an admission with a sharper edge than the rest. It is a
-        // POST, so the blind walk leaves it alone — but unlike the others there is no kit check it
-        // could belong to even if the walk reached it. The kit reads four kinds — form, page, submit,
-        // graph — and a `FormPatch` is none: it carries no schema, no tree and no action, so it is
-        // declared with no kind at all.
+        // CustomPackagePatch is NO LONGER HERE, and the entry it used to have is worth remembering.
+        // It said there was no kit check the patch could belong to even if the walk reached it: the
+        // kit read four kinds and a `FormPatch` is none of them, so the endpoint was declared with no
+        // kind and nothing verified that the fields it updates — or the one it focuses — are fields
+        // the schema declares. That was filed as U13, and `kompot-tck` grew a fifth kind and a check
+        // for it in `0.33.1.91` (youndie/kompot#93).
         //
-        // What goes unchecked is worth naming rather than leaving implied: nothing verifies that the
-        // fields a patch updates, and the one it focuses, are fields the schema declares. That is the
-        // same class of defect `form-fields` catches on the form itself, and it is the one place in
-        // this build where a spelling mistake would be silent. `CustomPackageFormTest` holds it
-        // instead, which is a unit test standing in for a protocol check — see U13.
-        endpointKey<CustomPackagePatch>("POST"),
+        // So the walk reaches it now, by a pairing rather than by a blind GET, and `CustomPackageFormTest`
+        // stops being a unit test standing in for a protocol check.
         // THE LOGIN SUBMITS. Both are `submit` endpoints and both change state — one asks the SMSC to
         // send a code, the other issues a session — and state-changing checks are off, which is what
         // keeps a conformance walk from signing itself in a hundred times.
