@@ -49,7 +49,7 @@ so re-prioritising must never move a file.
 | [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04, B-43 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[~]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[~]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26, B-43 |
-| [B-43](docs/backlog/B-43-client-composition-root.md) `[ ]` | The client has every part of an application and no application | P1 | L | - |
+| [B-43](docs/backlog/B-43-client-composition-root.md) `[~]` | The client has every part of an application and no application | P1 | L | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
 | [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |

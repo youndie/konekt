@@ -1,7 +1,7 @@
 ---
 id: B-43
 title: "The client has every part of an application and no application"
-status: open
+status: wip
 priority: P1
 size: L
 stage: stage-m3-product
@@ -64,3 +64,43 @@ them names it, so each reads as a separate difficulty when they are one.
 Background: [B-18](B-18-cache-versus-realtime.md) for the two corrections the holder owes,
 [research-architecture](../research/research-architecture.md) §1.11 for why there is no navigation
 graph and §1.14 for why the client reaches two iOS targets rather than three.
+
+## What landed: the holder, and the one correction only it could make
+
+`KonektApp` is a screen holder — fetch one tree by address, render it through the registry, provide
+the theme and the update overlay around it. What it takes is a `ScreenSource`: four operations the
+holder performs on the outside world, not a repository abstraction hiding HTTP.
+
+**B-18's unbounded failure is closed.** An update recorded before a stream gap kept shadowing the
+correct component of a screen fetched after it, for the life of the composition, with a healthy
+network and no error anywhere — the one finding of that item that could not be worked around, and it
+needed a holder that did not exist. The holder clears the overlay on `streamRestarted` and then
+refetches, in that order.
+
+The order is the correctness, and both halves are proved separately by mutation:
+
+| Removed | What the test says |
+|---|---|
+| the clear | the screen keeps showing the pre-gap value forever |
+| the refetch | the screen keeps showing the pre-gap tree |
+
+Each mutation fails the same test, which is the point: neither half is worth anything alone. There is
+a positive control beside it — the first fetch draws what the server sent — because without it "the
+refetched value is shown" is satisfied by a holder that draws nothing until a restart.
+
+**Its own map, not `KompotRealtimeProvider`'s.** That composable holds its `SnapshotStateMap`
+privately and empties it only when the topic changes, which konekt never does: one topic per
+subscriber. So the map has to be ours for the clear to be possible at all. Reported upstream rather
+than forked, per D9.
+
+## `wip`, and what is left
+
+- **AC 1 and the entry point.** `./gradlew :client:run` does not exist: there is no
+  `compose.desktop.application` block, no `Main.kt`, and no `ScreenSource` implementation over the
+  HTTP client this module already builds. The interface is the shape that implementation has to take;
+  writing it without an entry point to run it would be the write-and-never-call shape this repository
+  keeps catching.
+- **AC 2** waits on `B-25` for a route that sends an unknown component on purpose.
+- **AC 4** waits on the entry point too: goldens of a server-produced tree need a recorded response,
+  and the recording is the running application's.
+- iOS remains after the desktop one, and it is the part with no Kotlin in it — an Xcode project.
