@@ -133,13 +133,16 @@ is the profile a coroutine-per-connection engine is shaped for. See
   before the release's own objects, which on a first install means before the database exists. Four
   values have no default and stop the render rather than the pod: the hostname, the image tag, the
   JWT secret and the database password. Each of them, absent, produces a deploy that reports success.
-- **Where the environment lives:** the cluster's values and its deploy workflow are in the
-  `infra` repository (`k8s/konekt/`), the shape three neighbouring products already use. The chart
-  carries no addresses and no keys.
-- **The deployed instance:** `https://konekt.kotlin.website`, running the published image. There is
-  no browser surface — the client is Compose on a desktop or a phone — so the way to use it is
-  `KONEKT_URL=https://konekt.kotlin.website ./gradlew :client:run`, and the one-time code is read
-  from `kubectl -n konekt logs deploy/konekt`, because `DEV_REVEAL_OTP` is off there. `B-48`.
+- **Where the environment lives:** nowhere in this repository, and that is the split. The chart
+  carries the SHAPE — what runs, what may not be reached, what stops the render — and a deployment's
+  own addresses, keys and image tag are values an operator keeps beside their cluster. A chart that
+  shipped an address would be a chart with an opinion about somebody else's network.
+- **Using a deployed instance.** There is no browser surface: the client is Compose on a desktop or
+  a phone, so it is pointed at the deployment with `KONEKT_URL`. Signing in needs the one-time code,
+  and with `dev.revealOtp` off — the default, and the security property — the code reaches only the
+  server's log, at WARN, from the mock delivery that stands in for an SMSC. Reading a log is a
+  different permission from being on the internet, which is the whole of why that switch defaults
+  closed. `B-48`.
 - **The broker is closed by a NetworkPolicy rather than by the absence of a `ports:` line.** In
   compose that absence is its whole security model — it speaks a plaintext protocol with neither TLS
   nor authentication, both deliberately absent — and a namespace gives nothing for free: a ClusterIP
