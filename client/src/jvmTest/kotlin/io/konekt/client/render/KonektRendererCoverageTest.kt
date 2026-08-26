@@ -42,7 +42,14 @@ class KonektRendererCoverageTest {
     // block. Every test missed it by topping up first, so the banner was never sent.
     private val rendered = setOf("usage_counter_card", "esim_qr", "banner")
 
-    // The rest, each waiting for the screen that needs it. B-05 is the block a client draws instead.
+    // The rest, each waiting for the screen that needs it — and each now REGISTERED, drawing the
+    // degradation block on purpose.
+    //
+    // The distinction this list used to hide: having no renderer is not the same as drawing a block.
+    // With none, `RenderNode` found nothing, the toolkit's own fallback drew red text, and no sink
+    // heard about it — so a screen made of these was silent from an operator's side. This test passed
+    // throughout, because it holds the two lists apart and treats "not yet rendered" as a decision.
+    // It was one, until a served screen sent a `banner`.
     private val notYetRendered =
         setOf(
             "plan_card",
@@ -73,7 +80,30 @@ class KonektRendererCoverageTest {
     fun `the registry contains exactly the renderers this build claims`() {
         val actual = (konektRenderers.keys - replacementRenderers).map { it.wireName() }.toSet()
 
-        assertEquals(rendered, actual, "the renderer map and this test's list of what is drawn disagree")
+        assertEquals(
+            rendered + notYetRendered,
+            actual,
+            "the renderer map and this test's lists disagree",
+        )
+    }
+
+    @Test
+    fun `every dictionary type is registered, drawn properly or drawn as a block`() {
+        // THE GUARD THAT DID NOT EXIST, and its absence is what let `banner` reach a screen with no
+        // renderer at all. A type in the dictionary and not in the registry does not degrade — it
+        // falls through to the toolkit's red text, which no sink counts.
+        //
+        // "Registered" is the claim, not "drawn": six of these draw the degradation block deliberately
+        // (`UndrawableComponentRenderer`), which is a visible, counted, honest gap rather than a silent
+        // one.
+        val registered = (konektRenderers.keys - replacementRenderers).map { it.wireName() }.toSet()
+
+        assertEquals(
+            emptySet(),
+            konektWireNames.toSet() - registered,
+            "a dictionary type has no renderer at all, so a screen carrying it draws the toolkit's " +
+                "red fallback and nothing counts it",
+        )
     }
 
     @Test

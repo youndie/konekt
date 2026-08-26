@@ -55,6 +55,12 @@ class UnknownBlockRenderer(
     private val toolkit: KompotComponentRenderer<UnknownComponent> =
         io.github.youndie.kompot
             .UnknownComponentRenderer(),
+    // WHETHER THIS RENDERER REPORTS, and `false` has exactly one caller.
+    // `UndrawableComponentRenderer` draws this block through a synthetic `UnknownComponent` and has
+    // already reported the degradation itself — with the cause kompot's sink cannot carry. Left at
+    // `true` there, one component produces TWO records saying different things about the same
+    // failure, and the count an operator reads doubles for half the screen.
+    private val reports: Boolean = true,
 ) : KompotComponentRenderer<UnknownComponent> {
     @Composable
     override fun Render(
@@ -82,7 +88,8 @@ class UnknownBlockRenderer(
         // Keyed by the component rather than by nothing: a node replaced by a live update is a
         // different degradation and should be counted again, while a redraw of the same one is not.
         val sink = io.github.youndie.kompot.LocalKompotDegradationSink.current
-        LaunchedEffect(component.id, component.originalType) {
+        LaunchedEffect(component.id, component.originalType, reports) {
+            if (!reports) return@LaunchedEffect
             sink.onUnknown(
                 io.github.youndie.kompot.KompotDegradationKind.UNKNOWN_COMPONENT,
                 component.originalType,

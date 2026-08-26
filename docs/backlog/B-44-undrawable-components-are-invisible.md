@@ -1,7 +1,7 @@
 ---
 id: B-44
 title: "A component that decodes and cannot be drawn is invisible from every guard"
-status: open
+status: done
 priority: P1
 size: S
 stage: stage-m4-proof
@@ -48,3 +48,47 @@ running the iOS application against the stand with a fresh account. Six types ar
 
 Background: [B-05](B-05-unknown-component-renderer.md) for the block this reuses,
 [B-43](B-43-client-composition-root.md) for how it was found.
+
+## What landed
+
+Every one of the nine dictionary types is registered now, and the six with no renderer of their own
+draw the degradation block deliberately — `UndrawableComponentRenderer`, which reports the type and
+then delegates the drawing to `UnknownBlockRenderer` rather than copying its Card and Line. Two
+placeholders that drift apart is a screen that says one thing in one place and another in the next.
+
+**The two failures are identical on screen and different in the record.** A subscriber meets the same
+block and the same sentence, because "update to see it" is the only move either one leaves them.
+`KonektDegradation.Cause` is what tells them apart for whoever reads the record: `UNDECODABLE` says
+the client is behind the server, `UNDRAWABLE` says this build shipped a dictionary entry it never
+wired up.
+
+The cause needed a method of konekt's own. kompot's `onUnknown` is about the WIRE, which the toolkit
+owns; "in konekt's dictionary with no renderer" is a fact about konekt's registry the toolkit has no
+way to learn. A deployment binding some other sink still hears about the component and simply cannot
+be told which of the two happened.
+
+**The dev screen carries one of each now**, which is the only place they are ever drawn side by side —
+`step_meter` beside two `esim_transfer_widget`. `ClientAgainstStandTest` asserts three records, two
+causes and both types; mutation-proved by taking the registration back out, which fails two tests.
+
+The guard that did not exist now does: `every dictionary type is registered, drawn properly or drawn
+as a block`. The old `KonektRendererCoverageTest` passed throughout — it holds the two lists apart and
+treats "not yet rendered" as a decision, which is exactly what it was until a served screen sent one.
+
+## A defect this introduced, and the guard that caught it
+
+Delegating to `UnknownBlockRenderer` meant TWO records for one component: one from this renderer with
+the cause, one from the block with kompot's. Caught before it ran, and the block takes a `reports` flag
+with exactly one caller passing `false`.
+
+## And one this item inherited from B-35
+
+`scripts/rolling-check.sh` extracts a copy of the repository at another commit into `.rolling/`, and
+every source guard in this build walks the tree. Two `KonektClock.kt`, two `StatusPages.kt`, two of
+everything — and the failure did not say so: `ClockUsageTest` reported *"KonektClock.kt is allowed to
+read the system clock but does not exist"*, because `singleOrNull` over two matches is null.
+
+`productionSources()` excludes `.rolling` now, and the assertion is split so "none" and "more than
+one" say different things. The exclusion is in the walk rather than in the script's cleanup on
+purpose: a guard that is correct only when a previous command tidied up is a guard with a precondition
+nobody states.

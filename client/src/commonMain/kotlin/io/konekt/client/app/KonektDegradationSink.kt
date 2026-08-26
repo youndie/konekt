@@ -26,7 +26,28 @@ class KonektDegradationSink(
         originalType: String,
         drawnAsFallback: Boolean,
     ) {
-        record(KonektDegradation(kind, originalType, drawnAsFallback))
+        // WHAT REACHES THIS METHOD IS ALWAYS A DECODE FAILURE, because that is the only thing kompot
+        // can know about: it owns the wire and not konekt's dictionary. The other cause is set at the
+        // one call site that knows it — see `KonektDegradation.Cause`.
+        record(KonektDegradation(kind, originalType, drawnAsFallback, KonektDegradation.Cause.UNDECODABLE))
+    }
+
+    // THE OTHER CAUSE, and it needs a method of its own because kompot's interface cannot carry it:
+    // `onUnknown` is about the WIRE, which the toolkit owns, and "in konekt's dictionary with no
+    // renderer" is a fact about konekt's registry that the toolkit has no way to learn.
+    //
+    // A deployment that binds some other `KompotDegradationSink` still hears about the component —
+    // `UndrawableComponentRenderer` falls back to `onUnknown` — it just cannot be told which of the
+    // two happened. That is a smaller loss than a second sink interface nobody would bind.
+    fun onUndrawable(originalType: String) {
+        record(
+            KonektDegradation(
+                kind = KompotDegradationKind.UNKNOWN_COMPONENT,
+                originalType = originalType,
+                drawnAsFallback = false,
+                cause = KonektDegradation.Cause.UNDRAWABLE,
+            ),
+        )
     }
 }
 
@@ -40,4 +61,26 @@ data class KonektDegradation(
     // could draw instead. A hole and a substitution are different facts about a screen, and folding
     // them together would make the count useless for deciding whether anybody has to act.
     val drawnAsFallback: Boolean,
-)
+    // WHOSE FAULT IT IS, and it is the field this record was missing for most of the build's life.
+    val cause: Cause = Cause.UNDECODABLE,
+) {
+    // THE TWO WAYS A CLIENT FAILS TO RENDER, and the whole forward-compatibility argument only ever
+    // covered one of them.
+    //
+    // They are deliberately INDISTINGUISHABLE ON SCREEN: a subscriber meets the same block and the
+    // same sentence, because "update to see it" is the only move either one leaves them. They must be
+    // distinguishable in the RECORD, because the two mean opposite things to whoever reads it — one
+    // says the client is behind the server, the other says this build shipped a dictionary entry it
+    // never wired up.
+    enum class Cause {
+        // A type this build has never heard of. It decoded into `UnknownComponent`; the server is
+        // ahead, and the answer is a release.
+        UNDECODABLE,
+
+        // A type in konekt's own dictionary with no renderer. It decoded into its own class and the
+        // registry had nothing to draw it with — a gap inside one build rather than between two.
+        // Invisible until B-44: not an `UnknownComponent`, so it reached no block and no sink, and
+        // what appeared was the toolkit's red fallback on a screen nobody was counting.
+        UNDRAWABLE,
+    }
+}

@@ -141,14 +141,18 @@ class DegradationReachesTracyTest {
             // BREADCRUMB rather than on the tracy record, because this half is synchronous and the
             // other is not — and waiting on the slow one first would hide a fast one that never came.
             waitUntil(timeoutMillis = 20_000) {
-                Katcher.breadcrumbs.count { it.type == "degradation" } >= 2
+                Katcher.breadcrumbs.count { it.type == "degradation" } >= 3
             }
         }
 
         val crumbs = Katcher.breadcrumbs.filter { it.type == "degradation" }
-        assertEquals(2, crumbs.size, "expected one breadcrumb per unknown component: $crumbs")
-        assertTrue(
-            crumbs.all { it.data?.get("originalType") == "esim_transfer_widget" },
+        // THREE, because the screen carries three components this build cannot render: two it cannot
+        // decode and one it decodes and has no renderer for (B-44). All three leave a crumb, and all
+        // three name their type — which is the only thing a crumb is for.
+        assertEquals(3, crumbs.size, "expected one breadcrumb per component that could not be rendered: $crumbs")
+        assertEquals(
+            setOf("esim_transfer_widget", "step_meter"),
+            crumbs.mapNotNull { it.data?.get("originalType") }.toSet(),
             "a breadcrumb lost the wire type: ${crumbs.map { it.data }}",
         )
         // A crash report carries breadcrumbs so somebody can read what happened BEFORE it. A crumb
@@ -168,11 +172,11 @@ class DegradationReachesTracyTest {
         // pass on one of them arriving, which is the half-delivered case worth telling apart.
         runBlocking {
             val grown =
-                awaitOrFail("tracy to index two more originalType refs than the $baseline it already had") {
-                    originalTypeRefs().takeIf { it >= baseline + 2 }
+                awaitOrFail("tracy to index three more originalType refs than the $baseline it already had") {
+                    originalTypeRefs().takeIf { it >= baseline + 3 }
                 }
 
-            assertTrue(grown >= baseline + 2, "expected two new refs, went from $baseline to $grown")
+            assertTrue(grown >= baseline + 3, "expected three new refs, went from $baseline to $grown")
         }
     }
 

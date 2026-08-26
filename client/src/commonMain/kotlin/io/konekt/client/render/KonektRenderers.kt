@@ -10,9 +10,35 @@ import io.github.youndie.kompot.kompotStandardRenderers
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.BannerComponent
+import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
+import io.konekt.components.OrderRowComponent
+import io.konekt.components.PlanCardComponent
+import io.konekt.components.SkeletonComponent
+import io.konekt.components.SnackbarComponent
+import io.konekt.components.StepMeterComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.reflect.KClass
+
+// EVERY DICTIONARY TYPE HAS A RENDERER NOW, and the six below draw the degradation block on purpose.
+//
+// They used to have none, which is a different thing from drawing a block: `KompotRegistry.RenderNode`
+// found nothing and the toolkit's own fallback drew red text, reaching no sink and no record. A screen
+// made of them was silent from an operator's side — and `banner` was in this list while the home
+// screen sent one to every subscriber who had bought nothing.
+//
+// Registering them is what makes the gap VISIBLE rather than what fixes it. The fix is a renderer per
+// type, one screen at a time (`B-45`); until then a served type nobody wired up looks to a subscriber
+// exactly like a type from a newer server, and to an operator like neither.
+private val undrawn: Map<KClass<out KompotComponent>, KompotComponentRenderer<out KompotComponent>> =
+    mapOf(
+        PlanCardComponent::class to UndrawableComponentRenderer<PlanCardComponent>("plan_card"),
+        EsimCardComponent::class to UndrawableComponentRenderer<EsimCardComponent>("esim_card"),
+        OrderRowComponent::class to UndrawableComponentRenderer<OrderRowComponent>("order_row"),
+        SnackbarComponent::class to UndrawableComponentRenderer<SnackbarComponent>("snackbar"),
+        StepMeterComponent::class to UndrawableComponentRenderer<StepMeterComponent>("step_meter"),
+        SkeletonComponent::class to UndrawableComponentRenderer<SkeletonComponent>("skeleton"),
+    )
 
 // konekt's own renderers, and the list is deliberately short of the dictionary.
 //
@@ -39,7 +65,7 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         // declared, tested by a fixture that supplied its own condition, and provided by nothing.
         ColumnComponent::class to ColumnDensityRenderer(),
         RowComponent::class to RowDensityRenderer(),
-    )
+    ) + undrawn
 
 // The registry an application hands to `LocalKompotRegistry`: the toolkit's own renderers plus ours.
 //

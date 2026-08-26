@@ -41,16 +41,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-44](docs/backlog/B-44-undrawable-components-are-invisible.md) `[ ]` | A component that decodes and cannot be drawn is invisible from every guard | P1 | S | - |
 | [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[ ]` | The client draws one screen of a product that has four | P1 | L | B-44 |
 | [B-46](docs/backlog/B-46-no-login-screen.md) `[ ]` | Both runners sign in through a route that must never ship | P1 | M | - |
 | [B-47](docs/backlog/B-47-first-release-tag.md) `[ ]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 
-## Closed (43)
+## Closed (44)
 
 **The wire and the shell**
 
@@ -107,6 +106,7 @@ so re-prioritising must never move a file.
 - [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[x]` - The feature, screen and API layers are empty, and the reason they were empty has expired
 - [B-41](docs/backlog/B-41-order-status-vocabulary-disagrees.md) `[x]` - The server emits order statuses the component dictionary does not declare, and declares one nothing emits
 - [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[x]` - A @Test whose return type is not void is silently ignored, and three of them were
+- [B-44](docs/backlog/B-44-undrawable-components-are-invisible.md) `[x]` - A component that decodes and cannot be drawn is invisible from every guard
 
 **Upstream and the box**
 

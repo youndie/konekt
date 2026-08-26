@@ -23,8 +23,18 @@ fun productionSources(): List<Path> {
     return root
         .walk()
         .filter { it.extension == "kt" }
-        .filter { path -> path.none { it.name == "build" || it.name == ".git" || it.name == "build-logic" } }
+        // `.rolling` IS A COPY OF THIS REPOSITORY AT ANOTHER COMMIT, extracted by
+        // `scripts/rolling-check.sh` so an old server can be built. Left in the walk it doubles every
+        // source guard's input: two `KonektClock.kt`, two `StatusPages.kt`, two of everything — and
+        // the failures do not say so. `ClockUsageTest` reported "KonektClock.kt is allowed to read the
+        // system clock but does not exist", because `singleOrNull` over two matches is null.
+        //
+        // It is inside the repository on purpose — the build machine sees this directory and nothing
+        // else — so the exclusion belongs here rather than in the script's cleanup: a guard that is
+        // correct only when a previous command tidied up is a guard with a precondition nobody states.
         .filter { path ->
+            path.none { it.name == "build" || it.name == ".git" || it.name == "build-logic" || it.name == ".rolling" }
+        }.filter { path ->
             val parts = path.map { it.name }
             // Production sources of any module and any Kotlin target: src/main/kotlin,
             // src/commonMain/kotlin, src/jvmMain/kotlin and whatever a platform adds later.

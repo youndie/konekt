@@ -6,6 +6,7 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.CounterStates
+import io.konekt.components.StepMeterComponent
 import io.konekt.components.UsageCounterCardComponent
 import io.ktor.resources.Resource
 import kotlinx.serialization.SerialName
@@ -29,7 +30,8 @@ data class EsimTransferWidgetComponent(
     val headline: String,
 ) : KompotComponent
 
-// The development-only screen: one unknown component among known ones, twice, in the two shapes.
+// The development-only screen: the two ways a client fails to render, in the two shapes one of them
+// has.
 //
 // TWICE AND IN TWO CONTAINERS, AND THAT IS THE POINT. The replacement renderer has two densities — a
 // LINE among rows and a CARD standing alone — and the density is chosen by where the block sits,
@@ -84,6 +86,21 @@ object ForwardCompatScreen {
                     EsimTransferWidgetComponent(
                         id = "forward-compat-card",
                         headline = "And again, standing on its own",
+                    ),
+                    // THE OTHER WAY A CLIENT FAILS TO RENDER, and this screen could not demonstrate it
+                    // until B-44. `step_meter` is in konekt's OWN dictionary — every client decodes it
+                    // into its own class — and this build has no renderer for it. That is not an
+                    // `UnknownComponent`: before B-44 it reached no block and no sink, and the
+                    // toolkit's red fallback drew it while nothing counted it.
+                    //
+                    // A screen carrying one of each is the only place the two are ever drawn side by
+                    // side, and the point is that a subscriber cannot tell them apart while the RECORD
+                    // can.
+                    StepMeterComponent(
+                        id = "forward-compat-undrawable",
+                        current = 2,
+                        total = 4,
+                        label = "A type this build knows and cannot draw",
                     ),
                 ),
         )

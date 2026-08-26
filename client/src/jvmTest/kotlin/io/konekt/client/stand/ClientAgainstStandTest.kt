@@ -142,16 +142,33 @@ class ClientAgainstStandTest {
                 )
             }
 
-            waitUntil(timeoutMillis = 15_000) { recorded.size >= 2 }
+            waitUntil(timeoutMillis = 15_000) { recorded.size >= 3 }
         }
 
-        // TWO, and by the type. A count alone would be satisfied by two records of the same wrong
-        // thing, and the whole point of `originalType` is answering WHICH type went unrendered.
-        assertEquals(2, recorded.size, "expected one record per unknown component")
+        // THREE, and by type AND cause. A count alone would be satisfied by three records of the same
+        // wrong thing, and the whole point of `originalType` is answering WHICH type went unrendered.
+        assertEquals(3, recorded.size, "expected one record per component that could not be rendered")
+
+        // TWO CAUSES ON ONE SCREEN, which is what this screen exists to put side by side since B-44.
+        // The two are the same to a subscriber — same block, same sentence, because "update to see
+        // it" is the only move either leaves them — and they must be different to whoever reads the
+        // record: one says the client is behind the server, the other says this build shipped a
+        // dictionary entry it never wired up.
+        val undecodable = recorded.filter { it.cause == KonektDegradation.Cause.UNDECODABLE }
+        val undrawable = recorded.filter { it.cause == KonektDegradation.Cause.UNDRAWABLE }
+
+        assertEquals(2, undecodable.size, "expected both esim_transfer_widget blocks: $recorded")
         assertTrue(
-            recorded.all { it.originalType == "esim_transfer_widget" },
-            "the records lost the type: ${recorded.map { it.originalType }}",
+            undecodable.all { it.originalType == "esim_transfer_widget" },
+            "the records lost the type: ${undecodable.map { it.originalType }}",
         )
+
+        // The one this repository could not report at all until B-44: a type in konekt's own
+        // dictionary with no renderer. It reached no block and no sink, and the toolkit's red
+        // fallback drew it while nothing counted it.
+        assertEquals(1, undrawable.size, "the undrawable component was not recorded: $recorded")
+        assertEquals("step_meter", undrawable.single().originalType)
+
         assertTrue(
             recorded.none { it.drawnAsFallback },
             "a placeholder was reported as a fallback — a hole and a substitution are different facts",
@@ -234,10 +251,15 @@ class ClientAgainstStandTest {
                 onAllNodesWithText(UnknownBlockRenderer.LINE_TEXT).fetchSemanticsNodes().size,
                 "the block inside the row did not draw the line density",
             )
+            // TWO cards: the second `esim_transfer_widget` and the `step_meter`, which sits in the
+            // column too. The step meter is the other CAUSE rather than another density — a type this
+            // build decodes and cannot draw — and on screen it is deliberately identical to the block
+            // beside it. That identity is the claim: the record tells them apart and the subscriber
+            // does not have to.
             assertEquals(
-                1,
+                2,
                 onAllNodesWithText(UnknownBlockRenderer.HEADLINE).fetchSemanticsNodes().size,
-                "the block standing in the column did not draw the card density",
+                "the blocks standing in the column did not draw the card density",
             )
         }
     }

@@ -80,8 +80,17 @@ class ClockUsageTest {
         assertTrue(files.size >= 10, "found ${files.size} source files — is the path right?")
 
         allowed.forEach { name ->
-            val file = files.singleOrNull { it.fileName.toString() == name }
-            assertTrue(file != null, "$name is allowed to read the system clock but does not exist")
+            // `singleOrNull` answers null for BOTH "none" and "more than one", and the two need
+            // different sentences: a missing file means the allowance is stale, and two files mean the
+            // walk is picking up a tree it should not — which is what `.rolling` did, and the message
+            // sent the reader looking for a deleted file that was right there.
+            val matches = files.filter { it.fileName.toString() == name }
+            assertTrue(matches.isNotEmpty(), "$name is allowed to read the system clock but does not exist")
+            assertTrue(
+                matches.size == 1,
+                "$name matches ${matches.size} files, so the source walk is reaching outside this tree: $matches",
+            )
+            val file = matches.single()
             assertTrue(
                 forbidden.containsMatchIn(code(file.readText())),
                 "$name no longer reads the system clock, so its allowance should go",
