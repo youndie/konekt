@@ -121,6 +121,11 @@ include(":feature:realtime-shared-api")
 // The brand kit's address and the variable that chooses it. A module for one object, for the same
 // reason as the one above: the path has to exist once and both halves have to be able to see it.
 include(":feature:theme-shared-api")
+
+// The custom package builder's two addresses and its field ids. The ids are here rather than in the
+// server because three parties spell them — the schema, the tree and the patch — and the form
+// controller keys by string, so a typo is a field that silently never updates.
+include(":feature:packages-shared-api")
 include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")

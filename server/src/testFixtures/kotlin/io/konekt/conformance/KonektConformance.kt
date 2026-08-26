@@ -3,6 +3,7 @@ package io.konekt.conformance
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.esim.shared.api.EsimWizardResource
+import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
@@ -33,10 +34,6 @@ import io.konekt.openapi.endpointKey
 // on an undeclared one that has lost them.
 val KONEKT_CHECKS_WITH_NOTHING_TO_VISIT: Map<String, String> =
     mapOf(
-        "form-fields" to
-            "this server serves no endpoint of kind \"form\". The eSIM flow takes wizard-core only and draws " +
-            "its own chrome, because kompot-wizard's WizardScreenComponent presupposes a FormSchema it " +
-            "does not have (research-architecture §1.12), so no route answers a schema-plus-screen pair.",
         "etag" to
             "no operation declares 304. Conditional delivery is not implemented: the screens are built per " +
             "request and nothing computes an entity tag for them, so there is no revalidation to check.",

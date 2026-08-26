@@ -317,6 +317,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | closed, released in `0.31.0.76`; `:client` builds for iOS |
 | U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | closed, released in `0.32.0.77`; our transport decorator deleted |
 | U11 | tracy | the agent publishes no Apple target, so an iOS client cannot log through tracy | [tracy#16](https://github.com/youndie/tracy/issues/16) | open |
+| U12 | kompot | a form patch cannot reach a non-editable field, so a server-computed value is editable or stale | [kompot#89](https://github.com/youndie/kompot/issues/89) | open |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -481,3 +482,23 @@ likeliest on the platform that cannot report it.
 `metrik` publishes the same four targets and no iOS. Not filed: what metrik measures is request
 latency on a server, so an absent Apple target is a smaller claim than tracy's and one this build has
 no use for yet. Recorded here so the next reader does not have to measure it again.
+
+**U12 was found by building the thing and confirmed by the toolkit's own conformance kit**, which is
+the closest this repository has come to the whole argument for it existing.
+
+`FormPatch` updates values in the `FormController`; only bound components read it and every one of
+them is editable; the only non-editable display, `read_only_field`, is explicitly unbound — its
+renderer draws `component.value` and never touches the controller it is handed. So a price the server
+computes as a form changes is either something a subscriber can type into or something a patch cannot
+reach.
+
+The first attempt worked around it by declaring the computed values as schema fields anyway and
+rendering them as read-only text. That looked reasonable and is not: `form-fields` refused it on the
+first walk — *field "price" is declared but never rendered* — because SPEC §9.2 asks that every
+declared fieldId have a component rendering it. The workaround was an hour old, passed every test
+written for it, and was caught by a check the toolkit ships for exactly this.
+
+Worth noticing what that says about the order of events. The gap was **suspected** from reading the
+sources, **confirmed** by trying to build around it, and **named precisely** by the kit. Any one of
+the three alone would have been weaker: reading finds a shape, building finds the cost, and the kit
+finds the rule being broken.

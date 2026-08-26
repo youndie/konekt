@@ -13,6 +13,7 @@ dependencies {
     testImplementation(project(":feature:usage-shared-api"))
     testImplementation(project(":feature:realtime-shared-api"))
     testImplementation(project(":feature:esim-shared-api"))
+    testImplementation(project(":feature:packages-shared-api"))
     testImplementation(project(":shared:domain"))
     testImplementation(project(":shared:components"))
 
@@ -21,6 +22,10 @@ dependencies {
     testImplementation(libs.kompot.standard)
     testImplementation(libs.kompot.auth)
     testImplementation(libs.kompot.realtime)
+    // The form half, so the schema and the patch can be decoded here as a client would.
+    testImplementation(libs.kompot.formCore)
+    testImplementation(libs.kompot.formStandard)
+    testImplementation(libs.kompot.forms)
 
     // THE CONFORMANCE KIT, and it lives here rather than in :server:test because its subject is a
     // DEPLOYMENT. `assertTheWalkVisitedEveryTarget` asks what a run reached, and a run that reaches

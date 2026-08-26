@@ -4,6 +4,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.esim.shared.api.EsimWizardResource
+import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
@@ -191,6 +192,19 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyType = "io.konekt.feature.purchase.shared.api.TopUpResponse",
                 // 404 and not 403 for somebody else's top-up — a 403 is an enumeration oracle.
                 refusals = setOf(404),
+            ),
+        endpointKey<CustomPackageForm>("GET") to
+            EndpointFacts(
+                summary = "The custom package builder: three quantities and a price",
+                // `form`, and this is the first endpoint in this build that earns the word. It answers
+                // a `KompotFormResponse` — a `FormSchema` plus a component tree — which is exactly
+                // what the conformance kit's `form-fields` check looks for, and what it has been
+                // finding nothing of.
+                kind = EndpointKind.FORM,
+                successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
+                // 422 for a quantity that is not one of the sizes this package comes in — refused
+                // rather than rounded, because rounding charges for a package nobody chose.
+                refusals = setOf(404, 422),
             ),
         endpointKey<HomeScreenResource>("GET") to
             EndpointFacts(

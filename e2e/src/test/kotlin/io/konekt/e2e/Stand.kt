@@ -3,6 +3,8 @@ package io.konekt.e2e
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.decodeKompotAction
+import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
@@ -63,7 +65,15 @@ object Stand {
                 kompotStandardSerializersModule +
                 generatedStandardSerializersModule +
                 generatedKonektSerializersModule +
-                kompotAuthSerializersModule
+                kompotAuthSerializersModule +
+                // THE FORM HALF, ON THIS SIDE TOO, and they are two modules for two reasons.
+                // `generatedFormsSerializersModule` carries the form COMPONENTS — the inputs and the
+                // read-only field, which travel in the tree — and `formStandardSerializersModule` the
+                // FIELD definitions that travel in the schema. A client registering only the first
+                // decodes the screen and fails on `$.schema.fields[0]`, which is exactly what this
+                // suite did the first time it asked for a form.
+                generatedFormsSerializersModule +
+                formStandardSerializersModule
         }
 
     fun client(baseUrl: String = serverUrl): HttpClient =

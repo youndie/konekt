@@ -50,7 +50,7 @@ so re-prioritising must never move a file.
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[~]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26, B-43 |
 | [B-43](docs/backlog/B-43-client-composition-root.md) `[~]` | The client has every part of an application and no application | P1 | L | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
-| [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
+| [B-20](docs/backlog/B-20-custom-package-builder.md) `[~]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
 | [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |
 | [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[~]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22, B-43 |

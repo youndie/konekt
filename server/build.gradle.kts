@@ -56,6 +56,16 @@ dependencies {
     implementation(project(":feature:esim-server-data"))
     implementation(project(":feature:realtime-shared-api"))
     implementation(project(":feature:theme-shared-api"))
+    implementation(project(":feature:packages-shared-api"))
+
+    // THE FORM HALF OF THE TOOLKIT, used here for the first time. `form-core` is the schema and the
+    // controller contract, `form-standard` its field and rule set, and `kompot-forms` the components
+    // that render them plus the `KompotFormResponse` envelope. Three modules rather than one because
+    // they are plug-ins over `kompot-core` — an application may take any of them or none, which is
+    // the property B-20 is the first thing here to exercise.
+    implementation(libs.kompot.formCore)
+    implementation(libs.kompot.formStandard)
+    implementation(libs.kompot.forms)
     implementation(project(":feature:usage-shared-api"))
     implementation(project(":feature:usage-server-data"))
 
@@ -146,6 +156,7 @@ dependencies {
     testFixturesApi(project(":feature:esim-shared-api"))
     testFixturesApi(project(":feature:realtime-shared-api"))
     testFixturesApi(project(":feature:usage-shared-api"))
+    testFixturesApi(project(":feature:packages-shared-api"))
     testFixturesApi(libs.kotlinx.serialization.json)
 }
 

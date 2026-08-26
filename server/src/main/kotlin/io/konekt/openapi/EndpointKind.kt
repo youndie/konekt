@@ -32,7 +32,12 @@ object EndpointKind {
     // blind walk deliberately: the body is a sequence of frames rather than one document.
     const val UPDATES_STREAM = "updates_stream"
 
+    // Answers a `KompotFormResponse` — a `FormSchema` plus the tree that renders it. The kit's
+    // `form-fields` check claims every endpoint of this kind and, until `B-20`, found none: it was
+    // one of the five checks with nothing to visit.
+    const val FORM = "form"
+
     // Read in the kit and NOT used by this server, listed so the next person need not go back to the
-    // jar to learn whether the vocabulary is closed: `form`, `graph`, `live_screen`, `wizard_resume`.
+    // jar to learn whether the vocabulary is closed: `graph`, `live_screen`, `wizard_resume`.
     // A route of ours grows one of these the day it starts answering the matching shape.
 }

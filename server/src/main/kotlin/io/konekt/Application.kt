@@ -2,6 +2,8 @@ package io.konekt
 
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
+import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
@@ -39,6 +41,7 @@ import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.observability.KonektTrace
 import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
+import io.konekt.packages.customPackageRoutes
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.screens.dev.EsimTransferWidgetComponent
@@ -192,6 +195,7 @@ val konektRoutes: List<RouteGroup> =
             topUpRoutes()
             esimWizardRoutes()
             homeRoutes()
+            customPackageRoutes()
             realtimeRoutes()
         },
     )
@@ -486,6 +490,13 @@ private val kompotJson: Json =
             generatedStandardSerializersModule +
             generatedKonektSerializersModule +
             kompotAuthSerializersModule +
+            // THE FORM HALF'S OWN REGISTRATIONS, and both are needed for different reasons.
+            // `generatedFormsSerializersModule` carries the form COMPONENTS — the inputs and the
+            // read-only field — and `formStandardSerializersModule` the FIELD definitions, values and
+            // rules that travel inside a `FormSchema`. Omitting either compiles and starts, and fails
+            // on the one request the form exists for.
+            generatedFormsSerializersModule +
+            formStandardSerializersModule +
             // THE SAGA'S OWN TYPES, and without them no purchase can be created at all: petich
             // writes its payload polymorphically into the saga row, and an unregistered subclass is
             // a 500 on the first POST. Every saga test builds this by hand, which is exactly why

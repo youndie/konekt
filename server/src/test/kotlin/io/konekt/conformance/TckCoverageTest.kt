@@ -1,6 +1,7 @@
 package io.konekt.conformance
 
 import io.konekt.feature.auth.shared.api.AuthOtp
+import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
@@ -79,6 +80,9 @@ class TckCoverageTest {
                 // being given anything. It is also the only walked endpoint that is not secured,
                 // which is why `auth-required` claims one fewer than the rest.
                 "GET ${BrandTheme.PATH}",
+                // The custom package form. The first endpoint of kind `form` this build has served,
+                // and the reason `form-fields` left the declared-empty list.
+                endpointKey<CustomPackageForm>("GET"),
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",
