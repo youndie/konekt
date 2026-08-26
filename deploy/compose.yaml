@@ -79,6 +79,15 @@ services:
   #
   #     ./gradlew :server:installDist
   server:
+    # A RELEASED IMAGE WHEN ONE IS NAMED, and a build from this tree otherwise.
+    #
+    # `image` and `build` together is compose's own idiom: with `SERVER_IMAGE` set, `up` pulls or uses
+    # that tag and `--build` is what would rebuild it; unset, the default names a local tag this tree
+    # produces. It is the difference between running an ARTEFACT and running a working copy, and until
+    # `B-47` nothing here had ever run the first.
+    #
+    #     SERVER_IMAGE=ghcr.io/youndie/konekt-server:v0.1.0 docker compose ... up -d --no-build
+    image: ${SERVER_IMAGE:-konekt-server:local}
     build:
       context: ..
       dockerfile: deploy/Dockerfile

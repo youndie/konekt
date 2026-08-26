@@ -81,7 +81,7 @@ tck:
 
 COMPOSE := docker compose -f deploy/compose.yaml
 
-.PHONY: stand-up stand-down stand-logs e2e rolling-check
+.PHONY: stand-up stand-down stand-logs e2e rolling-check release-image
 
 # The distribution is built OUTSIDE the image — see deploy/Dockerfile for why — so it has to exist
 # before the image does. Forgetting that step gives a container running whatever was built last time,
@@ -111,6 +111,25 @@ stand-logs:
 # change is a suite people learn to ignore.
 e2e:
 	./gradlew :e2e:e2e :client:standTest
+
+# THE RELEASE IMAGE, tagged with the version rather than with the day.
+#
+# Built here rather than in CI because CI has no credential for the registry either — see `B-47`. What
+# this target produces is a LOCAL tag that the stand can be pointed at, which proves everything about
+# running an artefact except the registry round trip.
+#
+#     make release-image                 # tags the newest tag's build
+#     make release-image VERSION=v0.1.0
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null)
+release-image:
+	@test -n "$(VERSION)" || { \
+		echo "no tag to name the image after."; \
+		echo "On the build machine there is no git checkout, so the default cannot be read:"; \
+		echo "    make release-image VERSION=\$$(git describe --tags --abbrev=0)"; \
+		exit 2; }
+	./gradlew :server:installDist
+	docker build -f deploy/Dockerfile -t ghcr.io/youndie/konekt-server:$(VERSION) .
+	@echo "built ghcr.io/youndie/konekt-server:$(VERSION) — pushing it needs write:packages"
 
 # THE ROLLING-DEPLOY CHECK: the previous release's server against the current schema.
 #

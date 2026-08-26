@@ -45,7 +45,7 @@ so re-prioritising must never move a file.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-47](docs/backlog/B-47-first-release-tag.md) `[ ]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
+| [B-47](docs/backlog/B-47-first-release-tag.md) `[~]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 
 ## Closed (46)
 
