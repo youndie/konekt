@@ -80,6 +80,25 @@ java.lang.AssertionError: waited 20s for: metrik to have seen konekt-server
 That is why the compose file lets both variables of a pair be overridden to empty: running the stand
 with an agent off is the only way to check that this assertion can fail at all.
 
+## The check was measured where it could not fail, and CI said so
+
+It passed locally and failed in CI on the next push, and the timeout was not the reason.
+
+**The metrik agent's aggregation window defaults to sixty seconds** — read in
+`metrik/shared/.../Protocol.kt` rather than recalled. The agent buffers a window and sends it when the
+window closes, so a process that has just started reports nothing at all for a minute. Every local run
+was against a stand that had been up for a while, where a window had long since closed; CI starts a
+fresh one and the whole e2e run is shorter than a single window.
+
+The fix is the window rather than the timeout: `METRIK_WINDOW_MS` is five seconds on the stand, which
+is a stand-specific setting with the same justification as tracy's `sampleRate = 1.0` beside it. Then
+verified the way it should have been the first time — `docker compose down -v`, a cold stand, the
+whole suite green in fifteen seconds, which a sixty-second window could not have produced.
+
+That the local port had to move to do it is the compose file's own design paying off: another
+container held 55432, and every port in the stand is overridable precisely so the stand is not the
+thing that refuses to start.
+
 ## `wip`, and what is left
 
 - **AC 1's katcher half.** "a katcher report if the route throws" is unproved: nothing in this stand

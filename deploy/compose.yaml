@@ -115,6 +115,11 @@ services:
       # Overridable to EMPTY on purpose, and that is not a convenience. Setting both variables of a
       # pair to nothing is how the stand is asked to run with an agent switched off, which is the only
       # way to check that the e2e assertion about absent data can fail at all.
+      # FIVE SECONDS, AGAINST A DEFAULT OF SIXTY. The agent buffers an aggregation window and sends it
+      # when the window closes, so a process that has just started reports nothing for a minute. The
+      # whole e2e run is shorter than that — and leaving the default is what made the check pass
+      # locally against a stand that had been up a while and fail in CI against a fresh one.
+      METRIK_WINDOW_MS: ${METRIK_WINDOW_MS:-5000}
       METRIK_ENDPOINT: ${METRIK_ENDPOINT-metrik:9999}
       METRIK_KEY: ${METRIK_KEY-${METRIK_INGEST_KEY:-dev-metrik-key}}
       TRACY_ENDPOINT: ${TRACY_ENDPOINT-http://tracy:8080}

@@ -29,6 +29,7 @@ fun Application.configureObservability(
             apiKey = metrik.key
             endpoint = metrik.endpoint
             release = config.release
+            config.metrikWindowMs?.let { windowMs = it }
         }
     }
 

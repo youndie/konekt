@@ -19,6 +19,15 @@ data class ObservabilityConfig(
     val release: String,
     val environment: String,
     val metrik: AgentEndpoint?,
+    // THE AGENT'S AGGREGATION WINDOW, and it is here because its default is SIXTY SECONDS — read in
+    // `metrik/shared/.../Protocol.kt`, not recalled. The agent buffers a window and sends it when the
+    // window closes, so a freshly started process reports nothing at all for a minute.
+    //
+    // That is right for a deployment and wrong for a stand, where the whole run is shorter than one
+    // window. Left at the default it made the e2e check pass locally against a stand that had been up
+    // for a while and fail in CI against a fresh one — a result measured where the mechanism could not
+    // fail.
+    val metrikWindowMs: Long?,
     val tracy: AgentEndpoint?,
     val katcher: AgentEndpoint?,
 ) {
@@ -31,6 +40,7 @@ data class ObservabilityConfig(
                 release = System.getenv("RELEASE") ?: "dev",
                 environment = System.getenv("ENVIRONMENT") ?: "dev",
                 metrik = endpoint("METRIK"),
+                metrikWindowMs = System.getenv("METRIK_WINDOW_MS")?.toLongOrNull(),
                 tracy = endpoint("TRACY"),
                 katcher = endpoint("KATCHER"),
             )
