@@ -9,9 +9,11 @@ import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.domain.Money
+import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.money.MoneyFormat
+import io.konekt.roaming.RoamingPackageCards
 
 // The first screen, and the one that proves the loop: the server builds a tree, the client renders
 // it, and nothing about the layout lives in the client.
@@ -25,6 +27,12 @@ object HomeScreen {
         balance: Money?,
         counters: List<UsageCounter>,
         cards: UsageCounterCards,
+        // Roaming packages sit on the SAME screen as the home counters rather than behind a tab,
+        // because from the subscriber's side they are one question — what have I got. A separate
+        // roaming screen would mean a package bought for a trip is invisible on the screen they
+        // actually open, which is the failure mode this feature exists to fix.
+        packages: List<RoamingPackage> = emptyList(),
+        roamingCards: RoamingPackageCards? = null,
     ): KompotComponent =
         ColumnComponent(
             id = "home",
@@ -33,7 +41,7 @@ object HomeScreen {
                 buildList {
                     addAll(balanceBlock(balance))
 
-                    if (counters.isEmpty()) {
+                    if (counters.isEmpty() && packages.isEmpty()) {
                         // NOT AN EMPTY COLUMN. A subscriber who has bought nothing has no counters,
                         // and a screen that draws nothing for them is indistinguishable from one that
                         // failed to load. Saying so, with somewhere to go, is the difference.
@@ -51,6 +59,11 @@ object HomeScreen {
                         // database — two screens that disagree about which counter comes first read
                         // as two products.
                         addAll(counters.map(cards::of))
+
+                        // AFTER the home counters, always. What a subscriber is spending right now is
+                        // the answer to the question they opened the screen with; a package for a trip
+                        // in three weeks is context.
+                        if (roamingCards != null) addAll(packages.map(roamingCards::of))
                     }
                 },
         )

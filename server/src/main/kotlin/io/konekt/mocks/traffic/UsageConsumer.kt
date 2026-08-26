@@ -1,10 +1,15 @@
 package io.konekt.mocks.traffic
 
 import io.konekt.events.EventTopics
+import io.konekt.feature.roaming.server.domain.RoamingConsumption
+import io.konekt.feature.roaming.server.domain.RoamingPackages
+import io.konekt.feature.roaming.server.domain.Zones
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.realtime.ComponentBroadcaster
+import io.konekt.roaming.RoamingPackageCards
+import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -37,6 +42,11 @@ class UsageConsumer(
     // and on a price list. Injected for the same reason the clock is: a screen whose copy is decided
     // by a global is a screen no test can put in the low state on purpose.
     private val cards: UsageCounterCards,
+    // The roaming half of the same chain. An event carrying a zone spends a roaming package instead
+    // of the home counter — see `apply`.
+    private val roaming: RoamingPackages,
+    private val roamingCards: RoamingPackageCards,
+    private val clock: KonektClock,
     private val json: Json = Json,
     private val pollInterval: Duration = 200.milliseconds,
 ) {
@@ -70,6 +80,16 @@ class UsageConsumer(
     suspend fun apply(payload: String) {
         val event = json.parseToJsonElement(payload) as? JsonObject ?: return
         val subscriberId = event["subscriberId"]?.jsonPrimitive?.content ?: return
+
+        // WHERE THE DATA WAS USED, and absent means home. Defaulted rather than required because
+        // every event written before roaming existed omits it, and they all meant home — the same
+        // reason the payload's zone is defaulted.
+        val zone = event["zone"]?.jsonPrimitive?.content ?: Zones.HOME
+        if (zone != Zones.HOME) {
+            applyRoaming(subscriberId, zone, event)
+            return
+        }
+
         val kind =
             UsageCounter.Kind.entries.firstOrNull { it.wireName == event["kind"]?.jsonPrimitive?.content } ?: return
         val units = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return
@@ -83,5 +103,33 @@ class UsageConsumer(
         // Pushed by the component id the screen already has, so the client replaces a node rather
         // than reloading a screen. That is the whole difference a live update makes.
         push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated))
+    }
+
+    // FIRST USE ABROAD, which is where a dormant package stops being dormant. The activation is not a
+    // separate call this method makes first — `consume` does both, because "starts on first
+    // connection" means they are one event and an API that separates them permits one without the
+    // other.
+    private suspend fun applyRoaming(
+        subscriberId: String,
+        zone: String,
+        event: JsonObject,
+    ) {
+        val megabytes = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return
+
+        val result = roaming.consume(subscriberId, zone, megabytes, clock.now())
+        // Nothing bought for this zone. Not an error, and not silent either: it is what being abroad
+        // without a package looks like, and the simulator has no way to know.
+        if (result !is RoamingConsumption.Counted) return
+
+        if (result.started) {
+            logger.info(
+                "roaming package {} started in {} and now ends {}",
+                result.pkg.id,
+                zone,
+                result.pkg.expiresAt,
+            )
+        }
+
+        push.push(subscriberId, RoamingPackageCards.idOf(result.pkg), roamingCards.of(result.pkg))
     }
 }

@@ -13,6 +13,7 @@ import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
+import io.konekt.roaming.dev.ArriveResource
 import io.konekt.screens.dev.ForwardCompatScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.serialization.KSerializer
@@ -307,5 +308,13 @@ val devScreensEndpointFacts: Map<String, EndpointFacts> =
                 summary = "A screen carrying a component no client can render (development only)",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
+        endpointKey<ArriveResource>("POST") to
+            EndpointFacts(
+                summary = "Start a dormant roaming package, as a first attach abroad would (development only)",
+                // 202 rather than 200, and the document says so: the event goes to the broker and the
+                // consumer polls, so the package is not started by the time this answers.
+                successStatus = 202,
+                successContentType = null,
             ),
     )

@@ -236,11 +236,17 @@ def main():
 
     print("{0:34}{1:>10}{2:>10}".format("document", "scenarios", "automated"))
     print("-" * 54)
+    # A document is shown if it has EITHER scenarios or `**Automated:**` lines. Skipping on scenarios
+    # alone hid the case that matters: a document whose headings do not match `### Scenario:` parses
+    # as zero scenarios, drops out of the table, and its automated lines still count towards the
+    # total - which then prints a figure that does not equal its own column, and can read 100% while
+    # the visible rows say 47 of 52. Showing the row with a zero is what names the malformed file.
     for i in sorted(items, key=lambda x: -len(x["scenarios"])):
-        if not i["scenarios"]:
+        if not i["scenarios"] and not i["automated"]:
             continue
-        print("{0:34}{1:>10}{2:>10}".format(i["document"], len(i["scenarios"]),
-                                            len(i["automated"])))
+        print("{0:34}{1:>10}{2:>10}{3}".format(
+            i["document"], len(i["scenarios"]), len(i["automated"]),
+            "   <- automated lines but no `### Scenario:` heading" if not i["scenarios"] else ""))
     print("-" * 54)
     pct = auto * 100 // total if total else 0
     print("{0:34}{1:>10}{2:>10}   ({3}%)".format("TOTAL", total, auto, pct))

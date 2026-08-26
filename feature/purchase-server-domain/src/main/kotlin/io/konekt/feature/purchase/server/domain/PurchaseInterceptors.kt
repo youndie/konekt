@@ -1,6 +1,9 @@
 package io.konekt.feature.purchase.server.domain
 
+import io.konekt.feature.roaming.server.domain.RoamingPackages
+import io.konekt.feature.roaming.server.domain.Zones
 import io.konekt.feature.usage.server.domain.UsageGrants
+import io.konekt.time.KonektClock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -133,6 +136,10 @@ class ProvisionInterceptor(
     // The usage feature's port, named from here on purpose. What an allowance is made of is that
     // domain's business — see UsageGrants — and a purchase only knows it bought a plan.
     private val grants: UsageGrants,
+    // The roaming feature's port, alongside the usage one and for the same reason: a purchase knows
+    // it bought a package for a zone, and what a dormant package IS belongs to that domain.
+    private val roaming: RoamingPackages,
+    private val clock: KonektClock,
 ) : PetichInterceptor<PurchasePayload> {
     override val phase = PetichPhase.EXECUTION
 
@@ -159,7 +166,13 @@ class ProvisionInterceptor(
         // are one thing from the product's side — "make it real". A purchase that captured the money
         // and granted nothing is a subscriber who paid for ten gigabytes and has a home screen that
         // says zero.
-        if (payload.dataMb > 0) grants.grantPlanAllowance(payload.subscriberId, payload.dataMb)
+        //
+        // WHAT "make it real" MEANS DEPENDS ON THE ZONE, and this branch is the only difference
+        // between buying data for home and buying data for a trip. The saga is the same saga —
+        // same validation, same hold, same settlement, same compensation shape — because the money
+        // side of the two is identical and only the provisioning differs. That is D-19's claim, and
+        // it is four lines of it.
+        grantAllowance(petich, payload)
 
         return InterceptorResult.Proceed()
     }
@@ -174,7 +187,48 @@ class ProvisionInterceptor(
         entitlements.cancel(petich.id)
         // Including the allowance, which is the half that is easy to forget: money that comes back
         // while the gigabytes stay is a rollback that costs the operator rather than nobody.
-        if (payload.dataMb > 0) grants.revokePlanAllowance(payload.subscriberId, payload.dataMb)
+        //
+        // Branching on the SAME condition as the grant, which is why both live in one place below. Two
+        // copies of `if (zone == HOME)` is how a rolled-back roaming purchase ends up revoking a home
+        // allowance the subscriber actually paid for.
+        revokeAllowance(petich, payload)
+    }
+
+    private suspend fun grantAllowance(
+        petich: Petich,
+        payload: PurchasePayload,
+    ) {
+        if (payload.dataMb <= 0) return
+        if (payload.zone == Zones.HOME) {
+            grants.grantPlanAllowance(payload.subscriberId, payload.dataMb)
+        } else {
+            // DORMANT, and there is no flag here that could make it otherwise. The subscriber is
+            // standing at home with a package for Turkey; nothing about paying for it means the trip
+            // has started.
+            roaming.grant(
+                orderId = petich.id,
+                subscriberId = payload.subscriberId,
+                zone = payload.zone,
+                limitMb = payload.dataMb,
+                validForDays = payload.validForDays,
+                purchasedAt = clock.now(),
+            )
+        }
+    }
+
+    private suspend fun revokeAllowance(
+        petich: Petich,
+        payload: PurchasePayload,
+    ) {
+        if (payload.dataMb <= 0) return
+        if (payload.zone == Zones.HOME) {
+            grants.revokePlanAllowance(payload.subscriberId, payload.dataMb)
+        } else {
+            // The same key the grant used. The order IS the saga, so a compensation can
+            // always name exactly what it granted rather than searching for something that looks
+            // like it.
+            roaming.revoke(petich.id)
+        }
     }
 }
 

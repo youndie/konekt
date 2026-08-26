@@ -45,7 +45,11 @@ class LiveUpdateScenarioTest {
                     client
                         .post(Purchases()) {
                             bearerAuth(session.accessToken)
-                            setBody(CreatePurchaseRequest("tr-10gb-30d"))
+                            // THE HOME PLAN, and which side of the roaming branch it lands on is
+                            // load-bearing here. Every other plan in the catalogue is a roaming
+                            // package and is provisioned DORMANT — so buying one and waiting for a
+                            // counter to move waits for something that correctly never happens.
+                            setBody(CreatePurchaseRequest("home-20gb-30d"))
                         }.body<PurchaseOrderResponse>()
                 client.post(Purchases.ById.Confirm(Purchases.ById(orderId = started.orderId))) {
                     bearerAuth(session.accessToken)

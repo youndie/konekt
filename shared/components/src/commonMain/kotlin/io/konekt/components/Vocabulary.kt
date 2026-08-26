@@ -18,6 +18,14 @@ object CounterStates {
     const val NORMAL = "normal"
     const val LOW = "low"
     const val EXHAUSTED = "exhausted"
+
+    // BOUGHT AND NOT YET COUNTING — a roaming package waiting for a trip. It is a fourth state rather
+    // than a caption on `NORMAL` because it is the one state where the progress bar means nothing:
+    // the package is full, and it will still be full in a month.
+    //
+    // Safe to add mid-flight for the reason the field is an open string: a client built before this
+    // word existed draws the ordinary card, which is wrong in its colour and right in its numbers.
+    const val DORMANT = "dormant"
 }
 
 // Availability of a plan in the catalogue. `LOADING` is a real state on the wire rather than a

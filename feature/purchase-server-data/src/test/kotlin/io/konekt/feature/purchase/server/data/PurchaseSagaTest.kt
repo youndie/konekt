@@ -10,6 +10,7 @@ import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
+import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
@@ -99,10 +100,22 @@ class PurchaseSagaTest {
     private val ttl = 5.minutes
 
     private val payments = MockPaymentGateway()
+    private val roaming = InMemoryRoamingPackages { clock.now() }
 
     private val engine =
         PetichEngine(
-            interceptors = purchaseInterceptors(balances, entitlements, plans, payments, grants, json, ttl),
+            interceptors =
+                purchaseInterceptors(
+                    balances,
+                    entitlements,
+                    plans,
+                    payments,
+                    grants,
+                    roaming,
+                    clock,
+                    json,
+                    ttl,
+                ),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             clock = clock.asPetichClock(),

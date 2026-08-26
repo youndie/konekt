@@ -47,6 +47,11 @@ object UsageUnits {
             }
         }
 
+    // The same rendering, for callers that hold a number of megabytes rather than a counter — the
+    // roaming cards do. Public so there is ONE place that decides when a figure crosses into
+    // gigabytes: two screens rounding differently is exactly the inconsistency D15 exists to prevent.
+    fun megabytes(megabytes: Long): String = data(megabytes)
+
     private fun data(megabytes: Long): String =
         if (megabytes < MB_PER_GB) {
             "${grouped(megabytes)} MB"

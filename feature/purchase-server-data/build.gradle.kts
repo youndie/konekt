@@ -54,4 +54,5 @@ dependencies {
     // allowance, and asserting that against a double would assert the double.
     testImplementation(project(":feature:usage-server-data"))
     testImplementation(libs.mockk)
+    testImplementation(testFixtures(project(":feature:roaming-server-domain")))
 }

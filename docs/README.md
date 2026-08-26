@@ -98,7 +98,7 @@ it commits konekt to.
 - [x] [konekt-broker](services/konekt-broker.md) — the booblik instance the stand runs: three topics
   fixed at startup, no published port, no consumer offsets
 
-### Features (4)
+### Features (5)
 
 Identity:
 - [x] [feature-authentication](features/feature-authentication.md) — number and one-time code, and
@@ -113,6 +113,8 @@ Line and allowance:
   device limit it is built to be able to refuse for
 - [x] [feature-usage-allowance](features/feature-usage-allowance.md) — what is left, how long it will
   last, and the live update that moves it on screen
+- [x] [feature-roaming](features/feature-roaming.md) — a package bought at home that does nothing until
+  it is used abroad, and is dated from that moment rather than from the purchase
 
 ### Screens / flows (4)
 

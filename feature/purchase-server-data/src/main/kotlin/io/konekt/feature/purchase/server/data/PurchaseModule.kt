@@ -20,7 +20,9 @@ import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.ValidatePurchaseInterceptor
+import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.usage.server.domain.UsageGrants
+import io.konekt.time.KonektClock
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.qualifier.named
@@ -36,6 +38,8 @@ fun purchaseInterceptors(
     plans: PlanCatalog,
     payments: PaymentGateway,
     grants: UsageGrants,
+    roaming: RoamingPackages,
+    clock: KonektClock,
     json: Json,
     confirmationTtl: Duration = DEFAULT_CONFIRMATION_TTL,
 ): List<PetichInterceptor<*>> {
@@ -43,7 +47,7 @@ fun purchaseInterceptors(
     return listOf(
         ValidatePurchaseInterceptor(plans, balances),
         HoldFundsInterceptor(balances, entitlements, events, confirmationTtl),
-        ProvisionInterceptor(balances, entitlements, payments, grants),
+        ProvisionInterceptor(balances, entitlements, payments, grants, roaming, clock),
         AnnouncePurchaseInterceptor(events),
     )
 }

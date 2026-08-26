@@ -5,6 +5,7 @@ import io.konekt.feature.auth.server.data.authModule
 import io.konekt.feature.esim.server.data.esimModule
 import io.konekt.feature.esim.server.domain.SmDpPlus
 import io.konekt.feature.purchase.server.data.purchaseModule
+import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.feature.usage.server.domain.UsageCounters
 import io.konekt.observability.KonektTrace
@@ -55,6 +56,7 @@ class KoinGraphTest {
                 purchaseModule(NO_DATABASE),
                 esimModule(NO_DATABASE),
                 usageModule(NO_DATABASE),
+                roamingModule(NO_DATABASE),
                 io.konekt.serverModule(KonektTrace(agent = null)),
                 org.koin.dsl.module { single { kotlinx.serialization.json.Json } },
             )
@@ -113,6 +115,8 @@ class KoinGraphTest {
             io.konekt.feature.usage.server.domain.UsageCounters::class,
             io.konekt.feature.usage.server.domain.ConsumeUsageUseCase::class,
             io.konekt.feature.usage.server.data.UsageCounterCards::class,
+            io.konekt.feature.roaming.server.domain.RoamingPackages::class,
+            io.konekt.roaming.RoamingPackageCards::class,
             io.konekt.realtime.ComponentBroadcaster::class,
             io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster::class,
             // NOT provided by anything, and the entry is still honest. Every feature module CAPTURES

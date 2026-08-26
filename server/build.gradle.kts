@@ -68,6 +68,8 @@ dependencies {
     implementation(libs.kompot.formStandard)
     implementation(libs.kompot.forms)
     implementation(project(":feature:usage-shared-api"))
+    implementation(project(":feature:roaming-server-data"))
+    testImplementation(testFixtures(project(":feature:roaming-server-domain")))
     implementation(project(":feature:usage-server-data"))
 
     // One platform, and no kompot coordinate below names a version. See gradle/libs.versions.toml.

@@ -10,6 +10,7 @@ import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
+import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
@@ -52,6 +53,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class PaymentDeclineTest {
     private val clock = KonektClock { Instant.fromEpochMilliseconds(1_700_000_000_000) }
+    private val roaming = InMemoryRoamingPackages { clock.now() }
 
     private val json =
         Json {
@@ -81,7 +83,18 @@ class PaymentDeclineTest {
     private fun sagaWith(payments: MockPaymentGateway): Pair<StartPurchaseUseCase, ConfirmPurchaseUseCase> {
         val engine =
             PetichEngine(
-                interceptors = purchaseInterceptors(balances, entitlements, plans, payments, grants, json, 5.minutes),
+                interceptors =
+                    purchaseInterceptors(
+                        balances,
+                        entitlements,
+                        plans,
+                        payments,
+                        grants,
+                        roaming,
+                        clock,
+                        json,
+                        5.minutes,
+                    ),
                 repository = repository,
                 config = PetichEngineConfig(requireOutbox = true),
                 clock = clock.asPetichClock(),

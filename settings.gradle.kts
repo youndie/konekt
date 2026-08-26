@@ -130,6 +130,11 @@ include(":feature:packages-shared-api")
 // The tariff change's addresses and its wire shape. The second saga with a confirmation, so its
 // resource tree looks like the purchase's on purpose — the same shape means the same reading.
 include(":feature:tariff-shared-api")
+
+// Roaming: a package bought at home that does nothing until it is used abroad. A vertical rather than
+// a package, like every other feature — the domain cannot see Exposed, so it cannot depend on it.
+include(":feature:roaming-server-domain")
+include(":feature:roaming-server-data")
 include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")

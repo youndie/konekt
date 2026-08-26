@@ -10,6 +10,7 @@ import io.konekt.db.tables.SubscriberTable
 import io.konekt.events.BrokerHarness
 import io.konekt.events.EventTopics
 import io.konekt.feature.realtime.shared.api.RealtimeStream
+import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
@@ -18,6 +19,7 @@ import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.mocks.traffic.TrafficSimulator
 import io.konekt.mocks.traffic.UsageConsumer
 import io.konekt.realtime.ComponentBroadcaster
+import io.konekt.roaming.RoamingPackageCards
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
@@ -72,6 +74,8 @@ class TrafficChainTest {
     // the same clock the counters were granted on — a card built on the real clock would read
     // "runs out in about 19 000 days" against a counter stamped in 2023.
     private val cards = UsageCounterCards(StaticUsageAddOns(), clock)
+    private val roaming = InMemoryRoamingPackages { clock.now() }
+    private val roamingCards = RoamingPackageCards(clock)
 
     @AfterTest
     fun stop() {
@@ -115,7 +119,12 @@ class TrafficChainTest {
                     }
 
                 val simulator =
-                    TrafficSimulator(producer, subscribers = { listOf(subscriberId) }, megabytesPerTick = 25)
+                    TrafficSimulator(
+                        producer,
+                        subscribers = { listOf(subscriberId) },
+                        travelling = { roaming.travelling() },
+                        megabytesPerTick = 25,
+                    )
                 simulator.tick(handle)
 
                 val consumer = Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first(), start)
@@ -125,6 +134,9 @@ class TrafficChainTest {
                         ConsumeUsageUseCase(counters),
                         push,
                         cards,
+                        roaming,
+                        roamingCards,
+                        clock,
                         json,
                     ).drain(consumer)
 
@@ -148,7 +160,17 @@ class TrafficChainTest {
     fun `stopping the traffic stops the movement and nothing else changes`() =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
+            val consumer =
+                UsageConsumer(
+                    BrokerHarness.connect(),
+                    ConsumeUsageUseCase(counters),
+                    push,
+                    cards,
+                    roaming,
+                    roamingCards,
+                    clock,
+                    json,
+                )
 
             consumer.apply(event(units = 100))
             val afterOne = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA)).remainingUnits
@@ -164,7 +186,17 @@ class TrafficChainTest {
     fun `a counter is floored at zero rather than going negative`() =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 10)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
+            val consumer =
+                UsageConsumer(
+                    BrokerHarness.connect(),
+                    ConsumeUsageUseCase(counters),
+                    push,
+                    cards,
+                    roaming,
+                    roamingCards,
+                    clock,
+                    json,
+                )
 
             consumer.apply(event(units = 400))
 
@@ -180,7 +212,17 @@ class TrafficChainTest {
     fun `the copy changes with the state and not only the colour`(): Unit =
         runBlocking {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
+            val consumer =
+                UsageConsumer(
+                    BrokerHarness.connect(),
+                    ConsumeUsageUseCase(counters),
+                    push,
+                    cards,
+                    roaming,
+                    roamingCards,
+                    clock,
+                    json,
+                )
 
             consumer.apply(event(units = 950))
             val low = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA))
@@ -196,7 +238,17 @@ class TrafficChainTest {
     @Test
     fun `usage for a subscriber who bought nothing is ignored rather than failing`() =
         runBlocking {
-            val consumer = UsageConsumer(BrokerHarness.connect(), ConsumeUsageUseCase(counters), push, cards, json)
+            val consumer =
+                UsageConsumer(
+                    BrokerHarness.connect(),
+                    ConsumeUsageUseCase(counters),
+                    push,
+                    cards,
+                    roaming,
+                    roamingCards,
+                    clock,
+                    json,
+                )
 
             // No counter exists. The simulator does not know who has bought what, and a consumer that
             // threw here would stop the whole poll for everybody else.

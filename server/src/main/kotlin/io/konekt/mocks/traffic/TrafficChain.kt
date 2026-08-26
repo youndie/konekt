@@ -2,10 +2,13 @@ package io.konekt.mocks.traffic
 
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
+import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
 import io.konekt.feature.usage.server.domain.UsageCounters
 import io.konekt.realtime.ComponentBroadcaster
+import io.konekt.roaming.RoamingPackageCards
+import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.serialization.json.Json
@@ -26,6 +29,9 @@ class TrafficChain(
     private val consume: ConsumeUsageUseCase,
     private val push: ComponentBroadcaster,
     private val cards: UsageCounterCards,
+    private val roaming: RoamingPackages,
+    private val roamingCards: RoamingPackageCards,
+    private val clock: KonektClock,
     private val json: Json,
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.traffic.chain")
@@ -53,10 +59,14 @@ class TrafficChain(
                 // events the consumer correctly ignores, and a simulator producing only ignored
                 // events looks exactly like one that is not running.
                 subscribers = { counters.subscribersWithCounters() },
+                // Trips already under way, and nothing else. A dormant package is started by the
+                // arrival route, never by a tick — otherwise the state this feature exists to show is
+                // gone five seconds after the purchase.
+                travelling = { roaming.travelling() },
                 json = json,
             )
 
-        val consumer = UsageConsumer(connection.connection, consume, push, cards, json)
+        val consumer = UsageConsumer(connection.connection, consume, push, cards, roaming, roamingCards, clock, json)
 
         return listOf(simulator.start(scope), consumer.start(scope, partition, from))
     }

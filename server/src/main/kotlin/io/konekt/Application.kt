@@ -35,6 +35,7 @@ import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
@@ -45,6 +46,8 @@ import io.konekt.observability.configureObservability
 import io.konekt.packages.customPackageRoutes
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
+import io.konekt.roaming.RoamingPackageCards
+import io.konekt.roaming.dev.roamingArriveRoutes
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
@@ -248,7 +251,13 @@ fun productionRouteGroups(catalogue: BrandThemeCatalogue): List<RouteGroup> =
 // The development screens, in an entry of their own for the same reason: their existence is a
 // configuration decision rather than a fact about the build. Public, because the screen carries no
 // subscriber's data — two invented counters and a component nobody can render.
-val devScreensRouteGroup: RouteGroup = RouteGroup(AuthTier.PUBLIC) { forwardCompatRoutes() }
+val devScreensRouteGroup: RouteGroup =
+    RouteGroup(AuthTier.PUBLIC) {
+        forwardCompatRoutes()
+        // The arrival route rides the same gate: it is a demonstration control, and a build that ships
+        // one that starts other people's packages has shipped a way to spend their data.
+        roamingArriveRoutes()
+    }
 
 fun devOtpRouteGroup(revealed: () -> RevealedCodes): RouteGroup =
     RouteGroup(AuthTier.PUBLIC) { devOtpRoutes(revealed()) }
@@ -295,6 +304,7 @@ fun Application.module(config: KonektConfig) {
             // reachable from nothing: five imports of this feature sat in this file with no use
             // beneath them.
             usageModule(database),
+            roamingModule(database),
             serverModule(KonektTrace(tracy)),
             petichModule(database, config),
         ),
@@ -362,7 +372,8 @@ fun serverModule(trace: KonektTrace) =
         single { trace }
         single { KompotUpdateBroadcaster() }
         single { ComponentBroadcaster(get(), get()) }
-        single { TrafficChain(get(), get(), get(), get(), get(), get()) }
+        single { RoamingPackageCards(get()) }
+        single { TrafficChain(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     }
 
 // The saga engine and its storage.
@@ -395,6 +406,8 @@ fun petichModule(
                     plans = get(),
                     payments = get(),
                     grants = get(),
+                    roaming = get(),
+                    clock = get(),
                     json = get(),
                 ),
             repository = get<OutboxAwarePetichRepository>(),

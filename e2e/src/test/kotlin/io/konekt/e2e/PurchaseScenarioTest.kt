@@ -37,6 +37,11 @@ import kotlin.test.assertTrue
 class PurchaseScenarioTest {
     private val plan = "tr-10gb-30d"
 
+    // THE HOME PLAN, for the one scenario that is about a counter landing. Every other plan in the
+    // catalogue is a roaming package and is provisioned DORMANT — so buying one and then waiting for
+    // `counter-data` waits forever, correctly. See RoamingScenarioTest for the other branch.
+    private val homePlan = "home-20gb-30d"
+
     @Test
     fun `a purchase that is confirmed completes, and the allowance lands`() =
         runBlocking {
@@ -49,7 +54,7 @@ class PurchaseScenarioTest {
                     client
                         .post(Purchases()) {
                             bearerAuth(session.accessToken)
-                            setBody(CreatePurchaseRequest(plan))
+                            setBody(CreatePurchaseRequest(homePlan))
                         }.let { response ->
                             // 202 and not 201: the usual answer is a saga waiting for a confirmation,
                             // and telling a client the resource is created when the money has only
