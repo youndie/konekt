@@ -99,6 +99,35 @@ That the local port had to move to do it is the compose file's own design paying
 container held 55432, and every port in the stand is overridable precisely so the stand is not the
 thing that refuses to start.
 
+## The degradation sink is bound, and where it can land is measured rather than assumed
+
+The renderer has reported an unknown component through kompot's sink since `B-05`, and konekt bound no
+sink — so the toolkit's default took it, an unknown component was drawn correctly and **counted by
+nothing**, and the blindness [kompot#81](https://github.com/youndie/kompot/issues/81) was filed about
+survived being fixed upstream. A placeholder nobody counts is indistinguishable from a screen that
+never degraded.
+
+`KonektApp` now provides a `KonektDegradationSink` around the whole tree, and `:client:standTest`
+asserts by DATA: rendering `B-25`'s development screen against the running stand produces two records,
+both naming `esim_transfer_widget`, neither marked as a fallback — a hole and a substitution are
+different facts about a screen. Proved by unbinding the sink.
+
+**The output is a parameter and not a dependency, and the reason is a measurement.** What a client can
+report to differs by platform: katcher publishes every Apple target since `client:0.6.2`, while
+tracy's agent publishes `jvm`, `linux_arm64`, `linux_x64` and `macos_arm64` and **no iOS target at
+all** — the published listing has `agent-jvm`, `agent-linuxarm64`, `agent-linuxx64`, `agent-macosarm64`
+and nothing else, with no separate coordinate carrying the rest.
+
+So the third AC's "reaches tracy" is not merely unfinished, it is **unavailable on the platform where
+it matters most**: a phone updates on the subscriber's schedule and a desktop build updates on ours, so
+an out-of-date client is likeliest exactly where the record cannot be sent. Filed as
+[youndie/tracy#16](https://github.com/youndie/tracy/issues/16) — the same shape as katcher#25, which
+closed and gave konekt's iOS build crash reporting.
+
+The default output is named `KonektApp.RECORDS_NOTHING` rather than written as `{ }` at the call site:
+an empty lambda reads as "nothing to do here", and a deployment reporting nothing should be one that
+chose to rather than one that forgot.
+
 ## `wip`, and what is left
 
 - **AC 1's katcher half.** "a katcher report if the route throws" is unproved: nothing in this stand

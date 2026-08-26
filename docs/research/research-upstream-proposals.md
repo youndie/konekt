@@ -316,6 +316,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open; fix proposed in [#2898](https://github.com/JetBrains/Exposed/pull/2898) and verified here |
 | U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | closed, released in `0.31.0.76`; `:client` builds for iOS |
 | U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | closed, released in `0.32.0.77`; our transport decorator deleted |
+| U11 | tracy | the agent publishes no Apple target, so an iOS client cannot log through tracy | [tracy#16](https://github.com/youndie/tracy/issues/16) | open |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -464,3 +465,19 @@ host-picked native target is gone, which was the second, smaller ask in the same
 build **can** report a crash, and `B-27` changes from "write the gap down" to "wire it up". The
 client and the server also now share one version line, so the three katcher entries in the version
 catalogue became two.
+
+**U11 is katcher#25 again, in the other toolkit, and it was found the same way.** konekt's client
+records a degradation — the wire type of a component it could not draw — and the whole value of that
+record is asking later WHICH type and how often. That is an indexed field in tracy. The published
+listing under `ru/workinprogress/tracy/` is `agent`, `agent-jvm`, `agent-linuxarm64`, `agent-linuxx64`,
+`agent-macosarm64` and the matching `shared-*`: no iOS, and no separate coordinate carrying it.
+`macos_arm64` is the desktop host rather than the phone.
+
+The consequence is not "one platform is less observed". It is that the blindness is worst exactly
+where the feature matters most: a desktop build updates on our schedule and a phone updates on the
+subscriber's, so an out-of-date client — the only thing that can meet an unknown component — is
+likeliest on the platform that cannot report it.
+
+`metrik` publishes the same four targets and no iOS. Not filed: what metrik measures is request
+latency on a server, so an absent Apple target is a smaller claim than tracy's and one this build has
+no use for yet. Recorded here so the next reader does not have to measure it again.

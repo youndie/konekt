@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.theme.KonektTheme
@@ -33,6 +34,12 @@ import kotlinx.coroutines.launch
 //   * THE SCREEN IS REFETCHED AFTER THE GAP, in that order. Clearing without refetching leaves the
 //     tree as it was before the gap; refetching without clearing leaves the stale overlay on top of a
 //     correct tree. Neither half is worth anything alone.
+// The default output, named rather than written inline as `{ }`. An empty lambda at a call site reads
+// as "nothing to do here"; a constant with this name reads as what it is.
+object KonektApp {
+    val RECORDS_NOTHING: (KonektDegradation) -> Unit = { }
+}
+
 @Composable
 fun KonektApp(
     screens: ScreenSource,
@@ -40,6 +47,10 @@ fun KonektApp(
     topic: String,
     darkMode: Boolean,
     theme: KompotTheme? = null,
+    // NOT DEFAULTED TO A NO-OP THAT LOOKS LIKE A SINK. A caller that does not want to record says so
+    // by passing this explicitly; the default records nothing and is named for what it is, so a
+    // deployment reporting nothing is a deployment that chose to rather than one that forgot.
+    onDegradation: (KonektDegradation) -> Unit = KonektApp.RECORDS_NOTHING,
 ) {
     var tree by remember(address) { mutableStateOf<KompotComponent?>(null) }
 
@@ -47,6 +58,11 @@ fun KonektApp(
     // privately and empties it only when the topic changes, which konekt never does — so the map has
     // to be ours for the clear below to be possible at all. Reported upstream rather than forked.
     val updates = remember(topic) { mutableStateMapOf<String, KompotComponent>() }
+
+    // PROVIDED AROUND THE WHOLE TREE, because the renderer reads it from a composition local and a
+    // sink provided inside one screen would miss every other. `remember` on the callback so a
+    // recomposition does not build a new sink and, with it, a new "reported once" state.
+    val sink = remember(onDegradation) { KonektDegradationSink(onDegradation) }
 
     LaunchedEffect(address) { tree = screens.fetch(address) }
 
@@ -67,7 +83,10 @@ fun KonektApp(
     }
 
     KonektTheme(theme = theme, darkMode = darkMode) {
-        CompositionLocalProvider(LocalKompotRealtimeUpdates provides updates) {
+        CompositionLocalProvider(
+            LocalKompotRealtimeUpdates provides updates,
+            LocalKompotDegradationSink provides sink,
+        ) {
             tree?.let { screens.render(it) }
         }
     }

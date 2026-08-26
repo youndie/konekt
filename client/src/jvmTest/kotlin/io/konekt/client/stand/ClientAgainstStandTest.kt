@@ -8,6 +8,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.KonektApp
+import io.konekt.client.app.KonektDegradation
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
@@ -31,6 +32,7 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 // THE CLIENT AGAINST THE RUNNING DEPLOYMENT, which is the only place these two halves meet with
 // nothing simulated between them.
@@ -99,6 +101,42 @@ class ClientAgainstStandTest {
             // one component and lost the rest.
             onNodeWithText("Balance").assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun `every unknown component is recorded, with the type it could not draw`() {
+        // B-26's third acceptance criterion, minus where the record lands. Until the sink was bound,
+        // an unknown component was drawn correctly and counted by NOTHING — which is the blindness
+        // youndie/kompot#81 was filed about, surviving being fixed upstream because konekt never
+        // supplied a sink.
+        val http = signedInClient()
+        val recorded = mutableListOf<KonektDegradation>()
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/dev/screens/forward-compat",
+                    topic = "stand",
+                    darkMode = false,
+                    onDegradation = { recorded += it },
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) { recorded.size >= 2 }
+        }
+
+        // TWO, and by the type. A count alone would be satisfied by two records of the same wrong
+        // thing, and the whole point of `originalType` is answering WHICH type went unrendered.
+        assertEquals(2, recorded.size, "expected one record per unknown component")
+        assertTrue(
+            recorded.all { it.originalType == "esim_transfer_widget" },
+            "the records lost the type: ${recorded.map { it.originalType }}",
+        )
+        assertTrue(
+            recorded.none { it.drawnAsFallback },
+            "a placeholder was reported as a fallback — a hole and a substitution are different facts",
+        )
     }
 
     @Test
