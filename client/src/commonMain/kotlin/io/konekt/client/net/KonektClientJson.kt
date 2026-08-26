@@ -1,6 +1,8 @@
 package io.konekt.client.net
 
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
+import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
@@ -29,5 +31,13 @@ val konektClientJson: Json =
             generatedStandardSerializersModule +
             generatedKonektSerializersModule +
             kompotAuthSerializersModule +
-            esimActionsSerializersModule
+            esimActionsSerializersModule +
+            // BOTH FORM MODULES, and a client with only one of them decodes the screen and then dies
+            // on `$.schema.fields[0]` — which is exactly what the stand found the first time it asked
+            // for a form. `generatedFormsSerializersModule` carries the form COMPONENTS, the inputs
+            // and the read-only field; `formStandardSerializersModule` the FIELD DEFINITIONS, the
+            // values and the rules the schema is made of. They are registered separately upstream, so
+            // a client that renders a form needs both and needs to say so.
+            generatedFormsSerializersModule +
+            formStandardSerializersModule
     }

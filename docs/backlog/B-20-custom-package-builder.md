@@ -1,7 +1,7 @@
 ---
 id: B-20
 title: "The custom package builder as a form, with the price coming from the server"
-status: wip
+status: done
 priority: P2
 size: M
 stage: stage-m3-product
@@ -44,20 +44,14 @@ numeric range. It suits a tariff, which sells packages rather than arbitrary num
 the client offers are the same list the server prices — one list, so a client cannot offer a size the
 server refuses.
 
-## The patch mechanism cannot be used, and the kit is what proved it
+## The patch mechanism was blocked upstream, and now is not
 
 B-20 exists to demonstrate `form-core`'s split: local validation, and a price patched in from the
-server without redrawing. **That half is blocked upstream.**
+server without redrawing. **That half was blocked, and the conformance kit is what proved it.**
 
-`FormPatch` updates values in the `FormController`. Only bound components read the controller, and
-every one of them is editable; the single non-editable display, `read_only_field`, is explicitly not
-bound — its renderer draws `component.value` and never touches the controller it is handed. So a
-server-computed value is *either editable or stale*. Filed as
-[youndie/kompot#89](https://github.com/youndie/kompot/issues/89).
-
-The first attempt declared `price` and `balance` as schema fields anyway, with a `MaxAmountRule`
-reading the balance out of a neighbouring field's metadata — the pattern the readme describes. The
-conformance walk refused it the moment it had a form to look at:
+The first attempt declared `price` and `balance` as schema fields, with a `MaxAmountRule` reading the
+balance out of a neighbouring field's metadata — the pattern the readme describes. The walk refused it
+the moment it had a form to look at:
 
 ```
 [form-fields] /api/v1/forms/custom-package — field "balance" is declared but never rendered
@@ -69,15 +63,79 @@ schema declaring a field nothing renders is a schema that lies about its own for
 earning its keep on the first form it ever saw** — the defect was an hour old and invisible from every
 test written for it.
 
-So the two computed values are not fields. The form is refetched with what has been chosen, the price
-and the balance are server-rendered read-only values, and the affordability refusal is a sentence
-beside the balance rather than a `focusOn`.
+The cause was upstream. `FormPatch` updates values in the `FormController`; only bound components read
+the controller, and every one of them was editable. The single non-editable display,
+`read_only_field`, was explicitly not bound — its renderer drew `component.value` and never touched
+the controller it was handed. So a server-computed value was *either editable or stale*. Filed as
+[youndie/kompot#89](https://github.com/youndie/kompot/issues/89) and **fixed in kompot 0.33.0**:
+`read_only_field` takes an optional `fieldId` and is then bound for values and for visibility, and
+editable by nobody.
 
-- AC NOT MET: "moving a slider updates the price without the fields losing focus". A refetch redraws.
-  It needs a bound, non-editable field — kompot#89 — and no arrangement of what exists today avoids it.
-- AC PARTLY: the server refuses a package the balance cannot cover and says so beside the balance.
-  What it cannot do is *highlight the field*: `FormPatch.focusOn` names a fieldId, and the balance
-  cannot be one for the reason above.
+So the shape is now the one the item asked for. Both computed values are declared **and** rendered;
+the GET is the first paint; every change after it is `POST /api/v1/forms/custom-package/patch`
+answering a `FormPatch` with two values and no tree. The refetch is gone.
+
+- AC MET: "moving a slider updates the price without the fields losing focus or resetting."
+  `CustomPackageFormStandTest` renders the real form through the real registry against the running
+  stand, chooses 10 GB, and waits for `$15` — then asserts the chosen quantity is **still 10**. That
+  second assertion is the discriminating one: a refetch would also show the new price, and would not
+  leave the selection standing.
+- AC MET: "a combination the balance cannot cover is refused by the server and the balance field is
+  the one highlighted." `FormPatch.focusOn` names the balance, which it could not do while the balance
+  was not a field. A freshly-opened form says it in words beside the number as well, and the submit
+  route refuses a third time — a rule the client evaluates is a rule the client can skip.
+
+## What the client half cost, which the item did not anticipate
+
+The client did not render forms at all. `kompot-forms` and `kompot-forms-client` were **test-only**
+dependencies with a comment saying why: they were there to make the design-system comparison
+discriminating, "not because this module renders forms yet". Four things had to change, and each was
+found by the stand rather than by reading:
+
+1. Both form modules moved to `commonMain`, and `form-core` and `form-standard` joined them — the
+   components module does not bring them, because a form's wire and a form's logic are separable
+   upstream.
+2. `generatedFormsClientRenderers` joined `konektRegistry()`, unconditionally. A registry that differs
+   between two screens is two clients.
+3. `konektClientJson` gained **both** `generatedFormsSerializersModule` and
+   `formStandardSerializersModule`. With only the first it decoded the screen and died on
+   `$.schema.fields[0]` — the exact failure this item's earlier notes predicted, met in full.
+4. `KonektFormScreen`, the one screen shape that needs more than a tree: it remembers a
+   `FormController` keyed on the form id, so a patch changes values inside a controller that survives.
+
+Two smaller findings, both in the last category of "written and never exercised":
+
+**`rememberCoroutineScope()` was the wrong scope.** It inherits the composition's context, which is
+`Dispatchers.Main` — a patch is network work with no business there. It also made the screen
+untestable: a Compose harness with `kotlinx-coroutines-test` on the classpath and no `setMain` throws
+on first access. The controller now gets a `Dispatchers.Default` scope cancelled by a `DisposableEffect`.
+
+**No form renders in a Compose test without a main dispatcher.** The toolkit's bound components read
+the controller through `collectAsStateWithLifecycle`, which collects on the lifecycle's main
+dispatcher; Skiko's harness provides a frame clock and no `Dispatchers.Main`. The form threw before
+drawing a single field. That is a precondition of testing a form, not a defect in one.
+
+## Proved by mutation
+
+The stand test went green quickly enough to distrust. Two mutations, both restored:
+
+| Mutation | Result |
+|---|---|
+| the screen is given no `patchFetcher` | waits out the 15 s timeout and fails — the price never changes |
+| the price component stops naming its `fieldId` (exactly the pre-0.33.0 behaviour) | fails — the patch lands in the controller and the component does not read it |
+
+The second is the one worth keeping: it reproduces the state kompot#89 described, and the test fails
+in it. So this feature genuinely rests on the upstream fix rather than merely coinciding with it.
+
+## What is still unchecked, and it is named rather than implied
+
+The conformance kit reads four endpoint kinds and a `FormPatch` is none of them, so the patch route is
+walked by nothing and **no protocol check verifies that the fields a patch updates, and the one it
+focuses, are declared**. That is the same class of defect `form-fields` catches on the form itself, and
+it is silent: `FormController` keys by string, so a misspelling applies cleanly and the screen simply
+stops updating. `CustomPackageFormTest.a patch names only fields the schema declares` holds it here —
+a unit test standing in for a protocol check. Filed as
+[youndie/kompot#93](https://github.com/youndie/kompot/issues/93), recorded as U13.
 
 ## Two things the client half taught, both about registration
 

@@ -11,6 +11,8 @@ import androidx.compose.runtime.setValue
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
+import io.github.youndie.kompot.form.PatchFetcher
+import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.theme.KonektTheme
 import kotlinx.coroutines.CancellationException
@@ -110,6 +112,18 @@ interface ScreenSource {
     // root would otherwise have to remember to fetch it, and a root that forgot would draw the
     // application in Material's default purple — which looks like a design decision rather than like
     // a missing call. `null` when the deployment serves none.
+    // A FORM ENDPOINT ANSWERS A SCHEMA AND A TREE, and `fetch` can only decode the tree. Separate
+    // rather than a nullable field on the same result, because a caller that wants a form wants the
+    // schema too — and one that wants a screen must not have to check.
+    suspend fun fetchForm(address: String): KompotFormResponse
+
+    // How that form asks the server to recompute what only the server may compute. See
+    // `KonektFormScreen`.
+    fun patchFetcher(
+        address: String,
+        formId: String,
+    ): PatchFetcher
+
     suspend fun brandTheme(): KompotTheme?
 
     fun updates(topic: String): Flow<ComponentUpdate>

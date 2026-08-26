@@ -5,6 +5,7 @@ import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
+import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
@@ -220,6 +221,18 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
                 // 422 for a quantity that is not one of the sizes this package comes in — refused
                 // rather than rounded, because rounding charges for a package nobody chose.
+                refusals = setOf(404, 422),
+            ),
+        endpointKey<CustomPackagePatch>("POST") to
+            EndpointFacts(
+                summary = "Reprice the custom package without redrawing it",
+                // NO KIND, and that is the honest answer rather than the nearest-looking word. The
+                // kit reads four — form, page, submit, graph — and a `FormPatch` is none of them: it
+                // carries neither a schema, nor a tree, nor an action. Calling it `form` would put it
+                // in front of the `form-fields` check, which would find no schema and quietly pass.
+                successBodyType = "io.github.youndie.kompot.form.FormPatch",
+                // 422 for a quantity outside the steps, the same refusal the GET makes and for the
+                // same reason: the client picks from the list the server prices.
                 refusals = setOf(404, 422),
             ),
         endpointKey<HomeScreenResource>("GET") to

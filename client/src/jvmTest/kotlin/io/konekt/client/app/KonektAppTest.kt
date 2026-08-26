@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
+import io.github.youndie.kompot.form.PatchFetcher
+import io.github.youndie.kompot.forms.KompotFormResponse
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -55,6 +57,17 @@ class KonektAppTest {
             fetches++
             return current
         }
+
+        // No form here either, and refusing is better than answering an empty one: this fixture drives
+        // the clear-then-refetch order, and a fake that quietly returned a blank form would let a
+        // future test ask it for one and believe the answer.
+        override suspend fun fetchForm(address: String): KompotFormResponse =
+            throw UnsupportedOperationException("this fixture serves screens, not forms")
+
+        override fun patchFetcher(
+            address: String,
+            formId: String,
+        ): PatchFetcher = throw UnsupportedOperationException("this fixture serves screens, not forms")
 
         override fun updates(topic: String) = frames.asSharedFlow()
 

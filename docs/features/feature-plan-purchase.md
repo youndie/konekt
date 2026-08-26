@@ -56,6 +56,29 @@ saga that already records every step it took.
   changes the state** — so "the work happened but nobody was told" is structurally impossible.
 * History contains **everything that moved money**, and nothing else.
 
+### The custom package
+
+A subscriber can also build a package instead of choosing one: three quantities — gigabytes, minutes,
+messages — and a price that changes as they move.
+
+* **Quantities are a choice from a list, not a number.** The wire has no slider: kompot's standard
+  field set is text, amount, checkbox, autocomplete and selection. It suits a tariff, which sells
+  packages rather than arbitrary numbers, and the steps the client offers are the same list the server
+  prices — so a client cannot offer a size the server refuses.
+* **The price is the server's, always.** A price computed on the client is a price a client can argue
+  with. It arrives as a `FormPatch` when a quantity moves, lands in a bound `read_only_field`, and
+  nothing is redrawn.
+* **A computed value is bound and not editable.** Both `price` and `balance` are declared fields *and*
+  rendered, which is what lets a patch reach them. Until kompot 0.33.0 that was impossible — every
+  bound component was editable and the one non-editable display was unbound — so the price was either
+  something a subscriber could type into or something correct once and stale after.
+* **A quantity outside the steps is refused, not rounded**, on both doors: the form endpoint and the
+  patch endpoint. Rounding would charge for a package nobody chose.
+* **Money is formatted on the server even here.** The renderer draws a field's `plainValue` verbatim,
+  so the patch carries `"$15"` and not `15_00` — the client owns no formatter for money at all.
+* **A package beyond the balance is refused by the server**, and the patch focuses the balance field
+  rather than the price: the price is right, it is the money behind it that is not there.
+
 ## 3. Flow
 
 The four interceptors, in petich's phase order
@@ -88,6 +111,8 @@ keyed by order id.
 | konekt-server | `feature/purchase-shared-api/src/commonMain/kotlin/io/konekt/feature/purchase/shared/api/PurchaseApi.kt` — the contract |
 | konekt-server | `server/src/main/kotlin/io/konekt/Application.kt` — `petichModule`: the engine, the phase timeout, `requireOutbox = true` |
 | konekt-broker | `server/src/main/kotlin/io/konekt/events/BooblikOutboxPublisher.kt` — the transport petich does not provide |
+| konekt-server | `server/src/main/kotlin/io/konekt/packages/` — the custom package builder: the tariff, the form, the patch route |
+| konekt-client | `client/src/commonMain/kotlin/io/konekt/client/app/KonektFormScreen.kt` — the one screen shape that needs a `FormController` |
 
 ## 5. Scenarios (BDD / test cases)
 
@@ -174,15 +199,65 @@ keyed by order id.
 * **Then:** it is `rejected` — a subscriber is created with zero and **nothing in the product adds
   money**. Manual, and it is `B-40`. The e2e stand works around it with an `UPDATE` in SQL.
 
+### Scenario: choosing a quantity reprices the form without redrawing it
+
+```gherkin
+Given the custom package form is open on an empty package
+When the subscriber chooses 10 GB of data
+Then the price becomes "$15", which only the server could have composed
+And the chosen quantity is still 10, because nothing was refetched
+```
+
+**Automated:** `client CustomPackageFormStandTest`, `e2e CustomPackageScenarioTest`
+
+### Scenario: a patch carries two values and no tree
+
+```gherkin
+Given a form whose data quantity has just moved to 10 GB
+When the client posts the form's current state to the patch endpoint
+Then the answer updates exactly "price" and "balance"
+And it carries no schema and no component tree
+And it focuses the balance, because a new subscriber cannot afford $15
+```
+
+**Automated:** `e2e CustomPackageScenarioTest`, `server CustomPackageFormTest`
+
+### Scenario: a size the package does not come in is refused on both doors
+
+```gherkin
+Given a quantity of 7 GB, which is between two steps
+When it is sent to the form endpoint or to the patch endpoint
+Then both answer 422 rather than rounding it
+```
+
+**Automated:** `e2e CustomPackageScenarioTest`
+
 ## 6. Out of scope
 
 * Adding money to an account (`B-40`), and any real payment provider: no card is ever touched.
-* A real plan catalogue with prices that move and a zone per plan (`B-19`). Three plans are in
-  memory, one of them deliberately sold out because that is the fixture the refusal path needs.
+* A real plan catalogue with prices that move. Four plans are in memory, one of them deliberately sold
+  out because that is the fixture the refusal path needs. A zone per plan is no longer out of scope —
+  see [feature-roaming](feature-roaming.md), which is what made three of those four dormant on
+  purchase.
 * Changing a tariff (`B-21`), which is its own saga.
 * Buying the add-on that the low counter card offers. The offer is copy; nothing sells one.
+* Promotional pricing on a custom package. One tariff function, no campaign layer: a discount that is
+  a second function is a second thing to keep in step with the first.
 
 ## 7. Quirks
+
+- **The custom package's computed values were fields, then were not, then were again.** Declared and
+  rendered by nothing, the conformance kit refused them on sight — correctly, SPEC §9.2. The cause was
+  upstream ([kompot#89](https://github.com/youndie/kompot/issues/89)) and the interim shape was a
+  refetch, which cost exactly what `FormPatch` exists to save.
+- **Nothing checks a patch's field names.** The conformance kit reads four endpoint kinds and a
+  `FormPatch` is none of them, so the patch route is walked by nothing. A patch naming a field the
+  schema does not declare applies cleanly — the controller keys by string — and the screen simply
+  stops updating. A unit test stands in for the protocol check;
+  [kompot#93](https://github.com/youndie/kompot/issues/93).
+- **A form needs a main dispatcher to render in a test at all.** The toolkit's bound components read
+  the controller through `collectAsStateWithLifecycle`; Compose's Skiko harness provides a frame clock
+  and no `Dispatchers.Main`, so a form throws before drawing a field.
 
 - **petich's `FAILED` is the product's `compensated`.** A cleanly rolled-back saga ends in `FAILED`,
   and showing a subscriber "failed" would be wrong twice over. A compensation that itself failed does

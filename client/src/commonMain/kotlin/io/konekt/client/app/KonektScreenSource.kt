@@ -8,13 +8,21 @@ import io.github.youndie.kompot.KompotRegistry
 import io.github.youndie.kompot.KompotScreen
 import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.form.FormController
+import io.github.youndie.kompot.form.FormPatch
 import io.github.youndie.kompot.form.FormSchema
+import io.github.youndie.kompot.form.PatchFetcher
+import io.github.youndie.kompot.forms.FormPatchRequest
+import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.io.IOException
@@ -38,6 +46,37 @@ class KonektScreenSource(
     // A missing kit is `null` and not a failure. A deployment that serves no theme is a deployment
     // in the default palette, which is a coherent thing to be; making it fatal would stop an
     // application from starting over a colour.
+    // A FORM, WHICH IS NOT A TREE. `fetch` decodes a `KompotComponent`; a form endpoint answers a
+    // `KompotFormResponse` — a schema and a tree — and decoding one as the other loses the half that
+    // makes the fields work.
+    override suspend fun fetchForm(address: String): KompotFormResponse =
+        json.decodeFromString(KompotFormResponse.serializer(), http.get(address).bodyAsText())
+
+    // The patch, in the shape `FormController` asks for: it hands over the field that moved and the
+    // whole form as it currently stands, and expects the changes back.
+    //
+    // THE SERVER IS SENT THE SNAPSHOT AND TRUSTED WITH NOTHING FROM IT that it computes itself — the
+    // price travels in this payload and is recomputed on arrival. Sending it is how the toolkit's
+    // contract works, not a claim that it means anything.
+    // The form id is a PARAMETER rather than something read out of `values`: the toolkit's
+    // `PatchFetcher` is `(fieldId, values) -> FormPatch` and carries no form id at all, so the caller
+    // — which holds the schema — supplies it.
+    override fun patchFetcher(
+        address: String,
+        formId: String,
+    ): PatchFetcher =
+        { fieldId, values ->
+            val body = FormPatchRequest(formId = formId, fieldId = fieldId, values = values)
+            json.decodeFromString(
+                FormPatch.serializer(),
+                http
+                    .post(address) {
+                        contentType(ContentType.Application.Json)
+                        setBody(json.encodeToString(FormPatchRequest.serializer(), body))
+                    }.bodyAsText(),
+            )
+        }
+
     override suspend fun brandTheme(): KompotTheme? =
         // A PRECISE `try`, never `runCatching`. Plain `runCatching` swallows `CancellationException`,
         // and this runs inside a `LaunchedEffect` — so a composable leaving the tree would find its

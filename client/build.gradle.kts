@@ -54,6 +54,25 @@ kotlin {
             api(libs.kompot.theme)
             api(libs.kompot.themeClient)
 
+            // FORMS, AND THEY ARE A MAIN DEPENDENCY NOW. They were a test-only one, with a comment
+            // saying so outright: the form module was there to make the design-system comparison
+            // discriminating, "not because this module renders forms yet". B-20 is when it does — the
+            // custom package builder is a form, and a client that cannot render one cannot show it.
+            //
+            // Both halves, because a form is registered twice: `kompot-forms` carries the components
+            // and the field definitions the schema is made of, `kompot-forms-client` the renderers
+            // that draw them. A client with only one decodes the screen and fails on
+            // `$.schema.fields[0]`, which is what the stand suite found the first time it asked for a
+            // form.
+            api(libs.kompot.forms)
+            api(libs.kompot.formsClient)
+            // And the two under them: `form-core` is the controller and the patch, `form-standard`
+            // the field definitions, values and rules a schema is made of. The components module does
+            // not bring them — the split is deliberate upstream, a form's WIRE and a form's LOGIC
+            // being separable — so a client that decodes a schema names them itself.
+            api(libs.kompot.formCore)
+            api(libs.kompot.formStandard)
+
             api(project(":shared:components"))
             // The wire this client speaks to, so a path is never written as a string here either.
             api(project(":feature:auth-shared-api"))
@@ -126,16 +145,6 @@ kotlin {
             implementation(libs.ktor.server.sse)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.compose.uiTest)
-
-            // A TEST dependency and not a main one, and the reason is the whole point of the fixture
-            // it serves. Only three renderers in the toolkit read the surface hook — button,
-            // text_input and read_only_field — and of those, only the two form ones answer
-            // differently from Material's default under konekt's brand: a Material button is already
-            // a pill, so a button alone cannot tell a design system that answers from one that does
-            // not. The form module is here to make the comparison discriminating, not because this
-            // module renders forms yet.
-            implementation(libs.kompot.forms)
-            implementation(libs.kompot.formsClient)
         }
     }
 }
