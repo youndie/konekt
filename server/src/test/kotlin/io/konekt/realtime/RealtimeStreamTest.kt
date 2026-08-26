@@ -24,7 +24,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -88,12 +91,28 @@ class RealtimeStreamTest {
             // and it is worth meeting it here rather than in a client.
             client.sse("/api/v1/realtime", request = { header(HttpHeaders.Authorization, "Bearer anything") }) {
                 val sent = card("9975 MB left")
-                push.push("sub-1", "counter-data", sent)
 
-                // Bounded, because the failure this test exists for is SILENCE: a broadcaster that
-                // was never started delivers nothing at all, and without a timeout the test would
-                // hang instead of failing.
-                val event = withTimeout(5.seconds) { incoming.first() }
+                // PUSHED UNTIL IT LANDS, not once. Opening the client side of an SSE connection does
+                // not mean the server's route has run far enough to subscribe, and a push with nobody
+                // subscribed is DROPPED rather than queued — which the "a client that goes away is
+                // forgotten" test below states outright. So a single push here is a race, and it is
+                // one a timeout cannot rescue: the frame is not late, it never existed. It lost on CI
+                // for the first time after a commit that touched neither this file nor the broadcaster.
+                //
+                // Repeating does not weaken the assertion. What is under test is that a component
+                // pushed for a subscriber reaches that subscriber's stream as a decodable frame; that
+                // the first push had to race the handshake is the harness's problem, not the seam's.
+                val event =
+                    withTimeout(10.seconds) {
+                        val pushing =
+                            launch {
+                                while (isActive) {
+                                    push.push("sub-1", "counter-data", sent)
+                                    delay(50)
+                                }
+                            }
+                        incoming.first().also { pushing.cancel() }
+                    }
                 val message = json.decodeFromString(UpdateComponentMessage.serializer(), event.data!!)
 
                 // The id is what makes an update an update: the client replaces the node it names, so
@@ -110,12 +129,22 @@ class RealtimeStreamTest {
             val client = createClient { install(ClientSSE) }
 
             client.sse("/api/v1/realtime", request = { header(HttpHeaders.Authorization, "Bearer anything") }) {
-                // Somebody else's first. If the topic were not per subscriber this would arrive here,
-                // and the assertion below would read it as ours.
-                push.push("sub-2", "counter-data", card("theirs"))
-                push.push("sub-1", "counter-data", card("mine"))
-
-                val event = withTimeout(5.seconds) { incoming.first() }
+                // Somebody else's first, every round. If the topic were not per subscriber, theirs
+                // would arrive here and the assertion below would read it as ours. Repeated for the
+                // reason the test above is: a push before the route has subscribed is dropped, and
+                // the ordering that matters is within each round rather than across the run.
+                val event =
+                    withTimeout(10.seconds) {
+                        val pushing =
+                            launch {
+                                while (isActive) {
+                                    push.push("sub-2", "counter-data", card("theirs"))
+                                    push.push("sub-1", "counter-data", card("mine"))
+                                    delay(50)
+                                }
+                            }
+                        incoming.first().also { pushing.cancel() }
+                    }
                 val message = json.decodeFromString(UpdateComponentMessage.serializer(), event.data!!)
 
                 assertEquals("mine", (message.component as UsageCounterCardComponent).valueText)
