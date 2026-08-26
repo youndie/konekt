@@ -5,7 +5,7 @@ status: wip
 priority: P1
 size: S
 stage: stage-m4-proof
-blocked_by: [B-26]
+blocked_by: [B-26, B-43]
 ---
 
 # B-27 — Wire katcher into the iOS build, now that it has an Apple target

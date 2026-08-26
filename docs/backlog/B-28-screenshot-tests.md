@@ -5,7 +5,7 @@ status: wip
 priority: P2
 size: M
 stage: stage-m4-proof
-blocked_by: [B-22]
+blocked_by: [B-22, B-43]
 ---
 
 # B-28 — Screenshot tests for the counter states and both brands

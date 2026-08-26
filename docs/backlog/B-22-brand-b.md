@@ -5,7 +5,7 @@ status: wip
 priority: P1
 size: M
 stage: stage-m3-product
-blocked_by: [B-04]
+blocked_by: [B-04, B-43]
 ---
 
 # B-22 — Brand B: the colour kit ships from the server, the shape scale ships with the client
