@@ -49,3 +49,51 @@ off unless somebody switches them on. A second environment is the cheapest test 
 
 Background: [B-47](B-47-first-release-tag.md) is what makes an image exist to deploy;
 [B-22](B-22-brand-b.md) is the claim the brand value is here to test.
+
+## What landed
+
+**It is deployed and serving.** `https://konekt.kotlin.website/health` answers `ok` from
+`ghcr.io/youndie/konekt-server:v0.1.2` — a published artefact, not a tree — with Postgres and the
+broker beside it in namespace `konekt`. The chart is in this repository, the contour's values and the
+deploy are in `infra` (`k8s/konekt/`), which is the split three neighbouring products already use.
+
+**The whole product works against it, driven over the public address.** A number asked for a code,
+the code was read from the pod's log (the mock delivery writes it at WARN — that is the sign-in path
+when `dev.revealOtp` is off), the session came back as an `update_session`, a top-up of $50 landed, a
+plan was bought and confirmed, and the balance read `$35`. Then the data counter moved on its own —
+`progress` 0.00488 → 0.00732 in twelve seconds — which is the broker chain running in the cluster:
+simulator, broker, consumer, counter, screen.
+
+**The broker is closed, and the rule is proved in both directions.** A busybox pod in the same
+namespace cannot open 9092 on it; the same pod wearing `app: konekt` can. One of those alone would
+have been worthless — a refusal on its own is equally consistent with a broker that is simply not
+listening, which is the shape of negative result this repository has been caught by before.
+
+**The RBAC guard was wrong in a way worth keeping.** It asked `kubectl get rolebinding infra-deployer`
+and failed on a namespace whose RoleBinding had been applied two minutes earlier: the deploy account's
+role covers exactly what the chart renders, and `rolebindings` are not in it — so `get` answered
+Forbidden and the check read that as absent, advising that what was already applied be applied.
+`kubectl auth can-i list secrets` is what it should have been, and what `deploy-kobweb-ssr` already
+was: a SelfSubjectAccessReview any authenticated client may create, answering about the operation
+actually needed rather than about an object nobody may read.
+
+## The fourth criterion is half met, and the halves are different
+
+**tracy: met.** `konekt-server` reports one instance, and the purchase made through the public address
+is findable by its `orderId` — the record names the pod it came from. Read at the collector rather
+than at the agent, which is the only place that distinction can be made.
+
+**metrik: NOT confirmed, and that is not the same as absent.** metrik's ingest is UDP: a send always
+succeeds, so nothing on this side can tell a working pipeline from a silent one. The internal metrik's
+own API sits behind the browser proxy (`401 missing X-Auth-Request-User`) and there is no MCP server
+configured for it here — the only one is `metrik.stokker.shop`, a different contour, whose service
+list says nothing about this deployment. Forging the proxy's identity header to read it is exactly
+what the header must not be used for, so this stays unconfirmed until somebody looks at
+`metrik.kotlin.website` or an MCP is pointed at it.
+
+**katcher: off on purpose, and it is the one thing to do next.** `Katcher.catch` posts with an app
+key and the collector looks it up; katcher's app list has nine applications and none is `konekt-server`.
+A key naming nothing is every report refused, silently, and from the agent's side that is
+indistinguishable from an agent that never started — so both fields are empty, which the server reads
+as a decision rather than as a half-configuration. Creating the application is katcher's own step: the
+key is GENERATED on its side, so no values file can know it in advance.

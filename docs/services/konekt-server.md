@@ -136,6 +136,10 @@ is the profile a coroutine-per-connection engine is shaped for. See
 - **Where the environment lives:** the cluster's values and its deploy workflow are in the
   `infra` repository (`k8s/konekt/`), the shape three neighbouring products already use. The chart
   carries no addresses and no keys.
+- **The deployed instance:** `https://konekt.kotlin.website`, running the published image. There is
+  no browser surface — the client is Compose on a desktop or a phone — so the way to use it is
+  `KONEKT_URL=https://konekt.kotlin.website ./gradlew :client:run`, and the one-time code is read
+  from `kubectl -n konekt logs deploy/konekt`, because `DEV_REVEAL_OTP` is off there. `B-48`.
 - **The broker is closed by a NetworkPolicy rather than by the absence of a `ports:` line.** In
   compose that absence is its whole security model — it speaks a plaintext protocol with neither TLS
   nor authentication, both deliberately absent — and a namespace gives nothing for free: a ClusterIP
