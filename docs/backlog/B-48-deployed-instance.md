@@ -96,3 +96,17 @@ indistinguishable from an agent that never started. So the deployment ran with b
 which the server reads as a decision rather than as a half-configuration, until the application was
 registered and its GENERATED key existed to point at. That is the same reason the compose stand seeds
 its collector directly instead of calling an endpoint.
+
+**And then it was made to crash, because configured is not received.** There was no free way to do
+it: every malformed input this server takes answers 404 or 422, which is the domain refusing rather
+than the process failing, and refusals are deliberately never reported. So the deliberate-failure
+route was switched on for two requests and switched off again — it is PUBLIC and reliably answers
+500, which is a denial-of-service primitive rather than a demonstration if it stays. The report
+arrived: one group, two occurrences, `java.lang.IllegalStateException`, frames resolving to the line
+in this repository that raises it, and — the part that matters — `release: v0.1.2`, `environment:
+stage`. A crash group that cannot say which build produced it is one nobody can act on, and that was
+the whole of `B-47`'s second criterion, now shown on a deployed build rather than on a stand.
+
+The switch also mounts the forward-compatibility screen, which is the one thing a showcase might
+legitimately want. Wanting it is not a reason to leave this on: the two would have to be separated in
+the server first.
