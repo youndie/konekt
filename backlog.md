@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (10)
+## Open (9)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -51,12 +51,11 @@ so re-prioritising must never move a file.
 | [B-43](docs/backlog/B-43-client-composition-root.md) `[~]` | The client has every part of an application and no application | P1 | L | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[~]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
-| [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |
 | [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[~]` | A route that sends a component the client does not know, on purpose | P2 | S | B-05 |
 | [B-28](docs/backlog/B-28-screenshot-tests.md) `[~]` | Screenshot tests for the counter states and both brands | P2 | M | B-22, B-43 |
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (33)
+## Closed (34)
 
 **The wire and the shell**
 
@@ -94,6 +93,7 @@ so re-prioritising must never move a file.
 
 **The rest of the product**
 
+- [B-21](docs/backlog/B-21-tariff-change.md) `[x]` - Changing tariff, as a saga with a confirmation
 - [B-22](docs/backlog/B-22-brand-b.md) `[x]` - Brand B: the colour kit ships from the server, the shape scale ships with the client
 - [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[x]` - A subscriber is created with nothing and there is no way to add any
 

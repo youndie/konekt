@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":feature:realtime-shared-api"))
     implementation(project(":feature:theme-shared-api"))
     implementation(project(":feature:packages-shared-api"))
+    implementation(project(":feature:tariff-shared-api"))
 
     // THE FORM HALF OF THE TOOLKIT, used here for the first time. `form-core` is the schema and the
     // controller contract, `form-standard` its field and rule set, and `kompot-forms` the components
@@ -157,6 +158,7 @@ dependencies {
     testFixturesApi(project(":feature:realtime-shared-api"))
     testFixturesApi(project(":feature:usage-shared-api"))
     testFixturesApi(project(":feature:packages-shared-api"))
+    testFixturesApi(project(":feature:tariff-shared-api"))
     testFixturesApi(libs.kotlinx.serialization.json)
 }
 

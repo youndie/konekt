@@ -10,6 +10,7 @@ import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
+import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.screens.dev.ForwardCompatScreenResource
@@ -192,6 +193,20 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyType = "io.konekt.feature.purchase.shared.api.TopUpResponse",
                 // 404 and not 403 for somebody else's top-up — a 403 is an enumeration oracle.
                 refusals = setOf(404),
+            ),
+        endpointKey<TariffChanges>("POST") to
+            EndpointFacts(
+                summary = "Ask to change tariff, from the next billing boundary",
+                successBodyType = "io.konekt.feature.tariff.shared.api.TariffChangeResponse",
+                // 404 for a tariff that is not in the catalogue; 409 when a change is already waiting
+                // for a confirmation — one at a time, because two would race for the same boundary.
+                refusals = setOf(404, 409),
+            ),
+        endpointKey<TariffChanges.ById.Confirm>("POST") to
+            EndpointFacts(
+                summary = "Answer the confirmation the tariff change is waiting for",
+                successBodyType = "io.konekt.feature.tariff.shared.api.TariffChangeResponse",
+                refusals = setOf(404, 409),
             ),
         endpointKey<CustomPackageForm>("GET") to
             EndpointFacts(

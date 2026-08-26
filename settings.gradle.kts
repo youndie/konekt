@@ -126,6 +126,10 @@ include(":feature:theme-shared-api")
 // server because three parties spell them — the schema, the tree and the patch — and the form
 // controller keys by string, so a typo is a field that silently never updates.
 include(":feature:packages-shared-api")
+
+// The tariff change's addresses and its wire shape. The second saga with a confirmation, so its
+// resource tree looks like the purchase's on purpose — the same shape means the same reading.
+include(":feature:tariff-shared-api")
 include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")

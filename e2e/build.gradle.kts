@@ -14,6 +14,7 @@ dependencies {
     testImplementation(project(":feature:realtime-shared-api"))
     testImplementation(project(":feature:esim-shared-api"))
     testImplementation(project(":feature:packages-shared-api"))
+    testImplementation(project(":feature:tariff-shared-api"))
     testImplementation(project(":shared:domain"))
     testImplementation(project(":shared:components"))
 

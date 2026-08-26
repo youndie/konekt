@@ -56,3 +56,35 @@ object EsimTable : Table("esim") {
 // One list, so a table added without being registered is invisible to the schema test — the same
 // arrangement as konektWireNames for the component dictionary, and for the same reason.
 val konektCoreTables: List<Table> = listOf(SubscriberTable, AccountTable, EsimTable)
+
+// Every tariff a subscriber has been on, and the one they asked for next.
+//
+// A log rather than a column on `subscriber`: "since when" and "what before" come free, and a change
+// still awaiting confirmation has somewhere to sit that is not also the current answer. The same
+// shape `ledger_entry` uses, for the same reason.
+object TariffChangeTable : Table("tariff_change") {
+    val id = varchar("id", 64)
+
+    // The saga that owns the row. Unique, so a retried saga cannot leave two.
+    val changeId = varchar("change_id", 64).uniqueIndex("uq_tariff_change_change_id")
+    val subscriberId =
+        varchar("subscriber_id", 64)
+            .references(SubscriberTable.id)
+    val fromTariffId = varchar("from_tariff_id", 64)
+    val toTariffId = varchar("to_tariff_id", 64)
+    val status = varchar("status", 16)
+    val effectiveAt = long("effective_at")
+    val createdAt = long("created_at")
+
+    override val primaryKey = PrimaryKey(id, name = "pk_tariff_change")
+
+    init {
+        // Both questions this table is asked — what is current, and is anything pending — filter by
+        // subscriber and status, so one index serves both.
+        index("idx_tariff_change_subscriber_id_status", false, subscriberId, status)
+    }
+
+    const val PENDING = "pending"
+    const val APPLIED = "applied"
+    const val CANCELLED = "cancelled"
+}

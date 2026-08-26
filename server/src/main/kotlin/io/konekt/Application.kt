@@ -28,6 +28,7 @@ import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.data.topUpRoutes
+import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
 import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
@@ -47,6 +48,17 @@ import io.konekt.realtime.realtimeRoutes
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
+import io.konekt.tariff.ConfirmTariffChangeUseCase
+import io.konekt.tariff.ExposedTariffChanges
+import io.konekt.tariff.StartTariffChangeUseCase
+import io.konekt.tariff.StaticTariffCatalogue
+import io.konekt.tariff.TARIFF_CHANGE_SAGA_TYPE
+import io.konekt.tariff.TariffCatalogue
+import io.konekt.tariff.TariffChangePayload
+import io.konekt.tariff.TariffChanges
+import io.konekt.tariff.TariffConfirmation
+import io.konekt.tariff.tariffInterceptors
+import io.konekt.tariff.tariffRoutes
 import io.konekt.theme.BrandThemeCatalogue
 import io.konekt.theme.themeRoutes
 import io.konekt.time.KonektClock
@@ -196,6 +208,7 @@ val konektRoutes: List<RouteGroup> =
             esimWizardRoutes()
             homeRoutes()
             customPackageRoutes()
+            tariffRoutes()
             realtimeRoutes()
         },
     )
@@ -422,6 +435,24 @@ fun petichModule(
         )
     }
 
+    // THE THIRD SAGA TYPE, and the third engine. petich resolves nothing by type — an engine is a
+    // fixed interceptor list — so the qualifier is what keeps a tariff change from being handed to the
+    // purchase engine, which supports none of its steps and would complete having done nothing.
+    single<TariffCatalogue> { StaticTariffCatalogue() }
+    single<TariffChanges> { ExposedTariffChanges(database, get()) }
+
+    single(named(TARIFF_CHANGE_SAGA_TYPE)) {
+        PetichEngine(
+            interceptors = tariffInterceptors(get(), get(), get(), DEFAULT_CONFIRMATION_TTL),
+            repository = get<OutboxAwarePetichRepository>(),
+            config = PetichEngineConfig(requireOutbox = true),
+            clock = get<KonektClock>().asPetichClock(),
+        )
+    }
+
+    factory { StartTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get(), get()) }
+    factory { ConfirmTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get()) }
+
     single(named(TOP_UP_SAGA_TYPE)) {
         PetichEngine(
             interceptors = topUpInterceptors(balances = get(), payments = get(), json = get()),
@@ -462,9 +493,15 @@ private val petichSerializersModule =
             // POST. Not hypothetical — it is one of the four defects the stand found on its first
             // boot, when the PURCHASE payload was the one missing from here.
             subclass(TopUpPayload::class)
+            subclass(TariffChangePayload::class)
         }
         polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
-        polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
+        polymorphic(ResumePayload::class) {
+            subclass(PurchaseConfirmation::class)
+            // The tariff change's own confirmation. Without it a resume decodes to nothing and the
+            // saga waits forever — on the one request the confirmation exists for.
+            subclass(TariffConfirmation::class)
+        }
     }
 
 // THE ONE COMPONENT TYPE THE CLIENT MUST NOT HAVE, and it is declared in `:server` rather than in
