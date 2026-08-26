@@ -184,17 +184,26 @@ class ClientAgainstStandTest {
             onNodeWithText("9.7 GB left").assertIsDisplayed()
             onNodeWithText("120 min left").assertIsDisplayed()
 
-            // And the blocks. TWO of them, both in the LINE density — deliberately asserted as two
-            // rather than as "at least one", because one block plus one silently-dropped component
-            // is exactly the failure this screen exists to make visible.
+            // And the blocks. ONE OF EACH DENSITY, which is B-25's first acceptance criterion and
+            // was unreachable until a container decided: the local was declared, read by the
+            // renderer, and provided by nothing but the renderer's own test. Both blocks drew the
+            // same shape while the screen's comment claimed one of each.
+            //
+            // Asserted as exact counts rather than "at least one", because one block plus one
+            // silently-dropped component is exactly the failure this screen exists to make visible.
             //
             // The copy says what to do rather than what is missing: `originalType` is deliberately
             // NOT on screen — it is a wire name a subscriber cannot act on — so the assertion is on
             // the sentence the canvas specifies.
             assertEquals(
-                2,
+                1,
                 onAllNodesWithText(UnknownBlockRenderer.LINE_TEXT).fetchSemanticsNodes().size,
-                "expected both unknown components to draw the line block",
+                "the block inside the row did not draw the line density",
+            )
+            assertEquals(
+                1,
+                onAllNodesWithText(UnknownBlockRenderer.HEADLINE).fetchSemanticsNodes().size,
+                "the block standing in the column did not draw the card density",
             )
         }
     }

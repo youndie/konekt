@@ -1,7 +1,7 @@
 ---
 id: B-28
 title: "Screenshot tests for the counter states and both brands"
-status: wip
+status: done
 priority: P2
 size: M
 stage: stage-m4-proof
@@ -203,16 +203,3 @@ blank or single-coloured. That is what catches a bad recording that was recorded
   puts `viddikVerify` inside `:client:check`, and the build job already runs `./gradlew build`, so the
   comparison runs in CI without a job of its own. That is worth re-checking if the goldens ever move
   behind a task `build` does not reach.
-
-## Why this item is `wip` rather than `done`
-
-The harness, the eight goldens and both guards are in and proved. What is open is AC 2, and it is
-open because **its premise is false rather than because the work was not done**: it asks a mutation of
-brand A's `lg` to fail the brand A goldens, and brand A's `lg` is drawn by nothing in this build, so
-no fixture can make that mutation fail. The property the AC exists for is proved through `md` above.
-
-Closing it means deciding what brand A's `lg` is for — give the large radius a surface role of its
-own (a full-bleed card or a sheet is the obvious candidate, and the canvas states 36 for a reason), or
-strike it from the scale and from the canvas. Either answer makes the AC either satisfiable or
-unnecessary. Guessing which, in a screenshot item, would be deciding a design question through a test
-fixture.

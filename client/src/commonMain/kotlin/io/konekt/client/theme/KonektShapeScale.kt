@@ -26,9 +26,26 @@ data class KonektShapeScale(
     val pillButtons: Boolean,
 ) {
     val largeShape: Shape get() = RoundedCornerShape(large)
+
+    // WHETHER `large` IS DRAWN AT ALL, and it is a property of the scale rather than of a screen.
+    //
+    // `largeShape` is read by exactly one thing — `buttonShape`, and only when pills are off. So a
+    // brand with `pillButtons = true` states a large radius that nothing in this build can draw:
+    // brand A's 36 was measured to change nothing on any screen when set to 8.
+    //
+    // That is not a defect and it is not a gap waiting for a surface. It is what a pill MEANS: a
+    // shape that follows the height of what it wraps has no radius to take from a scale. Saying so in
+    // the type is what stops the next reader from either wiring `lg` somewhere to make a golden bite,
+    // or deleting a number brand B genuinely draws.
+    //
+    // B-28 asked for a mutation of brand A's `lg` to fail brand A's goldens. It cannot, and the
+    // premise is what is wrong: the property that acceptance exists for — a brand's radius reaching
+    // the screen — is held through `md`, which both brands draw, and through brand B's `lg`, which is
+    // drawn because brand B turns pills off.
+    val largeIsDrawn: Boolean get() = !pillButtons
     val mediumShape: Shape get() = RoundedCornerShape(medium)
     val smallShape: Shape get() = RoundedCornerShape(small)
-    val buttonShape: Shape get() = if (pillButtons) PILL else largeShape
+    val buttonShape: Shape get() = if (pillButtons) PILL_SHAPE else largeShape
 
     companion object {
         // Brand A, from the design canvas: lg 36 / md 20 / sm 12, with pills.
@@ -61,6 +78,9 @@ data class KonektShapeScale(
         // `BrandKitsTest`, which fails when the server ships a kit no scale answers for.
         fun forBrand(brandId: String?): KonektShapeScale = byBrand[brandId] ?: BrandA
 
-        private val PILL: Shape = RoundedCornerShape(percent = 50)
+        // Named rather than private: the guard that keeps `large` honestly inert has
+        // to be able to say what a pill IS, and a test asserting a shape it cannot name would be
+        // asserting a literal beside the one it is checking.
+        val PILL_SHAPE: Shape = RoundedCornerShape(percent = 50)
     }
 }

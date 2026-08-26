@@ -7,6 +7,8 @@ import io.github.youndie.kompot.UnknownComponent
 import io.github.youndie.kompot.generated.generatedFormsClientRenderers
 import io.github.youndie.kompot.kompotCoreRenderers
 import io.github.youndie.kompot.kompotStandardRenderers
+import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.reflect.KClass
@@ -26,6 +28,11 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.
         UnknownComponent::class to UnknownBlockRenderer(),
+        // REPLACING the toolkit's containers too, and for one line each: they provide the density an
+        // unknown block is drawn at. The CARD branch was unreachable from any screen before this —
+        // declared, tested by a fixture that supplied its own condition, and provided by nothing.
+        ColumnComponent::class to ColumnDensityRenderer(),
+        RowComponent::class to RowDensityRenderer(),
     )
 
 // The registry an application hands to `LocalKompotRegistry`: the toolkit's own renderers plus ours.

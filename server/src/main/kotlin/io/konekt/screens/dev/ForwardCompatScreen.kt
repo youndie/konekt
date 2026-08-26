@@ -3,6 +3,7 @@ package io.konekt.screens.dev
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
@@ -28,12 +29,12 @@ data class EsimTransferWidgetComponent(
     val headline: String,
 ) : KompotComponent
 
-// The development-only screen: one unknown component among known ones, twice.
+// The development-only screen: one unknown component among known ones, twice, in the two shapes.
 //
-// TWICE, AND THAT IS THE POINT. The replacement renderer has two densities — a LINE among rows and a
-// CARD standing alone — and the density is chosen by where the block sits, which is a decision no
-// unit test of the renderer can make for itself. Putting one of each in a real screen is the only
-// way both are ever drawn by the code that chooses.
+// TWICE AND IN TWO CONTAINERS, AND THAT IS THE POINT. The replacement renderer has two densities — a
+// LINE among rows and a CARD standing alone — and the density is chosen by where the block sits,
+// which is a decision no unit test of the renderer can make for itself. One inside a row and one
+// directly in the column is the only way both are drawn by the code that chooses.
 object ForwardCompatScreen {
     fun build(): KompotComponent =
         ColumnComponent(
@@ -56,9 +57,22 @@ object ForwardCompatScreen {
                         state = CounterStates.NORMAL,
                         progress = 0.6f,
                     ),
-                    EsimTransferWidgetComponent(
-                        id = "forward-compat-line",
-                        headline = "Transfer this eSIM to another device",
+                    // INSIDE A ROW, and that is what makes it a LINE. The density is chosen by the
+                    // container the block sits in — a column draws a card, a row draws a line — so a
+                    // screen that wants both must actually contain both shapes. Before this the two
+                    // blocks below were siblings in one column and drew identically, while the
+                    // comment above claimed one of each: the intent was written down and the tree did
+                    // not carry it.
+                    RowComponent(
+                        id = "forward-compat-row",
+                        spacing = 8,
+                        children =
+                            listOf(
+                                EsimTransferWidgetComponent(
+                                    id = "forward-compat-line",
+                                    headline = "Transfer this eSIM to another device",
+                                ),
+                            ),
                     ),
                     UsageCounterCardComponent(
                         id = "forward-compat-counter-2",

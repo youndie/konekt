@@ -53,7 +53,17 @@ class KonektRendererCoverageTest {
     // no @SerialName because it is never sent — it is what a decode produces for a type nobody knows —
     // and konekt registers a renderer for it to replace the toolkit's, which draws nothing. The design
     // document says the same: "not a new wire type — a replacement renderer".
-    private val replacementRenderers = setOf(io.github.youndie.kompot.UnknownComponent::class)
+    //
+    // The two CONTAINERS are here for the same reason and it is not the same mechanism: `column` and
+    // `row` are the toolkit's own wire types with the toolkit's own renderers, and konekt replaces
+    // them only to provide `LocalUnknownBlockDensity` before delegating. They draw nothing of their
+    // own, so counting them as konekt components would say this build renders two types it does not.
+    private val replacementRenderers =
+        setOf(
+            io.github.youndie.kompot.UnknownComponent::class,
+            io.github.youndie.kompot.standard.ColumnComponent::class,
+            io.github.youndie.kompot.standard.RowComponent::class,
+        )
 
     @Test
     fun `the registry contains exactly the renderers this build claims`() {

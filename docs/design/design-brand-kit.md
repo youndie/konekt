@@ -142,9 +142,17 @@ This matters when reading a golden failure. **A change to brand A's scale is vis
 states and brand A's light and dark pair) and neither of brand B's. That is the isolation property
 worth having; `lg` cannot demonstrate it.
 
-Whether brand A should have a role that reads `lg` at all is a design question this document does not
-answer. Either the canvas's 36 wants a surface of its own, or brand A's scale should say plainly that
-`lg` is inert while pills are on.
+**Answered, and the answer is the second.** Brand A's scale says plainly that `lg` is inert while pills
+are on: `KonektShapeScale.largeIsDrawn` is `!pillButtons`, and `InertRadiusIsDeclaredTest` holds it in
+both directions — brand A must not claim to draw it, brand B must.
+
+The rejected answer is giving 36 a surface of its own. A pill is a shape that follows the height of
+what it wraps, so it HAS no radius to take from a scale; inventing a full-bleed card or a sheet so the
+number has somewhere to land would be designing a product surface to satisfy a screenshot. Deleting
+`large` is the opposite mistake — brand B draws it, precisely because brand B turns pills off.
+
+The guard is what keeps the silence a decision rather than an oversight: without it the next reader has
+two plausible ways to "fix" it and both are wrong.
 
 ### Light and dark must be asked for together
 

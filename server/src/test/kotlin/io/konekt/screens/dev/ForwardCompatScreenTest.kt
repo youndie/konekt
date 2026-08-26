@@ -8,6 +8,7 @@ import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.devScreensRouteGroup
@@ -60,7 +61,11 @@ class ForwardCompatScreenTest {
 
     @Test
     fun `the client cannot decode the dev type, and gets the block instead`() {
-        val unknown = asClientSees().children.filterIsInstance<UnknownComponent>()
+        // WALKED, not read off the top level. One of the two blocks sits inside a `row` — which is
+        // what makes it draw the LINE density while its sibling in the column draws a CARD — so a
+        // check that only looks at the column's own children finds one of two and reports the screen
+        // as half broken. The nesting IS the feature here.
+        val unknown = asClientSees().walk().filterIsInstance<UnknownComponent>()
 
         assertEquals(2, unknown.size, "expected both dev components to arrive unknown")
         // The type name survives, which is what lets the block say what it could not draw and what
@@ -76,7 +81,7 @@ class ForwardCompatScreenTest {
         // The claim the screen exists for, and the reason it has known neighbours above and below. A
         // screen containing only the unknown component would look identical whether the rest of the
         // tree survived or not.
-        val counters = asClientSees().children.filterIsInstance<UsageCounterCardComponent>()
+        val counters = asClientSees().walk().filterIsInstance<UsageCounterCardComponent>()
 
         assertEquals(2, counters.size, "the known neighbours did not survive")
         assertEquals("9.7 GB left", counters.first().valueText)
@@ -95,3 +100,14 @@ class ForwardCompatScreenTest {
         assertEquals(2, konektRoutes.size, "the production table changed size — is a development group in it?")
     }
 }
+
+// Walks the containers this screen actually builds. A `row` is one of them since the two blocks were
+// separated into the two densities, and a walker that stopped at the column would have counted the
+// nested one as missing.
+private fun KompotComponent.walk(): List<KompotComponent> =
+    listOf(this) +
+        when (this) {
+            is ColumnComponent -> children.flatMap { it.walk() }
+            is RowComponent -> children.flatMap { it.walk() }
+            else -> emptyList()
+        }

@@ -1,7 +1,7 @@
 ---
 id: B-25
 title: "A route that sends a component the client does not know, on purpose"
-status: wip
+status: done
 priority: P2
 size: S
 stage: stage-m4-proof
@@ -64,21 +64,41 @@ konekt binds no sink, so this screen makes the blindness kompot#81 was filed abo
 first time rather than fixing it. That is `B-26`'s third acceptance criterion, and this route is what
 will finally exercise it.
 
-## The CARD density is unreachable, and that is a finding rather than a gap in this item
+## The CARD density was unreachable, and the container is what now decides
 
 `UnknownBlockRenderer` chooses between a LINE and a CARD by reading `LocalUnknownBlockDensity`, whose
-default is LINE. Its own comment says the density is "chosen by where the block sits".
+default is LINE. Its own comment said the density is "chosen by where the block sits".
 
-**Nothing chooses.** `grep` over the repository finds the composition local declared, read once by the
-renderer, and provided by exactly one caller: `UnknownBlockRendererTest`, which sets it by hand. No
-production code path can reach the CARD branch, so a screen cannot demonstrate both densities however
-its components are arranged — this one included.
+**Nothing chose.** `grep` found the composition local declared, read once by the renderer, and provided
+by exactly one caller: `UnknownBlockRendererTest`, which set it by hand. No production code path could
+reach the CARD branch, so a screen could not demonstrate both densities however its components were
+arranged — this one included. That is the `written-but-never-called` shape applied to a DECISION rather
+than to a function: the branch existed, it was tested by a fixture that supplied its own condition, and
+the condition was supplied nowhere else.
 
-That is the `written-but-never-called` shape applied to a decision rather than to a function: the
-branch exists, it is tested by a fixture that supplies the condition itself, and the condition is
-never supplied anywhere else. It was invisible until a real screen tried to produce it.
+**The container decides now**, and the rejected alternative was the screen holder. A holder knows the
+SCREEN and not the neighbourhood, so a mixed screen would get one answer for all of it — while "where
+the block sits" is a fact about neighbours, which is exactly what a container is. `ColumnDensityRenderer`
+and `RowDensityRenderer` provide the local and delegate to the toolkit's own renderers; a copy of
+`ColumnRenderer` would be a second layout to keep in step with kompot's for one line of context.
 
-Deciding WHO provides it is the open question and it is a design decision rather than a fix: the
-candidates are a container renderer (a block alone in a column is a card, a block among rows is a
-line) or the screen holder (which knows the screen and not the neighbourhood). Neither is obviously
-right, which is why this item records the finding instead of guessing.
+**And the screen did not carry its own intent.** Its comment claimed one block of each density while
+both sat as siblings in one column, so both drew the same shape — the intent was written down and the
+tree did not have it. One is inside a `row` now.
+
+- AC MET: "hitting the route draws the placeholder in both densities with the rest of the screen
+  intact." `:client:standTest` renders this screen through the real holder against the running stand
+  and asserts exactly one LINE, exactly one CARD, and both known neighbours. Exact counts rather than
+  "at least one", because one block plus one silently-dropped component is the failure this screen
+  exists to make visible. Mutation-proved: with the container renderers out of the registry, the test
+  fails.
+- AC MET: the route is absent from the production route table, asserted over `konektRoutes` itself
+  rather than over a flag — a development route reaches a deployment by being in the list every
+  deployment mounts.
+
+## The degradation record now reaches something
+
+When this item was written the record reached nothing: `KompotDegradationSink` counted an unknown
+component and konekt bound no sink, so this screen made the blindness kompot#81 was filed about visible
+for the first time rather than fixing it. `B-26` closed that — the record reaches tracy with
+`originalType` indexed and leaves a katcher breadcrumb, and this screen is what exercises it.
