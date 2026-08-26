@@ -44,12 +44,24 @@ object EsimStatuses {
 // is the state the canvas draws as "450 ₽ returned to balance on 28 Jun — profile never activated",
 // and it exists as its own word because rendering it as either of the other two is the misreading
 // the screen is built to prevent.
+// THESE ARE EXACTLY THE WORDS `OrderStatus.wireName` PRODUCES, and `OrderStatusVocabularyTest` walks
+// the enum to keep it so — in both directions. It used to declare `failed`, which no producer ever
+// emits (petich's FAILED maps to COMPENSATED, deliberately), and to omit `rejected` and
+// `compensating`, which the server does emit. Two lists of the same thing, disagreeing both ways.
 object OrderStatuses {
     const val PENDING = "pending"
     const val AWAITING_CONFIRMATION = "awaiting_confirmation"
     const val COMPLETED = "completed"
+
+    // A rule refused before anything happened. Its own word because "pending" tells a subscriber to
+    // wait for something that will never come, and the history row said exactly that.
+    const val REJECTED = "rejected"
+
     const val COMPENSATED = "compensated"
-    const val FAILED = "failed"
+
+    // In flight, or stuck because a compensating step itself failed — the one state that needs a
+    // person, which is why it is not folded into COMPENSATED.
+    const val COMPENSATING = "compensating"
 }
 
 // The three weights a banner or a snackbar carries. Deliberately the same vocabulary for both, since

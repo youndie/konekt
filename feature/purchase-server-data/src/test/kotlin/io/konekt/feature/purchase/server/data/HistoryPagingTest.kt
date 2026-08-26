@@ -81,7 +81,13 @@ class HistoryPagingTest {
             val screen = HistoryScreen.build(load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow())
             val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
 
-            assertEquals(OrderStatuses.PENDING, row.status)
+            // AWAITING_CONFIRMATION and not PENDING, and this expectation changed with B-41 rather
+            // than the behaviour regressing. `HistoryScreen` used to map everything it did not name
+            // to `pending` through an `else`, so this row's word said "in progress" while the
+            // `statusText` beside it said "Awaiting confirmation" — two fields of one component
+            // disagreeing. The mapping is exhaustive now and the word is the state.
+            assertEquals(OrderStatuses.AWAITING_CONFIRMATION, row.status)
+            assertEquals("Awaiting confirmation", row.statusText, "the word and the sentence disagree")
             assertNull(row.noteText, "an unfinished order was given a reversal line")
         }
 

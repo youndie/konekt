@@ -55,17 +55,37 @@ object HistoryScreen {
             // it came back. Netting the two to zero would make a reversal invisible, which is the one
             // thing this screen must not do.
             amountText = MoneyFormat.format(-entry.amount, signed = true),
+            // NO `else`, in both `when`s below. `OrderStatus` is an enum, so an exhaustive when makes
+            // a value added there and not thought about here a compile error — which is how this
+            // repository prefers to be told. The `else` that used to be here drew a REJECTED order as
+            // pending and told the subscriber it was "Awaiting confirmation": a rule had refused the
+            // order and the screen asked them to wait for something that was never coming.
             status =
                 when (entry.status) {
                     OrderStatus.COMPLETED -> OrderStatuses.COMPLETED
                     OrderStatus.COMPENSATED -> OrderStatuses.COMPENSATED
-                    else -> OrderStatuses.PENDING
+                    OrderStatus.REJECTED -> OrderStatuses.REJECTED
+                    OrderStatus.COMPENSATING -> OrderStatuses.COMPENSATING
+                    OrderStatus.PENDING -> OrderStatuses.PENDING
+                    OrderStatus.AWAITING_CONFIRMATION -> OrderStatuses.AWAITING_CONFIRMATION
                 },
             statusText =
                 when (entry.status) {
                     OrderStatus.COMPLETED -> "Paid"
+
                     OrderStatus.COMPENSATED -> "Reversed"
-                    else -> "Awaiting confirmation"
+
+                    // What a subscriber can act on, rather than what petich calls it. "Refused" says
+                    // the operation is over; "Awaiting confirmation" said the opposite.
+                    OrderStatus.REJECTED -> "Refused"
+
+                    // Deliberately not "failed". This is the state a person has to look at, and the
+                    // honest thing to tell a subscriber is that somebody is.
+                    OrderStatus.COMPENSATING -> "Being reversed"
+
+                    OrderStatus.PENDING -> "In progress"
+
+                    OrderStatus.AWAITING_CONFIRMATION -> "Awaiting confirmation"
                 },
             noteText =
                 entry.reversal?.let {
