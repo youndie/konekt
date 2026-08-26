@@ -24,9 +24,10 @@ from a registry rather than recalled, is [docs/research/research-stack.md](docs/
    - **petich drops outbox events silently** when handed a repository without outbox support — the
      saga still completes and every natural assertion still passes (§1.7);
    - **katcher published no Apple target** until `client:0.6.2`, so the iOS build reported no crashes
-     at all. Closed by youndie/katcher#25 and wired in `B-27`; kept in the list because the SHAPE
-     recurs — `tracy`'s agent still publishes `jvm`, `linux_*` and `macos_arm64` and no iOS target,
-     which is youndie/tracy#16 (§1.9).
+     at all. Closed by youndie/katcher#25 and wired in `B-27`; tracy had the same gap and it is
+     closed too (youndie/tracy#16, released in `0.1.13`). Kept in the list because the SHAPE recurs
+     rather than because either is open: a toolkit publishing every target but the one a phone
+     needs is a silence the agent cannot report, and it has now happened twice (§1.9).
 2. [docs/research/research-stack.md](docs/research/research-stack.md) — what is built on top of the
    toolkits: versions, the module layout, the layer rules, `Money`, the test harness. Four of its
    findings change how code is written rather than which library is used:
