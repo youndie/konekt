@@ -1,5 +1,6 @@
 package io.konekt
 
+import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
@@ -39,6 +40,8 @@ import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
+import io.konekt.screens.dev.EsimTransferWidgetComponent
+import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
 import io.konekt.time.KonektClock
 import io.konekt.time.SystemClock
@@ -197,6 +200,11 @@ val konektRoutes: List<RouteGroup> =
 // container: the composition root passes `{ getKoin().get() }` and the document generator passes a
 // plain instance. A parameter here would have made the whole table need a Koin, and a Koin needs a
 // database.
+// The development screens, in an entry of their own for the same reason: their existence is a
+// configuration decision rather than a fact about the build. Public, because the screen carries no
+// subscriber's data — two invented counters and a component nobody can render.
+val devScreensRouteGroup: RouteGroup = RouteGroup(AuthTier.PUBLIC) { forwardCompatRoutes() }
+
 fun devOtpRouteGroup(revealed: () -> RevealedCodes): RouteGroup =
     RouteGroup(AuthTier.PUBLIC) { devOtpRoutes(revealed()) }
 
@@ -282,7 +290,8 @@ fun Application.module(config: KonektConfig) {
     routing {
         mountKonektRoutes(
             konektRoutes +
-                if (config.revealOtpCodes) listOf(devOtpRouteGroup { getKoin().get() }) else emptyList(),
+                (if (config.revealOtpCodes) listOf(devOtpRouteGroup { getKoin().get() }) else emptyList()) +
+                (if (config.devScreens) listOf(devScreensRouteGroup) else emptyList()),
         )
     }
 }
@@ -424,6 +433,16 @@ private val petichSerializersModule =
         polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
     }
 
+// THE ONE COMPONENT TYPE THE CLIENT MUST NOT HAVE, and it is declared in `:server` rather than in
+// the dictionary module for exactly that reason: a type in the dictionary is a type the client
+// registers, and a component that cannot arrive unknown demonstrates nothing. Registered here so the
+// server can put it on the wire; absent from the client's registry, so it arrives as an
+// `UnknownComponent` and the replacement renderer draws it. See B-25.
+private val devScreensSerializersModule =
+    SerializersModule {
+        polymorphic(KompotComponent::class) { subclass(EsimTransferWidgetComponent::class) }
+    }
+
 // The application's Json: the toolkit's actions and components, konekt's own dictionary, and the
 // saga's payloads. One instance, bound in the graph, because two Json configurations that differ by
 // one module produce a wire nobody can debug.
@@ -446,6 +465,7 @@ private val kompotJson: Json =
             // `classDiscriminator`. Changing it would make already-persisted sagas unreadable, which
             // is the reason @SerialName is on those payloads rather than the class name being used.
             petichSerializersModule +
+            devScreensSerializersModule +
             // Hand-written, because actions are not generated: @KompotComponentMarker covers
             // components and the KompotAction hierarchy is registered by hand. Omitting it
             // fails nothing at build time and fails every wizard step at runtime.

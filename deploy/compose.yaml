@@ -99,6 +99,10 @@ services:
       # Development only: the endpoint that reads back a one-time code. Absent means closed, which is
       # why the default is not "true".
       DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      # The forward-compatibility screen: a component no client can render, beside ones that can. A
+      # separate switch from the OTP readback because they are separate decisions, and on here
+      # because a stand that cannot show the degradation cannot demonstrate it.
+      DEV_SCREENS: ${DEV_SCREENS:-true}
       PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
       PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
       # Fictional usage against real counters, which is what makes a live update visible without

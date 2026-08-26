@@ -72,6 +72,7 @@ class KoinGraphTest {
                         database = io.konekt.db.DatabaseConfig("", "", ""),
                         jwt = JwtConfig("s", "i", "a"),
                         revealOtpCodes = false,
+                        devScreens = false,
                         brokerHost = "broker",
                         brokerPort = 9092,
                         paymentMode = io.konekt.feature.purchase.server.data.MockPaymentGateway.Mode.APPROVE,

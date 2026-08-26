@@ -10,6 +10,7 @@ import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.usage.shared.api.HomeScreenResource
+import io.konekt.screens.dev.ForwardCompatScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
@@ -251,5 +252,19 @@ val devOtpEndpointFacts: Map<String, EndpointFacts> =
                 // 404 is answered by the route itself when there is no outstanding code; 422 comes
                 // from Msisdn.parse on the query parameter.
                 refusals = setOf(404, 422),
+            ),
+    )
+
+// The development SCREEN, in a third map for the same reason again: it exists only under
+// `DEV_SCREENS`, which is a different switch from `DEV_REVEAL_OTP` because they are different
+// decisions — a test environment may reasonably want the OTP readback without a demonstration screen
+// in its route table.
+val devScreensEndpointFacts: Map<String, EndpointFacts> =
+    mapOf(
+        endpointKey<ForwardCompatScreenResource>("GET") to
+            EndpointFacts(
+                summary = "A screen carrying a component no client can render (development only)",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
             ),
     )

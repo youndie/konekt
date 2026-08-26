@@ -28,6 +28,11 @@ data class KonektConfig(
     val simulateTraffic: Boolean,
     // Apply the migrations and exit, without serving. The deploy runs the same image this way before
     // the application pods roll.
+    // Whether the development screens exist — today one, which sends a component no client can
+    // render. Separate from `revealOtpCodes` rather than folded into it: they are two different
+    // decisions with two different consequences, and a deployment might reasonably want the OTP
+    // readback in a test environment without a demonstration screen in its route table.
+    val devScreens: Boolean,
     val migrateOnly: Boolean,
 ) {
     companion object {
@@ -58,6 +63,7 @@ data class KonektConfig(
                     },
                 paymentDelay = (System.getenv("PAYMENT_MOCK_DELAY_MS")?.toLongOrNull() ?: 0L).milliseconds,
                 simulateTraffic = System.getenv("SIMULATE_TRAFFIC") == "true",
+                devScreens = System.getenv("DEV_SCREENS") == "true",
                 migrateOnly = System.getenv("MIGRATE_ONLY") == "true",
             )
 

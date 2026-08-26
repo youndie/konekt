@@ -3,6 +3,7 @@ package io.konekt.openapi
 import io.konekt.RouteGroup
 import io.konekt.baseModule
 import io.konekt.devOtpRouteGroup
+import io.konekt.devScreensRouteGroup
 import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.auth.server.data.RevealedCodes
 import io.konekt.feature.auth.server.data.configureAuthentication
@@ -97,13 +98,18 @@ class OpenApiDocumentTest {
     fun `the development document builds too, so its description cannot rot`() {
         val document =
             documentOf(
-                konektRoutes + devOtpRouteGroup { RevealedCodes() },
-                konektEndpointFacts + devOtpEndpointFacts,
+                konektRoutes + devOtpRouteGroup { RevealedCodes() } + devScreensRouteGroup,
+                konektEndpointFacts + devOtpEndpointFacts + devScreensEndpointFacts,
             )
 
+        val paths = document.getValue("paths").jsonObject
+        // BOTH development routes, named individually. Asserting that the development document is
+        // merely larger would pass with one of them missing, and the second one is the newer and
+        // therefore likelier to be forgotten.
+        assertTrue("/api/v1/dev/otp" in paths, "the development document does not describe the OTP readback")
         assertTrue(
-            "/api/v1/dev/otp" in document.getValue("paths").jsonObject,
-            "the development document does not describe the development route",
+            "/api/v1/dev/screens/forward-compat" in paths,
+            "the development document does not describe the forward-compatibility screen",
         )
     }
 
