@@ -78,13 +78,15 @@ Worth stating precisely, because the boundary is not where it is usually assumed
 
 | Axis | Ships as |
 |---|---|
-| colours, typography, every string | a server response — no rebuild |
+| colours, typography, every string | a server response — **no client rebuild**; a new kit is a server deploy |
 | screens, layouts, flows | a server response — no rebuild |
 | the shape scale (corner radii) | **a client release** — the wire has no vocabulary for shape, deliberately |
 | a new kind of component | **a client release** — the dictionary is the API |
 | a new event topic | a broker restart — booblik fixes its topics at startup |
 
-The reasoning behind each row is in the research, §1.2, §1.5 and §1.8.
+The reasoning behind each row is in the research, §1.2, §1.5 and §1.8. The full version — what is a
+variable, what is a deploy, what is a release an operator does not control — is
+[operator-boundaries](docs/services/operator-boundaries.md).
 
 ### 📄 License
 

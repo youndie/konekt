@@ -89,7 +89,7 @@ Not in the map, because the checker guards only the five layer directories:
 [design-app-canvas](design/design-app-canvas.md) — the interface design and the component dictionary
 it commits konekt to.
 
-### Services (3)
+### Services (4)
 
 - [x] [konekt-server](services/konekt-server.md) — the Ktor process: every table, every screen, every
   route, the saga engine and the workers
@@ -97,6 +97,8 @@ it commits konekt to.
   the session, the transport and shape. JVM only, and that is upstream
 - [x] [konekt-broker](services/konekt-broker.md) — the booblik instance the stand runs: three topics
   fixed at startup, no published port, no consumer offsets
+- [x] [operator-boundaries](services/operator-boundaries.md) — per axis, whether a change is a
+  variable, a server deploy, a client release or a broker restart, and which research section says so
 
 ### Features (5)
 

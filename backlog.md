@@ -41,15 +41,14 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-35](docs/backlog/B-35-e2e-compose-stand.md) `[~]` | An end-to-end stand on docker-compose, driven by one command in both places | P0 | M | B-14, B-15 |
 | [B-43](docs/backlog/B-43-client-composition-root.md) `[~]` | The client has every part of an application and no application | P1 | L | - |
-| [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 
-## Closed (40)
+## Closed (41)
 
 **The wire and the shell**
 
@@ -108,6 +107,7 @@ so re-prioritising must never move a file.
 **Upstream and the box**
 
 - [B-29](docs/backlog/B-29-file-upstream-issues.md) `[x]` - File U1–U5 upstream and record what came back
+- [B-30](docs/backlog/B-30-operator-material.md) `[x]` - Operator material: what is configuration and what is a release
 
 <!-- END INDEX -->
 

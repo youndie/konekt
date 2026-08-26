@@ -234,6 +234,16 @@ reference build and is stated rather than assumed.
 
 ### 1.9 The observability trio covers the server and Android; iOS is not covered at all
 
+> **Amended, and the finding is now the opposite.** Both gaps were upstream and both are closed:
+> katcher publishes every Apple target since `client:0.6.2` ([katcher#25](https://github.com/youndie/katcher/issues/25))
+> and tracy publishes the three iOS targets since `0.1.13` ([tracy#16](https://github.com/youndie/tracy/issues/16)).
+> A simulator crash arrives in katcher naming its release, and a screen the client cannot draw is
+> findable in tracy by wire type — both measured at the collector rather than at the agent. What
+> remains uncovered on iOS is metrik, which measures route latency and has no routes to measure there.
+>
+> The section is kept rather than rewritten because the reasoning below is what made the two gaps
+> legible enough to file, and filing them is what closed them. See `B-26` and `B-27`.
+
 | Fact | Where verified |
 |---|---|
 | metrik is a Ktor plugin: `install(Metrik) { service, apiKey, endpoint, release }`, ingest over UDP `:9999` | `metrik/README.md` |
