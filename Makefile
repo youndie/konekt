@@ -86,9 +86,19 @@ COMPOSE := docker compose -f deploy/compose.yaml
 # The distribution is built OUTSIDE the image — see deploy/Dockerfile for why — so it has to exist
 # before the image does. Forgetting that step gives a container running whatever was built last time,
 # which is the most confusing failure this stand can produce.
+# A STAND ON AN ARTEFACT WHEN ONE IS NAMED. `SERVER_IMAGE` names a published image, and then
+# nothing in this tree is built at all — not the distribution, not the image — so a mistake here
+# cannot make a run against a release pass. Unset, the ordinary path is unchanged.
+#
+#     SERVER_IMAGE=ghcr.io/youndie/konekt-server:v0.1.0 make stand-up e2e
 stand-up:
+ifeq ($(strip $(SERVER_IMAGE)),)
 	./gradlew :server:installDist
 	$(COMPOSE) up -d --build --wait
+else
+	@echo "running $(SERVER_IMAGE) — nothing in this tree is built"
+	$(COMPOSE) up -d --no-build --wait
+endif
 	# An application and a key in katcher, without which every crash report is refused. A separate
 	# step rather than a service `up` starts: it exits when it is done, and a one-shot container is
 	# an error to `--wait` unless something depends on it — which here could only be the server, and
@@ -114,9 +124,10 @@ e2e:
 
 # THE RELEASE IMAGE, tagged with the version rather than with the day.
 #
-# Built here rather than in CI because CI has no credential for the registry either — see `B-47`. What
-# this target produces is a LOCAL tag that the stand can be pointed at, which proves everything about
-# running an artefact except the registry round trip.
+# A LOCAL tag, and publishing is deliberately not part of it. The push lives in
+# `.github/workflows/publish-image.yaml`, because the right to write to the registry lives in CI and
+# not on a laptop — `B-47`. What this target is for is producing the same image outside CI, to point
+# a stand at without waiting for a tag.
 #
 #     make release-image                 # tags the newest tag's build
 #     make release-image VERSION=v0.1.0
@@ -129,7 +140,8 @@ release-image:
 		exit 2; }
 	./gradlew :server:installDist
 	docker build -f deploy/Dockerfile -t ghcr.io/youndie/konekt-server:$(VERSION) .
-	@echo "built ghcr.io/youndie/konekt-server:$(VERSION) — pushing it needs write:packages"
+	@echo "built ghcr.io/youndie/konekt-server:$(VERSION) — publishing it is a tag, not a push:"
+	@echo "    git tag -a $(VERSION) && git push origin $(VERSION)"
 
 # THE ROLLING-DEPLOY CHECK: the previous release's server against the current schema.
 #

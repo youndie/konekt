@@ -1,0 +1,146 @@
+name: publish image
+
+# THE ONE STEP THAT CANNOT HAPPEN ON A LAPTOP, and that is the whole reason this file exists.
+#
+# `make release-image` builds the image and stops, because pushing needs a token with
+# `write:packages` and no developer credential here carries one. A job's own `GITHUB_TOKEN` does,
+# under the same owner, once it is asked for — so the release moves to CI not for tidiness but
+# because this is where the right to publish lives. `B-47`.
+#
+# A TAG, ALWAYS. The version is read from the ref rather than from an input, so the image cannot be
+# named after something that is not a release: an image called after a branch is one no
+# `rolling-check` can ever point at, and one nobody can map back to a commit afterwards.
+on:
+  push:
+    tags: ["v*"]
+  # Run against a tag ref — the version check below refuses anything else, which is the same
+  # refusal `make release-image` makes when `git describe` finds nothing.
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # A REF THAT IS NOT A TAG IS NOT A RELEASE. `git describe` on a branch answers with the newest
+      # tag plus a distance, which would publish `v0.1.0` from a tree that is no longer `v0.1.0` —
+      # a tag pointing at one commit and an image built from another, with nothing to say so.
+      - name: The version comes from the tag, or there is no version
+        run: |
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            echo "::error::this ran on ${{ github.ref }} — publish from a tag, which is what names the image"
+            exit 1
+          fi
+          echo "VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
+
+      # Built OUTSIDE the image, exactly as deploy/Dockerfile requires and says why: a Gradle build
+      # inside a layer starts from nothing on any cache miss, and is a second way of producing the
+      # artefact CI already tested.
+      - name: Build the distribution the image copies
+        run: ./gradlew :server:installDist --no-daemon
+
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Refused rather than overwritten. An image republished under one tag changes no rendered
+      # spec, so nothing downstream restarts — a cluster keeps running the previous binary behind a
+      # green deploy, and `rolling-check` compares a release against itself without knowing.
+      - name: Refuse a tag that is already published
+        run: |
+          if docker manifest inspect "ghcr.io/youndie/konekt-server:${VERSION}" >/dev/null 2>&1; then
+            echo "::error::ghcr.io/youndie/konekt-server:${VERSION} exists already — cut a new tag"
+            exit 1
+          fi
+
+      # amd64 only: that is what the cluster runs. A second platform is a second build rather than a
+      # second line here, and an arm64 manifest nobody deploys is a doubled build time for nothing.
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./deploy/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/youndie/konekt-server:${{ env.VERSION }}
+
+  # THE REGISTRY ROUND TRIP, which is the one thing `B-47` could not prove and the reason this job
+  # is not merely a nicety. Running an image the previous job left in the local daemon proves the
+  # build; PULLING it back and driving the whole suite through it is what proves that what was
+  # published is what runs — layers, entrypoint, distribution and all.
+  #
+  # It is also the first check here whose subject is an artefact rather than a tree.
+  verify:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Explicit, and before the stand. `up` would pull it anyway and report the failure as a
+      # container that did not start — which is the shape of message that sends somebody to read
+      # the server's logs for a problem that is a permission on a package.
+      - name: Pull what was just published
+        run: |
+          docker pull "ghcr.io/youndie/konekt-server:${{ github.ref_name }}"
+
+      # `SERVER_IMAGE` makes `stand-up` build nothing at all — no distribution, no image — so a
+      # mistake in this repository's build cannot make this job pass. What answers is the artefact.
+      - name: Bring the stand up on the published image
+        env:
+          SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+          RELEASE: ${{ github.ref_name }}
+        run: make stand-up
+
+      # Which image is actually serving, asked of the running container rather than assumed from the
+      # variable. A default that quietly won would leave this job green against a local build.
+      - name: Say which image is serving
+        run: |
+          docker inspect --format '{{.Config.Image}}' konekt-server-1
+
+      - name: Drive it
+        env:
+          SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+        run: make e2e
+
+      - name: The stand's logs
+        if: always()
+        env:
+          SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+        run: make stand-logs
+
+      - name: Take it down
+        if: always()
+        env:
+          SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+        run: make stand-down

@@ -58,6 +58,11 @@ services:
   # before the new pods roll; here it is the same thing in one file. Two processes racing to migrate
   # is the failure it removes, and Flyway's own lock turns that race into a hang rather than an error.
   migrate:
+    # The SAME image as the server, because it is the same image with a switch — see `MIGRATE_ONLY`
+    # below. Named here as well as there so that a stand pointed at a published artefact runs the
+    # artefact's migrations too: a released server against migrations built from a working copy is
+    # the one pairing nothing downstream would ever run.
+    image: ${SERVER_IMAGE:-konekt-server:local}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
@@ -265,6 +270,8 @@ services:
   # It shares the database and the broker on purpose: a rollback that only works in isolation is not
   # the thing being demonstrated.
   server-declining:
+    # Same image again, and the mode below is the whole difference.
+    image: ${SERVER_IMAGE:-konekt-server:local}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
