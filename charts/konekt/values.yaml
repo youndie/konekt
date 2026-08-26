@@ -1,0 +1,143 @@
+# The chart carries no environment. Everything here is either a shape or a default that is safe
+# anywhere; the addresses and keys of a particular cluster live with that cluster.
+#
+# Four values have no default on purpose, and the templates stop the render when they are empty
+# rather than deploying something that starts and misbehaves. Each is listed with what its absence
+# would actually do.
+
+# Where this instance answers. Empty renders `Host(``)`, which matches nothing while looking like a
+# working ingress.
+hostname: ""
+
+server:
+  image: ghcr.io/youndie/konekt-server
+  # An immutable tag, published by `.github/workflows/publish-image.yaml` from a git tag. Empty
+  # fails the render: a moving tag leaves helm nothing to notice — the rendered spec is unchanged,
+  # so no pod restarts — and a green deploy then runs the previous binary.
+  version: ""
+  # ONE, AND IT IS A PROPERTY OF THE PRODUCT RATHER THAN OF ITS SIZE.
+  #
+  # Two things in this server are per-process and would be run twice by a second pod: the traffic
+  # simulator, which publishes fictional usage against real counters — two of them would each spend
+  # what the other measured — and the realtime subscriptions, which are held by whichever pod the
+  # subscriber's stream landed on. The second is fine (each pod consumes the broker and pushes to
+  # its own subscribers); the first is not.
+  #
+  # So this is 1 until `SIMULATE_TRAFFIC` is something a deployment can leave off, and raising it
+  # without switching the simulator off is the mistake worth naming here rather than discovering as
+  # allowances draining at twice the rate.
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+# The signing key of every subscriber's session. The server refuses to start without it, which
+# arrives as a green deploy and a service that is down. Comes from a secret through --set.
+jwtSecret: ""
+
+# Which brand kit this deployment serves. One value, and switching it is a redeploy rather than a
+# rebuild — which is the claim the white-label half of this product exists to demonstrate.
+brand: brand-a
+
+dev:
+  # The endpoint that reads back a one-time code, for anybody who asks. OFF, and the default is the
+  # security property rather than caution: a machine route revealing any subscriber's code IS the
+  # authentication system once it is reachable. The code is also written to the log by the mock
+  # delivery, so an operator can still sign in — from `kubectl logs`, which is a different
+  # permission from being on the internet.
+  revealOtp: false
+  # The forward-compatibility screen: a component no client can render, beside ones that can. A
+  # separate switch because it is a separate decision — a demonstration deployment may want it.
+  screens: false
+
+# Fictional usage against real counters, which is what makes a live update visible without waiting
+# for a subscriber to browse. Off by default; a deployment that forgot to decide must not be one
+# that quietly spends its subscribers' allowances.
+simulateTraffic: false
+
+payment:
+  # `approve` or `decline`. The mock provider, read once at startup.
+  mode: approve
+  delayMs: 0
+
+postgres:
+  image: postgres:18-alpine
+  user: konekt
+  database: konekt
+  # No default: a database whose password is in a public chart is one anybody who reads the chart
+  # can reach from inside the cluster. Comes from a secret through --set.
+  password: ""
+  size: 4Gi
+  class: local-path
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+broker:
+  # Published for amd64 only. A cluster node of another architecture needs a second build rather
+  # than a second tag, and the failure is `no matching manifest`, which reads like a broken tag.
+  image: ghcr.io/youndie/booblik:0.3.0
+  # THE TOPIC SET IS DECIDED AT STARTUP AND NOWHERE ELSE. booblik creates no topics on demand, on
+  # purpose, so adding a fourth is a broker restart — which makes topic naming an architectural
+  # decision rather than a runtime one. This list must agree with `EventTopics` in the server.
+  topics: "orders:1,usage:1,notifications:1"
+  size: 2Gi
+  class: local-path
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  # A NetworkPolicy that lets only this release's server pods reach the broker. It speaks a
+  # plaintext protocol with neither TLS nor authentication — both deliberately absent, being
+  # incompatible with its zero-copy read path — so in compose its whole security model is the
+  # absence of a `ports:` line. A namespace has no such thing: every pod in the cluster can reach
+  # every Service unless something says otherwise, so the equivalent has to be written down.
+  #
+  # Enforcement belongs to the CNI. kube-router, which this cluster runs, enforces it; a cluster
+  # whose CNI does not would render this and be protected by nothing, which is why it is a value
+  # rather than an unconditional template.
+  networkPolicy: true
+
+# WHERE THE THREE AGENTS REPORT, AND EACH IS ALL-OR-NOTHING.
+#
+# The server refuses to start on an endpoint without its key, because every one of these agents
+# answers a half-configuration by doing nothing — and a deployment that believes it is observed and
+# is silent looks exactly like one that is working. Both empty means off, and that is a decision the
+# server accepts.
+#
+# The keys come from secrets through --set; the endpoints are cluster addresses and live in values.
+observability:
+  # `host:port`, UDP.
+  metrik:
+    endpoint: ""
+    key: ""
+  # A URL.
+  tracy:
+    endpoint: ""
+    key: ""
+  # A URL, plus a key that must name an application katcher already knows: `Katcher.catch` posts
+  # with an app key and the collector looks it up, so a key naming nothing is every report refused,
+  # silently, from the agent's point of view indistinguishable from an agent that was never started.
+  katcher:
+    endpoint: ""
+    key: ""
+  # What this deployment calls itself in all three. There is no registration step in any of them, so
+  # the name IS the identifier and a typo creates a phantom service that looks healthy and receives
+  # nothing.
+  service: konekt-server
+  environment: stage
+
+traefik:
+  entrypoint: websecure
+  certResolver: ""

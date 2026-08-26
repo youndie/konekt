@@ -123,6 +123,23 @@ is the profile a coroutine-per-connection engine is shaped for. See
   startup rather than switched off quietly.
 - **Version:** none on the wire. The release reaches the collectors through `RELEASE` and appears on
   every record; nothing serves it over HTTP.
+- **Published image:** `ghcr.io/youndie/konekt-server:<tag>`, built and pushed by
+  `.github/workflows/publish-image.yaml` when a `v*` tag is pushed. The push is in CI rather than in
+  a Makefile target because the right to write to the registry is what CI has and a laptop does not
+  — `B-47`. The same workflow then PULLS the tag back and drives the whole e2e suite through it,
+  which is the only check here whose subject is an artefact rather than a working tree.
+- **Chart:** `charts/konekt/`. It renders the server, a single-instance Postgres, the broker, the
+  ingress, and the migration as the server pod's init container — a helm `pre-install` hook would run
+  before the release's own objects, which on a first install means before the database exists. Four
+  values have no default and stop the render rather than the pod: the hostname, the image tag, the
+  JWT secret and the database password. Each of them, absent, produces a deploy that reports success.
+- **Where the environment lives:** the cluster's values and its deploy workflow are in the
+  `infra` repository (`k8s/konekt/`), the shape three neighbouring products already use. The chart
+  carries no addresses and no keys.
+- **The broker is closed by a NetworkPolicy rather than by the absence of a `ports:` line.** In
+  compose that absence is its whole security model — it speaks a plaintext protocol with neither TLS
+  nor authentication, both deliberately absent — and a namespace gives nothing for free: a ClusterIP
+  Service is reachable by every pod in the cluster until something says otherwise.
 
 ## 6. Local setup
 

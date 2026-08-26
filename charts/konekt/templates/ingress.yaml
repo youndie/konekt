@@ -1,0 +1,47 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-redirect-to-https
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+{{/*
+No forward-auth in front of this service, and that is a decision rather than an omission.
+
+The neighbouring services put a browser-session proxy ahead of everything and open a bypass for the
+endpoints machines use. Here there is no browser at all: the client is a Compose application on a
+desktop or a phone, holding a bearer token this server issued. A proxy expecting a browser session
+would reject it on every route, so the bypass would have to be every route — a proxy that refuses
+nothing while looking like protection.
+
+What guards this instead is the server's own tier, which is a VALUE on each route rather than the
+indentation of an `authenticate { }` block — see docs/api/endpoint-auth.md. Four addresses answer
+without a token, each because it must: requesting a code, verifying one, refreshing a session, and
+`/health`. Everything else answers 401.
+
+The one route that would change this answer is `GET /api/v1/dev/otp`, which reads back any
+subscriber's one-time code. It is mounted only when `DEV_REVEAL_OTP=true`, and `dev.revealOtp` is
+false by default for exactly this reason: behind this ingress it would not be a development
+convenience, it would be the authentication system.
+*/}}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - {{ .Values.traefik.entrypoint }}
+  routes:
+    - match: Host(`{{ include "konekt.require" (dict "name" "hostname" "because" "an empty one renders Host(``) — a rule that matches nothing while looking like a working ingress" "value" .Values.hostname) }}`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}
+          port: 80
+  tls:
+    {{- if .Values.traefik.certResolver }}
+    certResolver: {{ .Values.traefik.certResolver | quote }}
+    {{- end }}

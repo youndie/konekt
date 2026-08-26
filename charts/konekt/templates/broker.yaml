@@ -1,0 +1,108 @@
+{{/*
+The broker: one pod, one volume, and no way in from outside this release.
+
+In compose its entire security model is the ABSENCE of a `ports:` line — booblik speaks a plaintext
+protocol with neither TLS nor authentication, both deliberately absent because they are incompatible
+with its zero-copy read path. A namespace gives nothing for free: a ClusterIP Service is reachable
+by every pod in the cluster, so the equivalent of that missing line has to be written down, and it
+is the NetworkPolicy at the bottom of this file.
+
+One replica, and not because of load: the topic set is fixed at startup and the log is a file on a
+ReadWriteOnce volume. Ordering inside a topic is what this product buys from a broker — every event
+about one order arriving in the order it happened — and an order exists only inside a partition.
+*/}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-broker
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: {{ .Values.broker.class }}
+  resources:
+    requests:
+      storage: {{ .Values.broker.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-broker
+  labels:
+    app: {{ .Release.Name }}-broker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-broker
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-broker
+    spec:
+      containers:
+        - name: broker
+          image: {{ .Values.broker.image | quote }}
+          env:
+            - name: BOOBLIK_TOPICS
+              value: {{ .Values.broker.topics | quote }}
+          ports:
+            - name: broker
+              containerPort: 9092
+          # A TCP probe and not an HTTP one: booblik's port speaks its own protocol and answers no
+          # request a probe could form. What this asserts is that something is listening, which is
+          # the whole of what the server needs to know before it connects.
+          readinessProbe:
+            tcpSocket:
+              port: broker
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.broker.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/booblik
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-broker
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-broker
+spec:
+  selector:
+    app: {{ .Release.Name }}-broker
+  ports:
+    - name: broker
+      port: 9092
+      targetPort: broker
+{{- if .Values.broker.networkPolicy }}
+---
+{{/*
+Only this release's server may speak to the broker.
+
+A NetworkPolicy selecting a pod turns that pod's ingress into a default-deny — so this both opens
+the one route and closes every other at once. It is enforced by the CNI and by nothing else: on a
+cluster whose CNI ignores policies this object exists, reads as protection and provides none, which
+is why it is behind a value rather than unconditional.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-broker
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Release.Name }}-broker
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ .Release.Name }}
+      ports:
+        - protocol: TCP
+          port: 9092
+{{- end }}

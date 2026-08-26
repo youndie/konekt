@@ -41,11 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-47](docs/backlog/B-47-first-release-tag.md) `[~]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
+| [B-48](docs/backlog/B-48-deployed-instance.md) `[~]` | Everything that runs this product is a file on somebody's laptop | P2 | M | B-47 |
 
 ## Closed (46)
 

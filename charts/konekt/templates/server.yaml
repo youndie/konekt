@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.server.replicas }}
+  {{- if and .Values.simulateTraffic (gt (int .Values.server.replicas) 1) }}
+  {{- fail "konekt: simulateTraffic is on and server.replicas is above 1 — each pod runs its own simulator, so every subscriber's allowance would drain at a multiple of the configured rate, with nothing in any log to say so" }}
+  {{- end }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      annotations:
+        # So that a change to a key or a password restarts the pod. Without it the rendered spec is
+        # unchanged when only the secret moved, and the running process keeps what it started with.
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      {{/*
+      MIGRATIONS RUN BEFORE THE SERVER, from the same image with a switch, and they run HERE rather
+      than as a helm hook. A `pre-install` hook is applied before the release's own objects, so on a
+      first install it would run against a database that does not exist yet — the one deployment
+      where the ordering matters most is the one where the hook is wrong.
+
+      As an init container the ordering is the pod's own: the container runs, exits 0, and only then
+      does the server start. A postgres that is not ready yet makes it exit non-zero and the kubelet
+      restarts it, which is a wait rather than a failure — and `--atomic` bounds how long that may
+      go on.
+
+      With one replica this is also the whole of the "two processes must not migrate at once"
+      property that compose gets from a separate `migrate` service. Above one replica the pods
+      serialise on Flyway's own lock instead, which is a wait rather than a race — but see
+      `server.replicas`, which is 1 for a different reason.
+      */}}
+      initContainers:
+        - name: migrate
+          image: "{{ .Values.server.image }}:{{ include "konekt.require" (dict "name" "server.version" "because" "a tag that moves leaves helm nothing to notice, so a green deploy runs the previous binary" "value" .Values.server.version) }}"
+          env:
+            {{- include "konekt.dbEnv" . | nindent 12 }}
+            - name: MIGRATE_ONLY
+              value: "true"
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+      containers:
+        - name: server
+          image: "{{ .Values.server.image }}:{{ .Values.server.version }}"
+          env:
+            {{- include "konekt.dbEnv" . | nindent 12 }}
+            - name: BROKER_HOST
+              value: {{ .Release.Name }}-broker
+            - name: BROKER_PORT
+              value: "9092"
+            - name: BRAND
+              value: {{ .Values.brand | quote }}
+            # Both switches are read as the exact string "true", so an unset or misspelled value
+            # means closed. That is the server's rule and it is repeated here rather than relied on:
+            # `quote` on a YAML boolean gives "true", and anything else gives something that is not.
+            - name: DEV_REVEAL_OTP
+              value: {{ .Values.dev.revealOtp | quote }}
+            - name: DEV_SCREENS
+              value: {{ .Values.dev.screens | quote }}
+            - name: SIMULATE_TRAFFIC
+              value: {{ .Values.simulateTraffic | quote }}
+            - name: PAYMENT_MOCK_MODE
+              value: {{ .Values.payment.mode | quote }}
+            - name: PAYMENT_MOCK_DELAY_MS
+              value: {{ .Values.payment.delayMs | quote }}
+            # WHICH BUILD THIS IS, and it is not decoration: it names the release in a metrik deploy
+            # marker and in a katcher crash group. Unset, katcher's own default is `Unspecified`,
+            # which is what makes a crash report unactionable.
+            - name: RELEASE
+              value: {{ .Values.server.version | quote }}
+            - name: ENVIRONMENT
+              value: {{ .Values.observability.environment | quote }}
+            - name: OBSERVABILITY_SERVICE
+              value: {{ .Values.observability.service | quote }}
+            {{- include "konekt.agentEnv" (dict "name" "metrik" "agent" .Values.observability.metrik "root" .) | nindent 12 }}
+            {{- include "konekt.agentEnv" (dict "name" "tracy" "agent" .Values.observability.tracy "root" .) | nindent 12 }}
+            {{- include "konekt.agentEnv" (dict "name" "katcher" "agent" .Values.observability.katcher "root" .) | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+          # `/health` answers without a token and without touching the database — it is served by
+          # the half of the routing tree that needs neither. A probe that read the store would
+          # restart the pod for a slow query, and one that authenticated would report the state of
+          # the session machinery rather than of this process.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  selector:
+    app: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
