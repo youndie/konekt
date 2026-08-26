@@ -23,7 +23,10 @@ from a registry rather than recalled, is [docs/research/research-stack.md](docs/
      surface customisation the moment it arrives. konekt inverts the wrapping to survive it (§1.3);
    - **petich drops outbox events silently** when handed a repository without outbox support — the
      saga still completes and every natural assertion still passes (§1.7);
-   - **katcher publishes no Apple target**, so the iOS build reports no crashes at all (§1.9).
+   - **katcher published no Apple target** until `client:0.6.2`, so the iOS build reported no crashes
+     at all. Closed by youndie/katcher#25 and wired in `B-27`; kept in the list because the SHAPE
+     recurs — `tracy`'s agent still publishes `jvm`, `linux_*` and `macos_arm64` and no iOS target,
+     which is youndie/tracy#16 (§1.9).
 2. [docs/research/research-stack.md](docs/research/research-stack.md) — what is built on top of the
    toolkits: versions, the module layout, the layer rules, `Money`, the test harness. Four of its
    findings change how code is written rather than which library is used:
@@ -129,12 +132,12 @@ circular dependency inside `:server` naming neither module.
   tree; nested children serialise perfectly, which is what makes it easy to miss, and the client then
   receives an unknown component for the whole screen and draws nothing. Use
   `call.respondKompotComponent`.
-- **The client is JVM-only, and that is upstream rather than a choice.** kompot's Compose half —
-  `kompot-client`, `kompot-theme-client`, `kompot-ds-material-compose`, `kompot-forms-client`,
-  `kompot-wizard-client`, `kompot-images-client-coil` — publishes `-android`, `-desktop`,
-  `-wasm-js` and **no iOS artefact**, while the protocol half publishes the three iOS targets. So
-  `:client` does not use `konekt.multiplatform`. youndie/kompot#84. And when it closes the answer is
-  two iOS targets, not three: Compose stopped publishing `iosX64` after `1.11.0-alpha01`.
+- **The client builds for iOS, and still does not use `konekt.multiplatform`.** kompot's Compose half
+  published no iOS artefact at all until `0.31.0.76` (youndie/kompot#84) — that is closed, measured at
+  `0.32.0.77`: `kompot-client`, `kompot-theme-client` and `kompot-ds-material-compose` each declare
+  `ios_arm64` and `ios_simulator_arm64`. The reason the convention plugin still does not fit is the
+  second one, which outlived the first: it declares all THREE iOS targets and the Compose half has
+  two, because Compose stopped publishing `iosX64` after `1.11.0-alpha01`. So `:client` names its own.
 - **Compose versions are matched to the toolkit's binaries, not to the newest release.** The client
   pins `1.11.1` with material3 `1.11.0-alpha07`, named by coordinate rather than through the
   plugin's `compose.*` accessors. A newer foundation beside the toolkit's material3 resolves and
@@ -273,7 +276,7 @@ circular dependency inside `:server` naming neither module.
   A refusal thrown as an exception is a wizard that is neither here nor there.
 - **Anything that reads a generated directory must declare the dependency**, ktlint included —
   excluding generated files from the *check* does not remove the directory from the task's *inputs*.
-- **CI is two jobs: the documentation gate and the build.** The build asks for Docker before Gradle
+- **CI is three jobs: the documentation gate, the build, and the stand.** The build asks for Docker before Gradle
   does — half the suite is Testcontainers, and a runner without a daemon otherwise fails inside
   Testcontainers with a message about a socket. `ubuntu-latest` because the repository is public;
   a private one would need a self-hosted label, which is a bill rather than a setting.
@@ -284,8 +287,10 @@ circular dependency inside `:server` naming neither module.
   `--rerun-tasks` to be believed.
 - **An unknown component draws a block, and the block does not name the type.** konekt replaces the
   toolkit's registry entry for `UnknownComponent` — the default reports and draws nothing, and a hole
-  is indistinguishable from a screen that failed to load. Which density is the screen's decision
-  (`LocalUnknownBlockDensity`), not the renderer's. The wire name goes to the degradation sink, where
+  is indistinguishable from a screen that failed to load. Which density is NOMINALLY the screen's
+  decision (`LocalUnknownBlockDensity`) — but nothing provides it outside the renderer's own test, so
+  the CARD branch is unreachable in production and no arrangement of components demonstrates both.
+  `B-25` carries the finding and the open question of who should choose. The wire name goes to the degradation sink, where
   an operator can count it; on the screen it is a word nobody can act on.
 - **The stand is the only thing that asks the application.** Four defects fatal to the running server
   survived 191 green tests, because every test below that level builds its own object graph and
@@ -313,10 +318,11 @@ circular dependency inside `:server` naming neither module.
   `markAsRefreshTokenRequest()` does not exist in Ktor 3.5.
 - **`Last-Event-ID` is deliberately not used.** It resumes a stream by replaying, which needs the
   server to number and keep frames; this one does neither, because an update is losable by design.
-  The client reconnects and announces the gap instead, on `SseRealtimeSource.streamRestarted` — and
-  **nothing consumes that signal yet**: its only collector is its own test, because no client screen
-  exists to refetch. Wiring it is not optional decoration, since clearing the update overlay is the
-  same event (see the bullet above and [B-18](docs/backlog/B-18-cache-versus-realtime.md)).
+  The client reconnects and announces the gap instead, on `SseRealtimeSource.streamRestarted`, and
+  `KonektApp` consumes it (`B-43`): it clears the update overlay and refetches, in that ORDER — the
+  other way round the in-flight response is overwritten by the stale entry it was fetched to replace.
+  Both halves are proved by mutation separately, because a test that clears and refetches passes on an
+  implementation that does neither.
 - **MockEngine and the client's SSE plugin do not meet.** No frame ever arrives and the collector
   waits, so the failure is a timeout that names the test rather than the cause. Stream tests run an
   embedded CIO server on an ephemeral port.
