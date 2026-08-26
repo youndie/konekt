@@ -2,6 +2,8 @@ package io.konekt.conformance
 
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
+import io.konekt.feature.auth.shared.api.LoginCodeSubmit
+import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
@@ -102,4 +104,13 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         // this build where a spelling mistake would be silent. `CustomPackageFormTest` holds it
         // instead, which is a unit test standing in for a protocol check — see U13.
         endpointKey<CustomPackagePatch>("POST"),
+        // THE LOGIN SUBMITS. Both are `submit` endpoints and both change state — one asks the SMSC to
+        // send a code, the other issues a session — and state-changing checks are off, which is what
+        // keeps a conformance walk from signing itself in a hundred times.
+        //
+        // The walk still goes THROUGH the second one: `AuthOtp.Verify` is how it gets its token, and
+        // these two are the same use cases behind a different shape. So what is unwalked here is the
+        // shape rather than the behaviour.
+        endpointKey<LoginSubmit>("POST"),
+        endpointKey<LoginCodeSubmit>("POST"),
     )

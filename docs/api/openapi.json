@@ -6,6 +6,86 @@
         "description": "Generated from the routing tree by io.konekt.openapi — never hand-edited. It describes a PRODUCTION deployment: the development route that reads back a one-time code exists only when DEV_REVEAL_OTP=true and is deliberately absent here. Request bodies are not described; see docs/api/api-openapi.md for that gap and why it is admitted rather than filled with hand-written copies of the Kotlin types."
     },
     "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "summary": "Ask for a code, and be told where to type it",
+                "x-kompot-endpoint-kind": "submit",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "Ask for a code, and be told where to type it",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.standard.NavigateAction"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The request is well-formed and its contents are wrong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login/code": {
+            "post": {
+                "summary": "Verify the code and issue a session",
+                "x-kompot-endpoint-kind": "submit",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "Verify the code and issue a session",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.auth.UpdateSessionAction"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The request is well-formed and its contents are wrong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/otp/request": {
             "post": {
                 "summary": "Send a one-time code to a number",
@@ -808,6 +888,84 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/screens/login": {
+            "get": {
+                "summary": "The way in, step one: a form asking for a number",
+                "x-kompot-endpoint-kind": "form",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The way in, step one: a form asking for a number",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.forms.KompotFormResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/screens/login/code": {
+            "get": {
+                "summary": "The way in, step two: the code, and the number it was sent to",
+                "x-kompot-endpoint-kind": "form",
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "msisdn",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "error",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The way in, step two: the code, and the number it was sent to",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.forms.KompotFormResponse"
                                 }
                             }
                         }

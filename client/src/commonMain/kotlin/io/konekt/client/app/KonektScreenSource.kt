@@ -6,6 +6,7 @@ import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotRegistry
 import io.github.youndie.kompot.KompotScreen
+import io.github.youndie.kompot.decodeKompotAction
 import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.form.FormPatch
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 // THE REAL SOURCE BEHIND THE HOLDER: four operations over the client this module already builds, and
 // deliberately nothing else. It is not a repository abstraction hiding HTTP — every method here is
@@ -38,9 +40,34 @@ class KonektScreenSource(
     private val realtime: SseRealtimeSource,
     private val registry: KompotRegistry,
     private val json: Json,
+    // WHERE EACH FORM POSTS. `submit_form` carries a form id and no address — the toolkit leaves the
+    // routing to the application — so this is the client's half of that contract, and a map for the
+    // same reason `routes` is: the deployment decides, not the library.
+    private val submits: Map<String, String> = emptyMap(),
 ) : ScreenSource {
-    override suspend fun fetch(address: String): KompotComponent =
-        json.decodeKompotComponent(http.get(address).bodyAsText())
+    // ONE REQUEST, AND THE BODY DECIDES THE SHAPE. A form response is an object with `schema` and
+    // `screen`; a screen is a component with a `type`. Choosing on the presence of `schema` rather
+    // than on the address means the client needs no second copy of which routes are forms — the
+    // server already said so by what it sent.
+    override suspend fun fetch(address: String): Screen {
+        val body = http.get(address).bodyAsText()
+
+        // THE ADDRESS AND THE BODY IN THE MESSAGE, because a decoder's own is neither. "Unexpected
+        // JSON token at offset 13" names no route and shows nothing, and the first thing anybody does
+        // with it is add a println — so it is here instead.
+        val root =
+            try {
+                json.parseToJsonElement(body).jsonObject
+            } catch (failure: SerializationException) {
+                throw SerializationException("$address did not answer one JSON document: ${body.take(200)}", failure)
+            }
+
+        return if (root.containsKey("schema")) {
+            Screen.Form(json.decodeFromString(KompotFormResponse.serializer(), body))
+        } else {
+            Screen.Tree(json.decodeKompotComponent(body))
+        }
+    }
 
     // A missing kit is `null` and not a failure. A deployment that serves no theme is a deployment
     // in the default palette, which is a coherent thing to be; making it fatal would stop an
@@ -100,6 +127,59 @@ class KonektScreenSource(
 
     @Composable
     override fun render(
+        screen: Screen,
+        onAction: (KompotAction) -> Unit,
+    ) {
+        when (screen) {
+            // A FORM GETS ITS OWN CONTROLLER, built from the schema that came with it. The empty one
+            // below is what every other screen gets, and a form drawn with it holds nothing: the
+            // inputs render, accept typing, and lose it.
+            is Screen.Form -> {
+                KonektFormScreen(
+                    response = screen.response,
+                    registry = registry,
+                    patchFetcher = null,
+                    onAction = onAction,
+                    // SUBMITTING GOES BACK OUT THROUGH THE SAME HANDLER. The endpoint answers a
+                    // `KompotAction` — a `navigate` for the first login step, an `update_session` for
+                    // the second — and the client feeds it into the chain it already has. Nothing new
+                    // travels back and no new endpoint kind appears; that is the toolkit's own design,
+                    // and the reason a form submit needs no machinery of its own here.
+                    submit = { formId, values ->
+                        val address =
+                            submits[formId]
+                                ?: error("no address for form \"$formId\" — a submit button posting nowhere")
+
+                        val answer =
+                            json.decodeKompotAction(
+                                http
+                                    .post(address) {
+                                        contentType(ContentType.Application.Json)
+                                        setBody(
+                                            json.encodeToString(
+                                                FormPatchRequest.serializer(),
+                                                // `fieldId` is what CHANGED, and a submit changes
+                                                // nothing — the form is the subject. Sending the form's
+                                                // own id rather than inventing a field keeps the shape
+                                                // one thing rather than two.
+                                                FormPatchRequest(formId = formId, fieldId = formId, values = values),
+                                            ),
+                                        )
+                                    }.bodyAsText(),
+                            )
+                        onAction(answer)
+                    },
+                )
+            }
+
+            is Screen.Tree -> {
+                renderTree(screen.component, onAction)
+            }
+        }
+    }
+
+    @Composable
+    private fun renderTree(
         tree: KompotComponent,
         onAction: (KompotAction) -> Unit,
     ) {

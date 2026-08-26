@@ -84,7 +84,7 @@ fun KonektApp(
     // than `remember { }`: a caller that changes the address it passes still moves the holder, which
     // is what every existing test does.
     var current by remember(address) { mutableStateOf(address) }
-    var tree by remember(current) { mutableStateOf<KompotComponent?>(null) }
+    var screen by remember(current) { mutableStateOf<Screen?>(null) }
     // KEYED BY A PRESS COUNT AND NOT BY THE ACTION, and that is a fix rather than a flourish.
     //
     // A `LaunchedEffect(pending)` that clears `pending` inside itself changes its own key, which
@@ -111,7 +111,7 @@ fun KonektApp(
     var fetchedTheme by remember { mutableStateOf<KompotTheme?>(null) }
     LaunchedEffect(theme) { if (theme == null) fetchedTheme = screens.brandTheme() }
 
-    LaunchedEffect(current) { tree = screens.fetch(current) }
+    LaunchedEffect(current) { screen = screens.fetch(current) }
 
     LaunchedEffect(presses) {
         val action = pending ?: return@LaunchedEffect
@@ -133,7 +133,7 @@ fun KonektApp(
             // pre-gap tree with no overlay, which is stale and honest; the other way round it shows a
             // fresh tree wearing a stale overlay, which is wrong and looks fine.
             updates.clear()
-            tree = screens.fetch(current)
+            screen = screens.fetch(current)
         }
     }
 
@@ -146,7 +146,7 @@ fun KonektApp(
             // handler could not move the screen it is a source for — which is why `render` takes one
             // rather than the source keeping it.
             val handle: (KompotAction) -> Unit = { action ->
-                val destination = (action as? NavigateAction)?.let { routes[it.deeplink] }
+                val destination = (action as? NavigateAction)?.let { resolve(it.deeplink, routes) }
                 if (destination != null) {
                     // Clearing the overlay is not optional. It is keyed by component id and the ids
                     // of two different screens can collide — `counter-data` on one and on another —
@@ -163,7 +163,7 @@ fun KonektApp(
                 }
             }
 
-            tree?.let { screens.render(it, handle) }
+            screen?.let { screens.render(it, handle) }
         }
     }
 }
@@ -174,8 +174,28 @@ fun KonektApp(
 // It is not a repository abstraction hiding HTTP. Every method here is something the holder does to
 // the outside world, and the real implementation is a handful of lines over the client this module
 // already builds.
+// WHAT AN ADDRESS ANSWERS WITH, and there are two shapes rather than one.
+//
+// Most screens are a component tree. A form is a tree AND a schema, and the difference is not
+// cosmetic: the fields only work if a `FormController` built from that schema is in scope, so a
+// caller that decoded a form as a tree would draw five inputs that hold nothing.
+//
+// A sealed type rather than a nullable schema on one class: the holder must handle both, and a
+// nullable field is a branch a caller can forget to take.
+sealed interface Screen {
+    data class Tree(
+        val component: KompotComponent,
+    ) : Screen
+
+    data class Form(
+        val response: KompotFormResponse,
+    ) : Screen
+}
+
 interface ScreenSource {
-    suspend fun fetch(address: String): KompotComponent
+    // The address decides which shape comes back, and the SERVER decides that by what it serves. A
+    // client that had to be told in advance would be a client with a second copy of the route table.
+    suspend fun fetch(address: String): Screen
 
     // THE BRAND KIT, and it is on the source rather than left to each entry point on purpose. Every
     // root would otherwise have to remember to fetch it, and a root that forgot would draw the
@@ -201,7 +221,7 @@ interface ScreenSource {
 
     @Composable
     fun render(
-        tree: KompotComponent,
+        screen: Screen,
         onAction: (KompotAction) -> Unit,
     )
 }
@@ -210,3 +230,29 @@ data class ComponentUpdate(
     val componentId: String,
     val component: KompotComponent,
 )
+
+// A DEEPLINK TO AN ADDRESS, exact first and then by prefix.
+//
+// Exact is what `app://plans` needs. The prefix is what `app://login/code?msisdn=+1555…` needs: the
+// destination is one screen and the query is a value the server put there, so a map keyed on the whole
+// string would need an entry per subscriber. Everything after the matched prefix is carried across
+// unchanged — the client does not read it, and reading it would be the client deciding what a login
+// step means.
+//
+// Longest prefix wins, so `app://login/code` is not swallowed by `app://login`. Sorting rather than
+// trusting the map's order: a `Map` has none, and the version of this that worked did so by accident
+// of insertion.
+internal fun resolve(
+    deeplink: String,
+    routes: Map<String, String>,
+): String? {
+    routes[deeplink]?.let { return it }
+
+    val prefix =
+        routes.keys
+            .filter { deeplink.startsWith("$it?") || deeplink.startsWith("$it/") }
+            .maxByOrNull { it.length }
+            ?: return null
+
+    return routes.getValue(prefix) + deeplink.removePrefix(prefix)
+}

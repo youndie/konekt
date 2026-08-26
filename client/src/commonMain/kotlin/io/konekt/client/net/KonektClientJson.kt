@@ -2,6 +2,7 @@ package io.konekt.client.net
 
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.forms.kompotFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
@@ -34,6 +35,12 @@ val konektClientJson: Json =
             kompotAuthSerializersModule +
             esimActionsSerializersModule +
             purchaseActionsSerializersModule +
+            // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
+            // something: the components of a form are generated into
+            // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a
+            // submit button encoded to a 500 on the server and would have decoded to nothing on the
+            // client. Actions are registered by hand (§1.13) and nothing generates a reminder.
+            kompotFormsSerializersModule +
             // BOTH FORM MODULES, and a client with only one of them decodes the screen and then dies
             // on `$.schema.fields[0]` — which is exactly what the stand found the first time it asked
             // for a form. `generatedFormsSerializersModule` carries the form COMPONENTS, the inputs

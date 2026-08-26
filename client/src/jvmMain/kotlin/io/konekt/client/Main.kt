@@ -14,11 +14,13 @@ import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
-import io.konekt.feature.auth.shared.api.AuthOtp
-import io.konekt.feature.auth.shared.api.DevOtp
-import io.konekt.feature.auth.shared.api.DevOtpResponse
-import io.konekt.feature.auth.shared.api.RequestOtpRequest
-import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
+import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
+import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
+import io.konekt.feature.auth.shared.api.LoginCodeSubmit
+import io.konekt.feature.auth.shared.api.LoginForms
+import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
@@ -36,35 +38,21 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.serializer
 
-// A RUNNER AGAINST THE STAND, not the shipped application, and the difference is one route.
+// THE APPLICATION, and it no longer knows a development route exists.
 //
-// It signs in through `/api/v1/dev/otp`, the development endpoint that reads back a one-time code.
-// That route exists only where `DEV_REVEAL_OTP` is set and must never ship: a machine endpoint
-// revealing any subscriber's code IS the authentication system. A real client draws a login screen
-// and the subscriber types the code they were sent.
+// It used to sign in through `/api/v1/dev/otp` — the endpoint that reads back a one-time code — and
+// said so in this comment, because there was nowhere else to get one: a machine endpoint revealing
+// any subscriber's code IS the authentication system, and this file did it anyway. `B-46` built the
+// login screen, so the way in is now the way in.
 //
-// What it is for is the other half of B-43's first acceptance criterion — a window drawing a home
-// screen the SERVER built, counter cards included, with no text in it composed here:
+// It opens on that screen, a subscriber types their number and the code they were sent, and the
+// second step answers an `update_session` this runner adopts before moving home:
 //
 //     make stand-up && ./gradlew :client:run
 fun main() {
     val baseUrl = System.getenv("KONEKT_URL") ?: "http://127.0.0.1:8080"
     val session = KonektSession()
     val http = konektHttpClient(CIO.create(), baseUrl, session, konektClientJson)
-
-    // Blocking, and deliberately before the window opens. A runner that draws an empty frame and then
-    // fills it is demonstrating a loading state nobody asked for; the holder itself fetches inside the
-    // composition, which is the product's behaviour.
-    runBlocking {
-        val msisdn = "1555${(1_000_000..9_999_999).random()}"
-        http.post(AuthOtp.Request(AuthOtp())) { setBody(RequestOtpRequest(msisdn)) }
-        val code = http.get(DevOtp(msisdn)).body<DevOtpResponse>().code
-        val answer = http.post(AuthOtp.Verify(AuthOtp())) { setBody(VerifyOtpRequest(msisdn, code)) }
-
-        val action = konektClientJson.decodeKompotAction(answer.bodyAsText())
-        check(action is UpdateSessionAction) { "verify answered ${action::class.simpleName}, not a session" }
-        session.adopt(SessionTokens(action.accessToken, action.refreshToken))
-    }
 
     val buy = BuyPlan(http)
     val screens =
@@ -73,6 +61,14 @@ fun main() {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
+            // The two login forms, and nothing else posts. A map rather than a convention, because a
+            // convention that derives an address from a form id is a second route table nobody can
+            // grep for.
+            submits =
+                mapOf(
+                    LoginForms.NUMBER to addressOf<LoginSubmit>(),
+                    LoginForms.CODE to addressOf<LoginCodeSubmit>(),
+                ),
         )
 
     // OBSERVABILITY, and the runner is where it is decided rather than inside the holder. A client
@@ -103,7 +99,9 @@ fun main() {
                 // counted nowhere — the exact blindness kompot#81 was filed about, surviving its own
                 // fix upstream.
                 onDegradation = observability.recorder(),
-                address = homeAddress(),
+                // OPENS ON THE LOGIN SCREEN. There is no session yet, and the home screen behind a
+                // token would answer 401 to an application that has not asked for one.
+                address = addressOf<LoginScreenResource>(),
                 // A LOCAL KEY, NOT AN ADDRESS, and that is worth knowing before somebody goes looking
                 // for where it is sent. `SseRealtimeSource.subscribe` ignores its topic: the path is
                 // fixed and the SERVER derives the topic from the caller's token. So this string only
@@ -114,17 +112,35 @@ fun main() {
                 darkMode = false,
                 // THE ONE TRANSITION THIS BUILD HAS. The home screen's banner offers "See plans" and
                 // the deeplink is spelled once, in the shared module both sides read.
-                routes = mapOf(PLANS_DEEPLINK to plansAddress()),
+                routes =
+                    mapOf(
+                        PLANS_DEEPLINK to plansAddress(),
+                        // The login step, matched by PREFIX: the server puts the number in the query
+                        // and a map keyed on the whole string would need an entry per subscriber.
+                        LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
+                        LOGIN_DEEPLINK to addressOf<LoginScreenResource>(),
+                    ),
                 // Announced rather than swallowed: a handler that silently did nothing would make a
                 // button that does nothing indistinguishable from one whose handler is missing.
                 onAction = { action ->
-                    // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
-                    // about purchases is this application's holder rather than a reusable one. What
-                    // comes back is the order screen's address, and the holder moves to it exactly as
-                    // it moves for a `navigate`.
-                    buy.addressFor(action) ?: run {
-                        println("konekt: no handler for $action")
-                        null
+                    when {
+                        // THE SESSION LANDS HERE, which is the one thing a holder must not do: it
+                        // would be a screen holder that knows what a token is. The runner adopts it
+                        // and answers with the home address, so signing in ends the same way every
+                        // other transition does.
+                        action is UpdateSessionAction -> {
+                            session.adopt(SessionTokens(action.accessToken, action.refreshToken))
+                            homeAddress()
+                        }
+
+                        // BUYING, for the same reason: a holder with an opinion about purchases is
+                        // this application's holder rather than a reusable one.
+                        else -> {
+                            buy.addressFor(action) ?: run {
+                                println("konekt: no handler for $action")
+                                null
+                            }
+                        }
                     }
                 },
             )

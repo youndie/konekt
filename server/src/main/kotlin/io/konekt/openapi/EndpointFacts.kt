@@ -3,6 +3,10 @@ package io.konekt.openapi
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.DevOtp
+import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
+import io.konekt.feature.auth.shared.api.LoginCodeSubmit
+import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
@@ -236,6 +240,38 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 // 422 for a quantity outside the steps, the same refusal the GET makes and for the
                 // same reason: the client picks from the list the server prices.
                 refusals = setOf(404, 422),
+            ),
+        endpointKey<LoginScreenResource>("GET") to
+            EndpointFacts(
+                summary = "The way in, step one: a form asking for a number",
+                kind = EndpointKind.FORM,
+                successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
+            ),
+        endpointKey<LoginCodeScreenResource>("GET") to
+            EndpointFacts(
+                summary = "The way in, step two: the code, and the number it was sent to",
+                kind = EndpointKind.FORM,
+                successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
+            ),
+        endpointKey<LoginSubmit>("POST") to
+            EndpointFacts(
+                summary = "Ask for a code, and be told where to type it",
+                // `submit`: it answers a KompotAction the client feeds back into its chain — a
+                // `navigate` here, and an `update_session` from the step after.
+                kind = EndpointKind.SUBMIT,
+                successBodyType = "io.github.youndie.kompot.standard.NavigateAction",
+                // 422 from Msisdn.parse on a number that is not one.
+                refusals = setOf(422),
+            ),
+        endpointKey<LoginCodeSubmit>("POST") to
+            EndpointFacts(
+                summary = "Verify the code and issue a session",
+                kind = EndpointKind.SUBMIT,
+                successBodyType = "io.github.youndie.kompot.auth.UpdateSessionAction",
+                // A WRONG CODE IS NOT HERE, and that is the design rather than an omission: it answers
+                // a `navigate` back to the same screen carrying the reason, because a refusal a
+                // subscriber must read is a screen rather than a status.
+                refusals = setOf(422),
             ),
         endpointKey<HomeScreenResource>("GET") to
             EndpointFacts(

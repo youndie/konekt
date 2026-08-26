@@ -3,6 +3,7 @@ package io.konekt
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.forms.kompotFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
@@ -40,6 +41,7 @@ import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
+import io.konekt.login.loginRoutes
 import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.observability.KonektTrace
 import io.konekt.observability.ObservabilityConfig
@@ -203,6 +205,10 @@ val konektRoutes: List<RouteGroup> =
         // in the use cases, and refresh is public because the refresh token IS the credential.
         RouteGroup(AuthTier.PUBLIC) {
             authRoutes()
+            // The login SCREENS and their submits: public for the same reason `authRoutes` is, and
+            // beside it rather than in the screens group, because a screen group behind a token could
+            // not serve the screen that gets one.
+            loginRoutes()
             sessionRoutes()
         },
         // The user tier. Decided here, in the composition root, while the shape of a token is the
@@ -570,5 +576,11 @@ private val kompotJson: Json =
             esimActionsSerializersModule +
             // Buying, konekt's second action. Registered by hand like the first: nothing fails at
             // build time if it is missing, the press simply cannot be decoded.
-            purchaseActionsSerializersModule
+            purchaseActionsSerializersModule +
+            // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
+            // something: the components of a form are generated into
+            // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a
+            // submit button encoded to a 500 on the server and would have decoded to nothing on the
+            // client. Actions are registered by hand (§1.13) and nothing generates a reminder.
+            kompotFormsSerializersModule
     }

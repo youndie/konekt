@@ -1,6 +1,8 @@
 package io.konekt.conformance
 
 import io.konekt.feature.auth.shared.api.AuthOtp
+import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
+import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
@@ -73,6 +75,13 @@ class TckCoverageTest {
                 // The catalogue, reachable blind: a public-shaped GET answering one JSON document,
                 // and the second screen this build serves that a subscriber can actually get to.
                 endpointKey<PlansScreenResource>("GET"),
+                // The login screens: two forms, public, answering one JSON document each — so a blind
+                // walk reaches them without being given anything, and they are the first `form`
+                // endpoints it can reach without a session.
+                endpointKey<LoginScreenResource>("GET"),
+                // Reachable WITHOUT a number, and it answers step one when it has none — which is
+                // what makes a blind walk meaningful here rather than a 400 dressed as coverage.
+                endpointKey<LoginCodeScreenResource>("GET"),
                 // Both addressed by naming an order, and both reachable only because the walk creates
                 // one first. The second is the largest component tree this server emits.
                 endpointKey<Purchases.ById>("GET"),

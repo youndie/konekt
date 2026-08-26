@@ -129,6 +129,15 @@ class OpenApiDocumentTest {
                 "GET /health",
                 "POST /api/v1/auth/otp/request",
                 "POST /api/v1/auth/otp/verify",
+                // THE LOGIN SCREENS AND THEIR SUBMITS, and they must be public for the same reason
+                // the two above are: they are the way in, and a screen that gets you a session cannot
+                // sit behind one. They add no power — everything they do the OTP pair already did —
+                // and what protects all four is the lockout in the use cases plus the fact that no
+                // answer depends on whether the number is known.
+                "GET /api/v1/screens/login",
+                "GET /api/v1/screens/login/code",
+                "POST /api/v1/auth/login",
+                "POST /api/v1/auth/login/code",
                 // Public because the refresh token IS the credential: requiring an access token here
                 // would defeat the one thing this endpoint exists for.
                 "POST /api/v1/auth/session/refresh",
@@ -182,6 +191,6 @@ class OpenApiDocumentTest {
         val DESCRIBING_JWT = JwtConfig(secret = "openapi-generator", issuer = "konekt", audience = "konekt-app")
 
         // Fifteen: the whole product surface plus /health, and without the development route.
-        const val EXPECTED_OPERATIONS = 23
+        const val EXPECTED_OPERATIONS = 27
     }
 }

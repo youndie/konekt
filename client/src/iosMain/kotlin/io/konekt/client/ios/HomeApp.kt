@@ -13,11 +13,13 @@ import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
-import io.konekt.feature.auth.shared.api.AuthOtp
-import io.konekt.feature.auth.shared.api.DevOtp
-import io.konekt.feature.auth.shared.api.DevOtpResponse
-import io.konekt.feature.auth.shared.api.RequestOtpRequest
-import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
+import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
+import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
+import io.konekt.feature.auth.shared.api.LoginCodeSubmit
+import io.konekt.feature.auth.shared.api.LoginForms
+import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
@@ -45,10 +47,9 @@ import platform.UIKit.UIViewController
 // actually for. Nothing about the holder is duplicated here — `KonektApp` is the same composable, and
 // what this file adds is the twelve lines of platform between a `@Composable` and a phone.
 //
-// A RUNNER AND NOT THE PRODUCT, exactly like `Main.kt` and for the same reason: it signs in through
-// `/api/v1/dev/otp`, the development endpoint that reads back a one-time code. A machine endpoint
-// revealing any subscriber's code IS the authentication system; a real client draws a login screen
-// and the subscriber types what they were sent.
+// IT OPENS ON THE LOGIN SCREEN, like the desktop one and for the same reason: both used to sign in
+// through `/api/v1/dev/otp` — the endpoint that reads back a one-time code — and both said in their
+// own comments what that is. `B-46` built the way in, so neither knows the development route exists.
 @OptIn(ExperimentalForeignApi::class)
 fun homeViewController(): UIViewController {
     val env = NSProcessInfo.processInfo.environment
@@ -61,20 +62,6 @@ fun homeViewController(): UIViewController {
 
     val session = KonektSession()
     val http = konektHttpClient(Darwin.create(), baseUrl, session, konektClientJson)
-
-    // Blocking, and deliberately before the view exists — the same choice the desktop runner makes. A
-    // runner that draws an empty frame and then fills it is demonstrating a loading state nobody asked
-    // for; the holder itself fetches inside the composition, which is the product's behaviour.
-    runBlocking {
-        val msisdn = "1555${(1_000_000..9_999_999).random()}"
-        http.post(AuthOtp.Request(AuthOtp())) { setBody(RequestOtpRequest(msisdn)) }
-        val code = http.get(DevOtp(msisdn)).body<DevOtpResponse>().code
-        val answer = http.post(AuthOtp.Verify(AuthOtp())) { setBody(VerifyOtpRequest(msisdn, code)) }
-
-        val action = konektClientJson.decodeKompotAction(answer.bodyAsText())
-        check(action is UpdateSessionAction) { "verify answered ${action::class.simpleName}, not a session" }
-        session.adopt(SessionTokens(action.accessToken, action.refreshToken))
-    }
 
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val observability =
@@ -95,18 +82,28 @@ fun homeViewController(): UIViewController {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
+            submits =
+                mapOf(
+                    LoginForms.NUMBER to addressOf<LoginSubmit>(),
+                    LoginForms.CODE to addressOf<LoginCodeSubmit>(),
+                ),
         )
 
     return ComposeUIViewController {
         KonektApp(
             screens = screens,
-            address = homeAddress(),
+            address = addressOf<LoginScreenResource>(),
             // A LOCAL KEY, NOT AN ADDRESS. `SseRealtimeSource.subscribe` ignores its topic: the path
             // is fixed and the SERVER derives the topic from the caller's token, so this only keys
             // the overlay map. The client cannot learn its own subscriber id at all.
             topic = "konekt-ios",
             darkMode = false,
-            routes = mapOf(PLANS_DEEPLINK to plansAddress()),
+            routes =
+                mapOf(
+                    PLANS_DEEPLINK to plansAddress(),
+                    LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
+                    LOGIN_DEEPLINK to addressOf<LoginScreenResource>(),
+                ),
             onAction = { action ->
                 // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
                 // about purchases is this application's holder rather than a reusable one. What

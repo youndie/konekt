@@ -53,9 +53,9 @@ class KonektAppTest {
         // add a second suspending call to reason about for nothing.
         override suspend fun brandTheme(): io.github.youndie.kompot.theme.KompotTheme? = null
 
-        override suspend fun fetch(address: String): KompotComponent {
+        override suspend fun fetch(address: String): Screen {
             fetches++
-            return current
+            return Screen.Tree(current)
         }
 
         // No form here either, and refusing is better than answering an empty one: this fixture drives
@@ -78,9 +78,12 @@ class KonektAppTest {
         // called so the assertion is about the holder's map and not about the toolkit's registry.
         @Composable
         override fun render(
-            tree: KompotComponent,
+            screen: Screen,
             onAction: (io.github.youndie.kompot.KompotAction) -> Unit,
         ) {
+            // This fixture serves trees only; a form would need a controller and this test is about
+            // the clear-then-refetch order.
+            val tree = (screen as Screen.Tree).component
             val effective = LocalKompotRealtimeUpdates.current[(tree as UsageCounterCardComponent).id] ?: tree
             Text((effective as UsageCounterCardComponent).valueText)
         }

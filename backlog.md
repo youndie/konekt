@@ -41,14 +41,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-46](docs/backlog/B-46-no-login-screen.md) `[ ]` | Both runners sign in through a route that must never ship | P1 | M | - |
 | [B-47](docs/backlog/B-47-first-release-tag.md) `[ ]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 
-## Closed (45)
+## Closed (46)
 
 **The wire and the shell**
 
@@ -94,6 +93,7 @@ so re-prioritising must never move a file.
 - [B-40](docs/backlog/B-40-no-way-to-add-money.md) `[x]` - A subscriber is created with nothing and there is no way to add any
 - [B-43](docs/backlog/B-43-client-composition-root.md) `[x]` - The client has every part of an application and no application
 - [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[x]` - The client draws one screen of a product that has four
+- [B-46](docs/backlog/B-46-no-login-screen.md) `[x]` - Both runners sign in through a route that must never ship
 
 **Proof**
 
