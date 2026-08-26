@@ -89,9 +89,19 @@ COMPOSE := docker compose -f deploy/compose.yaml
 stand-up:
 	./gradlew :server:installDist
 	$(COMPOSE) up -d --build --wait
+	# An application and a key in katcher, without which every crash report is refused. A separate
+	# step rather than a service `up` starts: it exits when it is done, and a one-shot container is
+	# an error to `--wait` unless something depends on it — which here could only be the server, and
+	# the server deliberately depends on none of the observability trio.
+	$(COMPOSE) --profile seed run --rm katcher-seed
 
 stand-down:
-	$(COMPOSE) down -v
+	# `--profile seed`, and leaving it out cost an hour of measuring a stand that was not clean.
+	# `down -v` removes the volumes of ACTIVE services only, and `katcher-data` is also referenced by
+	# `katcher-seed`, which lives in a profile `down` does not consider — so katcher's database
+	# survived every teardown. Every "fresh stand" reading after that was the previous run's data,
+	# which is the shape of mistake that makes a green test mean nothing.
+	$(COMPOSE) --profile seed down -v
 
 stand-logs:
 	$(COMPOSE) logs --tail=200

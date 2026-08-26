@@ -1,7 +1,7 @@
 ---
 id: B-26
 title: "metrik, tracy and katcher wired, and a compose file that runs all three"
-status: wip
+status: done
 priority: P1
 size: M
 stage: stage-m4-proof
@@ -173,40 +173,66 @@ answered by the previous run's data. The assertion is a DELTA now — two more t
 before anything is rendered — and the same mutation kills it. A collector that accumulates cannot be
 asked "did it happen", only "did it happen again".
 
-## AC 1's katcher half: the wiring was missing, and it was invisible from every angle
+## AC 1's katcher half: three things were broken at once, and each hid the others
 
 The route that throws is `/api/v1/dev/fail`, behind `DEV_SCREENS` like every other demonstration
 control and for a sharper reason: a route that reliably answers 500 is a denial-of-service primitive
 if it ships.
 
-Adding it found something the address check could never have shown. **`Katcher.start` installs an
-uncaught-exception handler, and a route's exception never reaches one** — `StatusPages` catches it and
-answers 500, which is that plugin's entire purpose. So the server's katcher was correctly configured,
-correctly started, answered on its ingest address, and was structurally unable to receive anything a
-route did. The handler that swallows the exception is the only place that can report it, and it does
-now: `Katcher.catch(cause, context = route + method)`, guarded by
-`StatusPagesReportsToKatcherTest` — which also refuses the reverse mistake, a domain refusal reported
-as a crash. A 404 for somebody else's order is an ANSWER, and crash groups full of the product working
-correctly are crash groups an operator learns to ignore.
+Adding it did not finish the criterion — it started an excavation. Three independent faults sat
+between a route failing and an operator seeing it, and the address check this item shipped with was
+satisfied by all three being broken at the same time.
 
-## What delivery to katcher still needs, measured rather than guessed
+**1. Nothing threw on purpose.** That is what the route fixes, and it is the only one of the three
+this item anticipated.
 
-The report is produced and cannot yet arrive, and the two reasons are specific:
+**2. `StatusPages` swallows every route exception before any uncaught handler can run.** `Katcher.start`
+installs a `Thread.UncaughtExceptionHandler`; a route's exception never reaches one, because catching
+it and answering 500 is that plugin's entire purpose. So the server's katcher was correctly
+configured, correctly started, answered on its ingest address, and was structurally unable to receive
+anything a route did. The handler that swallows the exception is the only place that can report it,
+and it does now — guarded by `StatusPagesReportsToKatcherTest`, which also refuses the reverse
+mistake: a domain refusal must NOT be reported. A 404 for somebody else's order is an ANSWER, and
+crash groups full of the product working correctly are groups an operator learns to ignore.
 
-- **The stand's katcher has no application and no user.** Read out of its own database:
-  `apps: 0`, `app_keys: 0`, `users: 0`, `reports: 0`. An ingest carrying `konekt-server` names an app
-  key that katcher does not know, so it is refused. Provisioning one at stand startup is the missing
-  piece, and it is a fixture rather than a line of product code.
-- **Its data volume is mounted where it does not write.** `compose.yaml` mounts `katcher-data:/data`;
-  `docker diff` shows the database at `/app/data/local.db`. The volume is empty and the stand's
-  katcher therefore loses everything on recreate. Harmless for a demonstration and wrong, and it was
-  found by measuring the wrong directory first — the volume showed zero files both before and after a
-  deliberate crash, which is what a working pipeline would also have shown there.
+**3. A fresh katcher has no application and no key.** Read out of its own schema: `apps: 0`,
+`app_keys: 0`. An ingest naming `konekt-server` names a key `app_keys` does not have, and is refused —
+in silence, from the server's side. The stand seeds an application and a key for each half of the
+product.
 
-## `wip`, and what is left
+**Seeded rather than created through the UI, and the reason is the key.** `POST /apps` issues a
+GENERATED one, which no compose file can know in advance: the server would have to be restarted with
+a value that did not exist when it started. Writing the row directly is what lets the key be a
+constant the whole stand agrees on.
 
-- **AC 1's katcher half is produced but not delivered**, for the two reasons above. What changed is
-  that "unproved" now names a fixture gap rather than "nothing throws on purpose".
+**The seed is behind a profile and runs as a step of `make stand-up`.** A one-shot container that
+exits is an error to `--wait` unless something depends on it with `service_completed_successfully`,
+and the only candidate is the server — which deliberately depends on none of the observability trio,
+because an agent that cannot reach its collector must not stop the product from serving.
+
+Proved end to end by `ObservabilityScenarioTest`: the failing route answers 500, and katcher's own
+error page for `konekt-server` then names the exception type and the frame that threw. Read as HTML
+because that is what katcher exposes — `/api` carries the ingest and nothing else — so the far end of
+this pipeline is the page an operator would actually open. Mutation-proved on a clean stand: with the
+report call removed from the handler, the test waits out its timeout and fails.
+
+## Two measurement mistakes worth more than the fixes
+
+**The volume was mounted where katcher does not write.** `compose.yaml` had `katcher-data:/data`;
+`docker diff` shows the database at `/app/data/local.db`. So the stand's katcher persisted nothing.
+It was found by measuring the wrong directory first — the mounted volume showed zero files both
+before and after a deliberate crash, which is exactly what a *working* pipeline would have shown
+there too. A measurement that cannot distinguish success from failure is not a measurement.
+
+**`make stand-down` was not removing that volume, so no stand was ever clean.** `down -v` removes the
+volumes of ACTIVE services, and `katcher-data` is also referenced by `katcher-seed`, which lives in a
+profile `down` does not consider. Every "fresh stand" reading after that was the previous run's data —
+which is how a seed that inserts two applications appeared to insert four, and why the first
+idempotence fix looked like it had not worked. `--profile seed` is in the teardown now.
+
+## What is deliberately not covered
+
+- **Alerting thresholds.** metrik's alerts exist; tuning them needs traffic this build does not have.
 - **The read path trusts `X-Auth-Request-User`.** metrik and tracy sit behind a reverse proxy in a
   real deployment; the stand has none, so the header is simply believed. Fine for reading a stand and
   not fine for anything else — and worth stating because the same header on an INGEST route would be

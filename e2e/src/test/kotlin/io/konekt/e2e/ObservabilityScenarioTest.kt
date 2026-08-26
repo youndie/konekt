@@ -38,6 +38,20 @@ class ObservabilityScenarioTest {
     private val katcherUrl: String = System.getProperty("konekt.stand.katcher") ?: "http://127.0.0.1:8092"
 
     private val service = "konekt-server"
+
+    // The id the stand's seed gives konekt-server, which inserts it first. A literal rather than a
+    // lookup: the seed is the only thing that writes these rows and it writes them in one order, so a
+    // parse of the apps page would be indirection over a constant this repository owns.
+    private val konektServerApp = 1
+
+    // BOTH HEADERS, and one is not enough — the second is what took a 401 to find out. katcher's
+    // header auth wants a name AND an email, and creates the user from them, so nothing has to be
+    // provisioned for the read path.
+    private fun io.ktor.client.request.HttpRequestBuilder.katcherUser() {
+        header("X-Auth-Request-User", "e2e")
+        header("X-Auth-Request-Email", "e2e@konekt.local")
+    }
+
     private val plan = "tr-10gb-30d"
 
     @Test
@@ -128,6 +142,47 @@ class ObservabilityScenarioTest {
                     "deliberate failure" !in body,
                     "the exception message reached the client: $body",
                 )
+            }
+        }
+
+    @Test
+    fun `a route that throws produces a crash report katcher can show`(): Unit =
+        runBlocking {
+            // B-26'S FIRST ACCEPTANCE CRITERION, ALL THREE PARTS, and the katcher third took the
+            // longest to become assertable at all. What stood in the way was never one thing:
+            //
+            //   1. nothing threw on purpose. `/api/v1/dev/fail` does.
+            //   2. `Katcher.start` installs an uncaught-exception handler and `StatusPages` catches
+            //      every route exception before one can run, so a correctly configured katcher was
+            //      structurally unable to receive anything. The handler reports explicitly now.
+            //   3. a fresh katcher has no application and no key, so an ingest naming `konekt-server`
+            //      was refused. The stand seeds both.
+            //
+            // Each of those was invisible from the layer above it, and the address check this replaces
+            // was satisfied by all three being broken at once.
+            Stand.client().use { client ->
+                assertEquals(500, client.get("${Stand.serverUrl}/api/v1/dev/fail").status.value)
+            }
+
+            Stand.client(katcherUrl).use { client ->
+                val page =
+                    Stand.awaitOrExplain(
+                        what = "katcher to show the crash the failing route produced",
+                        timeout = 30.seconds,
+                    ) {
+                        // The application's own page, read the way a person reads it. katcher exposes
+                        // no JSON for this — `/api` carries the ingest and nothing else — so the far
+                        // end of this pipeline is HTML, and asserting on it is asserting on what an
+                        // operator would actually see.
+                        val body = client.get("$katcherUrl/apps/$konektServerApp/errors") { katcherUser() }.bodyAsText()
+                        body.takeIf { "deliberate failure" in it }
+                    }
+
+                // Not merely that something arrived: THIS failure, named by the class that threw and
+                // by the file it threw in. A report carrying somebody else's stack would satisfy a
+                // count and tell an operator nothing.
+                assertTrue("IllegalStateException" in page, "the report lost the exception type")
+                assertTrue("FailingRouting" in page, "the report lost the frame that threw")
             }
         }
 

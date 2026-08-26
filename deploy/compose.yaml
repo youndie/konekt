@@ -176,9 +176,77 @@ services:
   katcher:
     image: ghcr.io/youndie/katcher:latest
     volumes:
-      - katcher-data:/data
+      # `/app/data`, NOT `/data`, and the difference was a volume that persisted nothing. katcher
+      # writes `local.db` under `/app/data` — read out of `docker diff`, after a deliberate crash
+      # showed zero files in the mounted directory both before and after. A working pipeline would
+      # have shown exactly the same thing there, which is what made the wrong mount invisible.
+      - katcher-data:/app/data
     ports:
       - "${KATCHER_PORT:-8092}:8080"
+
+  # AN APPLICATION AND A KEY, WITHOUT WHICH KATCHER REFUSES EVERY REPORT.
+  #
+  # `Katcher.catch` posts to `/api/reports` with an app key, and the collector looks it up in
+  # `app_keys` — read out of its own schema. A fresh katcher has `apps: 0`, `app_keys: 0`, `users: 0`,
+  # so the key this stand configures names an application that does not exist and every report is
+  # refused. Nothing about that is visible from the server: the agent queues, uploads, and is turned
+  # away, which is the same silence as an agent that was never started.
+  #
+  # SEEDED RATHER THAN CREATED THROUGH THE UI, and the reason is the key. `POST /apps` issues a
+  # GENERATED key, which no compose file can know in advance — the server would have to be restarted
+  # with a value that did not exist when it started. Writing the row directly is what lets the key be
+  # a constant the whole stand agrees on.
+  #
+  # BEHIND A PROFILE, so `up` does not start it and `--wait` does not wait for it. A one-shot
+  # container that exits is an error to `--wait` unless something depends on it with
+  # `service_completed_successfully` — and the one candidate is the server, which deliberately has NO
+  # dependency on the observability trio in either direction: an agent that cannot reach its collector
+  # must not stop the product from serving. `make stand-up` runs it as an explicit step instead.
+  katcher-seed:
+    image: alpine:3.20
+    profiles: ["seed"]
+    depends_on:
+      # `service_started` and not `service_healthy`: the katcher image declares no healthcheck, and
+      # asking for one is a stand that refuses to come up at all. So the wait is on the FACT this
+      # needs — the tables existing — rather than on a status nobody publishes.
+      katcher:
+        condition: service_started
+    volumes:
+      - katcher-data:/app/data
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache sqlite >/dev/null
+        # katcher migrates its schema on startup, and this container races it. Waiting for the table
+        # rather than sleeping a guessed number of seconds: a sleep that is long enough today is the
+        # thing that breaks on a slower machine and looks like a broken seed.
+        i=0
+        until sqlite3 /app/data/local.db "SELECT 1 FROM app_keys LIMIT 1;" >/dev/null 2>&1; do
+          i=$$((i+1))
+          if [ "$$i" -gt 60 ]; then
+            echo "katcher never created app_keys — nothing to seed, and every report would be refused"
+            exit 1
+          fi
+          sleep 1
+        done
+        # Idempotent, because this runs on every `up`. `INSERT OR IGNORE` is enough for the KEYS —
+        # `app_keys.api_key` is uniquely indexed — and is NOT enough for the apps: `apps` has no
+        # unique index on `name`, so `OR IGNORE` silently inserted a second one every run and left
+        # four applications behind two keys. `WHERE NOT EXISTS` is what actually says "once".
+        sqlite3 /app/data/local.db "
+          INSERT INTO apps (name, type) SELECT 'konekt-server', 'JVM'
+            WHERE NOT EXISTS (SELECT 1 FROM apps WHERE name = 'konekt-server');
+          INSERT OR IGNORE INTO app_keys (app_id, api_key, created_at)
+            SELECT id, 'konekt-server', 0 FROM apps WHERE name = 'konekt-server';
+          INSERT INTO apps (name, type) SELECT 'konekt-client', 'COMPOSE_MULTIPLATFORM'
+            WHERE NOT EXISTS (SELECT 1 FROM apps WHERE name = 'konekt-client');
+          INSERT OR IGNORE INTO app_keys (app_id, api_key, created_at)
+            SELECT id, 'konekt-client', 0 FROM apps WHERE name = 'konekt-client';
+        "
+        sqlite3 /app/data/local.db "SELECT 'seeded app_keys: ' || COUNT(*) FROM app_keys;"
+    restart: "no"
 
   # THE SAME SERVER WITH THE PAYMENT MOCK SET TO REFUSE, and it is a second service rather than a
   # switch on the first because the mode is read once at startup. The compensated branch is one of
