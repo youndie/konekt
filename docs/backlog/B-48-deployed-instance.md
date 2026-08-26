@@ -1,7 +1,7 @@
 ---
 id: B-48
 title: "Everything that runs this product is a file on somebody's laptop"
-status: wip
+status: done
 priority: P2
 size: M
 stage: stage-m5-upstream
@@ -76,20 +76,23 @@ absent, and it advised applying what was already applied. `kubectl auth can-i` i
 been — a SelfSubjectAccessReview any authenticated client may create, answering about the operation
 actually needed rather than about an object nobody may read.
 
-## The fourth criterion is half met, and the halves are different
+## The fourth criterion, and the three different ways it was reached
 
 **tracy: met.** The deployment reports one instance, and the purchase made through the public address
 is findable by its `orderId`. Read at the collector rather than at the agent, which is the only place
 that distinction can be made at all.
 
-**metrik: NOT confirmed, and that is not the same as absent.** Its ingest is UDP: a send always
-succeeds, so nothing on the sending side can tell a working pipeline from a silent one. Confirming it
-means reading the collector, and reading that collector was not available from here. It stays
-unconfirmed rather than assumed — which is the distinction this whole item exists to hold.
+**metrik: met, and it took a second pair of eyes.** Its ingest is UDP — a send always succeeds, so
+nothing on the sending side can tell a working pipeline from a silent one — and the collector was not
+readable from where the check was being run. So it was recorded as UNCONFIRMED rather than as absent
+or as working, and confirmed afterwards by someone who could read it. The distinction is the point:
+"I could not look" is a third answer, and collapsing it into either of the other two is how a
+deployment comes to believe it is observed.
 
-**katcher: off on purpose, and it is the one thing to do next.** `Katcher.catch` posts with an
-application key and the collector looks it up; a key naming no application is every report refused,
-silently, and from the agent's side that is indistinguishable from an agent that never started. So
-both fields are empty, which the server reads as a decision rather than as a half-configuration.
-Registering the application is the collector's own step — the key is GENERATED there, so no values
-file can know it in advance, which is the same reason the compose stand seeds it directly.
+**katcher: met last, and it is the one that could not be wired in advance.** `Katcher.catch` posts
+with an APPLICATION key — not an installation-wide one like the other two — and the collector looks it
+up; a key naming no application is every report refused, silently, and from the agent's side that is
+indistinguishable from an agent that never started. So the deployment ran with both fields empty,
+which the server reads as a decision rather than as a half-configuration, until the application was
+registered and its GENERATED key existed to point at. That is the same reason the compose stand seeds
+its collector directly instead of calling an endpoint.
