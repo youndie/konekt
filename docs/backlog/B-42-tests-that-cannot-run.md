@@ -1,7 +1,7 @@
 ---
 id: B-42
 title: "A @Test whose return type is not void is silently ignored, and three of them were"
-status: open
+status: done
 priority: P1
 size: S
 stage: stage-m4-proof
@@ -53,3 +53,50 @@ been written months earlier and had never executed once.
 - Anchors: `build-logic/`, `server/src/test/kotlin/io/konekt/ci/`.
 
 Background: found while building [B-40](B-40-no-way-to-add-money.md).
+
+## What landed, and it checks something different from what this item proposed
+
+The check compares the number of `@Test` annotations a class **declares** against the number of cases
+JUnit **reported** for it, after every test run, in `konekt.base` — so every module has it and one
+added later gets it without anybody remembering.
+
+**The item asked for a bytecode check and that was the wrong instrument**, though its reasoning was
+right: no regex over Kotlin can determine a return type. This does not try to. Counting annotations
+and comparing against the report needs no return type at all, and catches strictly more — a method
+ignored for any reason, and a class not picked up at all. It also drops the dependency the Class-File
+API would have added on whichever JVM the Gradle daemon happens to run on, which is not the same JVM
+as the toolchain and is not the same on every machine.
+
+Reported may legitimately EXCEED declared: a `@TestFactory` produces dynamic cases and viddik's
+generated fixture is one. Only a shortfall is a defect.
+
+- AC MET: a `@Test` that does not run fails the build, naming the class and the shortfall. Proved by
+  taking the `: Unit` off `TrafficChainTest`'s resurrected test — the original defect, on the original
+  file: `io.konekt.mocks.TrafficChainTest declares 5 @Test and JUnit ran 4`.
+- AC MET: the check reports how many classes it read, and refuses a run that wrote no results at all —
+  a comparison with nothing to compare passes every time.
+- AC DEVIATION: it fails `./gradlew check` rather than `make check`. `make check` is the documentation
+  gate here and deliberately needs no JVM; CI runs both, so the gate that catches this is the one that
+  already compiles the code.
+
+## Two false positives, found by running it rather than by reading it
+
+Both would have made the check useless in a different way, and neither was visible from the code.
+
+**A multiplatform test task names its suite `MyTest[jvm]`.** Comparing simple names without stripping
+the target reported every `commonTest` class in every multiplatform module as never having run. A
+guard that cries wolf over a whole module is one that gets deleted in the week it first gets in the
+way.
+
+**A filtered task is running a subset on purpose.** `:client:viddikVerify` is a `Test` task narrowed
+to the generated screenshot fixtures, and it reported six classes as unrun — correctly, and
+meaninglessly, because the unfiltered `jvmTest` beside it covers them. Filtered tasks are skipped and
+**say so on the console**: a check that silently declines to check is the same shape of silence it
+exists to catch.
+
+## Not covered
+
+**Kotlin/Native test tasks.** `:client:iosSimulatorArm64Test` is a `KotlinNativeTest` and not a
+`Test`, so nothing here sees it — and the three iOS cases in that module are exactly the kind of small,
+new suite where one silently not running would go unnoticed. Written down rather than left to be
+discovered.

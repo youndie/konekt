@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (12)
+## Open (11)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -49,7 +49,6 @@ so re-prioritising must never move a file.
 | [B-22](docs/backlog/B-22-brand-b.md) `[~]` | Brand B: the colour kit ships from the server, the shape scale ships with the client | P1 | M | B-04 |
 | [B-26](docs/backlog/B-26-observability-wiring.md) `[~]` | metrik, tracy and katcher wired, and a compose file that runs all three | P1 | M | B-08 |
 | [B-27](docs/backlog/B-27-ios-crash-gap.md) `[~]` | Wire katcher into the iOS build, now that it has an Apple target | P1 | S | B-26 |
-| [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[ ]` | A @Test whose return type is not void is silently ignored, and three of them were | P1 | S | - |
 | [B-19](docs/backlog/B-19-roaming.md) `[ ]` | Roaming: status, zones and packages bought before the trip | P2 | M | B-08 |
 | [B-20](docs/backlog/B-20-custom-package-builder.md) `[ ]` | The custom package builder as a form, with the price coming from the server | P2 | M | B-08 |
 | [B-21](docs/backlog/B-21-tariff-change.md) `[ ]` | Changing tariff, as a saga with a confirmation | P2 | M | B-08 |
@@ -58,7 +57,7 @@ so re-prioritising must never move a file.
 | [B-30](docs/backlog/B-30-operator-material.md) `[ ]` | Operator material: what is configuration and what is a release | P2 | S | B-22, B-27 |
 | [B-41](docs/backlog/B-41-order-status-vocabulary-disagrees.md) `[ ]` | The server emits order statuses the component dictionary does not declare, and declares one nothing emits | P2 | S | - |
 
-## Closed (30)
+## Closed (31)
 
 **The wire and the shell**
 
@@ -103,6 +102,7 @@ so re-prioritising must never move a file.
 - [B-23](docs/backlog/B-23-openapi-document.md) `[x]` - Publish an OpenAPI document, because the conformance kit reads one
 - [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[x]` - The TCK gate asserts what it visited, not that it was clean
 - [B-39](docs/backlog/B-39-doc-layers-are-empty.md) `[x]` - The feature, screen and API layers are empty, and the reason they were empty has expired
+- [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[x]` - A @Test whose return type is not void is silently ignored, and three of them were
 
 **Upstream and the box**
 
