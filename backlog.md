@@ -41,14 +41,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-47](docs/backlog/B-47-first-release-tag.md) `[~]` | Nothing has ever been released, so three checks stand in for the one that matters | P2 | S | - |
 | [B-48](docs/backlog/B-48-deployed-instance.md) `[~]` | Everything that runs this product is a file on somebody's laptop | P2 | M | B-47 |
 
-## Closed (46)
+## Closed (47)
 
 **The wire and the shell**
 
@@ -113,6 +112,7 @@ so re-prioritising must never move a file.
 
 - [B-29](docs/backlog/B-29-file-upstream-issues.md) `[x]` - File U1–U5 upstream and record what came back
 - [B-30](docs/backlog/B-30-operator-material.md) `[x]` - Operator material: what is configuration and what is a release
+- [B-47](docs/backlog/B-47-first-release-tag.md) `[x]` - Nothing has ever been released, so three checks stand in for the one that matters
 
 <!-- END INDEX -->
 

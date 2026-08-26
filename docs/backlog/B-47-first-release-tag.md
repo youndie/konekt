@@ -1,7 +1,7 @@
 ---
 id: B-47
 title: "Nothing has ever been released, so three checks stand in for the one that matters"
-status: wip
+status: done
 priority: P2
 size: S
 stage: stage-m5-upstream
@@ -59,21 +59,31 @@ working: a green run of the same code against the same schema is a claim about r
 by nothing. It passes meaningfully the moment there is a second release, and it still takes a commit
 in the meantime.
 
-## Why this is `wip` and not `done`
+## The registry round trip, which is what this item was short of
 
-**The image is built and not published.** Pushing to the registry needs a token with
-`write:packages`, and the one this repository's tooling has carries `read:packages`. That is one
-command with a credential rather than work, and inventing a way around it would be worse than saying
-so:
+For a while this said the image was built and not published, because pushing needs a token with
+`write:packages` and no credential on a laptop here carries one. The answer was not a credential: it
+was noticing that **the right to publish already exists in CI** and belongs there. A job's own
+`GITHUB_TOKEN` may write packages under the same owner once the job asks for the permission, so the
+push moved to `.github/workflows/publish-image.yaml` and `make release-image` went back to being
+what it should have been — a way to produce the same image outside CI, for pointing a stand at.
 
-```bash
-make release-image VERSION=v0.1.0
-docker push ghcr.io/youndie/konekt-server:v0.1.0
-```
+**Published from a TAG and from nothing else.** The version is read from `github.ref_name` and a run
+on any other ref is refused, which is the same refusal `make release-image` makes when `git describe`
+finds nothing. An image named after a branch is one no `rolling-check` can ever point at and nobody
+can map back to a commit. A tag that already exists is refused as well: republishing under one tag
+changes no rendered spec, so nothing downstream restarts, and a cluster keeps running the previous
+binary behind a green deploy.
 
-Everything the third acceptance criterion is FOR is proved without it — the stand runs an image, the
-suite passes against it, and the image is named after a release. What is unproven is the registry
-round trip.
+**The round trip is asserted rather than assumed.** The second job PULLS the tag back out of the
+registry and drives the whole e2e suite through it — `SERVER_IMAGE` now names the migration and the
+declining server too, and `stand-up` builds nothing at all when it is set, so a mistake in this tree
+cannot make that run pass. On `v0.1.1`: `ghcr.io/youndie/konekt-server:v0.1.1` pulled, `docker
+inspect` naming it as the serving image, `:e2e:e2e` and `:client:standTest` both EXECUTED rather than
+reported UP-TO-DATE — which is the distinction that has cost this repository a green run before.
+
+The package is public, verified by fetching its manifest with an anonymous registry token rather than
+by reading the visibility field. That is what lets the chart render no pull secret.
 
 ## One thing the build machine cannot do
 
