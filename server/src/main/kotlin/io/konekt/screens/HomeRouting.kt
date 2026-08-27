@@ -1,6 +1,7 @@
 package io.konekt.screens
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
+import io.konekt.feature.auth.server.domain.SubscriberRepository
 import io.konekt.feature.purchase.server.domain.AccountBalances
 import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.usage.server.data.UsageCounterCards
@@ -21,6 +22,7 @@ fun Route.homeRoutes() {
     val cards by inject<UsageCounterCards>()
     val roaming by inject<RoamingPackages>()
     val roamingCards by inject<RoamingPackageCards>()
+    val subscribers by inject<SubscriberRepository>()
     val json by inject<Json>()
 
     get<HomeScreenResource> {
@@ -36,7 +38,15 @@ fun Route.homeRoutes() {
         // `CallRespondUsageTest` is what refuses the other spelling in the sources.
         call.respondKompotComponent(
             json,
-            HomeScreen.build(balance, counters, cards, packages, roamingCards, Shell.bottomNav(Shell.Tab.HOME)),
+            HomeScreen.build(
+                msisdn = subscribers.findById(subscriberId)?.msisdn?.value,
+                balance = balance,
+                counters = counters,
+                cards = cards,
+                packages = packages,
+                roamingCards = roamingCards,
+                nav = Shell.bottomNav(Shell.Tab.HOME),
+            ),
         )
     }
 }

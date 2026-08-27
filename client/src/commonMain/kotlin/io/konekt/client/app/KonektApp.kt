@@ -1,5 +1,10 @@
 package io.konekt.client.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -8,6 +13,8 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
@@ -166,7 +173,36 @@ fun KonektApp(
                 }
             }
 
-            screen?.let { screens.render(it, handle) }
+            // THE FRAME EVERY SCREEN IS DRAWN IN, and it belongs here rather than in a tree.
+            //
+            // Two things the canvas draws on all nine of its frames and no screen response carries:
+            // a side margin, and a bar at the BOTTOM of the window. Neither is a property of a
+            // screen — a `padding` modifier on every root would be the server saying the same thing
+            // seven times, and a bar drawn where it arrives lands wherever the content happens to
+            // end. `B-51`.
+            val shell = remember(screen) { (screen as? Screen.Tree)?.component?.withoutShell() }
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                ) {
+                    when {
+                        // The tree with its bar taken out. Rendered through the source like any
+                        // other, so nothing about the shell reaches the renderers.
+                        shell?.nav != null -> screens.render(Screen.Tree(shell.content), handle)
+
+                        else -> screen?.let { screens.render(it, handle) }
+                    }
+                }
+
+                // Outside the padded box on purpose: the bar runs edge to edge, which is what makes
+                // it read as the window's furniture rather than as the last thing on the screen.
+                shell?.nav?.let { screens.renderNode(it, handle) }
+            }
         }
     }
 }
@@ -224,6 +260,15 @@ interface ScreenSource {
     // what the orders screen answered the day a tab made it reachable, which is also the day
     // anybody could have found out.
     fun pages(): KompotPageLoader
+
+    // ONE COMPONENT, drawn through the same registry as a screen. The shell needs it for the bar it
+    // lifted out of the tree, and the registry lives here rather than in the holder — a holder that
+    // owned one would be a second opinion about which renderer draws what.
+    @Composable
+    fun renderNode(
+        component: KompotComponent,
+        onAction: (KompotAction) -> Unit,
+    )
 
     fun updates(topic: String): Flow<ComponentUpdate>
 

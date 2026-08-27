@@ -38,6 +38,7 @@ import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
+import io.konekt.feature.shell.shared.api.ScreenChrome
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
@@ -52,6 +53,7 @@ import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.dev.roamingArriveRoutes
+import io.konekt.screens.Shell
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
 import io.konekt.screens.dev.forwardCompatRoutes
@@ -472,6 +474,16 @@ fun petichModule(
     // THE THIRD SAGA TYPE, and the third engine. petich resolves nothing by type — an engine is a
     // fixed interceptor list — so the qualifier is what keeps a tariff change from being handed to the
     // purchase engine, which supports none of its steps and would complete having done nothing.
+    // THE SHELL, bound in the composition root because that is the one place that can see both the
+    // tab set and every feature that needs one. A feature asks for chrome by its own deeplink and
+    // never learns what a bar is — see `ScreenChrome`.
+    single<ScreenChrome> {
+        ScreenChrome { deeplink ->
+            Shell.Tab.entries
+                .firstOrNull { it.deeplink == deeplink }
+                ?.let(Shell::bottomNav)
+        }
+    }
     single<TariffCatalogue> { StaticTariffCatalogue() }
     single<TariffChanges> { ExposedTariffChanges(database, get()) }
 

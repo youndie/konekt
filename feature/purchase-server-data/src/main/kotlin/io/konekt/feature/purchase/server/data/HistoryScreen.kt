@@ -1,6 +1,7 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.standard.LoadPageAction
 import io.github.youndie.kompot.standard.PaginatedListComponent
@@ -23,7 +24,20 @@ object HistoryScreen {
     // server; the client never builds it, because the cursor inside it is opaque by design.
     fun pageUrl(cursor: String?): String = "/api/v1/screens/history/page" + (cursor?.let { "?cursor=$it" } ?: "")
 
-    fun build(page: HistoryPage): KompotComponent =
+    // WRAPPED IN A COLUMN WHEN THERE IS CHROME, and left alone when there is not.
+    //
+    // The root of this screen is a paginated list, and a bar cannot be a child of one — its items
+    // are the history. So the shell forces a wrapper, and the wrapper is added only when a shell
+    // exists: a deployment without one keeps the root it had, which is the shape every recording and
+    // every conformance walk was taken against.
+    fun build(
+        page: HistoryPage,
+        nav: KompotComponent? = null,
+    ): KompotComponent =
+        nav?.let { ColumnComponent(id = "orders", spacing = 12, children = listOf(list(page), it)) }
+            ?: list(page)
+
+    private fun list(page: HistoryPage): KompotComponent =
         PaginatedListComponent(
             id = "history",
             initialItems = page.entries.map(::row),

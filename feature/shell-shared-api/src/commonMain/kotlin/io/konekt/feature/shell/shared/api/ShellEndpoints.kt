@@ -1,5 +1,6 @@
 package io.konekt.feature.shell.shared.api
 
+import io.github.youndie.kompot.KompotComponent
 import io.ktor.resources.Resource
 
 // THE SHELL, and it is a feature module without a server half because it has no domain of its own.
@@ -31,3 +32,17 @@ class ProfileScreenResource
 const val HOME_DEEPLINK: String = "app://home"
 const val ORDERS_DEEPLINK: String = "app://orders"
 const val PROFILE_DEEPLINK: String = "app://profile"
+
+// HOW A FEATURE GETS THE SHELL WITHOUT KNOWING WHAT ONE IS.
+//
+// Three of the four tab screens are assembled in the composition root, which can see the shell and
+// every feature at once. The fourth — the orders list — is built inside the purchase feature, and a
+// feature reaching for `Shell` would make whichever module owned the bar the one every other module
+// reaches into. That is the shape this whole layering exists to avoid.
+//
+// So the feature asks for chrome BY ITS OWN DEEPLINK, which it already spells, and gets back a
+// component it never inspects. The composition root binds the implementation; a build that binds
+// none draws no bar, which is a deployment without a shell rather than a broken screen.
+fun interface ScreenChrome {
+    fun of(deeplink: String): KompotComponent?
+}

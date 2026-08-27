@@ -14,6 +14,8 @@ import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
+import io.konekt.feature.shell.shared.api.ScreenChrome
 import io.konekt.http.subscriberId
 import io.konekt.money.MoneyFormat
 import io.konekt.observability.KonektTrace
@@ -32,6 +34,7 @@ import org.koin.ktor.ext.inject
 // check is in the use case beside the subscriber id rather than here — `authenticate` proves the
 // caller is somebody, and says nothing about whose order this is.
 fun Route.purchaseRoutes() {
+    val chrome by inject<ScreenChrome>()
     val startPurchase by inject<StartPurchaseUseCase>()
     val confirmPurchase by inject<ConfirmPurchaseUseCase>()
     val findOrder by inject<FindOrderUseCase>()
@@ -79,7 +82,9 @@ fun Route.purchaseRoutes() {
 
     get<HistoryScreenResource> {
         val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = null)).getOrThrow()
-        call.respondKompotComponent(json, HistoryScreen.build(page))
+        // The shell asked for by this screen's own deeplink, which this feature already spells. What
+        // comes back is a component it never looks inside — see `ScreenChrome`.
+        call.respondKompotComponent(json, HistoryScreen.build(page, chrome.of(ORDERS_DEEPLINK)))
     }
 
     get<HistoryScreenResource.Page> { params ->

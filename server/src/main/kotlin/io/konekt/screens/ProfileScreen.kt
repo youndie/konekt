@@ -92,6 +92,7 @@ object ProfileScreen {
                             // worked. A `navigate` to the login screen would leave a live session
                             // behind a screen that says there is none.
                             action = SignOutAction(),
+                            modifiers = FILLS_THE_ROW,
                         ),
                     )
                     // THE SHELL, added last and hoisted by the client out of the tree it arrived

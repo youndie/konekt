@@ -17,6 +17,7 @@ import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginRefusals
+import io.konekt.screens.FILLS_THE_ROW
 
 // THE WAY IN, BUILT BY THE SERVER LIKE EVERY OTHER SCREEN.
 //
@@ -95,6 +96,7 @@ object LoginScreens {
                                     id = "login-submit",
                                     text = "Send me a code",
                                     action = SubmitFormAction(NUMBER_FORM),
+                                    modifiers = FILLS_THE_ROW,
                                 ),
                             )
                         },
@@ -173,6 +175,7 @@ object LoginScreens {
                                     id = "login-code-submit",
                                     text = "Sign in",
                                     action = SubmitFormAction(CODE_FORM),
+                                    modifiers = FILLS_THE_ROW,
                                 ),
                             )
                         },

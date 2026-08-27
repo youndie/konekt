@@ -15,6 +15,9 @@ dependencies {
     implementation(libs.kompot.core)
     implementation(libs.kompot.standard)
     implementation(project(":shared:components"))
+    // The chrome port, asked for by this feature's own deeplink. A leaf module with no server
+    // half that everything may depend on — see `ScreenChrome` for why it goes this way round.
+    implementation(project(":feature:shell-shared-api"))
     implementation(libs.kompot.ktor)
 
     implementation(libs.ktor.server.core)

@@ -60,6 +60,7 @@ class HomeScreenTest {
     fun `the balance is stated and every counter gets a card`() {
         val screen =
             HomeScreen.build(
+                msisdn = null,
                 balance = Money.ofMajor(38, Currency.DEFAULT),
                 counters =
                     listOf(
@@ -82,6 +83,7 @@ class HomeScreenTest {
     fun `the low state changes the copy and not only the colour`() {
         val screen =
             HomeScreen.build(
+                msisdn = null,
                 balance = Money.ofMajor(38, Currency.DEFAULT),
                 counters = listOf(counter(UsageCounter.Kind.MINUTES, 1_000, 100)),
                 cards = cards,
@@ -99,7 +101,13 @@ class HomeScreenTest {
 
     @Test
     fun `a subscriber with no plan is told so and given somewhere to go`() {
-        val screen = HomeScreen.build(Money.ofMajor(50, Currency.DEFAULT), counters = emptyList(), cards = cards)
+        val screen =
+            HomeScreen.build(
+                msisdn = null,
+                Money.ofMajor(50, Currency.DEFAULT),
+                counters = emptyList(),
+                cards = cards,
+            )
 
         assertTrue(screen.all<UsageCounterCardComponent>().isEmpty())
         val banner = assertNotNull(screen.all<BannerComponent>().singleOrNull(), "an empty home drew nothing")
@@ -111,7 +119,7 @@ class HomeScreenTest {
 
     @Test
     fun `a balance that could not be read is left out rather than drawn as zero`() {
-        val screen = HomeScreen.build(balance = null, counters = emptyList(), cards = cards)
+        val screen = HomeScreen.build(msisdn = null, balance = null, counters = emptyList(), cards = cards)
 
         val texts = screen.all<TextComponent>().map { it.text }
         assertTrue(texts.none { it == "Balance" }, "a balance block was drawn for a balance we do not have: $texts")
@@ -123,6 +131,7 @@ class HomeScreenTest {
     fun `the whole screen survives the wire`() {
         val screen =
             HomeScreen.build(
+                msisdn = null,
                 balance = Money.ofMajor(38, Currency.DEFAULT),
                 counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 500)),
                 cards = cards,

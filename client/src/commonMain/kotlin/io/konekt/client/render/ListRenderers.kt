@@ -53,12 +53,23 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
                 else -> M3Colors.OnSurfaceVariant
             }
 
+        // A SURFACE, which this row did not have. The canvas draws every order as a card (section
+        // 05) and the screen drew four lines of text on nothing — which is also why no golden of it
+        // could clear `GoldenContentTest`: at 4% drawn a machine cannot tell it from a capture that
+        // failed, and it was right not to. `B-51`.
+        //
+        // The shape comes from the design system rather than a number here, so brand B's tighter
+        // radii reach it without a client release — which is the whole claim `B-22` makes.
+        val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
+
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .clip(surface.shape ?: RoundedCornerShape(20.dp))
+                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)
-                    .padding(vertical = 10.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Row(
@@ -82,8 +93,12 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
+                // THE REFERENCE BESIDE THE DATE — "8f21-4c90 · 12 Aug" on the canvas. It was on the
+                // component and drawn nowhere, which made it a field the server composed for nobody:
+                // it is the string a subscriber quotes to support, and the one thing on this row
+                // that connects it to anything outside the screen.
                 Text(
-                    text = component.dateText,
+                    text = "${component.reference} · ${component.dateText}",
                     style = designSystem.resolveTypography(M3Typography.LabelMedium),
                     color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
                 )

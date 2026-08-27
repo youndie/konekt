@@ -205,6 +205,18 @@ class KonektScreenSource(
     }
 
     @Composable
+    override fun renderNode(
+        component: KompotComponent,
+        onAction: (KompotAction) -> Unit,
+    ) {
+        registry.RenderNode(
+            component = component,
+            actionHandler = KompotActionHandler { action -> onAction(action) },
+            formController = FormController(FormSchema(formId = "konekt-shell", fields = emptyList())),
+        )
+    }
+
+    @Composable
     private fun renderTree(
         tree: KompotComponent,
         onAction: (KompotAction) -> Unit,

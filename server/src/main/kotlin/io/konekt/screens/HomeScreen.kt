@@ -3,14 +3,17 @@ package io.konekt.screens
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.roaming.server.domain.RoamingPackage
+import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.money.MoneyFormat
@@ -25,6 +28,11 @@ import io.konekt.roaming.RoamingPackageCards
 // one. The composition root composes; that is what it is for.
 object HomeScreen {
     fun build(
+        // WHOSE LINE THIS IS. The canvas puts it under the balance, and it is the one fact on this
+        // screen that answers a question a subscriber with two SIMs actually asks. Nullable because
+        // the screen is worth drawing without it: a number the server could not read is left out
+        // rather than drawn as a blank, for the same reason the balance is.
+        msisdn: String?,
         balance: Money?,
         counters: List<UsageCounter>,
         cards: UsageCounterCards,
@@ -41,7 +49,7 @@ object HomeScreen {
             spacing = 16,
             children =
                 buildList {
-                    addAll(balanceBlock(balance))
+                    addAll(balanceBlock(msisdn, balance))
 
                     if (counters.isEmpty() && packages.isEmpty()) {
                         // NOT AN EMPTY COLUMN. A subscriber who has bought nothing has no counters,
@@ -66,6 +74,19 @@ object HomeScreen {
                         // the answer to the question they opened the screen with; a package for a trip
                         // in three weeks is context.
                         if (roamingCards != null) addAll(packages.map(roamingCards::of))
+
+                        // AFTER what the subscriber already has, because that is the order the
+                        // question comes in: what have I got, then what else is there. The empty
+                        // case above already offers the catalogue in its banner, so this is the
+                        // other half of the same door rather than a second one.
+                        add(
+                            ButtonComponent(
+                                id = "home-buy",
+                                text = "Buy a package",
+                                action = NavigateAction(PLANS_DEEPLINK),
+                                modifiers = FILLS_THE_ROW,
+                            ),
+                        )
                     }
 
                     // THE SHELL, added last and hoisted by the client out of the tree it arrived in.
@@ -75,7 +96,10 @@ object HomeScreen {
                 },
         )
 
-    private fun balanceBlock(balance: Money?): List<KompotComponent> {
+    private fun balanceBlock(
+        msisdn: String?,
+        balance: Money?,
+    ): List<KompotComponent> {
         // A balance the server could not read is left out rather than drawn as zero. Zero is a fact
         // about an account and "we could not tell" is not, and a subscriber who reads the first when
         // the second is true tops up money they already have.
@@ -96,6 +120,41 @@ object HomeScreen {
                 style = M3Typography.DisplaySmall,
                 color = M3Colors.OnSurface,
             ),
-        )
+        ) +
+            listOfNotNull(
+                msisdn?.let {
+                    TextComponent(
+                        id = "balance-msisdn",
+                        // The plus put back on, exactly as the profile screen does it and for the
+                        // same reason: `Msisdn` stores digits, and "79990001234" reads as a local
+                        // number in one country and a wrong one everywhere else.
+                        text = "+$it",
+                        style = M3Typography.BodyMedium,
+                        color = M3Colors.OnSurfaceVariant,
+                    )
+                },
+            ) +
+            listOf(
+                // THE TWO THINGS A SUBSCRIBER DOES WITH A BALANCE, beside it because that is where
+                // they are asked for. `History` goes to the orders screen, which existed and was
+                // unreachable until yesterday.
+                //
+                // `Top up` IS NOT HERE and its absence is the honest half: topping up is a POST with
+                // an amount, and this build serves no screen to choose one on. A button navigating
+                // nowhere is worse than no button, and inventing the screen is a feature rather than
+                // a layout fix — `B-51`.
+                RowComponent(
+                    id = "balance-actions",
+                    spacing = 8,
+                    children =
+                        listOf(
+                            ButtonComponent(
+                                id = "balance-history",
+                                text = "History",
+                                action = NavigateAction(ORDERS_DEEPLINK),
+                            ),
+                        ),
+                ),
+            )
     }
 }

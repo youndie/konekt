@@ -53,6 +53,14 @@ class KonektAppTest {
         // add a second suspending call to reason about for nothing.
         override suspend fun brandTheme(): io.github.youndie.kompot.theme.KompotTheme? = null
 
+        // The shell draws the bar through this, and no fixture here serves one — so it draws
+        // nothing rather than failing: an empty shell is a legitimate screen, unlike an empty page.
+        @androidx.compose.runtime.Composable
+        override fun renderNode(
+            component: io.github.youndie.kompot.KompotComponent,
+            onAction: (io.github.youndie.kompot.KompotAction) -> Unit,
+        ) = Unit
+
         // Nothing here paginates. It fails rather than answering an empty page, so a fixture that
         // grew a paginated screen says so instead of quietly drawing a shorter list.
         override fun pages(): io.github.youndie.kompot.standard.KompotPageLoader =
