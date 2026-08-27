@@ -3,11 +3,14 @@ package io.konekt.client.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +19,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
@@ -27,6 +31,8 @@ import io.github.youndie.kompot.LocalKompotRealtimeUpdates
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.material3.M3Colors
+import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.navigation.NavigationBackStack
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
@@ -97,7 +103,19 @@ fun KonektApp(
     // THE ADDRESS IS STATE NOW, seeded from the parameter. `remember(address)` on the seed rather
     // than `remember { }`: a caller that changes the address it passes still moves the holder, which
     // is what every existing test does.
-    var current by remember(address) { mutableStateOf(address) }
+    // A BACK STACK, and it is `kompot-navigation`'s rather than a list of ours.
+    //
+    // The toolkit has carried `NavigationBackStack` since this build began and nothing used it —
+    // push, pop, `canGoBack`, and nothing else, which is exactly the amount of stack this product
+    // has. `current` is its top.
+    //
+    // WHY THERE IS ONE AT ALL: the canvas draws no toolbar and no back control on any of its nine
+    // sections — only the bottom bar — so every screen it draws is a screen you arrive at, and the
+    // question of leaving one never comes up in a set of states. It comes up immediately in a
+    // running application: pressing a plan led to the purchase result, which is not a tab, and there
+    // was no way off it.
+    var stack by remember(address) { mutableStateOf(NavigationBackStack(address)) }
+    val current = stack.current
     var screen by remember(current) { mutableStateOf<Screen?>(null) }
     // KEYED BY A PRESS COUNT AND NOT BY THE ACTION, and that is a fix rather than a flourish.
     //
@@ -110,6 +128,15 @@ fun KonektApp(
     var presses by remember { mutableStateOf(0) }
     var pending by remember { mutableStateOf<KompotAction?>(null) }
     var reloads by remember { mutableStateOf(0) }
+
+    // WHICH DEEPLINKS ARE TABS, taken from the bar the SERVER sent rather than from a list here.
+    // The tab set is a product decision that travels on the wire (`bottom_nav`), so a second copy in
+    // the client would be the one place a deployment could change its tabs and its back behaviour
+    // would not follow.
+    //
+    // Remembered ACROSS screens, because the screens that most need the answer are the ones without
+    // a bar: the purchase result carries none, and "Done" on it goes to a tab.
+    var tabs by remember { mutableStateOf(emptySet<String>()) }
 
     // OUR OWN MAP, not `KompotRealtimeProvider`'s. That composable holds its `SnapshotStateMap`
     // privately and empties it only when the topic changes, which konekt never does — so the map has
@@ -142,7 +169,11 @@ fun KonektApp(
         val action = pending ?: return@LaunchedEffect
         onAction(action)?.let { destination ->
             updates.clear()
-            current = destination
+            // REPLACING THE TOP rather than pushing, and this is the one place the difference shows.
+            // An action that answers with an address ENDED somewhere — a purchase confirmed, a
+            // session adopted — and pushing would put the screen it came from behind it, so back
+            // would return to a plan already bought or a login already used.
+            stack = if (destination == current) stack else stack.pop().push(destination)
             // Always, even when the destination is where we already are. What changed is the state
             // behind the address, and only the server knows it.
             reloads += 1
@@ -175,13 +206,27 @@ fun KonektApp(
             // handler could not move the screen it is a source for — which is why `render` takes one
             // rather than the source keeping it.
             val handle: (KompotAction) -> Unit = { action ->
-                val destination = (action as? NavigateAction)?.let { resolve(it.deeplink, routes) }
-                if (destination != null) {
+                // The deeplink AND the address it resolved to, as one value: the stack needs the
+                // first to decide whether this was a tab, and the screen needs the second.
+                val move =
+                    (action as? NavigateAction)?.let { nav ->
+                        resolve(nav.deeplink, routes)?.let { nav.deeplink to it }
+                    }
+                if (move != null) {
+                    val (deeplink, destination) = move
                     // Clearing the overlay is not optional. It is keyed by component id and the ids
                     // of two different screens can collide — `counter-data` on one and on another —
                     // so an update recorded before a move would shadow a node on the screen after it.
                     updates.clear()
-                    current = destination
+                    // A TAB IS A DESTINATION, NOT A STEP. Pressing one returns to the root of the
+                    // stack instead of growing it: four tabs pressed in turn must not become four
+                    // presses of back, which is the first thing a bottom bar gets wrong.
+                    stack =
+                        if (deeplink in tabs) {
+                            NavigationBackStack(destination)
+                        } else {
+                            stack.push(destination)
+                        }
                 } else {
                     // HANDED TO AN EFFECT RATHER THAN LAUNCHED HERE. `onAction` suspends — buying is a
                     // request — and a renderer's click handler does not. Routing it through state
@@ -201,6 +246,14 @@ fun KonektApp(
             // end. `B-51`.
             val shell = remember(screen) { (screen as? Screen.Tree)?.component?.withoutShell() }
 
+            // Recorded when a bar arrives, kept when one does not. Written in an effect rather than
+            // during composition, which would be a state write in the middle of drawing.
+            LaunchedEffect(shell?.nav) {
+                shell?.nav?.let { bar ->
+                    tabs = bar.items.mapNotNull { (it.action as? NavigateAction)?.deeplink }.toSet()
+                }
+            }
+
             // PAINTED, and it was not. `KompotScreen` paints the area it draws in and nothing painted
             // the rest, so the margin around the content and the strip behind the bar were whatever
             // the window happened to be — patches of two colours on one screen, and worse in dark.
@@ -211,13 +264,39 @@ fun KonektApp(
             // — a ground taken from anywhere else is the one surface in the application a brand
             // cannot repaint.
             val content = (screen as? Screen.Tree)?.component ?: shell?.content
+            val designSystem = LocalKompotDesignSystem.current
 
             Column(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(LocalKompotDesignSystem.current.resolveColor(M3Colors.Surface)),
+                        .background(designSystem.resolveColor(M3Colors.Surface)),
             ) {
+                // THE TOOLBAR, and it holds a back control and nothing else.
+                //
+                // No title: every screen this build serves draws its own — "Plans", "Profile",
+                // "Enter the code" — and a second one in a bar above them would be the same words
+                // twice. The day a screen stops titling itself, the graph already carries a title
+                // per route to put here.
+                //
+                // Drawn only when there is somewhere to go, so a tab screen has no empty bar over
+                // it. A TEXT ARROW rather than an icon: this client compiles in no icon set, and
+                // adding one for a single glyph is a dependency for a character.
+                if (stack.canGoBack) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(onClick = { stack = stack.pop() }) {
+                            Text(
+                                text = "← Back",
+                                style = designSystem.resolveTypography(M3Typography.LabelLarge),
+                                color = designSystem.resolveColor(M3Colors.Primary),
+                            )
+                        }
+                    }
+                }
+
                 Box(
                     modifier =
                         Modifier
