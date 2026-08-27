@@ -125,6 +125,11 @@ logback = "1.6.3"
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+# THE MAIN DISPATCHER FOR A SWING DESKTOP, and it is a runtime implementation rather than an API.
+# `kotlinx-coroutines-core` declares `Dispatchers.Main` and ships no provider: the platform module
+# does, through a ServiceLoader — `-android` on Android, this one on Swing. Without it `Main` is not
+# a slow dispatcher, it throws.
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 

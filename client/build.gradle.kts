@@ -171,6 +171,18 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.ktor.client.cio)
+            // THE MAIN DISPATCHER, which nothing else on this classpath provides.
+            //
+            // `kotlinx-coroutines-core` DECLARES `Dispatchers.Main` and implements it nowhere: the
+            // provider arrives through a ServiceLoader from a platform module, and with none present
+            // `Main` is not slow or wrong, it throws `MissingMainCoroutineDispatcher` at first touch.
+            // Compose Desktop no longer brings one — the window opens on its own EDT dispatcher — so
+            // the application is what has to supply it, exactly as an Android build supplies
+            // `-android`.
+            //
+            // The window opening WITHOUT it is what made this invisible: everything drew, and the
+            // failure waited for the first piece of code that asked for `Main` by name.
+            implementation(libs.kotlinx.coroutines.swing)
         }
 
         commonTest.dependencies {
