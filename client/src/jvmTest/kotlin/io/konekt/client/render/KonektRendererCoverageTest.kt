@@ -23,7 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-// Which of konekt's nine types this client can draw, stated rather than implied.
+// Which of konekt's eleven types this client can draw, stated rather than implied.
 //
 // A missing renderer is NOT a defect — the type degrades to the unknown-component block, which is the
 // whole bargain the additive dictionary rests on. What would be a defect is nobody knowing which
@@ -40,7 +40,7 @@ class KonektRendererCoverageTest {
     // the fact and treated it as a decision — and the decision was invisible, because a type that
     // DECODES and has no renderer is not an `UnknownComponent` and never reaches konekt's degradation
     // block. Every test missed it by topping up first, so the banner was never sent.
-    // ALL TEN, and the second list below is still empty. `banner` joined after an iOS build drew a
+    // ALL ELEVEN, and the second list below is still empty. `banner` joined after an iOS build drew a
     // red "Unknown component" where the home screen's "no plan is active" message should have been;
     // six joined with `B-45`, which is the screens they were waiting for; and `bottom_nav` joined
     // with `B-49` on the day it was added — which is what the emptiness of the second list is FOR.
@@ -57,6 +57,10 @@ class KonektRendererCoverageTest {
             "step_meter",
             "skeleton",
             "bottom_nav",
+            // `surface` joined the same way `bottom_nav` did, and had to: a container the server
+            // sends and the client cannot draw is not a degraded card, it is a screen with its
+            // contents missing — the children would go nowhere at all.
+            "surface",
         )
 
     // EMPTY, AND KEPT. The list is what says "somebody decided this one does not draw yet" as opposed

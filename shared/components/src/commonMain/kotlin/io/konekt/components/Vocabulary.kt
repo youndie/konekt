@@ -102,3 +102,15 @@ object ButtonEmphasis {
     // everything as primary, gives a screen two equal answers to one question.
     const val QUIET = "quiet"
 }
+
+// Which ground a `surface` stands on, named as a ROLE rather than as a colour: the server says what
+// the group IS and the served brand kit says what that looks like. Two words, because the canvas
+// draws two — the balance block is the accented one and everything else is the quiet one.
+object SurfaceTones {
+    // The card everything else is quiet against. `primary_container` in Material's roles, which is
+    // what the canvas's #B8EDE4 is.
+    const val ACCENT = "accent"
+
+    // The ordinary card: a plan, an order, a roaming row.
+    const val NEUTRAL = "neutral"
+}

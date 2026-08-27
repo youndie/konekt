@@ -5,6 +5,7 @@ import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
@@ -102,6 +103,19 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                         BottomNavItem("Plans", NavigateAction("app://plans")),
                         BottomNavItem("Orders", NavigateAction("app://orders")),
                         BottomNavItem("Profile", NavigateAction("app://profile")),
+                    ),
+            ),
+        // THE ONE CONTAINER, and its specimen carries children on purpose: a `surface` holding
+        // nothing round-trips whatever the children field does, so an empty one would let a
+        // serialisation mistake in the only field that distinguishes this from a leaf go unnoticed.
+        "surface" to
+            SurfaceComponent(
+                id = "balance",
+                tone = SurfaceTones.ACCENT,
+                children =
+                    listOf(
+                        TextComponent(id = "balance-label", text = "Balance"),
+                        TextComponent(id = "balance-amount", text = "$54"),
                     ),
             ),
     )

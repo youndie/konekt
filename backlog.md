@@ -47,8 +47,8 @@ so re-prioritising must never move a file.
 |---|---|---|---|---|
 | [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[~]` | Four screens and no way between them except a banner | P1 | L | - |
 | [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[~]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
-| [B-52](docs/backlog/B-52-the-balance-is-not-a-card.md) `[ ]` | The balance block is four texts in the screen's own column, and the canvas draws a card | P1 | M | - |
 | [B-53](docs/backlog/B-53-history-excludes-top-ups.md) `[ ]` | History reads entitlements, so the top-up the button beside it starts will never appear | P1 | M | - |
+| [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[ ]` | Four hand-kept lists of which components nest, and each goes stale by looking at less | P1 | S | - |
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
 | [B-55](docs/backlog/B-55-home-header.md) `[?]` | The home screen has no header, and the two things a header names are not in the domain | P2 | S | - |
 | [B-57](docs/backlog/B-57-plans-catalogue-against-section-02.md) `[ ]` | The catalogue has no filters, no per-unit price, one badge for every plan and no loading state | P2 | M | - |
@@ -57,7 +57,7 @@ so re-prioritising must never move a file.
 | [B-60](docs/backlog/B-60-counter-copy-and-grouping.md) `[?]` | The canvas states a counter as used-of-total and groups the three under the plan; we do neither | P2 | M | - |
 | [B-61](docs/backlog/B-61-doc-says-two-renderers-of-nine.md) `[ ]` | The design document says the client renders two of the nine components; it renders all nine | P3 | XS | - |
 
-## Closed (51)
+## Closed (52)
 
 **The wire and the shell**
 
@@ -104,6 +104,7 @@ so re-prioritising must never move a file.
 - [B-43](docs/backlog/B-43-client-composition-root.md) `[x]` - The client has every part of an application and no application
 - [B-45](docs/backlog/B-45-the-client-draws-one-screen-of-four.md) `[x]` - The client draws one screen of a product that has four
 - [B-46](docs/backlog/B-46-no-login-screen.md) `[x]` - Both runners sign in through a route that must never ship
+- [B-52](docs/backlog/B-52-the-balance-is-not-a-card.md) `[x]` - The balance block is four texts in the screen's own column, and the canvas draws a card
 - [B-54](docs/backlog/B-54-the-esim-wizard-is-unreachable.md) `[x]` - The eSIM install wizard has routes, a step machine and no screen that leads to it
 
 **Proof**

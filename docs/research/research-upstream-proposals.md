@@ -319,6 +319,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U11 | tracy | the agent publishes no Apple target, so an iOS client cannot log through tracy | [tracy#16](https://github.com/youndie/tracy/issues/16) | closed, released in `0.1.13`; `agent` declares `ios_arm64`, `ios_simulator_arm64` and `ios_x64` in its module metadata and `:client` compiles for both of ours |
 | U12 | kompot | a form patch cannot reach a non-editable field, so a server-computed value is editable or stale | [kompot#89](https://github.com/youndie/kompot/issues/89) | closed, released in `0.33.0.86` as an optional `fieldId` on `read_only_field`; B-20's first acceptance criterion met and the form's refetch deleted |
 | U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
+| U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | open; konekt carries a `surface` component whose only job is the corner |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -503,3 +504,15 @@ Worth noticing what that says about the order of events. The gap was **suspected
 sources, **confirmed** by trying to build around it, and **named precisely** by the kit. Any one of
 the three alone would have been weaker: reading finds a shape, building finds the cost, and the kit
 finds the rule being broken.
+
+**U14 is the first one this project got wrong before getting it right, and the correction is the
+finding.** The backlog item that led to it stated flatly that "kompot's modifier vocabulary has `Size`
+and `Weight`, so a filled rounded group is not something the server can say". Reading
+`kompot-core:0.33.1.91` rather than trusting that sentence: the vocabulary is `Background(color)`,
+`Gradient(colors)`, `Padding`, `Size` and `Weight`, and the client resolves a `Background` through the
+design system. Two thirds of what the item asked for already existed and had existed all along.
+
+What is actually missing is one argument — the `Shape` passed to `Modifier.background`, which is
+`null`. That is a much smaller ask than the one that would have been filed, and it is only visible to
+somebody who opened the artefact. The premise of a task can be wrong, and a task whose premise is
+wrong produces an upstream request that is wrong in the same direction.

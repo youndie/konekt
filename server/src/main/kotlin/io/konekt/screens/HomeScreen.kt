@@ -10,6 +10,8 @@ import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceTones
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
@@ -50,7 +52,7 @@ object HomeScreen {
             spacing = 16,
             children =
                 buildList {
-                    addAll(balanceBlock(msisdn, balance))
+                    balanceCard(msisdn, balance)?.let(::add)
 
                     if (counters.isEmpty() && packages.isEmpty()) {
                         // NOT AN EMPTY COLUMN. A subscriber who has bought nothing has no counters,
@@ -97,72 +99,90 @@ object HomeScreen {
                 },
         )
 
-    private fun balanceBlock(
+    // ONE NODE, NOT FOUR SIBLINGS, and until now it was four.
+    //
+    // The canvas draws the balance as a filled, rounded card holding the label, the amount, the
+    // number and both controls; the served tree put them straight into the screen's own column, so
+    // there was nothing grouping them and nothing standing them on a ground. That is not a card drawn
+    // wrongly — it is the absence of a card, and it was the first thing a person noticed opening the
+    // running application.
+    //
+    // The GROUND is a role rather than a colour and the CORNER is not said at all: the served brand
+    // kit decides the first and the client's shape scale the second. See `SurfaceComponent` for why
+    // this needs a component of konekt's own and for the upstream ask that would delete it.
+    private fun balanceCard(
         msisdn: String?,
         balance: Money?,
-    ): List<KompotComponent> {
+    ): KompotComponent? {
         // A balance the server could not read is left out rather than drawn as zero. Zero is a fact
         // about an account and "we could not tell" is not, and a subscriber who reads the first when
         // the second is true tops up money they already have.
-        balance ?: return emptyList()
+        balance ?: return null
 
-        return listOf(
-            TextComponent(
-                id = "balance-label",
-                text = "Balance",
-                style = M3Typography.LabelMedium,
-                color = M3Colors.OnSurfaceVariant,
-            ),
-            TextComponent(
-                id = "balance-amount",
-                // Formatted on the server, because it is the only side that can (D15). The client
-                // renders a string and therefore cannot format it inconsistently.
-                text = MoneyFormat.format(balance),
-                style = M3Typography.DisplaySmall,
-                color = M3Colors.OnSurface,
-            ),
-        ) +
-            listOfNotNull(
-                msisdn?.let {
-                    TextComponent(
-                        id = "balance-msisdn",
-                        // The plus put back on, exactly as the profile screen does it and for the
-                        // same reason: `Msisdn` stores digits, and "79990001234" reads as a local
-                        // number in one country and a wrong one everywhere else.
-                        text = "+$it",
-                        style = M3Typography.BodyMedium,
-                        color = M3Colors.OnSurfaceVariant,
+        return SurfaceComponent(
+            id = "balance",
+            // THE ACCENTED ONE, and the only one on this screen: the canvas stands the balance on
+            // `primary_container` and everything else on the quiet card, which is what makes it read
+            // as the thing the screen is about.
+            tone = SurfaceTones.ACCENT,
+            spacing = 4,
+            children =
+                buildList {
+                    add(
+                        TextComponent(
+                            id = "balance-label",
+                            text = "Balance",
+                            style = M3Typography.LabelMedium,
+                            color = M3Colors.OnPrimaryContainer,
+                        ),
+                    )
+                    add(
+                        TextComponent(
+                            id = "balance-amount",
+                            // Formatted on the server, because it is the only side that can (D15).
+                            // The client renders a string and therefore cannot format it
+                            // inconsistently.
+                            text = MoneyFormat.format(balance),
+                            style = M3Typography.DisplaySmall,
+                            color = M3Colors.OnPrimaryContainer,
+                        ),
+                    )
+                    msisdn?.let {
+                        add(
+                            TextComponent(
+                                id = "balance-msisdn",
+                                // The plus put back on, exactly as the profile screen does it and for
+                                // the same reason: `Msisdn` stores digits, and "79990001234" reads as
+                                // a local number in one country and a wrong one everywhere else.
+                                text = "+$it",
+                                style = M3Typography.BodyMedium,
+                                color = M3Colors.OnPrimaryContainer,
+                            ),
+                        )
+                    }
+                    add(
+                        // THE TWO THINGS A SUBSCRIBER DOES WITH A BALANCE, beside it because that is
+                        // where they are asked for. `Top up` was missing for a build, and the comment
+                        // that explained its absence had outlived its reason — see `B-40`.
+                        RowComponent(
+                            id = "balance-actions",
+                            spacing = 8,
+                            children =
+                                listOf(
+                                    ButtonComponent(
+                                        id = "balance-top-up",
+                                        text = "Top up",
+                                        action = NavigateAction(TOP_UP_DEEPLINK),
+                                    ),
+                                    ButtonComponent(
+                                        id = "balance-history",
+                                        text = "History",
+                                        action = NavigateAction(ORDERS_DEEPLINK),
+                                    ),
+                                ),
+                        ),
                     )
                 },
-            ) +
-            listOf(
-                // THE TWO THINGS A SUBSCRIBER DOES WITH A BALANCE, beside it because that is where
-                // they are asked for. `History` goes to the orders screen, which existed and was
-                // unreachable until yesterday.
-                //
-                // `Top up` IS HERE NOW, and the comment it replaces is worth keeping as a warning
-                // rather than deleting. It said the button was missing because "inventing the screen
-                // is a feature rather than a layout fix" — and that had stopped being true: the saga,
-                // the limits, the compensation and the routes all shipped in `B-40`, so what was
-                // actually missing was one form field. The sentence outlived its reason and went on
-                // reading like a decision.
-                RowComponent(
-                    id = "balance-actions",
-                    spacing = 8,
-                    children =
-                        listOf(
-                            ButtonComponent(
-                                id = "balance-top-up",
-                                text = "Top up",
-                                action = NavigateAction(TOP_UP_DEEPLINK),
-                            ),
-                            ButtonComponent(
-                                id = "balance-history",
-                                text = "History",
-                                action = NavigateAction(ORDERS_DEEPLINK),
-                            ),
-                        ),
-                ),
-            )
+        )
     }
 }

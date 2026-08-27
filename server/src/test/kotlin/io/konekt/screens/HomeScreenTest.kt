@@ -8,10 +8,12 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.BannerComponent
 import io.konekt.components.CounterStates
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
@@ -143,6 +145,22 @@ class HomeScreenTest {
         assertEquals(screen, json.decodeKompotComponent(json.encodeKompotComponent(screen)))
     }
 
+    // ALL THE WAY DOWN, and it used to be one level. It read the screen column's own children and
+    // nothing below them, which was true of every screen this file asserts about until the balance
+    // became a card: the label and the amount moved one level down, and the assertion said "no
+    // balance label" about a screen that has one.
+    //
+    // A shallow walk does not fail when the tree deepens — it looks at less and reports absence,
+    // which is the shape that turns a green suite into a wrong one.
     private inline fun <reified T : KompotComponent> KompotComponent.all(): List<T> =
-        (listOf(this) + ((this as? ColumnComponent)?.children ?: emptyList())).filterIsInstance<T>()
+        descendants().filterIsInstance<T>()
+
+    private fun KompotComponent.descendants(): List<KompotComponent> =
+        listOf(this) +
+            when (this) {
+                is ColumnComponent -> children.flatMap { it.descendants() }
+                is RowComponent -> children.flatMap { it.descendants() }
+                is SurfaceComponent -> children.flatMap { it.descendants() }
+                else -> emptyList()
+            }
 }

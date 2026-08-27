@@ -7,6 +7,7 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.client.net.konektClientJson
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,11 +26,18 @@ class RecordedScreenIsRealTest {
             }.bufferedReader().use { it.readText() },
         )
 
+    // EVERY CONTAINER, and the list is exhaustive by hand because there is no `children` on
+    // `KompotComponent` — nesting is a convention of each type rather than a property of the
+    // interface. That makes this exactly the kind of list that goes stale without failing, and it
+    // did: the day the balance became a `surface`, this walk stopped seeing the amount and reported
+    // "no formatted amount in the recording" about a recording that had one. A missing container
+    // here does not break the test, it makes it look at less — which is the worse failure.
     private fun KompotComponent.walk(): List<KompotComponent> =
         listOf(this) +
             when (this) {
                 is ColumnComponent -> children.flatMap { it.walk() }
                 is RowComponent -> children.flatMap { it.walk() }
+                is SurfaceComponent -> children.flatMap { it.walk() }
                 else -> emptyList()
             }
 

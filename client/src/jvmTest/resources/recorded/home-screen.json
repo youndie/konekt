@@ -1,1 +1,132 @@
-{"type":"column","id":"home","children":[{"type":"text","id":"balance-label","text":"Balance","style":"label_medium","color":"on_surface_variant"},{"type":"text","id":"balance-amount","text":"$54","style":"display_small","color":"on_surface"},{"type":"text","id":"balance-msisdn","text":"+79990009876","style":"body_medium","color":"on_surface_variant"},{"type":"row","id":"balance-actions","children":[{"type":"button","id":"balance-history","text":"History","action":{"type":"navigate","deeplink":"app://orders"}}],"spacing":8},{"type":"usage_counter_card","id":"counter-data","title":"Data","valueText":"18.8 GB left","progress":0.06225586},{"type":"usage_counter_card","id":"counter-minutes","title":"Minutes","valueText":"249 min left","progress":0.17},{"type":"usage_counter_card","id":"counter-messages","title":"Messages","valueText":"0 SMS left","captionText":"You have used all of your messages. A 200-message add-on costs $2.","progress":1.0,"state":"exhausted"},{"type":"usage_counter_card","id":"roaming-30a3f602-42d3-4d98-af26-5be4d644ba54","title":"Turkey data","valueText":"10 GB ready","captionText":"Starts when you first connect in Turkey, then runs for 30 days.","progress":1.0,"state":"dormant"},{"type":"usage_counter_card","id":"roaming-9ff2db31-bf30-4627-850e-c2d77ebae964","title":"Europe data","valueText":"5 GB ready","captionText":"Starts when you first connect in Europe, then runs for 14 days.","progress":1.0,"state":"dormant"},{"type":"button","id":"home-buy","modifiers":[{"type":"size","width":"Fill"}],"text":"Buy a package","action":{"type":"navigate","deeplink":"app://plans"}},{"type":"bottom_nav","id":"shell-nav","items":[{"label":"Home","action":{"type":"navigate","deeplink":"app://home"},"selected":true},{"label":"Plans","action":{"type":"navigate","deeplink":"app://plans"}},{"label":"Orders","action":{"type":"navigate","deeplink":"app://orders"}},{"label":"Profile","action":{"type":"navigate","deeplink":"app://profile"}}]}],"spacing":16}
+{
+  "type": "column",
+  "id": "home",
+  "children": [
+    {
+      "type": "surface",
+      "id": "balance",
+      "children": [
+        {
+          "type": "text",
+          "id": "balance-label",
+          "text": "Balance",
+          "style": "label_medium",
+          "color": "on_primary_container"
+        },
+        {
+          "type": "text",
+          "id": "balance-amount",
+          "text": "$39",
+          "style": "display_small",
+          "color": "on_primary_container"
+        },
+        {
+          "type": "text",
+          "id": "balance-msisdn",
+          "text": "+79995550707",
+          "style": "body_medium",
+          "color": "on_primary_container"
+        },
+        {
+          "type": "row",
+          "id": "balance-actions",
+          "children": [
+            {
+              "type": "button",
+              "id": "balance-top-up",
+              "text": "Top up",
+              "action": {
+                "type": "navigate",
+                "deeplink": "app://top-up"
+              }
+            },
+            {
+              "type": "button",
+              "id": "balance-history",
+              "text": "History",
+              "action": {
+                "type": "navigate",
+                "deeplink": "app://orders"
+              }
+            }
+          ],
+          "spacing": 8
+        }
+      ],
+      "tone": "accent",
+      "spacing": 4
+    },
+    {
+      "type": "usage_counter_card",
+      "id": "counter-data",
+      "title": "Data",
+      "valueText": "20 GB left",
+      "progress": 0.0
+    },
+    {
+      "type": "usage_counter_card",
+      "id": "counter-minutes",
+      "title": "Minutes",
+      "valueText": "300 min left",
+      "progress": 0.0
+    },
+    {
+      "type": "usage_counter_card",
+      "id": "counter-messages",
+      "title": "Messages",
+      "valueText": "50 SMS left",
+      "progress": 0.0
+    },
+    {
+      "type": "button",
+      "id": "home-buy",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Buy a package",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://plans"
+      }
+    },
+    {
+      "type": "bottom_nav",
+      "id": "shell-nav",
+      "items": [
+        {
+          "label": "Home",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://home"
+          },
+          "selected": true
+        },
+        {
+          "label": "Plans",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://plans"
+          }
+        },
+        {
+          "label": "Orders",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders"
+          }
+        },
+        {
+          "label": "Profile",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://profile"
+          }
+        }
+      ]
+    }
+  ],
+  "spacing": 16
+}

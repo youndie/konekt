@@ -8,6 +8,7 @@ import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.CounterStates
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
@@ -180,12 +181,19 @@ class PurchaseScenarioTest {
 // Walks the containers this product actually builds. A history screen is a `paginated_list` and not
 // a column, which the first version of this helper did not reach — and the failure read as "the order
 // never appeared" rather than "the test looked in the wrong place".
+//
+// `surface` joined for the same reason and cost the same confusion: the balance moved inside a card
+// and this said "the balance did not come back" about a balance that had. That is now the fourth
+// time a walk in this repository has gone stale by omission, in four separate copies of the same
+// list — see `B-63`. `KompotComponent` declares no children, so nesting is a convention of each type
+// and every walk keeps its own list of which types have it.
 internal fun KompotComponent.walk(): List<KompotComponent> =
     listOf(this) +
         when (this) {
             is ColumnComponent -> children.flatMap { it.walk() }
             is RowComponent -> children.flatMap { it.walk() }
             is PaginatedListComponent -> initialItems.flatMap { it.walk() }
+            is SurfaceComponent -> children.flatMap { it.walk() }
             else -> emptyList()
         }
 

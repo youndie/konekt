@@ -18,6 +18,7 @@ import io.konekt.components.PlanCardComponent
 import io.konekt.components.SkeletonComponent
 import io.konekt.components.SnackbarComponent
 import io.konekt.components.StepMeterComponent
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import kotlin.reflect.KClass
 
@@ -66,6 +67,8 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         SnackbarComponent::class to SnackbarRenderer(),
         StepMeterComponent::class to StepMeterRenderer(),
         SkeletonComponent::class to SkeletonRenderer(),
+        // The one container, and the one meant to be deleted when U14 lands upstream.
+        SurfaceComponent::class to SurfaceRenderer(),
         // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.
