@@ -25,6 +25,17 @@ import io.konekt.money.MoneyFormat
 // than as an apology. A subscriber who can reconcile a reversal against their bank does not ring
 // support; one who is told "something went wrong" does.
 object PurchaseResultScreen {
+    // THE `when` BELOW HAS NO `else`, and the one that used to be there is what this is about.
+    //
+    // `AWAITING_CONFIRMATION` fell into it and drew "Confirming with the payment provider — keep the
+    // app open". Nothing was being confirmed with any provider: the saga was suspended waiting for
+    // the SUBSCRIBER, and the screen told them to wait for something that was never coming while the
+    // window ran out and the order rolled back. Two different states under one word.
+    //
+    // The neighbouring file already carries this lesson — `HistoryScreen` has "NO `else`, in both
+    // `when`s below" and the story of the `else` that drew a rejected order as pending. The same
+    // mistake, in the file next to it, by the same mechanism. An exhaustive `when` over an enum makes
+    // the next state a compile error instead.
     fun build(
         order: OrderView,
         reversal: Reversal?,
@@ -34,18 +45,6 @@ object PurchaseResultScreen {
             id = "purchase-result",
             spacing = 16,
             children =
-                // NO `else`, and the one that used to be here is what this branch list is about.
-                //
-                // `AWAITING_CONFIRMATION` fell into it and drew "Confirming with the payment
-                // provider — keep the app open". Nothing was being confirmed with any provider: the
-                // saga was suspended waiting for the SUBSCRIBER, and the screen told them to wait
-                // for something that was never coming while the window ran out and the order rolled
-                // back. Two different states under one word.
-                //
-                // The neighbouring file already carries this lesson — `HistoryScreen` has "NO
-                // `else`, in both `when`s below" and the story of the `else` that drew a rejected
-                // order as pending. The same mistake, in the file next to it, by the same mechanism.
-                // An exhaustive `when` over an enum makes the next state a compile error instead.
                 when (order.status) {
                     OrderStatus.COMPENSATED -> reversed(order, reversal, balance)
 
