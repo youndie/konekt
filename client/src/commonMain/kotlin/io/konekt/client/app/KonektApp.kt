@@ -11,9 +11,11 @@ import androidx.compose.runtime.setValue
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
+import io.github.youndie.kompot.LocalKompotPageLoader
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
+import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.theme.KonektTheme
@@ -141,6 +143,7 @@ fun KonektApp(
         CompositionLocalProvider(
             LocalKompotRealtimeUpdates provides updates,
             LocalKompotDegradationSink provides sink,
+            LocalKompotPageLoader provides screens.pages(),
         ) {
             // THE HANDLER IS THE HOLDER'S, because navigation is. A source constructed with its own
             // handler could not move the screen it is a source for — which is why `render` takes one
@@ -214,6 +217,13 @@ interface ScreenSource {
     ): PatchFetcher
 
     suspend fun brandTheme(): KompotTheme?
+
+    // HOW A LIST ASKS FOR ITS NEXT PAGE, and it is on the source for the same reason the brand kit
+    // is: every entry point would otherwise have to remember to provide it, and one that forgot
+    // would not draw a shorter list — the renderer THROWS. `LocalKompotPageLoader not provided` is
+    // what the orders screen answered the day a tab made it reachable, which is also the day
+    // anybody could have found out.
+    fun pages(): KompotPageLoader
 
     fun updates(topic: String): Flow<ComponentUpdate>
 

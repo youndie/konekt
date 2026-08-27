@@ -41,11 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[~]` | Four screens and no way between them except a banner | P1 | L | - |
+| [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[ ]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
 
 ## Closed (48)

@@ -14,11 +14,14 @@ import io.github.youndie.kompot.form.FormSchema
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.FormPatchRequest
 import io.github.youndie.kompot.forms.KompotFormResponse
+import io.github.youndie.kompot.standard.KompotPageLoader
+import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -101,6 +104,29 @@ class KonektScreenSource(
                         setBody(json.encodeToString(FormPatchRequest.serializer(), body))
                     }.bodyAsText(),
             )
+        }
+
+    // THE NEXT PAGE, fetched with the same client and decoded with the same `Json` as everything else.
+    //
+    // The toolkit hands over a path and the parameters it wants appended, and asks for a
+    // `KompotPageResponse` back — so this is four lines and no route table. What it is NOT is
+    // optional: `PaginatedListRenderer` reads the loader out of a composition local and throws when
+    // there is none, whether or not the list has a second page to ask for. The orders screen said so
+    // the first time anything opened it.
+    // An object expression rather than a lambda: `KompotPageLoader` is not a `fun interface` — its
+    // one method carries a default argument, which is what stops it being one.
+    override fun pages(): KompotPageLoader =
+        object : KompotPageLoader {
+            override suspend fun loadPage(
+                url: String,
+                params: Map<String, String>,
+            ): KompotPageResponse {
+                val response =
+                    http.get(url) {
+                        params.forEach { (name, value) -> parameter(name, value) }
+                    }
+                return json.decodeFromString(KompotPageResponse.serializer(), response.bodyAsText())
+            }
         }
 
     override suspend fun brandTheme(): KompotTheme? =

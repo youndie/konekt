@@ -50,6 +50,22 @@ class ScreenshotCasesTest {
             // fixture, which cannot fail when the SERVER stops sending what it draws.
             "Screen - Recorded home",
             "Screen - Recorded home Dark",
+            // THE GALLERY: every screen this build serves, each one a recording like the frame above
+            // and for the same reason. They exist to be held against the design canvas, which is a
+            // person's job — what a machine can do is notice when one of them stops looking like
+            // itself, and that is what a golden per screen buys.
+            "Gallery - Login",
+            "Gallery - Login Dark",
+            "Gallery - Login code",
+            "Gallery - Login code Dark",
+            "Gallery - Home",
+            "Gallery - Home Dark",
+            "Gallery - Plans",
+            "Gallery - Plans Dark",
+            "Gallery - Profile",
+            "Gallery - Profile Dark",
+            "Gallery - Purchase result",
+            "Gallery - Purchase result Dark",
         )
 
     @Test
