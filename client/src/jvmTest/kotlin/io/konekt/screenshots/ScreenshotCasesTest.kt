@@ -88,6 +88,23 @@ class ScreenshotCasesTest {
             "Gallery - B Profile Dark",
             "Gallery - B Purchase result",
             "Gallery - B Purchase result Dark",
+            // THE APPLICATION rather than the screen, and the reason this group exists at all is in
+            // `AppFrameScreenshots`: everything above is a tree handed to `RenderNode`, so the
+            // margin, the ground, the scroll and the bar at the bottom of the window are drawn by
+            // nothing and photographed by nothing. Six frame-level defects were found by a person
+            // looking at the running application while this suite stayed green.
+            "AppFrame - App home",
+            "AppFrame - App home Dark",
+            "AppFrame - App plans",
+            "AppFrame - App plans Dark",
+            "AppFrame - App orders",
+            "AppFrame - App orders Dark",
+            "AppFrame - App profile",
+            "AppFrame - App profile Dark",
+            "AppFrame - App plan detail",
+            "AppFrame - App plan detail Dark",
+            "AppFrame - App login",
+            "AppFrame - App login Dark",
         )
 
     @Test
