@@ -68,6 +68,22 @@ class ScreenshotCasesTest {
             "Gallery - Profile Dark",
             "Gallery - Purchase result",
             "Gallery - Purchase result Dark",
+            // The same seven on brand B. Section 08's claim — same markup, ink palette, tighter
+            // radii — held at the size a screen actually is rather than on a pair of cards.
+            "Gallery - B Login",
+            "Gallery - B Login Dark",
+            "Gallery - B Login code",
+            "Gallery - B Login code Dark",
+            "Gallery - B Home",
+            "Gallery - B Home Dark",
+            "Gallery - B Plans",
+            "Gallery - B Plans Dark",
+            "Gallery - B Orders",
+            "Gallery - B Orders Dark",
+            "Gallery - B Profile",
+            "Gallery - B Profile Dark",
+            "Gallery - B Purchase result",
+            "Gallery - B Purchase result Dark",
         )
 
     @Test

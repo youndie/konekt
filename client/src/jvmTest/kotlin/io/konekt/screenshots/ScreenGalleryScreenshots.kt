@@ -53,8 +53,11 @@ private fun form(name: String): KompotFormResponse =
 // of ours would photograph our frame around their screen and hide a root that arrived as something
 // else entirely.
 @Composable
-private fun Screen(name: String) {
-    BrandFrame(DEFAULT_BRAND) {
+private fun Screen(
+    name: String,
+    brand: String = DEFAULT_BRAND,
+) {
+    BrandFrame(brand) {
         // A LOADER THAT REFUSES, because a golden must photograph the page the server sent and not a
         // second one this fixture went and got. `PaginatedListRenderer` reads it out of a composition
         // local and throws when there is none — whether or not the list has a next page — which is how
@@ -86,8 +89,11 @@ private val NoFurtherPages =
 // `read_only_field` whose value lives in the schema's `initialValue` — hand it an empty controller
 // and the field draws blank, which is a photograph of a bug this build does not have.
 @Composable
-private fun FormScreen(name: String) {
-    BrandFrame(DEFAULT_BRAND) {
+private fun FormScreen(
+    name: String,
+    brand: String = DEFAULT_BRAND,
+) {
+    BrandFrame(brand) {
         val response = form(name)
         LocalKompotRegistry.current.RenderNode(
             component = response.screen,
@@ -128,3 +134,42 @@ fun GalleryProfile() = Screen("profile-screen")
 @ViddikScreenshot(name = "Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 230, darkVariant = true)
 @Composable
 fun GalleryPurchaseResult() = Screen("order-screen")
+
+// ── THE SAME SEVEN SCREENS ON THE OTHER BRAND ──────────────────────────────────────────────────
+//
+// Section 08 of the canvas is "brand B parity — ink palette, tighter radii, same markup", and the
+// claim it makes is the one this product is FOR: a brand is a redeploy rather than a rebuild. A pair
+// of component cards was proving it (`BrandScreenshots`); whole screens prove it where it can
+// actually fail — a card that resolves its own colour is easy, and a screen is where a hard-coded
+// one shows.
+//
+// The recordings are the same files. Only the kit differs, which is exactly the claim.
+private const val BRAND_B = "brand-b"
+
+@ViddikScreenshot(name = "B Login", group = "Gallery", width = FRAME_WIDTH, height = 240, darkVariant = true)
+@Composable
+fun GalleryBLogin() = FormScreen("login-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Login code", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
+@Composable
+fun GalleryBLoginCode() = FormScreen("login-code-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Home", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
+@Composable
+fun GalleryBHome() = Screen("home-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Plans", group = "Gallery", width = FRAME_WIDTH, height = 730, darkVariant = true)
+@Composable
+fun GalleryBPlans() = Screen("plans-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Orders", group = "Gallery", width = FRAME_WIDTH, height = 380, darkVariant = true)
+@Composable
+fun GalleryBOrders() = Screen("orders-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Profile", group = "Gallery", width = FRAME_WIDTH, height = 370, darkVariant = true)
+@Composable
+fun GalleryBProfile() = Screen("profile-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 230, darkVariant = true)
+@Composable
+fun GalleryBPurchaseResult() = Screen("order-screen", BRAND_B)
