@@ -1,7 +1,7 @@
 ---
 id: B-51
 title: "Every screen photographed and held against the canvas, and what the two disagree about"
-status: open
+status: wip
 priority: P1
 size: L
 stage: stage-m3-product
@@ -58,3 +58,44 @@ screenshot harness found it in the same hour. Fixed by putting `pages()` on `Scr
 
 Background: [B-49](B-49-the-app-has-no-shell.md) put the bar on the wire; [B-50](B-50-login-frame-six.md)
 prices the login additions; [B-28](B-28-screenshot-tests.md) is the harness these frames are recorded by.
+
+## What landed
+
+**The three cross-cutting ones are fixed.** The frame is the client's — a margin around the content
+and the bar lifted out of the root's own children and drawn at the bottom of the window. Full width
+is said by the SERVER, through `Size(width = Fill)`, a modifier the vocabulary already had: the
+renderer was the other candidate and is worse, because a client that made every button fill its row
+would be a client with an opinion about layout.
+
+**The order row has a card and its reference**, and the orders screen carries the bar — through a
+port rather than a dependency, so the purchase feature asks for chrome by its own deeplink and never
+learns what a bar is. Its golden is back: it was missing for one release because four lines of text
+on nothing is 4% drawn, and the guard that refused it needed no changing.
+
+**The home screen gained the number and a way to the catalogue.** `Top up` is deliberately absent:
+topping up is a POST with an amount and this build serves no screen to choose one on, so the button
+would navigate nowhere. That is a screen to build, not a layout to fix.
+
+**And two defects fell out of looking.** A history row drew the plan's ID where its name belongs —
+"eu-5gb-14d" — because an entitlement stores an id and nothing looked the name up. And a reference
+with no date drew a dangling separator on the purchase-result screen, which the goldens caught the
+same hour by refusing a build.
+
+## What is left, and why each one is not a layout fix
+
+- **The plans catalogue.** Reading section 02 properly rather than its one-line summary in
+  `design-app-canvas.md`: it draws a search field, four filter chips, per-GB pricing, restock dates,
+  a `Choose` button per card, and a whole plan-detail screen with a spec table. The summary called it
+  "four list states in one frame", which is how an alternating card tone got attempted and reverted.
+  **The summary is the thing that was wrong**, and a paraphrase that quietly replaces its source is
+  worth more attention than the feature it mis-described.
+- **Section 01's plan block** — "Smart 20 · renews 12 Sep" — needs a subscription with a renewal
+  date. This build grants a counter and keeps no such entity.
+- **Three counters.** `Plan` carries `dataMb` and nothing else, so MINUTES and MESSAGES are never
+  granted and the canvas's *Running low* and *Used up* cannot appear beside a normal counter on any
+  real account. It is the demonstration those two states exist for.
+- **The header and avatar.** The brand name is not in the domain and neither is a subscriber's name.
+  Drawing initials would mean inventing a field.
+- **The margin and the pinned bar are not photographed.** The gallery renders a screen TREE; the
+  frame belongs to `KonektApp`, which the goldens do not go through. Verified by running the desktop
+  client instead — which is a real gap in the harness rather than in the frame.
