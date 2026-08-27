@@ -6,6 +6,7 @@ import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
+import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
@@ -14,18 +15,8 @@ import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
-import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
-import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
-import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
-import io.konekt.feature.auth.shared.api.LoginCodeSubmit
-import io.konekt.feature.auth.shared.api.LoginForms
-import io.konekt.feature.auth.shared.api.LoginScreenResource
-import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
-import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
-import io.konekt.feature.purchase.shared.api.PlansScreenResource
-import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.time.SystemClock
 import io.ktor.client.call.body
 import io.ktor.client.engine.darwin.Darwin
@@ -33,13 +24,11 @@ import io.ktor.client.plugins.resources.get
 import io.ktor.client.plugins.resources.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.serializer
 import platform.Foundation.NSProcessInfo
 import platform.UIKit.UIViewController
 
@@ -85,53 +74,50 @@ fun homeViewController(): UIViewController {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
-            submits =
-                mapOf(
-                    LoginForms.NUMBER to addressOf<LoginSubmit>(),
-                    LoginForms.CODE to addressOf<LoginCodeSubmit>(),
-                ),
+            submits = KonektRoutes.submits,
         )
 
     return ComposeUIViewController {
         KonektApp(
             screens = screens,
-            address = addressOf<LoginScreenResource>(),
+            address = KonektRoutes.loginAddress,
             // A LOCAL KEY, NOT AN ADDRESS. `SseRealtimeSource.subscribe` ignores its topic: the path
             // is fixed and the SERVER derives the topic from the caller's token, so this only keys
             // the overlay map. The client cannot learn its own subscriber id at all.
             topic = "konekt-ios",
             darkMode = false,
-            routes =
-                mapOf(
-                    PLANS_DEEPLINK to plansAddress(),
-                    LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
-                    LOGIN_DEEPLINK to addressOf<LoginScreenResource>(),
-                ),
+            // THE SAME TABLE THE DESKTOP RUNNER USES, which it was not: this one knew three
+            // deeplinks against the other's six, so the tabs and the two flows below moved on
+            // one platform and printed "no handler" on the other.
+            routes = KonektRoutes.map,
             onAction = { action ->
-                // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
-                // about purchases is this application's holder rather than a reusable one. What
-                // comes back is the order screen's address, and the holder moves to it exactly as
-                // it moves for a `navigate`.
-                buy.addressFor(action)?.let(Destination::next) ?: run {
-                    println("konekt-ios: no handler for $action")
-                    null
+                when {
+                    // SIGNING IN, and this runner could not. It imported `UpdateSessionAction` and
+                    // `SessionTokens`, held a `KonektSession`, opened on the login screen — and
+                    // handled neither, so the second step answered an action nothing adopted and the
+                    // application printed "no handler" and stayed where it was. The iOS build could
+                    // not get past its first screen, and nothing said so: the imports compiled, the
+                    // session object was constructed, and every part existed except the branch.
+                    action is UpdateSessionAction -> {
+                        session.adopt(SessionTokens(action.accessToken, action.refreshToken))
+                        // START OVER: the login screen is the bottom of this stack, so replacing the
+                        // top would leave it under the home screen and put a back control on a tab.
+                        Destination.startOver(KonektRoutes.homeAddress)
+                    }
+
+                    // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
+                    // about purchases is this application's holder rather than a reusable one. What
+                    // comes back is the order screen's address, and the holder moves to it exactly
+                    // as it moves for a `navigate`.
+                    else -> {
+                        buy.addressFor(action)?.let(Destination::next) ?: run {
+                            println("konekt-ios: no handler for $action")
+                            null
+                        }
+                    }
                 }
             },
             onDegradation = observability.recorder(),
         )
     }
 }
-
-// The address, derived from the `@Resource` rather than typed again — the same three lines the
-// desktop runner has, and the ADDRESS itself is still spelled once, in the annotation.
-private fun homeAddress(): String = addressOf<HomeScreenResource>()
-
-private fun plansAddress(): String = addressOf<PlansScreenResource>()
-
-// Derived from the `@Resource` rather than typed again. The ADDRESS is still spelled once, in the
-// annotation; this is a copy of the three lines in `io.konekt.openapi.ResourceAddresses`, which lives
-// in `:server` and a client cannot see.
-private inline fun <reified T : Any> addressOf(): String =
-    ResourcesFormat()
-        .encodeToPathPattern(serializer<T>())
-        .let { if (it.startsWith("/")) it else "/$it" }

@@ -7,6 +7,7 @@ import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
+import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
@@ -17,27 +18,7 @@ import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
 import io.konekt.domain.suspendRunCatching
 import io.konekt.feature.auth.shared.api.AuthSession
-import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
-import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
-import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
-import io.konekt.feature.auth.shared.api.LoginCodeSubmit
-import io.konekt.feature.auth.shared.api.LoginForms
-import io.konekt.feature.auth.shared.api.LoginScreenResource
-import io.konekt.feature.auth.shared.api.LoginSubmit
-import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
-import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
-import io.konekt.feature.purchase.shared.api.HistoryScreenResource
-import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
-import io.konekt.feature.purchase.shared.api.PlansScreenResource
-import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
-import io.konekt.feature.purchase.shared.api.TopUpForms
-import io.konekt.feature.purchase.shared.api.TopUpScreenResource
-import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
-import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
-import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
-import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.shell.shared.api.SignOutAction
-import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.time.SystemClock
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -45,12 +26,10 @@ import io.ktor.client.plugins.resources.get
 import io.ktor.client.plugins.resources.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.serializer
 
 // THE APPLICATION, and it no longer knows a development route exists.
 //
@@ -75,17 +54,7 @@ fun main() {
             realtime = SseRealtimeSource(http, konektClientJson),
             registry = konektRegistry(),
             json = konektClientJson,
-            // The two login forms, and nothing else posts. A map rather than a convention, because a
-            // convention that derives an address from a form id is a second route table nobody can
-            // grep for.
-            submits =
-                mapOf(
-                    LoginForms.NUMBER to addressOf<LoginSubmit>(),
-                    LoginForms.CODE to addressOf<LoginCodeSubmit>(),
-                    // The amount form posts to the SCREEN'S own address: the submit is a POST on
-                    // the resource that serves it, so nothing here spells a second path.
-                    TopUpForms.AMOUNT_FORM to addressOf<TopUpScreenResource>(),
-                ),
+            submits = KonektRoutes.submits,
         )
 
     // OBSERVABILITY, and the runner is where it is decided rather than inside the holder. A client
@@ -118,7 +87,7 @@ fun main() {
                 onDegradation = observability.recorder(),
                 // OPENS ON THE LOGIN SCREEN. There is no session yet, and the home screen behind a
                 // token would answer 401 to an application that has not asked for one.
-                address = addressOf<LoginScreenResource>(),
+                address = KonektRoutes.loginAddress,
                 // A LOCAL KEY, NOT AN ADDRESS, and that is worth knowing before somebody goes looking
                 // for where it is sent. `SseRealtimeSource.subscribe` ignores its topic: the path is
                 // fixed and the SERVER derives the topic from the caller's token. So this string only
@@ -133,29 +102,12 @@ fun main() {
                 // An environment variable rather than a control, because the application has no
                 // settings screen and inventing one to test a palette is a feature. `KONEKT_DARK=true`.
                 darkMode = System.getenv("KONEKT_DARK") == "true",
-                // THE ONE TRANSITION THIS BUILD HAS. The home screen's banner offers "See plans" and
-                // the deeplink is spelled once, in the shared module both sides read.
-                routes =
-                    mapOf(
-                        PLANS_DEEPLINK to plansAddress(),
-                        // The install flow, which had routes and no address until B-54.
-                        ESIM_INSTALL_DEEPLINK to addressOf<EsimInstallScreenResource>(),
-                        // Matched by PREFIX for its result: `app://top-up/<id>` carries the id
-                        // after the deeplink, exactly as the login step carries a number.
-                        TOP_UP_DEEPLINK to addressOf<TopUpScreenResource>(),
-                        // THE FOUR TABS. Written here for now, and this map is what `B-49` exists to
-                        // delete: the server serves the same pairing as a `NavigationGraph` at
-                        // `/api/v1/navigation`, and a client resolving deeplinks from a map it wrote
-                        // by hand is a second copy of a contract the server already publishes. Four
-                        // entries is the point at which that stops being a detail.
-                        HOME_DEEPLINK to homeAddress(),
-                        ORDERS_DEEPLINK to ordersAddress(),
-                        PROFILE_DEEPLINK to profileAddress(),
-                        // The login step, matched by PREFIX: the server puts the number in the query
-                        // and a map keyed on the whole string would need an entry per subscriber.
-                        LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
-                        LOGIN_DEEPLINK to addressOf<LoginScreenResource>(),
-                    ),
+                // ONE TABLE, IN ONE PLACE, and it was two. The desktop runner knew six
+                // deeplinks and the iOS one knew three, so the same `navigate` moved here and
+                // printed "no handler" there. A table written at a call site is not something
+                // a guard can be handed — `KonektRoutes` is, and `EveryScreenIsReachableTest`
+                // reads it.
+                routes = KonektRoutes.map,
                 // Announced rather than swallowed: a handler that silently did nothing would make a
                 // button that does nothing indistinguishable from one whose handler is missing.
                 onAction = { action ->
@@ -170,7 +122,7 @@ fun main() {
                             // application opens, so it is the bottom of the stack — replacing the top
                             // left it underneath the home screen, which put a back control on a tab
                             // and pointed it at a code already spent.
-                            Destination.startOver(homeAddress())
+                            Destination.startOver(KonektRoutes.homeAddress)
                         }
 
                         // LEAVING. The order is the whole of it: tell the server FIRST, while the
@@ -185,7 +137,7 @@ fun main() {
                             session.clear()
                             // The same boundary from the other side, and worse if it is missed: back
                             // from here would return to a screen whose token this line just dropped.
-                            Destination.startOver(addressOf<LoginScreenResource>())
+                            Destination.startOver(KonektRoutes.loginAddress)
                         }
 
                         // BUYING, for the same reason: a holder with an opinion about purchases is
@@ -202,22 +154,3 @@ fun main() {
         }
     }
 }
-
-// The address, derived from the `@Resource` rather than typed again. The three lines are a copy of
-// `io.konekt.openapi.ResourceAddresses`; the ADDRESS is not — it is still spelled once, in the
-// annotation. The server's copy lives in `:server`, which a client cannot see.
-private fun homeAddress(): String = addressOf<HomeScreenResource>()
-
-private fun plansAddress(): String = addressOf<PlansScreenResource>()
-
-private fun ordersAddress(): String = addressOf<HistoryScreenResource>()
-
-private fun profileAddress(): String = addressOf<ProfileScreenResource>()
-
-// Derived from the `@Resource` rather than typed again. The ADDRESS is still spelled once, in the
-// annotation; this is a copy of the three lines in `io.konekt.openapi.ResourceAddresses`, which lives
-// in `:server` and a client cannot see.
-private inline fun <reified T : Any> addressOf(): String =
-    ResourcesFormat()
-        .encodeToPathPattern(serializer<T>())
-        .let { if (it.startsWith("/")) it else "/$it" }
