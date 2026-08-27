@@ -198,9 +198,14 @@ class ProvisionInterceptor(
         petich: Petich,
         payload: PurchasePayload,
     ) {
-        if (payload.dataMb <= 0) return
+        if (payload.dataMb <= 0 && payload.minutes <= 0 && payload.messages <= 0) return
         if (payload.zone == Zones.HOME) {
-            grants.grantPlanAllowance(payload.subscriberId, payload.dataMb)
+            grants.grantPlanAllowance(
+                payload.subscriberId,
+                payload.dataMb,
+                payload.minutes,
+                payload.messages,
+            )
         } else {
             // DORMANT, and there is no flag here that could make it otherwise. The subscriber is
             // standing at home with a package for Turkey; nothing about paying for it means the trip
@@ -220,9 +225,14 @@ class ProvisionInterceptor(
         petich: Petich,
         payload: PurchasePayload,
     ) {
-        if (payload.dataMb <= 0) return
+        if (payload.dataMb <= 0 && payload.minutes <= 0 && payload.messages <= 0) return
         if (payload.zone == Zones.HOME) {
-            grants.revokePlanAllowance(payload.subscriberId, payload.dataMb)
+            grants.revokePlanAllowance(
+                payload.subscriberId,
+                payload.dataMb,
+                payload.minutes,
+                payload.messages,
+            )
         } else {
             // The same key the grant used. The order IS the saga, so a compensation can
             // always name exactly what it granted rather than searching for something that looks

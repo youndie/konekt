@@ -123,6 +123,13 @@ interface UsageGrants {
     suspend fun grantPlanAllowance(
         subscriberId: String,
         dataMb: Long,
+        // THE OTHER TWO, defaulted to nothing so a caller that grants only data says so by saying
+        // nothing. Every roaming package is such a caller.
+        //
+        // Three arguments rather than one map keyed by `Kind`: the caller is a purchase, and a
+        // purchase knows a plan rather than a counter vocabulary. A map would let it invent a kind.
+        minutes: Long = 0,
+        messages: Long = 0,
     )
 
     // The other half, and it exists because the granting step sits inside a saga. A purchase that is
@@ -135,6 +142,8 @@ interface UsageGrants {
     suspend fun revokePlanAllowance(
         subscriberId: String,
         dataMb: Long,
+        minutes: Long = 0,
+        messages: Long = 0,
     )
 }
 

@@ -23,6 +23,16 @@ data class PurchasePayload(
     // validation and the settlement would grant an allowance nobody was shown. Defaulted so sagas
     // written before this field decode — and they grant nothing, which is what they intended.
     val dataMb: Long = 0,
+    // THE OTHER TWO ALLOWANCES, carried for the same reason and defaulted for the same one: a saga
+    // persisted before they existed decodes and grants neither, which is what it meant.
+    //
+    // They exist because a counter kind that is never granted is a state nobody can reach. `Kind`
+    // has known MINUTES and MESSAGES since the beginning and only DATA was ever handed out — so the
+    // canvas's *Running low* and *Used up*, which it draws on minutes and SMS beside a healthy data
+    // counter, were unreachable on any real account. The component could draw them; the product
+    // could not produce them.
+    val minutes: Long = 0,
+    val messages: Long = 0,
     // Carried on the payload for the reason the price and the allowance are: the payload is what was
     // AGREED. A catalogue edited between the validation and the settlement must not change which
     // branch provisioning takes — a package sold as Turkey is provisioned as Turkey.
@@ -85,6 +95,10 @@ data class Plan(
     // out of `title`: "Turkey · 10 GB · 30 days" is copy, and parsing copy for a number is how a
     // renamed plan silently grants nothing.
     val dataMb: Long,
+    // What the plan includes besides data. Zero on a roaming package, and the canvas says why: its
+    // detail frame lists "Calls & SMS — not included". A data package is data.
+    val minutes: Long = 0,
+    val messages: Long = 0,
     // WHERE IT WORKS, and it is not decoration: every plan in the catalogue is a roaming package —
     // Turkey, Europe, the United States — and until this field existed they were all provisioned as
     // an ordinary home allowance that started counting the moment it was bought. A subscriber who

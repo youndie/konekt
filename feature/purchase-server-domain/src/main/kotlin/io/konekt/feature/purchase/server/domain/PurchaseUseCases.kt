@@ -61,6 +61,8 @@ class StartPurchaseUseCase(
                             planTitle = plan.title,
                             price = plan.price,
                             dataMb = plan.dataMb,
+                            minutes = plan.minutes,
+                            messages = plan.messages,
                             zone = plan.zone,
                             validForDays = plan.validForDays,
                         ),

@@ -43,6 +43,15 @@ class StaticPlanCatalog(
                     Money.ofMajor(15, Currency.DEFAULT),
                     onSale = true,
                     dataMb = 20 * MB_PER_GB,
+                    // MINUTES AND MESSAGES, and only the home bundle has them. The canvas draws
+                    // three counters side by side — data healthy, minutes running low, SMS used up —
+                    // and until this line the product granted DATA and nothing else, so two of those
+                    // three states were unreachable on any real account. The component could draw
+                    // them; nothing could produce them.
+                    //
+                    // The numbers are the canvas's own: "18 of 300" and "0 of 50".
+                    minutes = 300,
+                    messages = 50,
                     // No zone and no validity: a home allowance has no start, so it has no expiry
                     // dated from one. The defaults say exactly that.
                 ),
@@ -52,6 +61,8 @@ class StaticPlanCatalog(
                     Money.ofMajor(12, Currency.DEFAULT),
                     onSale = true,
                     dataMb = 10 * MB_PER_GB,
+                    // No minutes and no messages on any roaming package, and the canvas says so on
+                    // its detail frame: "Calls & SMS — not included". A data package is data.
                     zone = "tr",
                     validForDays = 30,
                 ),

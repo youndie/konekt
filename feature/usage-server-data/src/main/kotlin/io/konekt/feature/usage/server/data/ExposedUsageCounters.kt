@@ -141,14 +141,38 @@ class ExposedUsageCounters(
     override suspend fun grantPlanAllowance(
         subscriberId: String,
         dataMb: Long,
+        minutes: Long,
+        messages: Long,
     ) {
-        grant(subscriberId, UsageCounter.Kind.DATA, dataMb)
+        // ZERO GRANTS NOTHING, and that is not a micro-optimisation. `grant` upserts, so granting
+        // zero minutes would CREATE a minutes counter reading "0 of 0" — a subscriber who bought a
+        // data package would find an empty allowance for calls on their home screen, which reads as
+        // a plan that took their minutes away.
+        if (dataMb > 0) grant(subscriberId, UsageCounter.Kind.DATA, dataMb)
+        if (minutes > 0) grant(subscriberId, UsageCounter.Kind.MINUTES, minutes)
+        if (messages > 0) grant(subscriberId, UsageCounter.Kind.MESSAGES, messages)
     }
 
     override suspend fun revokePlanAllowance(
         subscriberId: String,
         dataMb: Long,
+        minutes: Long,
+        messages: Long,
     ) {
+        revokeOne(subscriberId, UsageCounter.Kind.DATA, dataMb)
+        revokeOne(subscriberId, UsageCounter.Kind.MINUTES, minutes)
+        revokeOne(subscriberId, UsageCounter.Kind.MESSAGES, messages)
+    }
+
+    // One kind's worth of taking back, so the three read identically rather than the first being
+    // spelled out and the others bolted on beside it.
+    private suspend fun revokeOne(
+        subscriberId: String,
+        kind: UsageCounter.Kind,
+        units: Long,
+    ) {
+        if (units <= 0) return
+
         dbQuery {
             // Both columns, and both clamped in SQL. The limit falls because the allowance is gone;
             // the remainder falls because what is left of it is gone too — and it may already be
@@ -156,7 +180,7 @@ class ExposedUsageCounters(
             // subtraction.
             val row =
                 (UsageCounterTable.subscriberId eq subscriberId) and
-                    (UsageCounterTable.kind eq UsageCounter.Kind.DATA.wireName)
+                    (UsageCounterTable.kind eq kind.wireName)
 
             // CLAMP FIRST, both columns, for the reason `consume` above spells out at length: written
             // subtract-then-clamp the pair is not exclusive, because the subtract changes the row the
@@ -166,17 +190,17 @@ class ExposedUsageCounters(
             // Two columns and therefore four statements. They are not one pair repeated: the limit and
             // the remainder move independently, because the remainder may already be smaller than what
             // was granted.
-            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less dataMb) }) {
+            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less units) }) {
                 it[limitUnits] = 0
             }
-            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq dataMb) }) {
-                it[limitUnits] = UsageCounterTable.limitUnits plus (-dataMb)
+            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq units) }) {
+                it[limitUnits] = UsageCounterTable.limitUnits plus (-units)
             }
-            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less dataMb) }) {
+            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less units) }) {
                 it[remainingUnits] = 0
             }
-            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq dataMb) }) {
-                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-dataMb)
+            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq units) }) {
+                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-units)
             }
         }
     }
