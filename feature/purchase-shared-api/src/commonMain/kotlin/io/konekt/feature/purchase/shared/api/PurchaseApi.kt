@@ -28,14 +28,43 @@ class OrderScreen(
 )
 
 @Resource("/api/v1/screens/history")
-class HistoryScreenResource {
+class HistoryScreenResource(
+    // WHICH SLICE, and it is a query parameter rather than a path because it is not a different
+    // screen: the same list, the same cursor, one predicate narrower. A path per filter would make
+    // three addresses that a deeplink, a back stack and a conformance walk each have to know about
+    // separately.
+    val filter: String = HistoryFilters.ALL,
+) {
     // The next page. A resource of its own rather than a query parameter on the screen, because the
     // two answer different things: one is a screen to draw, the other is a page of items to append.
     @Resource("page")
     class Page(
         val parent: HistoryScreenResource = HistoryScreenResource(),
         val cursor: String? = null,
+        // THE FILTER TRAVELS WITH THE CURSOR, and it has to: a keyset cursor is a position in a
+        // FILTERED list. Asking for the next page without it walks a different list from the
+        // boundary of this one, which silently returns rows the subscriber filtered out.
+        val filter: String = HistoryFilters.ALL,
     )
+}
+
+// The three slices, as words on the wire rather than an enum, for the reason every open string in
+// this build is one: a value a client does not know must degrade rather than fail to decode. An
+// unrecognised filter is the whole list — the answer that shows too much rather than too little,
+// which is the right way round for a list somebody is searching.
+object HistoryFilters {
+    const val ALL = "all"
+
+    // A purchase that granted something and still holds it. NOT a top-up: money that arrived is
+    // finished, not running, and the canvas draws the active row as a plan with data left on it.
+    const val ACTIVE = "active"
+
+    // Anything that was undone, either direction — a purchase reversed or a top-up taken back. It is
+    // the slice somebody opens when they are looking for money, so it must not exclude the half that
+    // went the other way.
+    const val REFUNDED = "refunded"
+
+    val ALL_OF_THEM: List<String> = listOf(ALL, ACTIVE, REFUNDED)
 }
 
 @Serializable

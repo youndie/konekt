@@ -3,13 +3,50 @@
   "id": "orders",
   "children": [
     {
+      "type": "row",
+      "id": "history-filters",
+      "children": [
+        {
+          "type": "button",
+          "id": "history-filter-all",
+          "text": "All",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders"
+          },
+          "variant": "primary"
+        },
+        {
+          "type": "button",
+          "id": "history-filter-active",
+          "text": "Active",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders?filter=active"
+          },
+          "variant": "quiet"
+        },
+        {
+          "type": "button",
+          "id": "history-filter-refunded",
+          "text": "Refunded",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders?filter=refunded"
+          },
+          "variant": "quiet"
+        }
+      ],
+      "spacing": 8
+    },
+    {
       "type": "paginated_list",
       "id": "history",
       "initialItems": [
         {
           "type": "order_row",
-          "id": "history-31d70ec4-5d25-4200-9dfc-9772ebcb1568",
-          "reference": "31d70ec4",
+          "id": "history-8820e9a4-0bd5-48b1-a39e-d0417c30dddc",
+          "reference": "8820e9a4",
           "title": "Top-up",
           "dateText": "27 Aug",
           "amountText": "+$15",
@@ -18,8 +55,8 @@
         },
         {
           "type": "order_row",
-          "id": "history-f4f88fab-56c3-4e72-92e8-b3a5b61d06fc",
-          "reference": "f4f88fab",
+          "id": "history-10fac943-8cce-4203-996b-679c4b15027d",
+          "reference": "10fac943",
           "title": "Europe · 5 GB · 14 days",
           "dateText": "27 Aug",
           "amountText": "−$9",
@@ -28,8 +65,8 @@
         },
         {
           "type": "order_row",
-          "id": "history-b0ed4dae-9c05-433b-b1af-ce899aafa2b1",
-          "reference": "b0ed4dae",
+          "id": "history-7d3f18f7-089d-436b-ad28-59ebd3540f40",
+          "reference": "7d3f18f7",
           "title": "Turkey · 10 GB · 30 days",
           "dateText": "27 Aug",
           "amountText": "−$12",
@@ -38,8 +75,8 @@
         },
         {
           "type": "order_row",
-          "id": "history-b98929a6-4d3f-4d1a-82f0-b410010e4928",
-          "reference": "b98929a6",
+          "id": "history-bc6298a0-29b7-4ba6-baba-89b0c34b5cc4",
+          "reference": "bc6298a0",
           "title": "Home · 20 GB · 30 days",
           "dateText": "27 Aug",
           "amountText": "−$15",
@@ -48,8 +85,8 @@
         },
         {
           "type": "order_row",
-          "id": "history-c4ebef9e-cde0-4dcc-9733-3f34eab5aae7",
-          "reference": "c4ebef9e",
+          "id": "history-30213eeb-9077-46a6-a197-4f0b30a2fbf0",
+          "reference": "30213eeb",
           "title": "Top-up",
           "dateText": "27 Aug",
           "amountText": "+$60",

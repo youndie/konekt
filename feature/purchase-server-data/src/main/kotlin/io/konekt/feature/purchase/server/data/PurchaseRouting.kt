@@ -4,6 +4,7 @@ import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
+import io.konekt.feature.purchase.server.domain.HistoryFilter
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
 import io.konekt.feature.purchase.server.domain.LoadOrderScreenUseCase
@@ -12,6 +13,7 @@ import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
+import io.konekt.feature.purchase.shared.api.HistoryFilters
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
@@ -101,15 +103,33 @@ fun Route.purchaseRoutes() {
         call.respond(order.toResponse())
     }
 
-    get<HistoryScreenResource> {
-        val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = null)).getOrThrow()
+    get<HistoryScreenResource> { params ->
+        // A WORD THIS BUILD DOES NOT KNOW IS THE WHOLE LIST, not a 400. The filter arrives in a URL
+        // and a URL is something anybody can hand somebody; showing everything is the answer that
+        // shows too much rather than too little, which is the right way round for a list a subscriber
+        // is searching. `HistoryFilters` says the same thing from the wire's side.
+        val filter = params.filter.asHistoryFilter()
+        val page =
+            loadHistory(
+                LoadHistoryUseCase.Params(call.subscriberId(), cursor = null, filter = filter),
+            ).getOrThrow()
         // The shell asked for by this screen's own deeplink, which this feature already spells. What
         // comes back is a component it never looks inside — see `ScreenChrome`.
-        call.respondKompotComponent(json, HistoryScreen.build(page, titlesFor(page), chrome.of(ORDERS_DEEPLINK)))
+        call.respondKompotComponent(
+            json,
+            HistoryScreen.build(page, titlesFor(page), filter, chrome.of(ORDERS_DEEPLINK)),
+        )
     }
 
     get<HistoryScreenResource.Page> { params ->
-        val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = params.cursor)).getOrThrow()
+        // THE SAME FILTER THE CURSOR WAS TAKEN IN. A keyset is a position in a filtered list, so a
+        // page fetched without it walks a different list from this boundary and appends rows the
+        // subscriber narrowed away.
+        val filter = params.filter.asHistoryFilter()
+        val page =
+            loadHistory(
+                LoadHistoryUseCase.Params(call.subscriberId(), cursor = params.cursor, filter = filter),
+            ).getOrThrow()
         // A page response and not a component tree: the client appends items to a list it already
         // has, and sending it a screen would replace one.
         //
@@ -123,7 +143,7 @@ fun Route.purchaseRoutes() {
         // `CallRespondUsageTest` asked whether the FILE mentions respondKompotComponent, and this
         // file does — for the two routes above. It now asks per call site.
         call.respondText(
-            json.encodeToString(KompotPageResponse.serializer(), HistoryScreen.page(page, titlesFor(page))),
+            json.encodeToString(KompotPageResponse.serializer(), HistoryScreen.page(page, titlesFor(page), filter)),
             ContentType.Application.Json,
         )
     }
@@ -176,3 +196,13 @@ private fun OrderView.toResponse(): PurchaseOrderResponse =
                 null
             },
     )
+
+// The wire's word to the domain's slice, with anything unrecognised meaning the whole list. Here
+// rather than on the enum: the mapping belongs to the boundary that reads a request, and an enum that
+// knew how to parse a query string would be a domain type with an opinion about HTTP.
+private fun String.asHistoryFilter(): HistoryFilter =
+    when (this) {
+        HistoryFilters.ACTIVE -> HistoryFilter.ACTIVE
+        HistoryFilters.REFUNDED -> HistoryFilter.REFUNDED
+        else -> HistoryFilter.ALL
+    }

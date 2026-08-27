@@ -1,17 +1,24 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.standard.LoadPageAction
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.PaginatedListComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.feature.purchase.server.domain.HistoryEntry
+import io.konekt.feature.purchase.server.domain.HistoryFilter
 import io.konekt.feature.purchase.server.domain.HistoryKind
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.OrderStatus
+import io.konekt.feature.purchase.shared.api.HistoryFilters
+import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
 
@@ -23,7 +30,23 @@ import io.konekt.money.MoneyFormat
 object HistoryScreen {
     // The path the client asks for the next page. It is the ONE place this string exists on the
     // server; the client never builds it, because the cursor inside it is opaque by design.
-    fun pageUrl(cursor: String?): String = "/api/v1/screens/history/page" + (cursor?.let { "?cursor=$it" } ?: "")
+    // THE FILTER GOES IN THE URL WITH THE CURSOR, and leaving it out is the bug this shape prevents:
+    // a keyset cursor is a position in a FILTERED list, so the next page has to be asked for from the
+    // same list the boundary came from. Without it, "load more" under `Refunded` appends rows the
+    // subscriber filtered out.
+    fun pageUrl(
+        cursor: String?,
+        filter: HistoryFilter,
+    ): String {
+        val query =
+            listOfNotNull(
+                cursor?.let { "cursor=$it" },
+                // The default is omitted rather than spelled: a URL that says `filter=all` and one
+                // that says nothing must not be two addresses for one list.
+                filter.takeIf { it != HistoryFilter.ALL }?.let { "filter=${it.wireName()}" },
+            )
+        return "/api/v1/screens/history/page" + if (query.isEmpty()) "" else "?" + query.joinToString("&")
+    }
 
     // WRAPPED IN A COLUMN WHEN THERE IS CHROME, and left alone when there is not.
     //
@@ -42,40 +65,95 @@ object HistoryScreen {
         fun of(planId: String): String
     }
 
+    // THE CHIPS SIT ABOVE THE LIST, so the column exists whether or not there is a shell — which is
+    // a change from the shape every recording was taken against, where a screen with no chrome WAS
+    // the paginated list. A root that is sometimes a list and sometimes a column was already awkward;
+    // now it is always a column, and the bar is one more child when there is one.
     fun build(
         page: HistoryPage,
         titles: PlanTitles,
+        filter: HistoryFilter = HistoryFilter.ALL,
         nav: KompotComponent? = null,
     ): KompotComponent =
-        nav?.let { ColumnComponent(id = "orders", spacing = 12, children = listOf(list(page, titles), it)) }
-            ?: list(page, titles)
+        ColumnComponent(
+            id = "orders",
+            spacing = 12,
+            children = listOfNotNull(chips(filter), list(page, titles, filter), nav),
+        )
+
+    // WHICH SLICE IS OPEN, said by the SERVER — the same argument the bottom bar's `selected` makes.
+    // A client deciding it by reading its own address would be a second opinion about which filter is
+    // on, and the two disagree the first time an address gains a parameter.
+    //
+    // Buttons rather than a chip type: `ButtonEmphasis` already distinguishes the chosen one from the
+    // rest, and a `chip` on the wire would be a twelfth name for a control this vocabulary can
+    // already express.
+    private fun chips(filter: HistoryFilter): KompotComponent =
+        RowComponent(
+            id = "history-filters",
+            spacing = 8,
+            children =
+                HistoryFilter.entries.map { slice ->
+                    ButtonComponent(
+                        id = "history-filter-${slice.wireName()}",
+                        text = slice.label(),
+                        // A deeplink with the filter on it, so pressing a chip is an ordinary
+                        // `navigate` and the client needs to know nothing about filtering.
+                        action =
+                            NavigateAction(
+                                ORDERS_DEEPLINK +
+                                    if (slice == HistoryFilter.ALL) "" else "?filter=${slice.wireName()}",
+                            ),
+                        variant = if (slice == filter) ButtonEmphasis.PRIMARY else ButtonEmphasis.QUIET,
+                    )
+                },
+        )
 
     private fun list(
         page: HistoryPage,
         titles: PlanTitles,
+        filter: HistoryFilter,
     ): KompotComponent =
         PaginatedListComponent(
             id = "history",
             initialItems = page.entries.map { row(it, titles) },
-            loadMoreAction = page.next?.let { LoadPageAction(pageUrl(it.encode())) },
+            loadMoreAction = page.next?.let { LoadPageAction(pageUrl(it.encode(), filter)) },
             // Drawn rather than left blank. An empty list and a list that failed to load look
             // identical as nothing, and only one of them is worth waiting for.
+            //
+            // AND IT SAYS WHICH EMPTY IT IS. "Nothing here yet" under `Refunded` is wrong twice: this
+            // subscriber may have plenty of history, and the sentence sends them looking for a fault
+            // instead of pressing `All`.
             emptyState =
                 TextComponent(
                     id = "history-empty",
-                    text = "Nothing here yet. Your purchases and top-ups will appear on this screen.",
+                    text =
+                        when (filter) {
+                            HistoryFilter.ALL -> {
+                                "Nothing here yet. Your purchases and top-ups will appear on this screen."
+                            }
+
+                            HistoryFilter.ACTIVE -> {
+                                "No plan is running on this line right now."
+                            }
+
+                            HistoryFilter.REFUNDED -> {
+                                "Nothing has been refunded."
+                            }
+                        },
                 ),
         )
 
     fun page(
         page: HistoryPage,
         titles: PlanTitles,
+        filter: HistoryFilter = HistoryFilter.ALL,
     ): KompotPageResponse =
         KompotPageResponse(
             items = page.entries.map { row(it, titles) },
             // null is what stops the client asking, and it is derived from having fetched one row
             // more than asked for rather than from a count.
-            nextLoadAction = page.next?.let { LoadPageAction(pageUrl(it.encode())) },
+            nextLoadAction = page.next?.let { LoadPageAction(pageUrl(it.encode(), filter)) },
         )
 
     private fun row(
@@ -170,3 +248,23 @@ object HistoryScreen {
                 },
         )
 }
+
+// The word on the wire and the word on the button, kept beside each other so a slice cannot gain one
+// and not the other. `HistoryFilters` is the shared spelling; this is the mapping to it.
+private fun HistoryFilter.wireName(): String =
+    when (this) {
+        HistoryFilter.ALL -> HistoryFilters.ALL
+        HistoryFilter.ACTIVE -> HistoryFilters.ACTIVE
+        HistoryFilter.REFUNDED -> HistoryFilters.REFUNDED
+    }
+
+private fun HistoryFilter.label(): String =
+    when (this) {
+        HistoryFilter.ALL -> "All"
+
+        HistoryFilter.ACTIVE -> "Active"
+
+        // "Refunded" and not "Reversed", which is the word the ROW uses. The row says what happened
+        // to one order; the chip names what somebody is looking for, and they look for a refund.
+        HistoryFilter.REFUNDED -> "Refunded"
+    }

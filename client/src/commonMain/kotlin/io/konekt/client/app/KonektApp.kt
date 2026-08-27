@@ -260,8 +260,14 @@ fun KonektApp(
                     // A TAB IS A DESTINATION, NOT A STEP. Pressing one returns to the root of the
                     // stack instead of growing it: four tabs pressed in turn must not become four
                     // presses of back, which is the first thing a bottom bar gets wrong.
+                    //
+                    // MATCHED BEFORE THE QUERY, and that is not cosmetic. The orders screen grew
+                    // filter chips, and each of them is a `navigate` to `app://orders?filter=…` — the
+                    // same tab, narrower. Compared whole, none of them is a tab, so three chips
+                    // pressed in turn became three presses of back before leaving the screen. A
+                    // filtered tab is still the tab.
                     stack =
-                        if (deeplink in tabs) {
+                        if (deeplink.substringBefore('?') in tabs) {
                             NavigationBackStack(destination)
                         } else {
                             stack.push(destination)

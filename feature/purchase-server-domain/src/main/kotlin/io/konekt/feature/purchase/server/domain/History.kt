@@ -79,11 +79,24 @@ data class HistoryPage(
     val next: HistoryCursor?,
 )
 
+// WHICH SLICE OF THE LIST, as a domain type rather than the wire's string: the repository is what
+// turns it into a predicate, and a repository branching on a raw word would let a typo become "no
+// filter" rather than a compile error.
+//
+// `ALL` is the default and the fallback for a word this build does not know — see `HistoryFilters`
+// for why an unrecognised filter shows too much rather than too little.
+enum class HistoryFilter {
+    ALL,
+    ACTIVE,
+    REFUNDED,
+}
+
 interface HistoryRepository {
     suspend fun page(
         subscriberId: String,
         after: HistoryCursor?,
         limit: Int,
+        filter: HistoryFilter,
     ): HistoryPage
 }
 
@@ -92,7 +105,7 @@ class LoadHistoryUseCase(
 ) {
     suspend operator fun invoke(params: Params): Result<HistoryPage> =
         suspendRunCatching {
-            history.page(params.subscriberId, HistoryCursor.decode(params.cursor), params.limit)
+            history.page(params.subscriberId, HistoryCursor.decode(params.cursor), params.limit, params.filter)
         }
 
     data class Params(
@@ -101,6 +114,7 @@ class LoadHistoryUseCase(
         // Bounded here rather than trusted from the request: a client asking for a million rows is
         // either broken or not a client.
         val limit: Int = DEFAULT_PAGE_SIZE,
+        val filter: HistoryFilter = HistoryFilter.ALL,
     )
 
     companion object {

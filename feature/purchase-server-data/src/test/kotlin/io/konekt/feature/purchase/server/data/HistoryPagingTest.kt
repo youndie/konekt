@@ -1,14 +1,20 @@
 package io.konekt.feature.purchase.server.data
 
+import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.PaginatedListComponent
+import io.github.youndie.kompot.standard.TextComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.konektWalk
 import io.konekt.db.tables.AccountTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.Entitlement
 import io.konekt.feature.purchase.server.domain.HistoryCursor
+import io.konekt.feature.purchase.server.domain.HistoryFilter
 import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
 import io.konekt.testing.PostgresHarness
 import kotlinx.coroutines.runBlocking
@@ -67,7 +73,7 @@ class HistoryPagingTest {
                     load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
                     PLAN_IDS_AS_TITLES,
                 )
-            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+            val row = screen.theList().initialItems.single() as OrderRowComponent
 
             assertEquals(orderId.take(8), row.reference)
             assertEquals(OrderStatuses.COMPENSATED, row.status)
@@ -87,7 +93,7 @@ class HistoryPagingTest {
                     load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
                     PLAN_IDS_AS_TITLES,
                 )
-            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+            val row = screen.theList().initialItems.single() as OrderRowComponent
 
             // AWAITING_CONFIRMATION and not PENDING, and this expectation changed with B-41 rather
             // than the behaviour regressing. `HistoryScreen` used to map everything it did not name
@@ -142,9 +148,7 @@ class HistoryPagingTest {
             // The client stops asking on a null, so this is the assertion that "terminates" rests on.
             // It comes from having fetched one row more than asked for, not from a count.
             assertNull(page.next)
-            assertNull(
-                HistoryScreen.build(page, PLAN_IDS_AS_TITLES).let { (it as PaginatedListComponent).loadMoreAction },
-            )
+            assertNull(HistoryScreen.build(page, PLAN_IDS_AS_TITLES).theList().loadMoreAction)
         }
 
     @Test
@@ -186,7 +190,7 @@ class HistoryPagingTest {
                     load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
                     PLAN_IDS_AS_TITLES,
                 )
-            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+            val row = screen.theList().initialItems.single() as OrderRowComponent
 
             assertEquals(topUpId.take(8), row.reference)
             assertEquals("Top-up", row.title, "the row went looking for a plan a top-up does not have")
@@ -206,7 +210,7 @@ class HistoryPagingTest {
 
             val page = load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow()
             val screen = HistoryScreen.build(page, PLAN_IDS_AS_TITLES)
-            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+            val row = screen.theList().initialItems.single() as OrderRowComponent
 
             assertEquals(OrderStatuses.COMPENSATED, row.status)
             assertEquals("Taken back", row.statusText)
@@ -237,6 +241,115 @@ class HistoryPagingTest {
         }
 
     @Test
+    fun `each slice shows its own rows and no others`() =
+        runBlocking {
+            val running = order(at = 1_719_532_800_000, status = Entitlement.ACTIVE, reversedAt = null)
+            val reversed =
+                order(at = 1_719_532_800_001, status = Entitlement.CANCELLED, reversedAt = 1_719_619_200_000)
+            val credit = topUp(at = 1_719_532_800_002)
+            val takenBack = topUp(at = 1_719_532_800_003, reversedAt = 1_719_619_200_001)
+
+            suspend fun slice(filter: HistoryFilter) =
+                load(LoadHistoryUseCase.Params(subscriberId, null, filter = filter))
+                    .getOrThrow()
+                    .entries
+                    .map { it.reference }
+                    .toSet()
+
+            assertEquals(setOf(running, reversed, credit, takenBack), slice(HistoryFilter.ALL))
+
+            // A top-up is NOT active: money that arrived is finished, not running. It has no
+            // entitlement to be active, which is what makes this one clause rather than two.
+            assertEquals(setOf(running), slice(HistoryFilter.ACTIVE))
+
+            // BOTH DIRECTIONS. Somebody opening this slice is looking for money and does not care
+            // which way it went — a purchase reversed and a top-up taken back are both refunds to
+            // the person reading.
+            assertEquals(setOf(reversed, takenBack), slice(HistoryFilter.REFUNDED))
+        }
+
+    // THE BUG THIS SHAPE PREVENTS, and it is the reason the filter is on the page URL rather than
+    // only on the screen: a keyset cursor is a position in a FILTERED list. Asking for the next page
+    // without the filter walks the unfiltered list from this boundary, and the client appends rows
+    // the subscriber just narrowed away.
+    @Test
+    fun `paging inside a slice never leaves it`() =
+        runBlocking {
+            val refunded =
+                (1..5)
+                    .map {
+                        order(
+                            at = 1_719_532_800_000L + it,
+                            status = Entitlement.CANCELLED,
+                            reversedAt = 1_719_619_200_000L + it,
+                        )
+                    }.toSet()
+            // Twice as many rows that must never appear, interleaved in time with the ones that must.
+            repeat(10) { order(at = 1_719_532_800_000L + it, status = Entitlement.ACTIVE, reversedAt = null) }
+
+            val seen = mutableListOf<String>()
+            var cursor: String? = null
+            var pages = 0
+            do {
+                val page =
+                    load(
+                        LoadHistoryUseCase.Params(subscriberId, cursor, limit = 2, filter = HistoryFilter.REFUNDED),
+                    ).getOrThrow()
+                seen += page.entries.map { it.reference }
+                cursor = page.next?.encode()
+                assertTrue(++pages <= 10, "the walk did not terminate — it is looping over $seen")
+            } while (cursor != null)
+
+            assertEquals(refunded, seen.toSet(), "paging inside a slice let another slice's rows in")
+            assertEquals(refunded.size, seen.size, "a row came back twice: $seen")
+        }
+
+    @Test
+    fun `an empty slice says which empty it is`() =
+        runBlocking {
+            order(at = 1_719_532_800_000, status = Entitlement.ACTIVE, reversedAt = null)
+
+            val screen =
+                HistoryScreen.build(
+                    load(LoadHistoryUseCase.Params(subscriberId, null, filter = HistoryFilter.REFUNDED)).getOrThrow(),
+                    PLAN_IDS_AS_TITLES,
+                    HistoryFilter.REFUNDED,
+                )
+
+            // "Nothing here yet" would be wrong twice under `Refunded`: this subscriber has history,
+            // and the sentence sends them looking for a fault instead of pressing `All`.
+            assertEquals(
+                "Nothing has been refunded.",
+                (screen.theList().emptyState as? TextComponent)?.text,
+            )
+        }
+
+    @Test
+    fun `the chips say which slice is open`() =
+        runBlocking {
+            val screen =
+                HistoryScreen.build(
+                    load(LoadHistoryUseCase.Params(subscriberId, null, filter = HistoryFilter.ACTIVE)).getOrThrow(),
+                    PLAN_IDS_AS_TITLES,
+                    HistoryFilter.ACTIVE,
+                )
+            val chips =
+                screen.konektWalk().filterIsInstance<ButtonComponent>().filter {
+                    it.id.startsWith(
+                        "history-filter-",
+                    )
+                }
+
+            assertEquals(3, chips.size, "a slice gained a filter and lost its chip, or the other way round")
+            // EXACTLY ONE is emphasised. Two would be a screen with two answers to one question, and
+            // none would be a screen that does not say what it is showing.
+            assertEquals(
+                listOf("history-filter-active"),
+                chips.filter { it.variant == ButtonEmphasis.PRIMARY }.map { it.id },
+            )
+        }
+
+    @Test
     fun `a cursor survives being written down and read back`() {
         val cursor = HistoryCursor(kotlin.time.Instant.fromEpochMilliseconds(1_719_532_800_000), "order-1")
 
@@ -254,6 +367,12 @@ class HistoryPagingTest {
     // nothing is not a purchase. The list is driven by the ledger now, so the omission stopped being
     // harmless — and a fixture that cannot be built the way the product builds it was never testing
     // the product.
+    // THE ROOT IS A COLUMN NOW, and it used to be the list itself. The filter chips sit above it, so
+    // a screen with no chrome is no longer the same node as its list — and `konektWalk` is how a test
+    // stops caring which, rather than a cast that breaks the day the tree gains a level.
+    private fun KompotComponent.theList(): PaginatedListComponent =
+        konektWalk().filterIsInstance<PaginatedListComponent>().single()
+
     private fun order(
         at: Long,
         status: String,

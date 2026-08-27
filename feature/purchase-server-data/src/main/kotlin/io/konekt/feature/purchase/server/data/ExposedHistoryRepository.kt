@@ -6,6 +6,7 @@ import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.Entitlement
 import io.konekt.feature.purchase.server.domain.HistoryCursor
 import io.konekt.feature.purchase.server.domain.HistoryEntry
+import io.konekt.feature.purchase.server.domain.HistoryFilter
 import io.konekt.feature.purchase.server.domain.HistoryKind
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.HistoryRepository
@@ -18,6 +19,7 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.core.or
@@ -53,6 +55,7 @@ class ExposedHistoryRepository(
         subscriberId: String,
         after: HistoryCursor?,
         limit: Int,
+        filter: HistoryFilter,
     ): HistoryPage =
         dbQuery {
             // The account, because the ledger is keyed by it. A subscriber with no account has no
@@ -111,6 +114,31 @@ class ExposedHistoryRepository(
                                     (LedgerEntryTable.kind eq LedgerEntryTable.HOLD) or
                                         (LedgerEntryTable.kind eq LedgerEntryTable.TOP_UP)
                                 )
+                        // THE SLICE, as one more clause on the same query rather than a second one.
+                        //
+                        // `ACTIVE` reads the entitlement, so it excludes top-ups without naming them:
+                        // a credit has no entitlement and cannot be active. `REFUNDED` reads the
+                        // reversal join, which covers BOTH directions — a purchase reversed and a
+                        // top-up taken back — because somebody opening that slice is looking for
+                        // money and does not care which way it went.
+                        //
+                        // Narrowing the LEFT join to an inner one is exactly what `REFUNDED` wants,
+                        // and is why the constraint is written here rather than moved into the join.
+                        predicate =
+                            when (filter) {
+                                HistoryFilter.ALL -> {
+                                    predicate
+                                }
+
+                                HistoryFilter.ACTIVE -> {
+                                    predicate and (EntitlementTable.status eq Entitlement.ACTIVE)
+                                }
+
+                                HistoryFilter.REFUNDED -> {
+                                    predicate and reversals[LedgerEntryTable.id].isNotNull()
+                                }
+                            }
+
                         if (after != null) {
                             // The keyset, and it has to be the PAIR. `created_at < x` alone drops
                             // every row sharing the boundary instant; `<=` alone repeats them

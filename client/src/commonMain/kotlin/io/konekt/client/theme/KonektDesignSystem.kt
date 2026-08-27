@@ -36,13 +36,25 @@ class KonektDesignSystem(
                 KompotSurface(shape = shapes.buttonShape)
             }
 
-            // Only the shape, and deliberately no container: a quiet button that named its own fill
-            // would have to name its own foreground too — Material leaves the content colour where it
-            // was — and a pale container with the default foreground is how "Cancel" becomes
-            // unreadable. Emphasis is drawn by the renderer's own colours until a canvas frame says
-            // otherwise.
+            // A CANVAS FRAME NOW SAYS OTHERWISE, which is what the comment here used to be waiting
+            // for. It gave a quiet button the shape and nothing else, so `quiet` and `primary` drew
+            // identically — the word travelled on the wire from the day `ButtonEmphasis` existed and
+            // changed nothing anybody could see. Nobody noticed because the one screen that sent it,
+            // the eSIM wizard, has no primary button beside it to compare against; the orders filter
+            // chips put three side by side and two of them were lying.
+            //
+            // Section 05 draws the unselected chip as an outline: no fill, the accent as the text,
+            // a hairline border. ALL THREE ARE SET, and that is the trap the old comment named
+            // correctly — Material leaves the content colour where it was, so a surface that names a
+            // container and not a foreground is how "Cancel" becomes unreadable. Naming none was the
+            // safe half of that; naming all three is the right whole.
             KompotSurfaceRoles.button(QUIET) -> {
-                KompotSurface(shape = shapes.buttonShape)
+                KompotSurface(
+                    shape = shapes.buttonShape,
+                    container = Color.Transparent,
+                    content = MaterialTheme.colorScheme.primary,
+                    outline = MaterialTheme.colorScheme.outline,
+                )
             }
 
             // THE BORDERLESS FIELD. Transparent rather than unspecified, and the difference is the
