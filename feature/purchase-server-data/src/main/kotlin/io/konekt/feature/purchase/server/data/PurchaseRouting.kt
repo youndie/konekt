@@ -4,10 +4,12 @@ import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
+import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
 import io.konekt.feature.purchase.server.domain.LoadOrderScreenUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
+import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
@@ -35,6 +37,23 @@ import org.koin.ktor.ext.inject
 // caller is somebody, and says nothing about whose order this is.
 fun Route.purchaseRoutes() {
     val chrome by inject<ScreenChrome>()
+    val plans by inject<PlanCatalog>()
+
+    // THE CATALOGUE READ ONCE PER PAGE, not once per row. `PlanCatalog.find` suspends, and a lookup
+    // handed to the builder would have to suspend with it — which would make composing a screen an
+    // I/O operation for every line on it.
+    //
+    // The id is the fallback, and it is the important half: an order outlives the plan it was for, so
+    // a row that drew a blank because the catalogue no longer lists that plan would lose exactly the
+    // order somebody went looking for.
+    suspend fun titlesFor(page: HistoryPage): HistoryScreen.PlanTitles {
+        val byId =
+            page.entries
+                .map { it.title }
+                .distinct()
+                .associateWith { plans.find(it)?.title }
+        return HistoryScreen.PlanTitles { planId -> byId[planId] ?: planId }
+    }
     val startPurchase by inject<StartPurchaseUseCase>()
     val confirmPurchase by inject<ConfirmPurchaseUseCase>()
     val findOrder by inject<FindOrderUseCase>()
@@ -84,7 +103,7 @@ fun Route.purchaseRoutes() {
         val page = loadHistory(LoadHistoryUseCase.Params(call.subscriberId(), cursor = null)).getOrThrow()
         // The shell asked for by this screen's own deeplink, which this feature already spells. What
         // comes back is a component it never looks inside — see `ScreenChrome`.
-        call.respondKompotComponent(json, HistoryScreen.build(page, chrome.of(ORDERS_DEEPLINK)))
+        call.respondKompotComponent(json, HistoryScreen.build(page, titlesFor(page), chrome.of(ORDERS_DEEPLINK)))
     }
 
     get<HistoryScreenResource.Page> { params ->
@@ -102,7 +121,7 @@ fun Route.purchaseRoutes() {
         // `CallRespondUsageTest` asked whether the FILE mentions respondKompotComponent, and this
         // file does — for the two routes above. It now asks per call site.
         call.respondText(
-            json.encodeToString(KompotPageResponse.serializer(), HistoryScreen.page(page)),
+            json.encodeToString(KompotPageResponse.serializer(), HistoryScreen.page(page, titlesFor(page))),
             ContentType.Application.Json,
         )
     }

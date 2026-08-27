@@ -62,6 +62,8 @@ class ScreenshotCasesTest {
             "Gallery - Home Dark",
             "Gallery - Plans",
             "Gallery - Plans Dark",
+            "Gallery - Orders",
+            "Gallery - Orders Dark",
             "Gallery - Profile",
             "Gallery - Profile Dark",
             "Gallery - Purchase result",

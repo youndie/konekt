@@ -30,17 +30,32 @@ object HistoryScreen {
     // are the history. So the shell forces a wrapper, and the wrapper is added only when a shell
     // exists: a deployment without one keeps the root it had, which is the shape every recording and
     // every conformance walk was taken against.
+    // THE PLAN'S NAME, LOOKED UP RATHER THAN STORED. The entitlement row keeps a plan id, because an
+    // id is what an entitlement is about; the history drew it, so a subscriber read "eu-5gb-14d"
+    // where the canvas draws "Europe · 5 GB · 14 days".
+    //
+    // A FUNCTION rather than the catalogue itself, and it FALLS BACK TO THE ID. A plan withdrawn from
+    // sale still has orders in somebody's history, and a row that vanished — or drew a blank — because
+    // the catalogue no longer lists it would lose the very order a subscriber is looking for.
+    fun interface PlanTitles {
+        fun of(planId: String): String
+    }
+
     fun build(
         page: HistoryPage,
+        titles: PlanTitles,
         nav: KompotComponent? = null,
     ): KompotComponent =
-        nav?.let { ColumnComponent(id = "orders", spacing = 12, children = listOf(list(page), it)) }
-            ?: list(page)
+        nav?.let { ColumnComponent(id = "orders", spacing = 12, children = listOf(list(page, titles), it)) }
+            ?: list(page, titles)
 
-    private fun list(page: HistoryPage): KompotComponent =
+    private fun list(
+        page: HistoryPage,
+        titles: PlanTitles,
+    ): KompotComponent =
         PaginatedListComponent(
             id = "history",
-            initialItems = page.entries.map(::row),
+            initialItems = page.entries.map { row(it, titles) },
             loadMoreAction = page.next?.let { LoadPageAction(pageUrl(it.encode())) },
             // Drawn rather than left blank. An empty list and a list that failed to load look
             // identical as nothing, and only one of them is worth waiting for.
@@ -51,19 +66,25 @@ object HistoryScreen {
                 ),
         )
 
-    fun page(page: HistoryPage): KompotPageResponse =
+    fun page(
+        page: HistoryPage,
+        titles: PlanTitles,
+    ): KompotPageResponse =
         KompotPageResponse(
-            items = page.entries.map(::row),
+            items = page.entries.map { row(it, titles) },
             // null is what stops the client asking, and it is derived from having fetched one row
             // more than asked for rather than from a count.
             nextLoadAction = page.next?.let { LoadPageAction(pageUrl(it.encode())) },
         )
 
-    private fun row(entry: HistoryEntry): OrderRowComponent =
+    private fun row(
+        entry: HistoryEntry,
+        titles: PlanTitles,
+    ): OrderRowComponent =
         OrderRowComponent(
             id = "history-${entry.orderId}",
             reference = entry.orderId.take(8),
-            title = entry.title,
+            title = titles.of(entry.title),
             dateText = DayFormat.dayAndMonth(entry.at),
             // The debit, always, even on a compensated order. The row says what left; the note says
             // it came back. Netting the two to zero would make a reversal invisible, which is the one

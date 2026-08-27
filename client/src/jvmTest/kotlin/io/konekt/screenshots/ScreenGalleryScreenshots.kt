@@ -105,7 +105,7 @@ fun GalleryLogin() = FormScreen("login-screen")
 @Composable
 fun GalleryLoginCode() = FormScreen("login-code-screen")
 
-@ViddikScreenshot(name = "Home", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
+@ViddikScreenshot(name = "Home", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
 @Composable
 fun GalleryHome() = Screen("home-screen")
 
@@ -113,16 +113,14 @@ fun GalleryHome() = Screen("home-screen")
 @Composable
 fun GalleryPlans() = Screen("plans-screen")
 
-// ORDERS IS NOT HERE, and the reason is the screen rather than the harness.
-//
-// It draws four lines of text and nothing else — no card, no surface, no rule — so a frame of it is
-// 4% drawn and `GoldenContentTest` calls that a photograph of an empty frame. The guard is right to:
-// at that coverage it cannot tell this screen from a capture that failed.
-//
-// Neither weakening the guard nor giving the screen a surface to satisfy it is a decision to make
-// here. The canvas draws every order as a CARD (section 05), so the sparseness is a real delta and
-// the missing golden is the cheapest possible record of it. The recording is committed beside the
-// others and the frame comes back the day the row gets its surface.
+// ORDERS IS BACK. It had no golden for one release: the rows drew four lines of text on nothing, a
+// frame of it was 4% drawn, and `GoldenContentTest` cannot tell that from a capture that failed. The
+// missing frame was the record of the delta rather than an exemption from it — and the row has a
+// card now, so the frame returns without anybody touching the guard.
+@ViddikScreenshot(name = "Orders", group = "Gallery", width = FRAME_WIDTH, height = 380, darkVariant = true)
+@Composable
+fun GalleryOrders() = Screen("orders-screen")
+
 @ViddikScreenshot(name = "Profile", group = "Gallery", width = FRAME_WIDTH, height = 370, darkVariant = true)
 @Composable
 fun GalleryProfile() = Screen("profile-screen")

@@ -62,7 +62,11 @@ class HistoryPagingTest {
         runBlocking {
             val orderId = order(at = 1_719_532_800_000, status = Entitlement.CANCELLED, reversedAt = 1_719_619_200_000)
 
-            val screen = HistoryScreen.build(load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow())
+            val screen =
+                HistoryScreen.build(
+                    load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
+                    PLAN_IDS_AS_TITLES,
+                )
             val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
 
             assertEquals(orderId.take(8), row.reference)
@@ -78,7 +82,11 @@ class HistoryPagingTest {
         runBlocking {
             order(at = 1_719_532_800_000, status = Entitlement.PENDING, reversedAt = null)
 
-            val screen = HistoryScreen.build(load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow())
+            val screen =
+                HistoryScreen.build(
+                    load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
+                    PLAN_IDS_AS_TITLES,
+                )
             val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
 
             // AWAITING_CONFIRMATION and not PENDING, and this expectation changed with B-41 rather
@@ -134,7 +142,9 @@ class HistoryPagingTest {
             // The client stops asking on a null, so this is the assertion that "terminates" rests on.
             // It comes from having fetched one row more than asked for, not from a count.
             assertNull(page.next)
-            assertNull(HistoryScreen.build(page).let { (it as PaginatedListComponent).loadMoreAction })
+            assertNull(
+                HistoryScreen.build(page, PLAN_IDS_AS_TITLES).let { (it as PaginatedListComponent).loadMoreAction },
+            )
         }
 
     @Test
@@ -208,3 +218,7 @@ class HistoryPagingTest {
         return orderId
     }
 }
+
+// The identity lookup. These tests are about PAGING — cursors, boundaries, the row that comes back —
+// and a catalogue would add a second thing that can be wrong to every assertion about the first.
+private val PLAN_IDS_AS_TITLES = HistoryScreen.PlanTitles { it }
