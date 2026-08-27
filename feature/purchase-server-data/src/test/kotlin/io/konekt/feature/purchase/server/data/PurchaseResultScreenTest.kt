@@ -148,6 +148,46 @@ class PurchaseResultScreenTest {
         assertTrue("$12" in texts, "the price went missing with the balance: $texts")
     }
 
+    // EVERY STATE HAS A WAY OFF THE SCREEN, and one of them did not.
+    //
+    // The purchase result carries no tab bar — it is not a tab — so a state with nothing to press is
+    // a subscriber stuck on it. Five of the six had an exit and the ROLLBACK did not: the one state
+    // this product exists to demonstrate, and the one somebody arrives at with a question. Asserted
+    // over the whole enum rather than for the branch that was missing, because the next branch added
+    // is the one that will be missing next.
+    @Test
+    fun `no state of this screen is a dead end`() {
+        val states =
+            listOf(
+                OrderStatus.COMPLETED,
+                OrderStatus.COMPENSATED,
+                OrderStatus.REJECTED,
+                OrderStatus.AWAITING_CONFIRMATION,
+                OrderStatus.PENDING,
+                OrderStatus.COMPENSATING,
+            )
+
+        // Vacuity first: an enum that gained a value would leave this list short, and a list that is
+        // short passes by not looking at the state it forgot.
+        assertEquals(
+            OrderStatus.entries.size,
+            states.size,
+            "OrderStatus gained a value and this list did not — the state added is the one unchecked",
+        )
+
+        states.forEach { status ->
+            val screen =
+                PurchaseResultScreen.build(
+                    order = compensated(null).copy(status = status),
+                    reversal = Reversal(Money.ofMajor(12, Currency.DEFAULT), reversedOn),
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                )
+            val buttons = screen.konektWalk().filterIsInstance<ButtonComponent>()
+
+            assertTrue(buttons.isNotEmpty(), "$status draws no control at all — a subscriber lands here and is stuck")
+        }
+    }
+
     @Test
     fun `a reversal is stated in money, with a date and a reference`() {
         val screen =

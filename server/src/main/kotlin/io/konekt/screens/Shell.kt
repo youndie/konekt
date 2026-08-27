@@ -10,9 +10,15 @@ import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
 import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
 import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
 import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
+import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
+import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
@@ -71,6 +77,45 @@ object Shell {
                         title = "Profile",
                         kind = ScreenRouteKind.SCREEN,
                     ),
+                    // THE THREE THAT WERE MISSING, and their absence contradicted the sentence at
+                    // the top of this list. The graph described six destinations while the client
+                    // resolved nine — `top-up` and `esim-install` shipped with their screens and
+                    // never joined it, and the order screen had no deeplink at all until an order row
+                    // needed one. `B-49` exists to delete the client's copy in favour of this graph,
+                    // and doing that today would have taken three screens out of the product.
+                    //
+                    // `NavigationGraphMatchesTheClientTest` compares the two against a running
+                    // deployment now, so the next omission fails instead of waiting for `B-49`.
+                    ScreenRoute(
+                        deeplink = TOP_UP_DEEPLINK,
+                        endpoint = resourceAddress<TopUpScreenResource>(),
+                        title = "Top up",
+                        // A FORM, not a screen: it answers a schema and a tree, and the kit compares
+                        // this word against what the HTTP description says the same address sends.
+                        kind = ScreenRouteKind.FORM,
+                    ),
+                    ScreenRoute(
+                        deeplink = ESIM_INSTALL_DEEPLINK,
+                        endpoint = resourceAddress<EsimInstallScreenResource>(),
+                        title = "Install eSIM",
+                        kind = ScreenRouteKind.SCREEN,
+                    ),
+                    // ONE ORDER IS DELIBERATELY NOT HERE, and the conformance kit is why.
+                    //
+                    // `app://order/<id>` is the first parameterised destination this product has, and
+                    // the kit FOLLOWS every route of this graph to the screen behind it — with the
+                    // endpoint exactly as written. The prefix `/api/v1/screens/orders` is not a route
+                    // and answered 404; the pattern `/api/v1/screens/orders/{orderId}` is not an
+                    // address and answered 404 as well, because nothing substitutes an id for a graph
+                    // route the way `TckConfig.pathParameters` does for an endpoint.
+                    //
+                    // So this graph is what it can be checked as: destinations that ANSWER as written.
+                    // The client resolves one more than that, and
+                    // `NavigationGraphMatchesTheClientTest` declares which one and why rather than
+                    // filtering by shape — a filter would silently absorb the next omission.
+                    //
+                    // It is worth an upstream ask (a graph route with a placeholder is not an exotic
+                    // thing) and it is not worth a route that 404s in the meantime.
                     // THE WAY IN, and it is in the graph even though no tab points at it. A graph
                     // that only described the tabs would leave the client resolving two of its
                     // transitions from a map and two from a service, which is the arrangement this

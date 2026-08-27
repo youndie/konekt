@@ -70,13 +70,11 @@ class EveryScreenIsReachableTest {
             // The way in. Nothing can navigate to it because it is where the application OPENS —
             // `KonektRoutes.loginAddress` — and because signing out is an action the runner answers
             // with rather than a `navigate` on a screen.
-            KonektRoutes.map.getValue("app://login") to
-                "the application opens here; arriving is not navigating",
+            "app://login" to "the application opens here; arriving is not navigating",
             // Step two. Reached by the login submit's ANSWER — a `navigate` the endpoint returns, not
             // one that sits in a tree — so a walk over trees cannot see it. Posting a number to find
             // out would make this guard perform the product's own side effects.
-            KonektRoutes.map.getValue("app://login/code") to
-                "reached by an endpoint's answer rather than by a control on a screen",
+            "app://login/code" to "reached by an endpoint's answer rather than by a control on a screen",
         )
 
     @Test
@@ -93,8 +91,17 @@ class EveryScreenIsReachableTest {
                 // by answering an action rather than by resolving a deeplink. The purchase result is
                 // the only one, and leaving it out is how the eSIM install door — which lives on it
                 // and nowhere else — was reported unreachable by a guard looking in the wrong places.
-                deeplinksFoundIn(http, KonektRoutes.map.values.distinct() + orderScreen)
-            }.mapNotNull { resolve(it, KonektRoutes.map) }.toSet()
+                // ONE ENTRY IS A PREFIX AND NOT AN ADDRESS. `app://order` resolves to
+                // `/api/v1/screens/orders`, which the server does not serve — only
+                // `/api/v1/screens/orders/{orderId}` is a route — so fetching it answers 404 with an
+                // empty body and the decode below fails on nothing. The seeded order screen below IS
+                // that screen, with an id, so the walk loses no coverage by skipping the bare prefix.
+                val addresses =
+                    KonektRoutes.map.values
+                        .distinct()
+                        .filterNot { orderScreen.startsWith("$it/") } + orderScreen
+                deeplinksFoundIn(http, addresses)
+            }.mapNotNull { routeFor(it) }.toSet()
 
         // Vacuity first, and it is not ceremony: a run that fetched nothing — a stand answering 401,
         // a decode that returned no actions — would make every screen "unreachable" and the assertion
@@ -105,7 +112,7 @@ class EveryScreenIsReachableTest {
             "only ${reachable.size} destinations were found across every served screen; the walk did not run",
         )
 
-        val unreached = KonektRoutes.map.values.toSet() - reachable
+        val unreached = KonektRoutes.map.keys - reachable
 
         assertEquals(
             reachedByNothing.keys,
@@ -119,9 +126,23 @@ class EveryScreenIsReachableTest {
                     appendLine("  declared unreachable and now reached: $it — delete the entry")
                 }
                 appendLine("declared:")
-                reachedByNothing.forEach { (address, why) -> appendLine("  $address — $why") }
+                reachedByNothing.forEach { (deeplink, why) -> appendLine("  $deeplink — $why") }
             },
         )
+    }
+
+    // WHICH ROUTE A DEEPLINK WENT THROUGH, not which address it produced — and the difference is what
+    // this guard got wrong until an order screen was addressable at all.
+    //
+    // A prefix route is reached by every deeplink UNDER it: `app://order/8f21` reaches `app://order`,
+    // and comparing resolved ADDRESSES would call the route unreached because no tree carries the bare
+    // prefix. The plans detail hid the same mistake by accident — its route is also a tab, so the bar
+    // pointed at it whatever the cards did.
+    private fun routeFor(deeplink: String): String? {
+        if (deeplink in KonektRoutes.map) return deeplink
+        return KonektRoutes.map.keys
+            .filter { deeplink.startsWith("$it?") || deeplink.startsWith("$it/") }
+            .maxByOrNull { it.length }
     }
 
     // THE POSITIVE CONTROL. Without it the assertion above passes on a walk that found every address
@@ -136,6 +157,10 @@ class EveryScreenIsReachableTest {
             resolve("app://plans", withoutPlans),
             "a deeplink with no entry resolved anyway — every count in the test above would be a fiction",
         )
+        // And the other half, which is what the assertion above is actually made of now: a deeplink
+        // under a prefix reaches the ROUTE, not an address of its own.
+        assertEquals("app://order", routeFor("app://order/8f214c90"))
+        assertEquals(null, routeFor("app://nothing-like-this/1"))
     }
 
     private suspend fun deeplinksFoundIn(

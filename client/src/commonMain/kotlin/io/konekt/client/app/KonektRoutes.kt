@@ -10,6 +10,8 @@ import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
+import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
+import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
@@ -42,6 +44,11 @@ object KonektRoutes {
             ORDERS_DEEPLINK to addressOf<HistoryScreenResource>(),
             PROFILE_DEEPLINK to addressOf<ProfileScreenResource>(),
             TOP_UP_DEEPLINK to addressOf<TopUpScreenResource>(),
+            // ONE ORDER, addressed by the PREFIX of its own pattern. `OrderScreen` carries the
+            // placeholder inline — `/api/v1/screens/orders/{orderId}` — and `resolve` appends the
+            // tail after a matched prefix, so the entry has to be the part before it. Stripped from
+            // the pattern rather than typed: the address is still spelled once, in the annotation.
+            ORDER_DEEPLINK to addressOf<OrderScreen>().substringBefore("/{"),
             ESIM_INSTALL_DEEPLINK to addressOf<EsimInstallScreenResource>(),
             // Matched by PREFIX: the server puts the number in the query, and a map keyed on the
             // whole string would need an entry per subscriber. `resolve` carries the tail across.

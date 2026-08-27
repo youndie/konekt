@@ -114,3 +114,13 @@ class PlansScreenResource {
 // sends it, the client that resolves it, and the test that proves the two agree — and a fourth
 // spelling is a button that goes nowhere in exactly one of them.
 const val PLANS_DEEPLINK: String = "app://plans"
+
+// ONE ORDER, and singular on purpose: `app://orders` is the tab and resolves to the history, so a
+// nested `app://orders/<id>` would be prefix-matched onto the history's own address and ask for a
+// page that does not exist. The two screens are siblings in the product and not parent and child.
+//
+// It exists because the order screen had NO deeplink at all: it was reached exactly once, as the
+// answer a purchase gives, and became unreachable the moment a subscriber navigated away. An order
+// awaiting confirmation could then never be confirmed, and an eSIM never installed — both controls
+// live on that screen.
+const val ORDER_DEEPLINK: String = "app://order"

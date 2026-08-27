@@ -18,6 +18,8 @@ import io.konekt.feature.purchase.server.domain.HistoryKind
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.shared.api.HistoryFilters
+import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
@@ -231,6 +233,22 @@ object HistoryScreen {
                     OrderStatus.AWAITING_CONFIRMATION -> {
                         "Awaiting confirmation"
                     }
+                },
+            // THE ROW OPENS THE THING IT NAMES, and every row carried `null` here.
+            //
+            // `OrderRowComponent` has had an `action` since it was written and the history never set
+            // one, so this list was a wall of text: the order screen was reachable exactly once — as
+            // the answer a purchase gives — and unreachable the moment a subscriber navigated away.
+            // Two controls live on it, and both were then out of reach for good: `Confirm` on an
+            // order still awaiting one, and `Install eSIM` on a completed purchase.
+            //
+            // A top-up goes to ITS OWN result, not to an order screen: the two are different sagas
+            // with different screens, and sending a credit to an order's address is a 404 with a
+            // reference in it.
+            action =
+                when (entry.kind) {
+                    HistoryKind.PURCHASE -> NavigateAction("$ORDER_DEEPLINK/${entry.reference}")
+                    HistoryKind.TOP_UP -> NavigateAction("$TOP_UP_DEEPLINK/${entry.reference}")
                 },
             noteText =
                 entry.reversal?.let {

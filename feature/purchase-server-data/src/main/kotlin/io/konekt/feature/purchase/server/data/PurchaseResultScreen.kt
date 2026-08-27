@@ -125,6 +125,18 @@ object PurchaseResultScreen {
                     ),
                 )
             }
+
+            // AND A WAY OFF IT, which this branch alone did not have.
+            //
+            // Five of the six states carried one and the rollback did not — the one state this
+            // product exists to demonstrate, and the one a subscriber arrives at with a question. It
+            // was a screen with a banner, a row, a sentence and nothing to press: a dead end at the
+            // end of the flow the whole build is about.
+            //
+            // The others were fixed together when the purchase result gained its exits, and this
+            // branch is longer than the rest, so the missing call is at the bottom of a `buildList`
+            // rather than in a `listOf` where it would have been one line out of four.
+            add(wayOut("purchase-reversed-back", "Back"))
         }
 
     // A WAY OFF THIS SCREEN, and every state needs one.

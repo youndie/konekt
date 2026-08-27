@@ -6,6 +6,7 @@ import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.Destination
+import io.konekt.client.app.EsimInstall
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
@@ -48,6 +49,8 @@ fun main() {
     val http = konektHttpClient(CIO.create(), baseUrl, session, konektClientJson)
 
     val buy = BuyPlan(http)
+    // Stepping the install wizard, which nothing did until B-54's door was walked through.
+    val install = EsimInstall(http, konektClientJson)
     val screens =
         KonektScreenSource(
             http = http,
@@ -143,7 +146,7 @@ fun main() {
                         // BUYING, for the same reason: a holder with an opinion about purchases is
                         // this application's holder rather than a reusable one.
                         else -> {
-                            buy.addressFor(action)?.let(Destination::next) ?: run {
+                            (buy.addressFor(action) ?: install.addressFor(action))?.let(Destination::next) ?: run {
                                 println("konekt: no handler for $action")
                                 null
                             }

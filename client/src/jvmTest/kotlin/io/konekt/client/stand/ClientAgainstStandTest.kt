@@ -4,14 +4,18 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
 import io.konekt.client.app.Destination
+import io.konekt.client.app.EsimInstall
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektDegradation
+import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
@@ -25,6 +29,7 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -228,6 +233,45 @@ class ClientAgainstStandTest {
             // The sold-out plan is SHOWN and marked, rather than omitted: a subscriber told about a
             // plan should find it rather than find nothing.
             onNodeWithText("Sold out").assertIsDisplayed()
+        }
+    }
+
+    // THE ACCEPTANCE `B-54` SHOULD HAVE HAD. It asked that "the wizard's first step draws", and it
+    // did — while every control on it was inert: the action decoded, reached the handler chain,
+    // matched nothing, and the runner printed "no handler". Four buttons behind a door built for
+    // them, and drawing is not working.
+    //
+    // Driven through the client's OWN chain — `KonektRoutes`, `EsimInstall`, the real source — so
+    // what is asserted is that a press moves the flow, not that a POST would have.
+    @Test
+    fun `the install wizard steps when its button is pressed`() {
+        val http = signedInClient()
+        val install = EsimInstall(http, konektClientJson)
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = KonektRoutes.map.getValue(ESIM_INSTALL_DEEPLINK),
+                    topic = "stand",
+                    darkMode = false,
+                    routes = KonektRoutes.map,
+                    onAction = { action -> install.addressFor(action)?.let(Destination::next) },
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Continue").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Continue").performClick()
+
+            // STEP TWO, and its own control — which is the whole assertion: the run is persisted, the
+            // address is the same one, and the screen came back moved. A press that did nothing would
+            // leave "Continue" on the screen and time out here.
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Get my eSIM").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Get my eSIM").assertIsDisplayed()
         }
     }
 

@@ -12,6 +12,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
 import io.ktor.util.cio.ChannelWriteException
+import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
 import ru.workinprogress.katcher.Katcher
 
@@ -64,6 +65,33 @@ fun Application.configureStatusPages() {
         // returned: which internal type backs an endpoint is not the caller's business.
         exception<BadRequestException> { call, cause ->
             logger.info("rejected a malformed request on {}: {}", call.request.local.uri, cause.message)
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ApiError("bad_request", "the request could not be read"),
+            )
+        }
+
+        // THE SAME REFUSAL ONE LAYER DOWN, and the handler above does not catch it.
+        //
+        // `BadRequestException` is what Ktor wraps a failed `call.receive<T>()` in. Several routes
+        // here do not use `receive<T>()`: a form submit and a wizard step read the body as TEXT and
+        // decode it with the application's own `Json`, because the polymorphic scope that turns
+        // `{"type":"…"}` into an action or a `FieldValue` is the application's and not
+        // ContentNegotiation's. Nothing wraps that, so a malformed body reached the handler below and
+        // answered "something went wrong on our side" — for a request that was wrong on the client's
+        // side, on every endpoint that takes an action or a form.
+        //
+        // Found by sending one: a step posted with a truncated body answered 500 and logged an
+        // unhandled failure, which is a line that looks like a server defect to whoever reads the log.
+        //
+        // THE TRADE, NAMED. This also catches a stored payload that will not parse — petich decodes
+        // its own saga payloads — and that IS a server fault reported as a client one. It is taken
+        // because a malformed request is orders of magnitude commoner than a corrupt row, and because
+        // the alternative is remembering to wrap the decode in every route that reads a body by hand:
+        // the same thing the handler above exists because somebody forgot. Either way the cause is
+        // logged, so a burst of these on one endpoint is visible.
+        exception<SerializationException> { call, cause ->
+            logger.info("could not read the body of {}: {}", call.request.local.uri, cause.message)
             call.respond(
                 HttpStatusCode.BadRequest,
                 ApiError("bad_request", "the request could not be read"),
