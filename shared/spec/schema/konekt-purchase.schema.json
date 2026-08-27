@@ -6,7 +6,8 @@
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
   "x-kompot-contributes": {
     "KompotAction": {
-      "buy_plan": "#/$defs/KompotActionBuyPlan"
+      "buy_plan": "#/$defs/KompotActionBuyPlan",
+      "confirm_purchase": "#/$defs/KompotActionConfirmPurchase"
     }
   },
   "$defs": {
@@ -25,6 +26,24 @@
       "required": [
         "type",
         "planId"
+      ],
+      "additionalProperties": true
+    },
+    "KompotActionConfirmPurchase": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "confirm_purchase",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "confirm_purchase"
+        },
+        "orderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "orderId"
       ],
       "additionalProperties": true
     }

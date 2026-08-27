@@ -20,6 +20,7 @@ package io.konekt.components
 val konektActionWireNames: List<String> =
     listOf(
         "buy_plan",
+        "confirm_purchase",
         "esim_wizard_step",
         "sign_out",
     )

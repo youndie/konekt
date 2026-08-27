@@ -1,6 +1,9 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.KompotModifierNode
+import io.github.youndie.kompot.SizeType
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
@@ -11,6 +14,7 @@ import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.Reversal
+import io.konekt.feature.purchase.shared.api.ConfirmPurchaseAction
 import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
 
@@ -30,11 +34,31 @@ object PurchaseResultScreen {
             id = "purchase-result",
             spacing = 16,
             children =
+                // NO `else`, and the one that used to be here is what this branch list is about.
+                //
+                // `AWAITING_CONFIRMATION` fell into it and drew "Confirming with the payment
+                // provider — keep the app open". Nothing was being confirmed with any provider: the
+                // saga was suspended waiting for the SUBSCRIBER, and the screen told them to wait
+                // for something that was never coming while the window ran out and the order rolled
+                // back. Two different states under one word.
+                //
+                // The neighbouring file already carries this lesson — `HistoryScreen` has "NO
+                // `else`, in both `when`s below" and the story of the `else` that drew a rejected
+                // order as pending. The same mistake, in the file next to it, by the same mechanism.
+                // An exhaustive `when` over an enum makes the next state a compile error instead.
                 when (order.status) {
                     OrderStatus.COMPENSATED -> reversed(order, reversal, balance)
+
                     OrderStatus.COMPLETED -> completed(order)
+
                     OrderStatus.REJECTED -> rejected(order)
-                    else -> inFlight(order)
+
+                    OrderStatus.AWAITING_CONFIRMATION -> awaitingConfirmation(order)
+
+                    // The two that really are "in flight": the saga is running, or a compensating
+                    // step itself failed and a person has to look. Neither is anything a subscriber
+                    // can act on, which is exactly what separates them from the branch above.
+                    OrderStatus.PENDING, OrderStatus.COMPENSATING -> inFlight(order)
                 },
         )
 
@@ -123,6 +147,28 @@ object PurchaseResultScreen {
                 // Saying so is the difference between this screen and the one above.
                 text = "This purchase could not be started, and nothing was charged.",
                 tone = MessageTones.ERROR,
+            ),
+        )
+
+    // THE ONE ACTION A SUBSCRIBER MUST TAKE, and until now the screen offered no way to take it.
+    //
+    // The copy says who is being waited for, because that is the whole difference from the branch
+    // below: "confirming with the provider" is a state to sit through, and this one is a state to
+    // act on. A subscriber told to wait would have waited out the deadline.
+    private fun awaitingConfirmation(order: OrderView): List<KompotComponent> =
+        listOf(
+            BannerComponent(
+                id = "purchase-awaiting",
+                text =
+                    "${order.payload.planTitle} is ready for ${MoneyFormat.format(order.payload.price)}. " +
+                        "Confirm to complete the purchase — nothing has been charged yet.",
+                tone = MessageTones.INFO,
+            ),
+            ButtonComponent(
+                id = "purchase-confirm",
+                text = "Confirm",
+                action = ConfirmPurchaseAction(order.orderId),
+                modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
             ),
         )
 
