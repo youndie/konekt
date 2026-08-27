@@ -16,7 +16,15 @@ import kotlin.time.Duration.Companion.seconds
 class MockPaymentGateway(
     private val mode: Mode = Mode.APPROVE,
     private val delay: Duration = Duration.ZERO,
-    private val declineReason: String = "The provider declined the operation.",
+    // THE PROVIDER'S OWN WORDS, and a code with them. The canvas writes the rollback as
+    // "Reference 8f21-4c90 · declined by issuer (51)", and the code is the half that makes the
+    // sentence actionable: a subscriber quoting one to their bank gets an answer, and a subscriber
+    // told "the provider declined the operation" gets a shrug.
+    //
+    // 51 is "insufficient funds" in ISO 8583, which is the most ordinary decline there is. Invented
+    // here in the sense that every response from this gateway is — there is no provider — and shaped
+    // like a real one so the screen it lands on is shaped like a real one.
+    private val declineReason: String = "Declined by the issuer (51).",
 ) : PaymentGateway {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.payment")
 
