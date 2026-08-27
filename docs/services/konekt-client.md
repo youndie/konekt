@@ -103,10 +103,27 @@ Not deployed. It is compiled by the ordinary build, and its tests run on the JVM
 
 ## 7. Configuration
 
-None. The base URL is a constructor parameter of `konektHttpClient`, not an environment variable.
+The base URL is a constructor parameter of `konektHttpClient` rather than an environment variable;
+the desktop RUNNER reads `KONEKT_URL` and passes it, which is what points the same build at a stand
+or at a deployment. `KONEKT_RELEASE` names the build on any record it sends, and the two tracy
+variables are absent-or-both — one alone is refused, because a build that means to be observed and
+is silent looks exactly like one that is working.
+
+```bash
+KONEKT_URL=https://<a deployment> ./gradlew :client:run
+```
 
 ## 8. Quirks
 
+- **The desktop build had no `Dispatchers.Main` at all, and drew every screen anyway.**
+  `kotlinx-coroutines-core` declares it and implements it nowhere: the provider arrives through a
+  ServiceLoader from a platform module (`-android` on Android, `-swing` here), and with none present
+  `Main` throws rather than degrading. Compose Desktop opens its window on an EDT dispatcher of its
+  own, so the application ran, drew, and kept the failure waiting for the first code that asked for
+  `Main` by name — which turned out to be a library, on a screen nobody had opened yet.
+  `MainDispatcherIsProvidedTest` is what stops the dependency from being tidied away as unused: it
+  fails on a classpath without it, and asserts the thread is the Swing event queue rather than merely
+  that something ran.
 - **A stored session IS attached to the very first request.** The "first request goes out bare and
   comes back 401" shape belongs to a session with no tokens yet — `SessionRefreshTest` asserts the
   first case explicitly, because the second one was believed and is false.
