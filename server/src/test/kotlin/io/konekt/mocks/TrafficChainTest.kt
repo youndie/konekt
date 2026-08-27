@@ -140,7 +140,11 @@ class TrafficChainTest {
                         json,
                     ).drain(consumer)
 
-                assertEquals(1, applied, "the simulator's event did not reach the consumer")
+                // THREE, one per counter kind, and the number is asserted rather than left loose:
+                // the simulator publishes data, minutes and messages every tick, and a kind that
+                // silently stopped being published is a counter state nobody could reach again.
+                // That is exactly what this file's subject used to be — only DATA was ever sent.
+                assertEquals(3, applied, "the simulator's events did not all reach the consumer")
                 assertEquals(9_975, assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA)).remainingUnits)
 
                 // And the screen hears about it. This is the link the whole chain exists for: a
