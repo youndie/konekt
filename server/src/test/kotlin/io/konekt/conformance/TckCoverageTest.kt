@@ -9,6 +9,7 @@ import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
@@ -108,6 +109,12 @@ class TckCoverageTest {
                 endpointKey<CustomPackagePatch>("POST"),
                 // The account screen, reachable blind: a secured GET answering one JSON document,
                 // like the other three tabs.
+                // THE AMOUNT FORM, reachable blind: a secured GET answering one JSON document, like
+                // the login forms. Its SUBMIT is not, and is declared — it changes state, and a walk
+                // that pressed it would top the walking subscriber up on every run.
+                endpointKey<TopUpScreenResource>("GET"),
+                // The result, addressed by a top-up the walk already creates for itself.
+                endpointKey<TopUpScreenResource.ById>("GET"),
                 endpointKey<ProfileScreenResource>("GET"),
                 // THE ROUTE GRAPH, and it is the reason the `navigation` check left the
                 // nothing-to-visit list. The walk fetches it, then follows every route in it to the

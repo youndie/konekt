@@ -88,6 +88,12 @@ object MoneyFormat {
                 ),
         )
 
+    // THE SYMBOL ALONE, for the one place that needs it without an amount: `amount_input` draws the
+    // currency beside a field the subscriber is still typing into, so there is no `Money` to format
+    // yet. Reading it out of the same table rather than letting a screen spell "$" keeps one answer
+    // to how this deployment writes its currency.
+    fun symbol(currency: Currency): String = layouts[currency]?.symbol ?: error("no layout configured for $currency")
+
     fun format(
         money: Money,
         // Whether a positive amount carries an explicit plus. A history row does — the canvas draws a

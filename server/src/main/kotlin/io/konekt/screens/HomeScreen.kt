@@ -12,6 +12,7 @@ import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.usage.server.data.UsageCounterCards
@@ -139,15 +140,22 @@ object HomeScreen {
                 // they are asked for. `History` goes to the orders screen, which existed and was
                 // unreachable until yesterday.
                 //
-                // `Top up` IS NOT HERE and its absence is the honest half: topping up is a POST with
-                // an amount, and this build serves no screen to choose one on. A button navigating
-                // nowhere is worse than no button, and inventing the screen is a feature rather than
-                // a layout fix — `B-51`.
+                // `Top up` IS HERE NOW, and the comment it replaces is worth keeping as a warning
+                // rather than deleting. It said the button was missing because "inventing the screen
+                // is a feature rather than a layout fix" — and that had stopped being true: the saga,
+                // the limits, the compensation and the routes all shipped in `B-40`, so what was
+                // actually missing was one form field. The sentence outlived its reason and went on
+                // reading like a decision.
                 RowComponent(
                     id = "balance-actions",
                     spacing = 8,
                     children =
                         listOf(
+                            ButtonComponent(
+                                id = "balance-top-up",
+                                text = "Top up",
+                                action = NavigateAction(TOP_UP_DEEPLINK),
+                            ),
                             ButtonComponent(
                                 id = "balance-history",
                                 text = "History",

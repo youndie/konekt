@@ -8,6 +8,7 @@ import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.tariff.shared.api.TariffChanges
@@ -86,6 +87,11 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         // Putting money in. Its GET sibling IS walked — the walk tops up before it buys, which is
         // also how it stopped needing a database write of its own (B-40).
         endpointKey<TopUps>("POST"),
+        // The amount form's submit, unwalked for the same reason the login submits below are: it is
+        // state-changing, and a walk that pressed it would top the walking subscriber up on every
+        // run. The behaviour behind it IS walked — `TopUps.ById` is reached because the walk creates
+        // a top-up of its own before it buys anything.
+        endpointKey<TopUpScreenResource>("POST"),
         endpointKey<EsimWizardResource>("POST"),
         endpointKey<EsimWizardResource.Step>("POST"),
         // CustomPackagePatch is NO LONGER HERE, and the entry it used to have is worth remembering.

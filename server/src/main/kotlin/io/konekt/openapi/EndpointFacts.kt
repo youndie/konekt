@@ -14,6 +14,7 @@ import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.shell.shared.api.NavigationResource
@@ -282,6 +283,33 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 summary = "The home screen: balance and counters",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
+        // PUTTING MONEY IN, as a screen — the half `B-40` did not build, and without which every
+        // route it did build was unreachable from the product.
+        endpointKey<TopUpScreenResource>("GET") to
+            EndpointFacts(
+                summary = "Choose an amount to top up by",
+                kind = EndpointKind.FORM,
+                successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
+            ),
+        endpointKey<TopUpScreenResource>("POST") to
+            EndpointFacts(
+                summary = "Start the top-up and be told where its result is",
+                // `submit`: it answers a KompotAction the client feeds back into its chain.
+                kind = EndpointKind.SUBMIT,
+                successBodyType = "io.github.youndie.kompot.standard.NavigateAction",
+                // 422 for an amount outside TopUpLimits, which the client cannot refuse itself:
+                // form-standard carries no minimum rule, and its maximum compares against a balance.
+                refusals = setOf(422),
+            ),
+        endpointKey<TopUpScreenResource.ById>("GET") to
+            EndpointFacts(
+                summary = "How a top-up ended, stated in money on both branches",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+                // 404 for somebody else's top-up as well as for one that does not exist — the owner
+                // check answers 404 rather than 403, so it hands out no enumeration oracle.
+                refusals = setOf(404),
             ),
         endpointKey<PlansScreenResource>("GET") to
             EndpointFacts(

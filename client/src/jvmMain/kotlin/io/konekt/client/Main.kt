@@ -27,6 +27,9 @@ import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TopUpForms
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
@@ -77,6 +80,9 @@ fun main() {
                 mapOf(
                     LoginForms.NUMBER to addressOf<LoginSubmit>(),
                     LoginForms.CODE to addressOf<LoginCodeSubmit>(),
+                    // The amount form posts to the SCREEN'S own address: the submit is a POST on
+                    // the resource that serves it, so nothing here spells a second path.
+                    TopUpForms.AMOUNT_FORM to addressOf<TopUpScreenResource>(),
                 ),
         )
 
@@ -130,6 +136,9 @@ fun main() {
                 routes =
                     mapOf(
                         PLANS_DEEPLINK to plansAddress(),
+                        // Matched by PREFIX for its result: `app://top-up/<id>` carries the id
+                        // after the deeplink, exactly as the login step carries a number.
+                        TOP_UP_DEEPLINK to addressOf<TopUpScreenResource>(),
                         // THE FOUR TABS. Written here for now, and this map is what `B-49` exists to
                         // delete: the server serves the same pairing as a `NavigationGraph` at
                         // `/api/v1/navigation`, and a client resolving deeplinks from a map it wrote

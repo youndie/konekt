@@ -44,3 +44,32 @@ data class TopUpResponse(
     // that says why.
     val declineReason: String? = null,
 )
+
+// THE SCREEN THE SAGA NEVER HAD, and its absence is what made every part above unreachable.
+//
+// `B-40` built topping up in full — the saga, the limits, the compensation, the routes — and stopped
+// at the wire. Nothing in the product could reach it, so the balance on the home screen only ever
+// went down. The comment on `HomeScreen.balanceBlock` said a button was missing because "inventing
+// the screen is a feature"; by then it was one form field.
+//
+// A FORM RATHER THAN A DTO CALL, like signing in: the amount is chosen on a screen the server builds,
+// so what a subscriber may enter is the server's to say and not a number typed into a client.
+@Resource("/api/v1/screens/top-up")
+class TopUpScreenResource {
+    // THE RESULT, nested so the address of a top-up is derived from the address of the screen that
+    // starts one. The submit is a POST on the parent rather than a path of its own — a sibling named
+    // `submit` would be one `topUpId` away from colliding with this.
+    @Resource("{topUpId}")
+    class ById(
+        val parent: TopUpScreenResource = TopUpScreenResource(),
+        val topUpId: String,
+    )
+}
+
+const val TOP_UP_DEEPLINK: String = "app://top-up"
+
+object TopUpForms {
+    const val AMOUNT_FORM = "top-up"
+
+    const val FIELD_AMOUNT = "amount"
+}

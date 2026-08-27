@@ -6,6 +6,7 @@ import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.openapi.EndpointKind
 import io.konekt.openapi.resourceAddress
@@ -167,6 +168,11 @@ val KONEKT_WALK_PLAN =
                 resourceAddress<OrderScreen>() to setOf("orderId"),
                 resourceAddress<Purchases.ById>() to setOf("orderId"),
                 resourceAddress<TopUps.ById>() to setOf("topUpId"),
+                // The top-up RESULT screen, on the SAME id: the walk already creates a top-up before
+                // it buys anything, so the screen costs the walk nothing it was not already paying.
+                // Left out, it would be a screen the kit does not check for no better reason than
+                // that `pathParameters` is keyed by path and this path was new.
+                resourceAddress<TopUpScreenResource.ById>() to setOf("topUpId"),
                 // THE PLAN DETAIL, and its placeholder is the only one here whose value is not
                 // created by the walk: a plan id is a CATALOGUE fact, stable and known in advance,
                 // so the walk can reach this screen without buying anything first.

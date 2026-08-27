@@ -78,6 +78,7 @@ import io.konekt.time.KonektClock
 import io.konekt.time.SystemClock
 import io.konekt.time.asPetichClock
 import io.konekt.time.timeModule
+import io.konekt.topup.topUpScreenRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
@@ -222,6 +223,7 @@ val konektRoutes: List<RouteGroup> =
             authenticatedSessionRoutes()
             purchaseRoutes()
             topUpRoutes()
+            topUpScreenRoutes()
             esimWizardRoutes()
             homeRoutes()
             plansRoutes()
