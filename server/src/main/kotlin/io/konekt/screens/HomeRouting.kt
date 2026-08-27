@@ -34,6 +34,9 @@ fun Route.homeRoutes() {
         // nested children serialise perfectly, which is what makes it easy to miss — and the client
         // then receives an unknown component for the whole screen and, by design, draws nothing.
         // `CallRespondUsageTest` is what refuses the other spelling in the sources.
-        call.respondKompotComponent(json, HomeScreen.build(balance, counters, cards, packages, roamingCards))
+        call.respondKompotComponent(
+            json,
+            HomeScreen.build(balance, counters, cards, packages, roamingCards, Shell.bottomNav(Shell.Tab.HOME)),
+        )
     }
 }

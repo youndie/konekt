@@ -44,7 +44,14 @@ object EndpointKind {
     // the gap; `TckRunner.patchesNameDeclaredFields` is what reads this constant.
     const val PATCH = "patch"
 
+    // Answers a `NavigationGraph`: every destination this deployment serves, by deeplink, with the
+    // address behind each and the SHAPE that address answers. `TckRunner.navigationGraphResolves`
+    // follows every route to its screen and holds the route's declared kind against the kind the
+    // description gives the same address — the route says what a client will parse, the description
+    // says what the server will send, and nothing else compares the two.
+    const val GRAPH = "graph"
+
     // Read in the kit and NOT used by this server, listed so the next person need not go back to the
-    // jar to learn whether the vocabulary is closed: `graph`, `live_screen`, `wizard_resume`.
+    // jar to learn whether the vocabulary is closed: `live_screen`, `wizard_resume`.
     // A route of ours grows one of these the day it starts answering the matching shape.
 }

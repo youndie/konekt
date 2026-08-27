@@ -7,6 +7,7 @@
   "x-kompot-contributes": {
     "KompotComponent": {
       "banner": "#/$defs/KompotComponentBanner",
+      "bottom_nav": "#/$defs/KompotComponentBottomNav",
       "esim_card": "#/$defs/KompotComponentEsimCard",
       "esim_qr": "#/$defs/KompotComponentEsimQr",
       "order_row": "#/$defs/KompotComponentOrderRow",
@@ -18,6 +19,26 @@
     }
   },
   "$defs": {
+    "BottomNavItem": {
+      "x-kompot-kind": "object",
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "action": {
+          "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+        },
+        "selected": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label",
+        "action"
+      ],
+      "additionalProperties": true
+    },
     "KompotComponentBanner": {
       "x-kompot-kind": "variant",
       "x-kompot-wire-type": "banner",
@@ -62,6 +83,37 @@
         "type",
         "id",
         "text"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentBottomNav": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "bottom_nav",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bottom_nav"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BottomNavItem"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "items"
       ],
       "additionalProperties": true
     },

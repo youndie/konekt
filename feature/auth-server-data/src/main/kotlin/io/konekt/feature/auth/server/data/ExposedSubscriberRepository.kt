@@ -36,6 +36,15 @@ class ExposedSubscriberRepository(
                 ?.let { Subscriber(id = it[SubscriberTable.id], msisdn = Msisdn.parse(it[SubscriberTable.msisdn])) }
         }
 
+    override suspend fun findById(id: String): Subscriber? =
+        dbQuery {
+            SubscriberTable
+                .selectAll()
+                .where { SubscriberTable.id eq id }
+                .singleOrNull()
+                ?.let { Subscriber(id = it[SubscriberTable.id], msisdn = Msisdn.parse(it[SubscriberTable.msisdn])) }
+        }
+
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun createWithAccount(
         msisdn: Msisdn,

@@ -15,6 +15,10 @@ dependencies {
     // And the purchase feature's, for `buy_plan`. One spec module per Gradle module means one
     // dependency per Gradle module that puts something on the wire.
     api(project(":feature:purchase-shared-api"))
+    // And the shell's, for `sign_out`. Added the day the conformance walk refused the profile screen
+    // over an action nothing had declared — which is what this dependency being easy to forget looks
+    // like from the outside.
+    api(project(":feature:shell-shared-api"))
 
     implementation(platform(libs.kompot.bom))
     // kompot-spec depends on every protocol module of the toolkit, which is what lets

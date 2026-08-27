@@ -24,7 +24,10 @@ import io.konekt.roaming.RoamingZoneNames
 // `priceText` and `quotaTexts` as they came and owns no formatter for either (D15) — which is also
 // what makes a price change a server deploy rather than a release.
 object PlansScreen {
-    fun build(plans: List<Plan>): KompotComponent =
+    fun build(
+        plans: List<Plan>,
+        nav: KompotComponent? = null,
+    ): KompotComponent =
         ColumnComponent(
             id = "plans",
             spacing = 12,
@@ -52,6 +55,11 @@ object PlansScreen {
                     } else {
                         addAll(plans.map(::card))
                     }
+
+                    // THE SHELL, added last and hoisted by the client out of the tree it arrived in.
+                    // In the tree rather than fetched separately so the SERVER decides which tab is
+                    // current: it is the only side that knows which screen it just built.
+                    nav?.let(::add)
                 },
         )
 

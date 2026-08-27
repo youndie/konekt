@@ -38,6 +38,7 @@ import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
@@ -55,7 +56,9 @@ import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
 import io.konekt.screens.dev.forwardCompatRoutes
 import io.konekt.screens.homeRoutes
+import io.konekt.screens.navigationRoutes
 import io.konekt.screens.plansRoutes
+import io.konekt.screens.profileRoutes
 import io.konekt.tariff.ConfirmTariffChangeUseCase
 import io.konekt.tariff.ExposedTariffChanges
 import io.konekt.tariff.StartTariffChangeUseCase
@@ -220,6 +223,11 @@ val konektRoutes: List<RouteGroup> =
             esimWizardRoutes()
             homeRoutes()
             plansRoutes()
+            profileRoutes()
+            // The route graph. In the user tier with everything it points at: it carries no
+            // subscriber's data, and a public graph would promise a client four destinations that
+            // all answer 401.
+            navigationRoutes()
             customPackageRoutes()
             tariffRoutes()
             realtimeRoutes()
@@ -543,7 +551,11 @@ private val devScreensSerializersModule =
 // The application's Json: the toolkit's actions and components, konekt's own dictionary, and the
 // saga's payloads. One instance, bound in the graph, because two Json configurations that differ by
 // one module produce a wire nobody can debug.
-private val kompotJson: Json =
+//
+// `internal` rather than `private`, and only so that `ServerEncodesEveryActionTest` can ask THIS
+// instance what it can encode. A test building its own copy would be a third list to keep in step
+// with the two that already have to match, and it would pass while the server it is about does not.
+internal val kompotJson: Json =
     Json {
         ignoreUnknownKeys = true
         classDiscriminator = "type"
@@ -577,6 +589,11 @@ private val kompotJson: Json =
             // Buying, konekt's second action. Registered by hand like the first: nothing fails at
             // build time if it is missing, the press simply cannot be decoded.
             purchaseActionsSerializersModule +
+            // Signing out, konekt's third action. Registered by hand like the rest — and this is
+            // the one that got a guard rather than another comment: `konektActionWireNames` lists
+            // every action this build puts on the wire, and a test on each side asks its own Json
+            // whether all of them resolve.
+            shellActionsSerializersModule +
             // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
             // something: the components of a form are generated into
             // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a

@@ -90,6 +90,20 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                 shape = SkeletonShapes.CARD,
                 count = 3,
             ),
+        // Fully populated like every entry here, and that includes `selected` on exactly one item:
+        // the round-trip test compares by equality, so a field left at its default is a field this
+        // dictionary never checks travels.
+        "bottom_nav" to
+            BottomNavComponent(
+                id = "shell-nav",
+                items =
+                    listOf(
+                        BottomNavItem("Home", NavigateAction("app://home"), selected = true),
+                        BottomNavItem("Plans", NavigateAction("app://plans")),
+                        BottomNavItem("Orders", NavigateAction("app://orders")),
+                        BottomNavItem("Profile", NavigateAction("app://profile")),
+                    ),
+            ),
     )
 
 // The application's own Json: the toolkit's core and standard sets plus this dictionary. Assembled

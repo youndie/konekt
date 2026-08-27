@@ -40,9 +40,11 @@ class KonektRendererCoverageTest {
     // the fact and treated it as a decision — and the decision was invisible, because a type that
     // DECODES and has no renderer is not an `UnknownComponent` and never reaches konekt's degradation
     // block. Every test missed it by topping up first, so the banner was never sent.
-    // ALL NINE, and the second list below is empty for the first time. `banner` joined after an iOS
-    // build drew a red "Unknown component" where the home screen's "no plan is active" message should
-    // have been; the other six joined with `B-45`, which is the screens they were waiting for.
+    // ALL TEN, and the second list below is still empty. `banner` joined after an iOS build drew a
+    // red "Unknown component" where the home screen's "no plan is active" message should have been;
+    // six joined with `B-45`, which is the screens they were waiting for; and `bottom_nav` joined
+    // with `B-49` on the day it was added — which is what the emptiness of the second list is FOR.
+    // It is the first component in this build that could not be added without also being drawn.
     private val rendered =
         setOf(
             "usage_counter_card",
@@ -54,11 +56,13 @@ class KonektRendererCoverageTest {
             "snackbar",
             "step_meter",
             "skeleton",
+            "bottom_nav",
         )
 
     // EMPTY, AND KEPT. The list is what says "somebody decided this one does not draw yet" as opposed
-    // to "nobody noticed" — and its emptiness is now an assertion rather than a gap: a tenth component
-    // added to the dictionary lands in one of the two lists or fails the test below.
+    // to "nobody noticed" — and its emptiness is an assertion rather than a gap: a component added to
+    // the dictionary lands in one of the two lists or fails the test below. It has now been paid for
+    // once: `bottom_nav` arrived with `B-49` and this test is what refused the build until it drew.
     private val notYetRendered = emptySet<String>()
 
     // The toolkit's placeholder, and NOT a tenth entry in konekt's dictionary. `UnknownComponent` has

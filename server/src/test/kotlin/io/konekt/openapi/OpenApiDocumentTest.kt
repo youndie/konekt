@@ -190,7 +190,11 @@ class OpenApiDocumentTest {
     private companion object {
         val DESCRIBING_JWT = JwtConfig(secret = "openapi-generator", issuer = "konekt", audience = "konekt-app")
 
-        // Fifteen: the whole product surface plus /health, and without the development route.
-        const val EXPECTED_OPERATIONS = 27
+        // The whole product surface plus /health, and without the development routes. The comment
+        // above this line said "fifteen" long after the number said 27, which is what a count kept in
+        // prose beside a constant does — so it says neither now. What it is for is the change nobody
+        // intended: an endpoint appearing or disappearing is a contract moving, and this is the line
+        // that makes somebody type the new number and mean it.
+        const val EXPECTED_OPERATIONS = 29
     }
 }

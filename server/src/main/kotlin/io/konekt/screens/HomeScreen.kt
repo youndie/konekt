@@ -34,6 +34,7 @@ object HomeScreen {
         // actually open, which is the failure mode this feature exists to fix.
         packages: List<RoamingPackage> = emptyList(),
         roamingCards: RoamingPackageCards? = null,
+        nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
             id = "home",
@@ -66,6 +67,11 @@ object HomeScreen {
                         // in three weeks is context.
                         if (roamingCards != null) addAll(packages.map(roamingCards::of))
                     }
+
+                    // THE SHELL, added last and hoisted by the client out of the tree it arrived in.
+                    // In the tree rather than fetched separately so the SERVER decides which tab is
+                    // current: it is the only side that knows which screen it just built.
+                    nav?.let(::add)
                 },
         )
 

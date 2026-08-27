@@ -139,6 +139,11 @@ include(":feature:usage-shared-api")
 include(":feature:usage-server-domain")
 include(":feature:usage-server-data")
 
+// The shell: the route graph and the account screen. A shared-api module with no server half, like
+// theme and realtime — it has no domain of its own, and what it holds is what turns a set of screens
+// into an application. A bar naming all four features would otherwise have to belong to one of them.
+include(":feature:shell-shared-api")
+
 // The wire specification of THIS build: the toolkit's spec modules plus konekt's own, and the
 // committed JSON Schema files another implementation would read. JVM-only, because kompot-spec is.
 include(":shared:spec")

@@ -7,6 +7,7 @@ import io.github.youndie.kompot.spec.KompotSpecModule
 import io.github.youndie.kompot.spec.KompotToolkitSpec
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import kotlinx.serialization.json.JsonObject
 
 // konekt's own contribution to the wire specification: the nine component types of
@@ -52,13 +53,27 @@ fun konektPurchaseSpecModule(): KompotSpecModule =
         serializersModule = purchaseActionsSerializersModule,
     )
 
+// The shell's contribution: `sign_out`, konekt's third verb.
+//
+// Its absence is what the conformance walk caught the first time it saw the profile screen — the
+// action was registered on both sides, decoded perfectly, and was in no schema, so the kit reported
+// it as a type outside the declared wire. That is the kit doing exactly its job: "both sides agree"
+// and "the wire is described" are different claims, and only the second is what a second
+// implementation can build against.
+fun konektShellSpecModule(): KompotSpecModule =
+    KompotSpecModule(
+        name = "konekt-shell",
+        description = "Leaving: the verb that ends a session on both sides at once.",
+        serializersModule = shellActionsSerializersModule,
+    )
+
 // The spec of THIS build. The order matters — whoever comes first owns a shared definition — and
 // konekt's modules go last because they define nothing the toolkit also defines and refer to plenty
 // that it does.
 object KonektSpec {
     val modules: List<KompotSpecModule> get() =
         KompotToolkitSpec.modules + konektSpecModule() + konektEsimSpecModule() +
-            konektPurchaseSpecModule()
+            konektPurchaseSpecModule() + konektShellSpecModule()
 
     fun generateAll(): List<GeneratedSchema> = KompotSpec.generateAll(modules)
 

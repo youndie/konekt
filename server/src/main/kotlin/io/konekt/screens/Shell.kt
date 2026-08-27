@@ -1,0 +1,126 @@
+package io.konekt.screens
+
+import io.github.youndie.kompot.navigation.NavigationGraph
+import io.github.youndie.kompot.navigation.ScreenRoute
+import io.github.youndie.kompot.navigation.ScreenRouteKind
+import io.github.youndie.kompot.standard.NavigateAction
+import io.konekt.components.BottomNavComponent
+import io.konekt.components.BottomNavItem
+import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
+import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
+import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
+import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.purchase.shared.api.HistoryScreenResource
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
+import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
+import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
+import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
+import io.konekt.feature.shell.shared.api.ProfileScreenResource
+import io.konekt.feature.usage.shared.api.HomeScreenResource
+import io.konekt.openapi.resourceAddress
+
+// THE APPLICATION'S SHELL: which destinations exist, and which of them are tabs.
+//
+// Two answers to two different questions, deliberately not one. The GRAPH is every destination a
+// deeplink can name, and it is the toolkit's type — `kompot-navigation` has carried it since this
+// build began and nothing used it. The TABS are a product decision about which four of those a
+// subscriber sees at the bottom of the screen, and no toolkit has an opinion about that.
+//
+// Folding the second into the first was the tempting mistake: `ScreenRoute.kind` is a free string
+// and "tab" would have fitted in it. It would also have been the nearest-looking word rather than
+// the right one — the kit reads that field to decide what SHAPE a destination answers, and a
+// conformance run would then have been told a tab is a body format.
+object Shell {
+    // Every destination, in one place, because a deeplink that resolves on one side and not the other
+    // is a button that does nothing. The client used to hold its own copy of this map.
+    //
+    // ADDRESSES ARE ASKED OF THE `@Resource` CLASSES rather than written: a renamed segment moves the
+    // routing tree and this graph together, and the alternative is a 404 in somebody's hands.
+    fun graph(): NavigationGraph =
+        NavigationGraph(
+            routes =
+                listOf(
+                    ScreenRoute(
+                        deeplink = HOME_DEEPLINK,
+                        endpoint = resourceAddress<HomeScreenResource>(),
+                        title = "Home",
+                        // `screen`, even though this is the tree the realtime stream pushes into.
+                        // The kit compares a route's kind against the kind the HTTP description
+                        // declares for the same address and reports a disagreement — the route says
+                        // what a client will PARSE, the description says what the server will SEND,
+                        // and nothing else holds the two together. This endpoint answers one
+                        // component tree; the updates arrive on a different address entirely.
+                        kind = ScreenRouteKind.SCREEN,
+                    ),
+                    ScreenRoute(
+                        deeplink = PLANS_DEEPLINK,
+                        endpoint = resourceAddress<PlansScreenResource>(),
+                        title = "Plans",
+                        kind = ScreenRouteKind.SCREEN,
+                    ),
+                    ScreenRoute(
+                        deeplink = ORDERS_DEEPLINK,
+                        endpoint = resourceAddress<HistoryScreenResource>(),
+                        title = "Orders",
+                        kind = ScreenRouteKind.SCREEN,
+                    ),
+                    ScreenRoute(
+                        deeplink = PROFILE_DEEPLINK,
+                        endpoint = resourceAddress<ProfileScreenResource>(),
+                        title = "Profile",
+                        kind = ScreenRouteKind.SCREEN,
+                    ),
+                    // THE WAY IN, and it is in the graph even though no tab points at it. A graph
+                    // that only described the tabs would leave the client resolving two of its
+                    // transitions from a map and two from a service, which is the arrangement this
+                    // replaces.
+                    ScreenRoute(
+                        deeplink = LOGIN_DEEPLINK,
+                        endpoint = resourceAddress<LoginScreenResource>(),
+                        title = "Sign in",
+                        kind = ScreenRouteKind.FORM,
+                    ),
+                    ScreenRoute(
+                        deeplink = LOGIN_CODE_DEEPLINK,
+                        endpoint = resourceAddress<LoginCodeScreenResource>(),
+                        title = "Your code",
+                        kind = ScreenRouteKind.FORM,
+                    ),
+                ),
+        )
+
+    // The bar, built for the screen that is about to carry it.
+    //
+    // `selected` is decided HERE because the server is what knows which screen it is building. A
+    // client deciding it by comparing its address against an action's payload would be a second
+    // opinion about which tab is open, and the two would disagree the first time an address gained a
+    // query parameter — which the login step already has.
+    fun bottomNav(selected: Tab): BottomNavComponent =
+        BottomNavComponent(
+            id = "shell-nav",
+            items =
+                Tab.entries.map { tab ->
+                    BottomNavItem(
+                        label = tab.label,
+                        action = NavigateAction(tab.deeplink),
+                        selected = tab == selected,
+                    )
+                },
+        )
+
+    // The four tabs, in the order they are drawn.
+    //
+    // FOUR AND NOT THREE, and the canvas is why the question comes up at all: section 01 draws four
+    // and section 05 draws three, dropping Orders. Four is taken because Orders exists and is
+    // otherwise unreachable — a screen this product builds, tests and cannot show anybody.
+    enum class Tab(
+        val label: String,
+        val deeplink: String,
+    ) {
+        HOME("Home", HOME_DEEPLINK),
+        PLANS("Plans", PLANS_DEEPLINK),
+        ORDERS("Orders", ORDERS_DEEPLINK),
+        PROFILE("Profile", PROFILE_DEEPLINK),
+    }
+}

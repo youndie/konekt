@@ -1,6 +1,6 @@
 package io.konekt.components
 
-// The nine names konekt adds to the kompot wire, in one list because more than one thing has to walk
+// The ten names konekt adds to the kompot wire, in one list because more than one thing has to walk
 // them: the registration tests, the schema profile check, and — when it exists — the server's own
 // completeness gate over the screens it can build.
 //
@@ -19,4 +19,5 @@ val konektWireNames: List<String> =
         "snackbar",
         "step_meter",
         "skeleton",
+        "bottom_nav",
     )

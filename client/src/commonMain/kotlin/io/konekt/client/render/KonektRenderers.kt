@@ -10,6 +10,7 @@ import io.github.youndie.kompot.kompotStandardRenderers
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.BannerComponent
+import io.konekt.components.BottomNavComponent
 import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.OrderRowComponent
@@ -48,6 +49,9 @@ private val undrawn: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
 val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<out KompotComponent>> =
     mapOf(
         UsageCounterCardComponent::class to UsageCounterCardRenderer(),
+        // The shell's bar, which arrives inside every tab screen's tree rather than being
+        // fetched once — the server is the side that knows which tab it just built.
+        BottomNavComponent::class to BottomNavRenderer(),
         EsimQrComponent::class to EsimQrRenderer(),
         // The banner the home screen sends to a subscriber who has bought nothing — which is every
         // subscriber's FIRST screen, and which drew a red "Unknown component" until an application

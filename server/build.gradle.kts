@@ -127,6 +127,8 @@ dependencies {
     implementation(libs.kompot.formStandard)
     implementation(libs.kompot.forms)
     implementation(project(":feature:usage-shared-api"))
+    // The shell: the route graph and the account screen.
+    implementation(project(":feature:shell-shared-api"))
     implementation(project(":feature:roaming-server-data"))
     testImplementation(testFixtures(project(":feature:roaming-server-domain")))
     implementation(project(":feature:usage-server-data"))
@@ -143,6 +145,10 @@ dependencies {
     implementation(libs.kompot.auth)
     implementation(libs.kompot.realtime)
     implementation(libs.kompot.realtimeServer)
+    // THE ROUTE GRAPH, and the first use this build has had of it. `NavigationGraph` is a
+    // serialisable type rather than a server plug-in — the endpoint is an ordinary GET that
+    // answers it — so the same coordinate is what the client resolves deeplinks with.
+    implementation(libs.kompot.navigation)
     implementation(libs.ktor.server.sse)
     implementation(libs.ktor.server.resources)
     implementation(libs.ktor.server.auth)

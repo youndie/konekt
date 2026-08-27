@@ -6,6 +6,7 @@ import io.github.youndie.kompot.spec.KompotProtocol
 import io.github.youndie.kompot.tck.RemoteTckTransport
 import io.github.youndie.kompot.tck.TckConfig
 import io.github.youndie.kompot.tck.TckRunner
+import io.konekt.components.konektActionWireNames
 import io.konekt.components.konektWireNames
 import io.konekt.conformance.KONEKT_WALK_PLAN
 import io.konekt.conformance.assertTheWalkVisitedEveryTarget
@@ -170,10 +171,14 @@ class TckWalkTest {
                     }
                 },
             // DECLARED and not inferred: the check "the server keeps to what it declared" means
-            // nothing if the kit reads the declaration off the responses it is checking. These are the
-            // nine component types of `:shared:components` plus the eSIM wizard's one action, which is
-            // konekt's whole application-level verb set.
-            extensionTypes = konektWireNames.toSet() + "esim_wizard_step",
+            // nothing if the kit reads the declaration off the responses it is checking.
+            //
+            // BOTH LISTS, and the second one used to be the single string "esim_wizard_step" written
+            // here by hand. That was a third copy of konekt's verb set — after the two
+            // `SerializersModule` registrations — and it went stale the way a hand-written list does:
+            // the walk refused the profile screen over `sign_out`, an action registered on both
+            // sides, decoded perfectly, and named in no list this file could see.
+            extensionTypes = konektWireNames.toSet() + konektActionWireNames.toSet(),
             // THE PATCH, paired with the form it patches. Derived from the plan like everything else
             // here: the plan names the addresses, and this supplies what only a running deployment can.
             //

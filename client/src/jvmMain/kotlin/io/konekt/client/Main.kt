@@ -14,6 +14,8 @@ import io.konekt.client.realtime.SseRealtimeSource
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
+import io.konekt.domain.suspendRunCatching
+import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
 import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
 import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
@@ -21,8 +23,14 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
+import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
+import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
+import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
+import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
+import io.konekt.feature.shell.shared.api.ProfileScreenResource
+import io.konekt.feature.shell.shared.api.SignOutAction
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.time.SystemClock
 import io.ktor.client.call.body
@@ -115,6 +123,14 @@ fun main() {
                 routes =
                     mapOf(
                         PLANS_DEEPLINK to plansAddress(),
+                        // THE FOUR TABS. Written here for now, and this map is what `B-49` exists to
+                        // delete: the server serves the same pairing as a `NavigationGraph` at
+                        // `/api/v1/navigation`, and a client resolving deeplinks from a map it wrote
+                        // by hand is a second copy of a contract the server already publishes. Four
+                        // entries is the point at which that stops being a detail.
+                        HOME_DEEPLINK to homeAddress(),
+                        ORDERS_DEEPLINK to ordersAddress(),
+                        PROFILE_DEEPLINK to profileAddress(),
                         // The login step, matched by PREFIX: the server puts the number in the query
                         // and a map keyed on the whole string would need an entry per subscriber.
                         LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
@@ -131,6 +147,19 @@ fun main() {
                         action is UpdateSessionAction -> {
                             session.adopt(SessionTokens(action.accessToken, action.refreshToken))
                             homeAddress()
+                        }
+
+                        // LEAVING. The order is the whole of it: tell the server FIRST, while the
+                        // token is still usable, then drop the tokens. The other way round the
+                        // request goes out unauthenticated and the refresh family lives on — a
+                        // subscriber who signed out on a shared machine and a session that did not
+                        // end. The server's answer is not waited on for correctness, only for order:
+                        // if the call fails the tokens still go, because the one thing that must not
+                        // happen is a screen saying "signed out" with a live session behind it.
+                        action is SignOutAction -> {
+                            suspendRunCatching { http.post(AuthSession.Logout()) }
+                            session.clear()
+                            addressOf<LoginScreenResource>()
                         }
 
                         // BUYING, for the same reason: a holder with an opinion about purchases is
@@ -154,6 +183,10 @@ fun main() {
 private fun homeAddress(): String = addressOf<HomeScreenResource>()
 
 private fun plansAddress(): String = addressOf<PlansScreenResource>()
+
+private fun ordersAddress(): String = addressOf<HistoryScreenResource>()
+
+private fun profileAddress(): String = addressOf<ProfileScreenResource>()
 
 // Derived from the `@Resource` rather than typed again. The ADDRESS is still spelled once, in the
 // annotation; this is a copy of the three lines in `io.konekt.openapi.ResourceAddresses`, which lives

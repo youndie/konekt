@@ -10,6 +10,7 @@ import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 
@@ -18,8 +19,14 @@ import kotlinx.serialization.modules.plus
 //
 // Assembled here rather than imported from the server, because the server's copy lives in a module
 // this one must not see. Two lists that have to match and cannot share a definition is exactly the
-// kind of seam that drifts, which is why `ClientAndServerSpeakOneWireTest` compares them by what
-// they can decode rather than by reading both.
+// kind of seam that drifts.
+//
+// This comment used to end "which is why `ClientAndServerSpeakOneWireTest` compares them by what they
+// can decode rather than by reading both". THAT TEST DOES NOT EXIST AND NEVER DID. The seam it named
+// went on to cost three incidents — the third was `submit_form`, registered on neither side, which
+// answered 500 on the login screen. What guards it now is a pair: `konektActionWireNames` lists every
+// action this build puts on the wire, and each side has a test asking its OWN Json whether all of them
+// resolve. Two tests rather than one, so the failure names the side that is missing the registration.
 //
 // `ignoreUnknownKeys` on purpose: a field added by a newer server must not take the screen down. The
 // discriminator is `"type"`, matching the server's.
@@ -35,6 +42,7 @@ val konektClientJson: Json =
             kompotAuthSerializersModule +
             esimActionsSerializersModule +
             purchaseActionsSerializersModule +
+            shellActionsSerializersModule +
             // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
             // something: the components of a form are generated into
             // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a

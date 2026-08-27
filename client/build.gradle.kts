@@ -120,6 +120,12 @@ kotlin {
             // CONTRACT of the purchase feature and none of its server halves — which is the whole
             // reason a  module exists per feature.
             api(project(":feature:purchase-shared-api"))
+            // The shell: the route graph the client resolves deeplinks through, and the
+            // action that ends a session.
+            api(project(":feature:shell-shared-api"))
+            // `kompot-navigation`, and the first use this client has had of it. The graph is a
+            // serialisable type the server answers with, so both sides decode the same one.
+            api(libs.kompot.navigation)
 
             // The session lives behind ktor's bearer plugin: it holds the tokens and refreshes them
             // on a 401, which is why `KonektSession` is a store rather than an interceptor.

@@ -16,6 +16,8 @@ import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
+import io.konekt.feature.shell.shared.api.NavigationResource
+import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
@@ -286,6 +288,27 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 summary = "The catalogue: every plan, with the sold-out ones marked rather than hidden",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
+        endpointKey<ProfileScreenResource>("GET") to
+            EndpointFacts(
+                summary = "The account: the number, what is installed on it, and the way out",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+                // 404 for a token whose subscriber no longer exists. Nothing deletes one today, and
+                // the branch is declared because it is reachable rather than because it is likely.
+                refusals = setOf(404),
+            ),
+        endpointKey<NavigationResource>("GET") to
+            EndpointFacts(
+                summary = "Every destination this deployment serves, by deeplink",
+                kind = EndpointKind.GRAPH,
+                // NO BODY REFERENCE, and it is an admission rather than an oversight. `NavigationGraph`
+                // is `kompot-navigation`'s type and that module publishes no JSON Schema — the toolkit's
+                // spec modules cover the protocol and the components, not this. So the `schema` check
+                // visits this endpoint and validates nothing against it, while the `navigation` check
+                // reads its routes and follows every one to the screen behind it. The second is what
+                // this endpoint is for; the first is a gap worth naming here rather than leaving for
+                // somebody to discover as a check that quietly had nothing to say.
             ),
         endpointKey<HistoryScreenResource>("GET") to
             EndpointFacts(

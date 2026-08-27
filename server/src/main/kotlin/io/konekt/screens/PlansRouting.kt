@@ -19,6 +19,6 @@ fun Route.plansRoutes() {
         // respondKompotComponent, never call.respond. A plain respond resolves the serialiser from the
         // concrete runtime class and drops the "type" discriminator on the ROOT of the tree, and the
         // client then receives an unknown component for the whole screen.
-        call.respondKompotComponent(json, PlansScreen.build(plans.all()))
+        call.respondKompotComponent(json, PlansScreen.build(plans.all(), Shell.bottomNav(Shell.Tab.PLANS)))
     }
 }

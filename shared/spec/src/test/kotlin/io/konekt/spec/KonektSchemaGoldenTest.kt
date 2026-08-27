@@ -33,11 +33,12 @@ class KonektSchemaGoldenTest {
         // index is built by walking the modules in order and konekt's file refers to types the
         // toolkit defines — dropping them would change our own schema, not just skip theirs.
         val ours = generated.filter { it.fileName.startsWith("konekt-") }
-        // Three: the component dictionary, the eSIM feature's action and the purchase feature's. An
-        // exact number rather than a floor, because the failure worth catching here is a spec module
-        // that stopped being assembled — which shrinks this set silently and takes a whole vocabulary
-        // off the wire specification while every test about the remaining ones still passes.
-        assertEquals(3, ours.size, "expected three konekt schema files, got ${ours.map { it.fileName }}")
+        // Four: the component dictionary and one per feature that puts a VERB on the wire — eSIM,
+        // purchase, shell. An exact number rather than a floor, because the failure worth catching
+        // here is a spec module that stopped being assembled — which shrinks this set silently and
+        // takes a whole vocabulary off the wire specification while every test about the remaining
+        // ones still passes.
+        assertEquals(4, ours.size, "expected four konekt schema files, got ${ours.map { it.fileName }}")
 
         if (SchemaFiles.recordMode) {
             ours.forEach { SchemaFiles.write(it.fileName, it.document) }

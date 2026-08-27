@@ -40,9 +40,6 @@ val KONEKT_CHECKS_WITH_NOTHING_TO_VISIT: Map<String, String> =
         "etag" to
             "no operation declares 304. Conditional delivery is not implemented: the screens are built per " +
             "request and nothing computes an entity tag for them, so there is no revalidation to check.",
-        "navigation" to
-            "this server serves no endpoint of kind \"graph\". kompot-navigation's server-driven route graph " +
-            "is not part of this build — the client's navigation is its own.",
         "updates" to
             "the check reads a RECORDING of an update stream from TckConfig.recordedUpdateStreams and never " +
             "opens a connection, and nothing records one. The walk against the stand exists now, so what " +

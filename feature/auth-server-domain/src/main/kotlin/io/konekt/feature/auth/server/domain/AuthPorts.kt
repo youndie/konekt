@@ -34,6 +34,11 @@ data class Subscriber(
 interface SubscriberRepository {
     suspend fun findByMsisdn(msisdn: Msisdn): Subscriber?
 
+    // By the id a token carries, which is the only handle a request has on its own account. Sign-in
+    // goes the other way — a number becomes a subscriber — and every screen after it goes this way,
+    // so both directions are needed and neither derives the other.
+    suspend fun findById(id: String): Subscriber?
+
     // Creating the account alongside is deliberate and atomic: a subscriber without an account is a
     // row every balance read has to defend against, forever, because of one interrupted sign-up.
     suspend fun createWithAccount(

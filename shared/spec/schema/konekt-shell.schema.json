@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kompot.workinprogress.ru/schema/konekt-shell.schema.json",
+  "title": "konekt-shell",
+  "description": "Leaving: the verb that ends a session on both sides at once.",
+  "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
+  "x-kompot-contributes": {
+    "KompotAction": {
+      "sign_out": "#/$defs/KompotActionSignOut"
+    }
+  },
+  "$defs": {
+    "KompotActionSignOut": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "sign_out",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "sign_out"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

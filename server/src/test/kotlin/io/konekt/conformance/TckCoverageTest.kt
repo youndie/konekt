@@ -10,6 +10,8 @@ import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
+import io.konekt.feature.shell.shared.api.NavigationResource
+import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.OpenApiFiles
@@ -101,6 +103,14 @@ class TckCoverageTest {
                 // a POST, and what reaches it is the pairing in `TckWalkPlan.patchEndpoints`. It
                 // arrived the day `kompot-tck` grew a kind for it — U13, youndie/kompot#93.
                 endpointKey<CustomPackagePatch>("POST"),
+                // The account screen, reachable blind: a secured GET answering one JSON document,
+                // like the other three tabs.
+                endpointKey<ProfileScreenResource>("GET"),
+                // THE ROUTE GRAPH, and it is the reason the `navigation` check left the
+                // nothing-to-visit list. The walk fetches it, then follows every route in it to the
+                // screen behind — which is also how `GET /api/v1/screens/orders` stops being
+                // unreachable without anybody adding it here: the graph names it.
+                endpointKey<NavigationResource>("GET"),
             ),
             walked,
             "the set of endpoints a conformance walk of this deployment reaches has changed",
