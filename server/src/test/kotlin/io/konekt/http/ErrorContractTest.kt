@@ -22,8 +22,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
+import io.ktor.util.cio.ChannelWriteException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -105,6 +107,28 @@ class ErrorContractTest {
             assertTrue("postgres" !in text, "the internal error leaked its cause: $text")
             assertTrue("konekt" !in text, "the internal error leaked its cause: $text")
             assertEquals("internal_error", Json.decodeFromString(ApiError.serializer(), text).code)
+        }
+    }
+
+    @Test
+    fun `a client that went away is not an internal error`() {
+        // WHAT THIS IS FOR is not the status code — nobody is left to read one — it is that the
+        // failure does not reach the branch that logs at ERROR and reports a crash.
+        //
+        // The realtime stream ends this way every single time: the subscriber closes the application,
+        // locks the phone, loses signal. Ktor's CIO wraps the broken pipe in a ChannelWriteException,
+        // and until this branch existed that became a katcher group — the most ordinary event the
+        // product has, filling the place where the reports that mean something have to be visible.
+        //
+        // Found by closing the desktop client against a deployed instance and watching the log.
+        probe(ChannelWriteException("Cannot write to channel", IOException("Broken pipe"))) { response ->
+            // Not 500: no handler responded at all, so the test client sees the empty answer the
+            // server gave rather than an internal-error body it would have had to build a channel
+            // for. What is asserted is the ABSENCE of the internal-error contract.
+            assertTrue(
+                "internal_error" !in response.bodyAsText(),
+                "a departed client was answered as an internal failure, so it was also reported as one",
+            )
         }
     }
 

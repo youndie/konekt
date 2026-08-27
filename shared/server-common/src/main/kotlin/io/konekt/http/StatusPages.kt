@@ -11,6 +11,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
+import io.ktor.util.cio.ChannelWriteException
 import org.slf4j.LoggerFactory
 import ru.workinprogress.katcher.Katcher
 
@@ -67,6 +68,29 @@ fun Application.configureStatusPages() {
                 HttpStatusCode.BadRequest,
                 ApiError("bad_request", "the request could not be read"),
             )
+        }
+
+        // A CLIENT THAT WENT AWAY IS NOT A DEFECT, and this build was reporting it as one.
+        //
+        // The realtime stream is held open for as long as a subscriber has the screen; it ends when
+        // they close the application, lock the phone or lose signal. Ktor's CIO wraps the resulting
+        // broken pipe in a `ChannelWriteException`, which is a Throwable like any other — so it
+        // reached the handler below, was logged at ERROR, and became a CRASH GROUP in katcher.
+        //
+        // Found by closing the desktop client against the deployed instance, which is the point:
+        // every long-lived connection ends this way eventually, so left alone this fills the crash
+        // reporter with the most ordinary event the product has and teaches an operator to stop
+        // reading it. That is worse than not reporting at all, because it hides the reports that
+        // mean something.
+        //
+        // NARROW ON PURPOSE. Not `IOException` — a failure talking to the database or the broker is
+        // an IOException too, and silencing those would be trading one blind spot for a larger one.
+        // What this type says, and nothing else does, is that the socket to THIS caller is gone.
+        //
+        // NOTHING IS SENT. There is no channel left to answer on; a `respond` here would throw the
+        // same exception again, from inside the handler for it.
+        exception<ChannelWriteException> { call, cause ->
+            logger.debug("the client on {} went away mid-response", call.request.local.uri, cause)
         }
 
         exception<Throwable> { call, cause ->

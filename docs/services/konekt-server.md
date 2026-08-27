@@ -173,6 +173,14 @@ the list. Do not copy it here; what is worth stating is the shape of the default
 
 ## 8. Quirks
 
+- **A subscriber closing the application used to file a crash report.** The realtime stream is held
+  open for as long as the screen is; it ends when somebody locks their phone or loses signal, and
+  Ktor's CIO wraps the resulting broken pipe in a `ChannelWriteException` — a `Throwable` like any
+  other, so it reached `StatusPages`' catch-all, was logged at ERROR, and became a katcher group.
+  Every long-lived connection ends that way eventually, so the effect was to fill the crash reporter
+  with the most ordinary event the product has and teach an operator to stop reading it. Found by
+  closing the desktop client against the deployed instance. The branch that now swallows it is
+  narrow on purpose — not `IOException`, which would also silence a failure talking to the database.
 - **The auth tier of a route is asserted by nothing below the stand.** `konektRoutes` in
   `Application.kt` pairs an `AuthTier` with each group of routes, and `mountKonektRoutes` is what
   turns `AuthTier.USER` into `authenticate(AUTH_JWT)`. Nothing checks that a route is in the right
