@@ -110,6 +110,8 @@ class ScreenshotCasesTest {
             "AppFrame - App login Dark",
             "AppFrame - App esim install",
             "AppFrame - App esim install Dark",
+            "AppFrame - App confirm",
+            "AppFrame - App confirm Dark",
         )
 
     @Test

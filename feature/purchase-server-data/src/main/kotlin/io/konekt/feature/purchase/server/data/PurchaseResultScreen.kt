@@ -3,11 +3,15 @@ package io.konekt.feature.purchase.server.data
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.SizeType
+import io.github.youndie.kompot.material3.M3Colors
+import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
@@ -55,7 +59,7 @@ object PurchaseResultScreen {
 
                     OrderStatus.REJECTED -> rejected(order)
 
-                    OrderStatus.AWAITING_CONFIRMATION -> awaitingConfirmation(order)
+                    OrderStatus.AWAITING_CONFIRMATION -> awaitingConfirmation(order, balance)
 
                     // The two that really are "in flight": the saga is running, or a compensating
                     // step itself failed and a person has to look. Neither is anything a subscriber
@@ -131,11 +135,17 @@ object PurchaseResultScreen {
     private fun wayOut(
         id: String,
         text: String,
+        // QUIET WHERE SOMETHING ELSE IS THE ANSWER. On every terminal state this IS the answer and
+        // draws as one; beside `Pay $X` it is the other option, and two equal-looking buttons are a
+        // screen asking one question twice. `ButtonEmphasis`'s own comment says exactly this, and it
+        // could not be acted on until `B-58` gave `quiet` a look of its own.
+        emphasis: String = ButtonEmphasis.PRIMARY,
     ): KompotComponent =
         ButtonComponent(
             id = id,
             text = text,
             action = NavigateAction(HOME_DEEPLINK),
+            variant = emphasis,
             modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
         )
 
@@ -187,28 +197,105 @@ object PurchaseResultScreen {
 
     // THE ONE ACTION A SUBSCRIBER MUST TAKE, and until now the screen offered no way to take it.
     //
-    // The copy says who is being waited for, because that is the whole difference from the branch
-    // below: "confirming with the provider" is a state to sit through, and this one is a state to
-    // act on. A subscriber told to wait would have waited out the deadline.
-    private fun awaitingConfirmation(order: OrderView): List<KompotComponent> =
-        listOf(
-            BannerComponent(
-                id = "purchase-awaiting",
-                text =
-                    "${order.payload.planTitle} is ready for ${MoneyFormat.format(order.payload.price)}. " +
-                        "Confirm to complete the purchase — nothing has been charged yet.",
-                tone = MessageTones.INFO,
-            ),
-            ButtonComponent(
-                id = "purchase-confirm",
-                text = "Confirm",
-                action = ConfirmPurchaseAction(order.orderId),
-                modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-            ),
+    // WHAT CHANGED WITH `B-59`: the facts stopped being a sentence. The whole of it was one banner —
+    // "<plan> is ready for <price>. Confirm to complete the purchase" — and section 03 of the canvas
+    // draws a small table instead: what, how much, and out of what. That is not decoration. A
+    // confirmation exists so the amount and its SOURCE are visible at the moment of agreeing, and the
+    // number that matters is the one people skim past in prose.
+    //
+    // The banner stays, and it carries the half a table cannot: who is being waited for. That is the
+    // whole difference from the branch below — "confirming with the provider" is a state to sit
+    // through, and this one is a state to act on. A subscriber told to wait would have waited out the
+    // deadline.
+    private fun awaitingConfirmation(
+        order: OrderView,
+        balance: Money?,
+    ): List<KompotComponent> =
+        buildList {
+            // "HELD" AND NOT "NOTHING HAS HAPPENED", and the first live run of this screen is what
+            // forced the distinction. The banner said "nothing has been charged yet" beside a balance
+            // that had ALREADY dropped by the price — `hold` decrements the account in the same
+            // statement it checks it against, so at this point the money has left the available
+            // balance and simply has not been captured.
+            //
+            // Both sentences were true and together they read as a contradiction, which is what a
+            // subscriber would report. The old banner got away with it only because it showed no
+            // balance to contradict.
+            add(
+                BannerComponent(
+                    id = "purchase-awaiting",
+                    text =
+                        "${MoneyFormat.format(order.payload.price)} is on hold and has not been charged. " +
+                            "Let the window pass and it is released.",
+                    tone = MessageTones.INFO,
+                ),
+            )
+
+            add(fact("purchase-plan", "Plan", order.payload.planTitle))
+            add(fact("purchase-price", "Price", MoneyFormat.format(order.payload.price)))
+
+            // WHERE THE MONEY COMES FROM, which is the one thing a confirmation is for and the one
+            // the banner never said. The canvas draws a choice — balance or a card — and there is no
+            // choice to draw: this product has no payment methods, and offering a card it cannot
+            // charge would be worse than offering none. So it states the source rather than asking
+            // for one.
+            //
+            // "LEFT AFTER THIS" rather than a bare balance, because the number is ALREADY net of the
+            // hold: confirming captures a sum that has gone, so this figure is what remains either
+            // way. Printing it as "Balance · $35" beside a price of $15 invites the subscriber to
+            // subtract twice.
+            //
+            // Omitted when the balance could not be read, for the reason the home screen gives about
+            // the same number: zero is a fact about an account and "we could not tell" is not.
+            balance?.let {
+                add(
+                    fact("purchase-source", "Pay from", "Balance — ${MoneyFormat.format(it)} left after this"),
+                )
+            }
+
+            add(
+                ButtonComponent(
+                    id = "purchase-confirm",
+                    // THE AMOUNT ON THE BUTTON, like the plan detail's `Buy for $X`. A subscriber who
+                    // reads only the control they are about to press still reads the price.
+                    text = "Pay ${MoneyFormat.format(order.payload.price)}",
+                    action = ConfirmPurchaseAction(order.orderId),
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                ),
+            )
+
             // LEAVING WITHOUT CONFIRMING IS A PATH, not an escape hatch. The order keeps its
             // deadline and rolls itself back when it passes — which is the compensated branch this
             // product exists to demonstrate, reached the way a subscriber would actually reach it.
-            wayOut("purchase-not-now", "Not now"),
+            add(wayOut("purchase-not-now", "Not now", ButtonEmphasis.QUIET))
+        }
+
+    // ONE FACT, AS A ROW: the label on the left and the value on the right, which is how the canvas
+    // draws every one of them and how a column of them becomes something to read down rather than
+    // through. The same shape the plan detail screen uses for "What is included".
+    private fun fact(
+        id: String,
+        label: String,
+        value: String,
+    ): KompotComponent =
+        RowComponent(
+            id = id,
+            spacing = 8,
+            children =
+                listOf(
+                    TextComponent(
+                        id = "$id-label",
+                        text = label,
+                        style = M3Typography.BodyMedium,
+                        color = M3Colors.OnSurfaceVariant,
+                    ),
+                    TextComponent(
+                        id = "$id-value",
+                        text = value,
+                        style = M3Typography.BodyMedium,
+                        color = M3Colors.OnSurface,
+                    ),
+                ),
         )
 
     private fun inFlight(order: OrderView): List<KompotComponent> =

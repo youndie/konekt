@@ -180,6 +180,21 @@ fun AppProfile() = App("profile-screen")
 @Composable
 fun AppPlanDetail() = App("plan-detail-screen")
 
+// THE STATE SECTION 03 DRAWS AND NOTHING PHOTOGRAPHED. The confirmation is where a subscriber agrees
+// to spend, and it had no frame at all — which is the same gap that let its whole copy be rewritten
+// with a green suite. It goes here rather than in the gallery because it is text, a banner and two
+// buttons on no card: `GoldenContentTest` reads a frame of that as too thin to tell from a capture
+// that failed, and it is right to.
+@ViddikScreenshot(
+    name = "App confirm",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppConfirm() = App("confirm-screen")
+
 @ViddikScreenshot(
     name = "App esim install",
     group = "AppFrame",

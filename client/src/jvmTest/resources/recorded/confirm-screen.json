@@ -1,0 +1,106 @@
+{
+  "type": "column",
+  "id": "purchase-result",
+  "children": [
+    {
+      "type": "banner",
+      "id": "purchase-awaiting",
+      "text": "$15 is on hold and has not been charged. Let the window pass and it is released."
+    },
+    {
+      "type": "row",
+      "id": "purchase-plan",
+      "children": [
+        {
+          "type": "text",
+          "id": "purchase-plan-label",
+          "text": "Plan",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "purchase-plan-value",
+          "text": "Home · 20 GB · 30 days",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "purchase-price",
+      "children": [
+        {
+          "type": "text",
+          "id": "purchase-price-label",
+          "text": "Price",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "purchase-price-value",
+          "text": "$15",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "purchase-source",
+      "children": [
+        {
+          "type": "text",
+          "id": "purchase-source-label",
+          "text": "Pay from",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "purchase-source-value",
+          "text": "Balance — $35 left after this",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "button",
+      "id": "purchase-confirm",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Pay $15",
+      "action": {
+        "type": "confirm_purchase",
+        "orderId": "3568140e-2e98-45c1-8191-e91615a16b87"
+      }
+    },
+    {
+      "type": "button",
+      "id": "purchase-not-now",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Not now",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://home"
+      },
+      "variant": "quiet"
+    }
+  ],
+  "spacing": 16
+}

@@ -14,6 +14,11 @@ dependencies {
     implementation(platform(libs.kompot.bom))
     implementation(libs.kompot.core)
     implementation(libs.kompot.standard)
+    // THE TOKEN NAMES, and nothing else from a design system: `M3Colors` and `M3Typography` are the
+    // words a `text` carries on the wire. Spelling them here as strings would be spelling a
+    // vocabulary twice, and the composition root already depends on the same coordinate for the same
+    // reason.
+    implementation(libs.kompot.dsMaterial)
     implementation(project(":shared:components"))
     // The chrome port, asked for by this feature's own deeplink. A leaf module with no server
     // half that everything may depend on — see `ScreenChrome` for why it goes this way round.

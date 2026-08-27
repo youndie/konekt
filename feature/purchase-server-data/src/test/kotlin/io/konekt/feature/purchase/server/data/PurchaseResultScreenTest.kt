@@ -6,6 +6,7 @@ import io.github.youndie.kompot.encodeKompotComponent
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
@@ -13,12 +14,14 @@ import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.Reversal
+import io.konekt.feature.purchase.shared.api.ConfirmPurchaseAction
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import kotlin.test.Test
@@ -62,6 +65,88 @@ class PurchaseResultScreenTest {
             requiredAction = null,
             declineReason = declineReason,
         )
+
+    private fun awaiting() =
+        OrderView(
+            orderId = "8f214c90-1111-2222-3333-444455556666",
+            status = OrderStatus.AWAITING_CONFIRMATION,
+            payload = payload,
+            requiredAction = "CONFIRM",
+            declineReason = null,
+        )
+
+    // THE BRANCH NOBODY ASSERTED ON, and it is the one the confirmation button was built for. Its
+    // copy could be rewritten wholesale and this file stayed green — which is how it was found: a
+    // rewrite passed, and a rewrite passing is the same evidence as a mutation surviving.
+    @Test
+    fun `the confirmation says what, how much, and out of what`() {
+        val texts =
+            PurchaseResultScreen
+                .build(awaiting(), reversal = null, balance = Money.ofMajor(50, Currency.DEFAULT))
+                .konektWalk()
+                .filterIsInstance<TextComponent>()
+                .map { it.text }
+
+        assertTrue("Turkey · 10 GB · 30 days" in texts, "the confirmation did not name the plan: $texts")
+        assertTrue("$12" in texts, "the confirmation did not name the price: $texts")
+        // THE SOURCE, which is the one thing a confirmation is for and the one the banner it replaced
+        // never said. A subscriber agreeing to spend must be able to see what it comes out of.
+        // "LEFT AFTER THIS", because the balance handed to this screen is already net of the hold —
+        // `hold` decrements the account. A bare "Balance · $50" beside a price of $12 invites the
+        // subscriber to subtract twice, and the banner's "not charged" then contradicts it.
+        assertTrue(
+            "Balance — $50 left after this" in texts,
+            "the confirmation did not say where the money comes from, or said it ambiguously: $texts",
+        )
+        // The banner, read as a `banner` rather than swept up with the texts: it is konekt's own
+        // component and carries its own field, and a `filterIsInstance<TextComponent>` walks straight
+        // past it. That is how this assertion failed the first time it was written.
+        val banner =
+            PurchaseResultScreen
+                .build(awaiting(), reversal = null, balance = Money.ofMajor(50, Currency.DEFAULT))
+                .konektWalk()
+                .filterIsInstance<BannerComponent>()
+                .single()
+        assertTrue(
+            "on hold and has not been charged" in banner.text,
+            "the screen claimed nothing had happened, beside a balance that has already moved: ${banner.text}",
+        )
+    }
+
+    @Test
+    fun `the control a subscriber presses carries the amount`() {
+        val button =
+            PurchaseResultScreen
+                .build(awaiting(), reversal = null, balance = Money.ofMajor(50, Currency.DEFAULT))
+                .konektWalk()
+                .filterIsInstance<ButtonComponent>()
+                .single { it.id == "purchase-confirm" }
+
+        assertEquals("Pay $12", button.text, "somebody who reads only the control still has to read the price")
+        assertEquals(ConfirmPurchaseAction("8f214c90-1111-2222-3333-444455556666"), button.action)
+    }
+
+    // A BALANCE THE SERVER COULD NOT READ IS LEFT OUT, not drawn as zero — the same rule the home
+    // screen follows about the same number. Zero is a fact about an account and "we could not tell"
+    // is not, and a subscriber who reads the first when the second is true thinks they cannot afford
+    // something they can.
+    @Test
+    fun `a balance that could not be read is not invented`() {
+        val texts =
+            PurchaseResultScreen
+                .build(awaiting(), reversal = null, balance = null)
+                .konektWalk()
+                .filterIsInstance<TextComponent>()
+                .map { it.text }
+
+        assertTrue(
+            texts.none { it.startsWith("Balance") },
+            "a balance was drawn for an account it could not read: $texts",
+        )
+        // The control control: the rest of the screen is still there, so the assertion above is about
+        // one omitted row rather than about a screen that failed to build.
+        assertTrue("$12" in texts, "the price went missing with the balance: $texts")
+    }
 
     @Test
     fun `a reversal is stated in money, with a date and a reference`() {
