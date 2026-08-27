@@ -41,7 +41,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (6)
+## Open (5)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -50,9 +50,8 @@ so re-prioritising must never move a file.
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
 | [B-55](docs/backlog/B-55-home-header.md) `[?]` | The home screen has no header, and the two things a header names are not in the domain | P2 | S | - |
 | [B-60](docs/backlog/B-60-counter-copy-and-grouping.md) `[?]` | The canvas states a counter as used-of-total and groups the three under the plan; we do neither | P2 | M | - |
-| [B-61](docs/backlog/B-61-doc-says-two-renderers-of-nine.md) `[ ]` | The design document says the client renders two of the nine components; it renders all nine | P3 | XS | - |
 
-## Closed (57)
+## Closed (58)
 
 **The wire and the shell**
 
@@ -119,6 +118,7 @@ so re-prioritising must never move a file.
 - [B-42](docs/backlog/B-42-tests-that-cannot-run.md) `[x]` - A @Test whose return type is not void is silently ignored, and three of them were
 - [B-44](docs/backlog/B-44-undrawable-components-are-invisible.md) `[x]` - A component that decodes and cannot be drawn is invisible from every guard
 - [B-56](docs/backlog/B-56-unreachable-screen-guard.md) `[x]` - Nothing fails when a screen the server serves is the destination of no action anywhere
+- [B-61](docs/backlog/B-61-doc-says-two-renderers-of-nine.md) `[x]` - The design document says the client renders two of the nine components; it renders all nine
 - [B-62](docs/backlog/B-62-the-stand-shared-ports-with-the-machine.md) `[x]` - Three tests accused the services that were working; a local daemon held their ports
 - [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[x]` - Five hand-kept lists of which components nest, and each goes stale by looking at less
 

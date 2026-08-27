@@ -163,12 +163,20 @@ frame therefore carries THE SAME DATA as the normal one and its golden is assert
 pixel-identical to it — a degradation that draws something of its own fails, and so does one that
 draws nothing.
 
-**Two sections of the canvas cannot be photographed yet, and the reason is the same for both.**
-Sections 02 and 03 — the four plan-list states and the four purchase states — are drawn from
-`plan_card`, `order_row`, `banner` and `step_meter`, and this client registers a renderer for two of
-the nine types only (`usage_counter_card` and `esim_qr`; `KonektRendererCoverageTest` holds the two
-lists apart). A golden of a frame made entirely of unknown-component blocks would photograph the
-degradation and call it the purchase flow. They join when their renderers do.
+**Every type this build serves has a renderer**, and every screen is photographed. The list is
+`usage_counter_card`, `plan_card`, `esim_card`, `esim_qr`, `order_row`, `banner`, `snackbar`,
+`step_meter`, `skeleton`, `bottom_nav`, `surface` — kept in step with the code by
+`RendererCoverageIsDocumentedTest`, which fails if this sentence and `konektRenderers` disagree.
+
+**The paragraph this replaces said the opposite, and had for three releases.** It read: *"this client
+registers a renderer for two of the nine types only (`usage_counter_card` and `esim_qr`)"*, and gave
+that as the reason sections 02 and 03 could not be photographed. It was true when it was written and
+stopped being true when `B-45` shipped six renderers; the goldens for both sections arrived without
+anybody touching the prose beside them. The claim was load-bearing — it is the stated reason two
+sections had no frames — so somebody planning work against it would have priced a renderer that
+already existed.
+
+Prose next to generated artefacts is checked by nothing, which is why this one is checked now.
 
 Recording is `LOCAL=1 ./gradlew :client:viddikRecord`, on the Mac: the Linux box is a one-way replica
 and reverts anything a task writes there, so a recording run in the usual place looks like it did

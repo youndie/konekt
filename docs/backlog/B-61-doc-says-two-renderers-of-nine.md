@@ -1,7 +1,7 @@
 ---
 id: B-61
 title: "The design document says the client renders two of the nine components; it renders all nine"
-status: open
+status: done
 priority: P3
 size: XS
 stage: stage-m4-proof
@@ -30,3 +30,33 @@ against it would price a renderer that exists.
   `konektRenderers` rather than typed.
 - Anchors: `docs/design/design-app-canvas.md`,
   `client/src/commonMain/kotlin/io/konekt/client/render/KonektRenderers.kt`.
+
+## What landed
+
+The paragraph names the eleven types instead of counting them, and
+`RendererCoverageIsDocumentedTest` fails when it and `konektRenderers` disagree. **Names rather than a
+number**, because a count goes stale the same way — one release later and one digit at a time — while
+a list can be compared.
+
+The sentence it replaced is kept above the correction rather than deleted: it was true when written,
+stopped being true when `B-45` shipped six renderers, and the goldens for both sections arrived
+**without anybody touching the prose beside them**. That is the finding, and deleting the evidence
+would delete it too.
+
+## The mutation passed, and that was the second finding
+
+Editing the sentence and re-running the suite reported BUILD SUCCESSFUL. The test had not run:
+`docs/design/design-app-canvas.md` is not an input of `:client:jvmTest`, so Gradle saw no reason to
+re-execute and the previous run's XML said everything passed.
+
+This repository already knew: `AppleTestsAreNotClaimedTest` carries a comment saying a guard reading a
+file outside the module is not a Gradle input and needs `--rerun-tasks` to be believed — **and has no
+input declaration of its own.** So the warning was written down and the fix was not applied, which
+means that guard is trustworthy only when somebody remembers the comment.
+
+Declared now, beside the goldens, which were added to the same task for the same near-miss. The
+mutation fails properly: it names both sets and which type is missing.
+
+- Left open deliberately: `AppleTestsAreNotClaimedTest`'s own declaration. It reads
+  `.github/workflows/`, which is a different file set, and folding it into this change would make two
+  fixes share one commit.

@@ -309,6 +309,16 @@ tasks.named<Test>("jvmTest") {
         .withPropertyName("viddikGoldens")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
+    // AND THE DOCUMENT `RendererCoverageIsDocumentedTest` READS, for exactly the same reason and by
+    // the same near-miss: the first attempt to prove that guard bites edited the markdown, ran the
+    // suite, and got UP-TO-DATE with the previous run's XML saying everything passed. A file outside
+    // the module is not an input of a task that reads it — `AppleTestsAreNotClaimedTest` carries the
+    // same warning and has no such declaration, which is worth knowing before trusting it.
+    inputs
+        .file(layout.settingsDirectory.file("docs/design/design-app-canvas.md"))
+        .withPropertyName("canvasDocument")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
     // The stand-driven suite is not part of an ordinary build: it needs a deployment that is already
     // up, and wired into `check` it would fail every build on a machine that has not started one.
     // The same reasoning `:e2e` carries, and the same answer — a named task, below.
