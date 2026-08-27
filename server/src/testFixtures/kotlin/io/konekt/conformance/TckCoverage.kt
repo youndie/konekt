@@ -4,6 +4,7 @@ import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.OrderScreen
+import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.openapi.EndpointKind
@@ -166,6 +167,10 @@ val KONEKT_WALK_PLAN =
                 resourceAddress<OrderScreen>() to setOf("orderId"),
                 resourceAddress<Purchases.ById>() to setOf("orderId"),
                 resourceAddress<TopUps.ById>() to setOf("topUpId"),
+                // THE PLAN DETAIL, and its placeholder is the only one here whose value is not
+                // created by the walk: a plan id is a CATALOGUE fact, stable and known in advance,
+                // so the walk can reach this screen without buying anything first.
+                resourceAddress<PlansScreenResource.ById>() to setOf("planId"),
             ),
         recordedUpdateStreams = emptySet(),
         // The custom package patch, whose body the walk supplies: a quantity the form declares as a

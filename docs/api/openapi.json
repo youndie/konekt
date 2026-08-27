@@ -1133,6 +1133,69 @@
                 }
             }
         },
+        "/api/v1/screens/plans/{planId}": {
+            "get": {
+                "summary": "One plan, and what buying it commits to, before anything is spent",
+                "x-kompot-endpoint-kind": "screen",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "planId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "One plan, and what buying it commits to, before anything is spent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "kompot.profile.schema.json#/$defs/KompotComponent"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No session, or one that no longer means anything.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "It does not exist, OR it exists and belongs to somebody else — deliberately the same answer, because a 403 confirms existence and hands out an enumeration oracle.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/screens/profile": {
             "get": {
                 "summary": "The account: the number, what is installed on it, and the way out",

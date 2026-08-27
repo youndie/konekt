@@ -4,13 +4,14 @@ import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.PlanCardComponent
 import io.konekt.components.PlanStates
 import io.konekt.feature.purchase.server.domain.Plan
-import io.konekt.feature.purchase.shared.api.BuyPlanAction
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.money.MoneyFormat
 import io.konekt.roaming.RoamingZoneNames
 
@@ -86,7 +87,13 @@ object PlansScreen {
             // worse than one that does not accept it — the renderer refuses the press too, and both
             // halves are needed: the client decides what is pressable and the server decides what is
             // sold, and neither may be the only one that knows.
-            action = if (plan.onSale) BuyPlanAction(plan.id) else null,
+            // NAVIGATES NOW, AND DOES NOT BUY. Pressing a card used to create an order — the
+            // catalogue was a page of buttons that charge you — and the canvas draws a detail screen
+            // in between, which is where the money is agreed to.
+            //
+            // The deeplink needs no new entry in the client's route map: `app://plans` is already
+            // there and the resolver carries everything after a matched prefix across unchanged.
+            action = if (plan.onSale) NavigateAction("$PLANS_DEEPLINK/${plan.id}") else null,
         )
 
     // What the plan is made of, said in the units a person uses. Built from `dataMb` rather than

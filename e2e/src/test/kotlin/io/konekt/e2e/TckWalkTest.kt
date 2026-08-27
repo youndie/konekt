@@ -163,6 +163,12 @@ class TckWalkTest {
 
                             "topUpId" -> topUpId
 
+                            // A CATALOGUE ID, written here because it is one of the few values in
+                            // this build that a walk can know in advance: the home bundle is what
+                            // makes the catalogue work at all, and `StaticPlanCatalog` would be
+                            // broken without it.
+                            "planId" -> "home-20gb-30d"
+
                             // A placeholder added to the plan and not given a value here would
                             // otherwise be substituted with the word "orderId" and produce a 404 that
                             // reads like a server defect.

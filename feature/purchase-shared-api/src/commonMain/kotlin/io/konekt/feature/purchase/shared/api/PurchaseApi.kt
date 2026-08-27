@@ -64,7 +64,22 @@ data class PurchaseOrderResponse(
 // being there. It lives with the purchase feature because the subject is the plans; the home screen's
 // banner is what sends a subscriber here.
 @Resource("/api/v1/screens/plans")
-class PlansScreenResource
+class PlansScreenResource {
+    // ONE PLAN, AND THE SCREEN THAT WAS MISSING BETWEEN THE CATALOGUE AND THE PURCHASE.
+    //
+    // Pressing a card used to CREATE AN ORDER. The canvas draws a detail screen in between — what
+    // the plan includes, how it activates, and a "Buy for …" that is the first thing to spend
+    // anything — and its absence made the catalogue a page of buttons that charge you.
+    //
+    // Nested rather than a path of its own so that `app://plans/<id>` resolves with no new entry in
+    // the client's route map: the resolver carries everything after the matched prefix across
+    // unchanged, so the deeplink for the catalogue already addresses this.
+    @Resource("{planId}")
+    class ById(
+        val parent: PlansScreenResource = PlansScreenResource(),
+        val planId: String,
+    )
+}
 
 // The deeplink the server puts on that banner, spelled once. Three parties use it — the screen that
 // sends it, the client that resolves it, and the test that proves the two agree — and a fourth

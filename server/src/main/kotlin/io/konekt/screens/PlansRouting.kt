@@ -1,6 +1,7 @@
 package io.konekt.screens
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
+import io.konekt.domain.KonektException
 import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.ktor.server.resources.get
@@ -14,6 +15,13 @@ import org.koin.ktor.ext.inject
 fun Route.plansRoutes() {
     val plans by inject<PlanCatalog>()
     val json by inject<Json>()
+
+    // ONE PLAN. A 404 for an id nobody sells rather than an empty screen: a plan can leave the
+    // catalogue while a deeplink to it is still in somebody's hands.
+    get<PlansScreenResource.ById> { params ->
+        val plan = plans.find(params.planId) ?: throw KonektException.NotFound("plan")
+        call.respondKompotComponent(json, PlanDetailScreen.build(plan, Shell.bottomNav(Shell.Tab.PLANS)))
+    }
 
     get<PlansScreenResource> {
         // respondKompotComponent, never call.respond. A plain respond resolves the serialiser from the

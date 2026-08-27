@@ -289,6 +289,15 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
             ),
+        endpointKey<PlansScreenResource.ById>("GET") to
+            EndpointFacts(
+                summary = "One plan, and what buying it commits to, before anything is spent",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+                // 404 for an id nobody sells. A plan can leave the catalogue while a deeplink to it
+                // is still in somebody's hands, and that is the ordinary case rather than an odd one.
+                refusals = setOf(404),
+            ),
         endpointKey<ProfileScreenResource>("GET") to
             EndpointFacts(
                 summary = "The account: the number, what is installed on it, and the way out",

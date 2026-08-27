@@ -78,6 +78,9 @@ class TckCoverageTest {
                 // The catalogue, reachable blind: a public-shaped GET answering one JSON document,
                 // and the second screen this build serves that a subscriber can actually get to.
                 endpointKey<PlansScreenResource>("GET"),
+                // One plan, reachable because a plan id is a catalogue fact rather than something
+                // the walk has to create.
+                endpointKey<PlansScreenResource.ById>("GET"),
                 // The login screens: two forms, public, answering one JSON document each — so a blind
                 // walk reaches them without being given anything, and they are the first `form`
                 // endpoints it can reach without a session.
