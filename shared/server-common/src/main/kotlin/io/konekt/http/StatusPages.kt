@@ -72,16 +72,20 @@ fun Application.configureStatusPages() {
 
         // A CLIENT THAT WENT AWAY IS NOT A DEFECT, and this build was reporting it as one.
         //
-        // The realtime stream is held open for as long as a subscriber has the screen; it ends when
-        // they close the application, lock the phone or lose signal. Ktor's CIO wraps the resulting
-        // broken pipe in a `ChannelWriteException`, which is a Throwable like any other — so it
-        // reached the handler below, was logged at ERROR, and became a CRASH GROUP in katcher.
+        // The realtime stream is held open for as long as a subscriber has the screen. Ktor's CIO
+        // wraps a broken pipe on it in a `ChannelWriteException`, which is a Throwable like any other
+        // — so it reached the handler below, was logged at ERROR, and became a CRASH GROUP in katcher.
         //
-        // Found by closing the desktop client against the deployed instance, which is the point:
-        // every long-lived connection ends this way eventually, so left alone this fills the crash
-        // reporter with the most ordinary event the product has and teaches an operator to stop
-        // reading it. That is worse than not reporting at all, because it hides the reports that
-        // mean something.
+        // WHICH DISCONNECTS DO IT, measured rather than assumed. Killing the desktop client mid-push
+        // filed a report; closing its window did not. The difference is whether the server was
+        // writing when the socket went: a graceful close ends the read side between frames and
+        // nothing throws. So this is the UNGRACEFUL half — a killed process, a closed laptop, a phone
+        // that lost signal — raced against the push cadence, which on a screen that updates every few
+        // seconds is a large share of real endings and none of the tidy ones.
+        //
+        // That is still worth silencing rather than triaging: it is a report about a subscriber's
+        // network, filed under a product's defects, and reports nobody can act on are what teach an
+        // operator to stop reading the ones they can.
         //
         // NARROW ON PURPOSE. Not `IOException` — a failure talking to the database or the broker is
         // an IOException too, and silencing those would be trading one blind spot for a larger one.

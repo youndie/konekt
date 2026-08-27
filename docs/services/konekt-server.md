@@ -173,14 +173,16 @@ the list. Do not copy it here; what is worth stating is the shape of the default
 
 ## 8. Quirks
 
-- **A subscriber closing the application used to file a crash report.** The realtime stream is held
-  open for as long as the screen is; it ends when somebody locks their phone or loses signal, and
-  Ktor's CIO wraps the resulting broken pipe in a `ChannelWriteException` — a `Throwable` like any
-  other, so it reached `StatusPages`' catch-all, was logged at ERROR, and became a katcher group.
-  Every long-lived connection ends that way eventually, so the effect was to fill the crash reporter
-  with the most ordinary event the product has and teach an operator to stop reading it. Found by
-  closing the desktop client against the deployed instance. The branch that now swallows it is
-  narrow on purpose — not `IOException`, which would also silence a failure talking to the database.
+- **A subscriber's connection dying used to file a crash report.** Ktor's CIO wraps a broken pipe on
+  the realtime stream in a `ChannelWriteException` — a `Throwable` like any other, so it reached
+  `StatusPages`' catch-all, was logged at ERROR, and became a katcher group. Which endings do it was
+  MEASURED and is narrower than it first looked: killing the desktop client mid-push filed one,
+  closing its window did not, because a graceful close ends the read side between frames. So it is
+  the ungraceful half — a closed laptop, a phone off the network — raced against the push cadence.
+  Still worth silencing: it is a report about somebody's network filed under this product's defects,
+  and reports nobody can act on are what teach an operator to stop reading the ones they can. The
+  branch is narrow on purpose — not `IOException`, which would also silence a failure talking to the
+  database.
 - **The auth tier of a route is asserted by nothing below the stand.** `konektRoutes` in
   `Application.kt` pairs an `AuthTier` with each group of routes, and `mountKonektRoutes` is what
   turns `AuthTier.USER` into `authenticate(AUTH_JWT)`. Nothing checks that a route is in the right

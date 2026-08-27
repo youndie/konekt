@@ -115,12 +115,14 @@ class ErrorContractTest {
         // WHAT THIS IS FOR is not the status code — nobody is left to read one — it is that the
         // failure does not reach the branch that logs at ERROR and reports a crash.
         //
-        // The realtime stream ends this way every single time: the subscriber closes the application,
-        // locks the phone, loses signal. Ktor's CIO wraps the broken pipe in a ChannelWriteException,
-        // and until this branch existed that became a katcher group — the most ordinary event the
-        // product has, filling the place where the reports that mean something have to be visible.
+        // It is the UNGRACEFUL ending that does it, and that was measured rather than assumed:
+        // killing the desktop client mid-push filed a katcher group, closing its window did not. The
+        // difference is whether the server was writing when the socket went — which makes this a race
+        // with the push cadence, and on a screen that updates every few seconds it catches a large
+        // share of the real endings: a closed laptop, a phone off the network, a process killed.
         //
-        // Found by closing the desktop client against a deployed instance and watching the log.
+        // Until this branch existed each one became a report about somebody's network, filed under
+        // this product's defects.
         probe(ChannelWriteException("Cannot write to channel", IOException("Broken pipe"))) { response ->
             // Not 500: no handler responded at all, so the test client sees the empty answer the
             // server gave rather than an internal-error body it would have had to build a channel
