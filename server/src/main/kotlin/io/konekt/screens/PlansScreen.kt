@@ -67,17 +67,28 @@ object PlansScreen {
     private fun card(plan: Plan): PlanCardComponent =
         PlanCardComponent(
             id = "plan-${plan.id}",
-            title = plan.title,
+            // THE PLACE, AND THE QUOTA BENEATH IT — which is how the canvas draws a card and what
+            // this line used to prevent. `plan.title` is "Turkey · 10 GB · 30 days", so the card said
+            // the quota twice: once glued into a heading and again in `quotaTexts` under it. The
+            // component could always express the canvas's layout; the server was not using it.
+            //
+            // `plan.title` keeps its full form because the HISTORY needs it: a row from three months
+            // ago has no card under it to carry the rest, and "Turkey" alone would not say which
+            // Turkey plan was bought.
+            title = RoamingZoneNames.of(plan.zone),
             priceText = MoneyFormat.format(plan.price),
+            // WHAT A GIGABYTE COSTS, which is the comparison the canvas puts on every card and the
+            // one a column of totals actively prevents: $9 for 5 GB is dearer than $15 for 20 GB, and
+            // nothing on the old card said so. `null` for a plan with no data to divide by.
+            //
+            // THE PRICE IS SCALED, NOT THE QUOTA, and the first version of this line got it backwards:
+            // it divided by `dataMb` and labelled the answer "GB", which is a price per MEGABYTE with
+            // the wrong unit under it — off by a factor of 1024 in the direction that makes every plan
+            // look free. `price × 1024 ÷ dataMb` keeps the arithmetic in whole minor units, and the
+            // 1024 is the same base `UsageUnits` uses for the "20 GB" beside it: two figures on one
+            // card computed in two bases would disagree with each other for a living.
+            perUnitText = MoneyFormat.perUnit(plan.price * MB_PER_GB, plan.dataMb, "GB"),
             quotaTexts = quotas(plan),
-            // The zone as a person reads it, and absent for a home bundle: "Home" on a plan nobody
-            // travels with is a line that says nothing and takes a line's worth of attention.
-            zoneText =
-                if (plan.zone == io.konekt.feature.roaming.server.domain.Zones.HOME) {
-                    null
-                } else {
-                    "Works in ${RoamingZoneNames.of(plan.zone)}"
-                },
             badgeText = if (plan.onSale) "On sale" else null,
             // SOLD OUT IS A STATE AND NOT AN ABSENCE. `us-20gb-30d` carries `onSale = false` and is
             // deliberately in the catalogue: the refusal path needs a fixture, and a subscriber who
@@ -99,6 +110,17 @@ object PlansScreen {
     // What the plan is made of, said in the units a person uses. Built from `dataMb` rather than
     // parsed out of the title: "Turkey · 10 GB · 30 days" is copy, and parsing copy for a number is
     // how a renamed plan silently advertises nothing.
+    // EVERYTHING THE PLAN INCLUDES, and minutes and messages used to be missing from it.
+    //
+    // The home bundle carries 300 minutes and 50 messages — the canvas's own numbers — and the card
+    // listed "20 GB" and stopped. A subscriber comparing it against a roaming package was comparing
+    // gigabytes against gigabytes while one of the two also included calls, which is the comparison
+    // the card exists to make and the one it was getting wrong by omission.
+    // The same base `UsageUnits` writes "20 GB" with. Spelled here rather than imported because the
+    // usage feature's copy is private to it — and named rather than written as 1024 at the call site,
+    // so the two cannot drift apart silently.
+    private const val MB_PER_GB = 1024L
+
     private fun quotas(plan: Plan): List<String> =
         buildList {
             if (plan.dataMb > 0) {
@@ -107,6 +129,8 @@ object PlansScreen {
                         .megabytes(plan.dataMb),
                 )
             }
+            if (plan.minutes > 0) add("${plan.minutes} min")
+            if (plan.messages > 0) add("${plan.messages} SMS")
             if (plan.validForDays > 0) add("${plan.validForDays} days once it starts")
         }
 }

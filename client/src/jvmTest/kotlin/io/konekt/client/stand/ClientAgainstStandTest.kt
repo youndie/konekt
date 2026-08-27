@@ -203,8 +203,18 @@ class ClientAgainstStandTest {
             waitUntil(timeoutMillis = 15_000) {
                 onAllNodesWithText("Plans").fetchSemanticsNodes().isNotEmpty()
             }
-            onNodeWithText("Home · 20 GB · 30 days").assertIsDisplayed()
+            // THE PLACE AND THE QUOTA ARE TWO NODES NOW, which is `B-57`: the card's title used to be
+            // the whole of "Home · 20 GB · 30 days" AND the quota again beneath it. Asserting both
+            // halves is what makes this about the card's shape rather than about one string.
+            // NOT asserted by the title alone: the card's title is now the PLACE, and "Home" is also
+            // the first tab's label — so a lookup by that word finds two nodes and says the screen is
+            // ambiguous rather than that it is wrong. The quota line is the card's own and appears
+            // once.
+            onNodeWithText("20 GB · 300 min · 50 SMS").assertIsDisplayed()
             onNodeWithText("$15").assertIsDisplayed()
+            // What a gigabyte costs, which the catalogue could not say before and which is the
+            // comparison a column of totals actively prevents.
+            onNodeWithText("$0.75 / GB").assertIsDisplayed()
 
             // AND IT IS A PLAN CARD, not a degradation block. `plan_card` had no renderer until B-45,
             // so a screen of them drew blocks — which would satisfy "the transition happened" and
@@ -247,9 +257,11 @@ class ClientAgainstStandTest {
             onNodeWithText("See plans").performClick()
 
             waitUntil(timeoutMillis = 15_000) {
-                onAllNodesWithText("Home · 20 GB · 30 days").fetchSemanticsNodes().isNotEmpty()
+                onAllNodesWithText("20 GB · 300 min · 50 SMS").fetchSemanticsNodes().isNotEmpty()
             }
-            onNodeWithText("Home · 20 GB · 30 days").performClick()
+            // Pressed by the quota line rather than by the title: "Home" is also the first tab's
+            // label, and a test that clicked it would sometimes be clicking the bottom bar.
+            onNodeWithText("20 GB · 300 min · 50 SMS").performClick()
 
             // THE DETAIL SCREEN FIRST, and this step is the point of it existing: pressing a card
             // used to create an order, so the catalogue was a page of buttons that charge you.

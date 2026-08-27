@@ -78,14 +78,30 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                     style = designSystem.resolveTypography(M3Typography.TitleMedium),
                     color = designSystem.resolveColor(if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.OnSurface),
                 )
-                Text(
-                    // A plan still being priced says so where the price goes, rather than showing a
-                    // stale number or an empty space. `LOADING` is on the wire precisely because only
-                    // the server knows the difference.
-                    text = if (loading) "…" else component.priceText,
-                    style = designSystem.resolveTypography(M3Typography.TitleMedium),
-                    color = designSystem.resolveColor(if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.Primary),
-                )
+                // THE PRICE AND WHAT A UNIT OF IT COSTS, stacked and right-aligned — which is what
+                // makes the second readable AS a comparison rather than as another number on the
+                // card. The canvas draws it exactly here.
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        // A plan still being priced says so where the price goes, rather than showing
+                        // a stale number or an empty space. `LOADING` is on the wire precisely because
+                        // only the server knows the difference.
+                        text = if (loading) "…" else component.priceText,
+                        style = designSystem.resolveTypography(M3Typography.TitleMedium),
+                        color = designSystem.resolveColor(if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.Primary),
+                    )
+                    // Not drawn while the price is unknown: a per-unit figure beside "…" would be a
+                    // number derived from one the server has said it does not have yet.
+                    if (!loading) {
+                        component.perUnitText?.let {
+                            Text(
+                                text = it,
+                                style = designSystem.resolveTypography(M3Typography.LabelSmall),
+                                color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                            )
+                        }
+                    }
+                }
             }
 
             component.zoneText?.let {
@@ -96,13 +112,24 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                 )
             }
 
-            component.quotaTexts.forEach { quota ->
-                Text(
-                    text = quota,
-                    style = designSystem.resolveTypography(M3Typography.BodyMedium),
-                    color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
-                )
-            }
+            // ONE LINE, JOINED, and it was one `Text` per entry. The canvas writes the quota as a
+            // single subtitle — "10 GB · 30 days · 5G" — and stacking them made a card as tall as the
+            // number of things a plan includes: adding minutes and messages to the home bundle turned
+            // it into five lines and pushed the next card off the screen.
+            //
+            // The SERVER still sends them apart, which is the right way round: they are separate
+            // facts, and gluing them into one string upstream would leave a client that wants a
+            // column with nothing to make one from. The separator is a rendering decision and lives
+            // where rendering decisions live.
+            component.quotaTexts
+                .takeIf { it.isNotEmpty() }
+                ?.let { quotas ->
+                    Text(
+                        text = quotas.joinToString(" · "),
+                        style = designSystem.resolveTypography(M3Typography.BodyMedium),
+                        color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                    )
+                }
 
             // The badge and the sold-out word are the same slot: a plan that is both on sale and sold
             // out has nothing to advertise.

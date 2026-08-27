@@ -94,6 +94,44 @@ object MoneyFormat {
     // to how this deployment writes its currency.
     fun symbol(currency: Currency): String = layouts[currency]?.symbol ?: error("no layout configured for $currency")
 
+    // A PRICE PER UNIT, and the rounding is the whole of why this is a function rather than a
+    // division at a call site.
+    //
+    // `Money` has no `div` on purpose — dividing money is a rounding decision, and one made
+    // implicitly is the one that loses a kopeck per transaction until somebody reconciles a month.
+    // That objection does not apply here and the difference is worth stating: **this figure is never
+    // charged.** It exists so a subscriber can compare a 5 GB plan against a 20 GB one, it is never
+    // summed, never held, never captured, and nobody's balance moves by it. Rounding a comparison
+    // aid to the currency's own minor unit costs nothing; refusing to draw one because the division
+    // is inexact would hide the comparison the canvas puts it there to make.
+    //
+    // HALF-UP on the minor unit, spelled with integers rather than with a Double: `1.005` is not
+    // representable, and a per-unit price that disagrees with itself between two platforms is worse
+    // than one that is a hundredth out.
+    fun perUnit(
+        total: Money,
+        units: Long,
+        unitLabel: String,
+    ): String? {
+        // Zero units is not a price of infinity, it is a plan that includes none of this — and the
+        // caller asking about a unit the plan does not carry is the ordinary case rather than a bug.
+        if (units <= 0) return null
+
+        // `(2a + b) / 2b`, which is half-up in integers and the first form of this was not: adding
+        // one only when there was a remainder rounds 2.5 DOWN, because an exact half has no
+        // remainder to notice. The case that caught it is the one a reviewer would skip — five over
+        // two — and it is in the tests for that reason.
+        //
+        // On the MAGNITUDE, with the sign restored: integer division truncates toward zero, so the
+        // same expression rounds a negative amount the other way and "half-up" would quietly mean
+        // "half-away-from-zero" for half the inputs. Nothing asks this for a negative price today;
+        // the day something does, it should not be a surprise.
+        val magnitude = if (total.minorUnits < 0) -total.minorUnits else total.minorUnits
+        val perUnitMinor = (2 * magnitude + units) / (2 * units)
+        val signed = if (total.minorUnits < 0) -perUnitMinor else perUnitMinor
+        return "${format(Money(signed, total.currency))} / $unitLabel"
+    }
+
     fun format(
         money: Money,
         // Whether a positive amount carries an explicit plus. A history row does — the canvas draws a

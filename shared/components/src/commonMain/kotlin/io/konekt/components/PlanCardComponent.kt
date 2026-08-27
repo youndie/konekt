@@ -25,8 +25,21 @@ data class PlanCardComponent(
     // is the only side that formats money in this product.
     val priceText: String,
     val quotaTexts: List<String> = emptyList(),
-    // "Turkey", "Home" — where the plan applies. Absent for a plan that applies everywhere the
-    // subscriber already is.
+    // WHAT A UNIT OF IT COSTS — "$1.20 / GB" — drawn under the price, which is where the canvas puts
+    // it and why it is a field of its own rather than another `quotaText`. Its whole job is to be
+    // read against the price above it.
+    //
+    // Formatted by the server like every other amount in this product (D15), and NULLABLE because a
+    // plan can carry nothing to divide by: a top-up of minutes has no gigabytes, and a card that
+    // said "$0.00 / GB" would be answering a question nobody asked.
+    val perUnitText: String? = null,
+    // "Works in Turkey" — where the plan applies, as a line under the title.
+    //
+    // NOTHING SENDS IT SINCE `B-57`, and it is kept rather than removed. The card's title is the
+    // place now — "Turkey", the way the canvas draws it — so a line saying where it works repeats the
+    // heading. The field stays because taking a name off the wire is a coordinated release of both
+    // sides for a screen nobody is asking to change, and because a deployment whose plans are not
+    // organised by place would want exactly this line back.
     val zoneText: String? = null,
     // "Popular", "Best value". Purely a marketing label, and separate from `state` because the two
     // are independent: a sold-out plan may still be the popular one.
