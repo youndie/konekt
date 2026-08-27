@@ -4,18 +4,39 @@ import io.konekt.domain.Money
 import io.konekt.domain.suspendRunCatching
 import kotlin.time.Instant
 
+// WHICH MOVEMENT A LINE IS, and the two are not the same row wearing a different sign.
+//
+// A purchase names a plan, has a status that can still change, and can be reversed. A top-up names
+// nothing, is over by the time it exists, and its only interesting state is whether it was taken
+// back. The screen draws them differently for that reason, and a boolean called `isCredit` would
+// hide it.
+enum class HistoryKind {
+    PURCHASE,
+    TOP_UP,
+}
+
 // One line of history.
 //
 // WHAT IS IN THE LIST, and it is a decision rather than a query: everything that MOVED MONEY. A
 // purchase refused in validation never held anything, so it is not here — there is nothing to
 // reconcile against a bank statement, and a list of refusals is a different screen answering a
-// different question.
+// different question. The same rule puts a top-up in: `credit` runs after the provider has settled,
+// so a top-up row exists exactly when money arrived.
 //
 // A compensated order IS here, with its reversal line. A history that quietly omitted what was undone
 // would be a history a subscriber cannot reconcile, which is the one job it has.
 data class HistoryEntry(
-    val orderId: String,
-    val title: String,
+    // The id a subscriber can quote — an order's or a top-up's. Both are saga ids and both are what
+    // the result screen shows, which is what makes the row and the screen quotable against each
+    // other.
+    val reference: String,
+    val kind: HistoryKind,
+    // The plan, for a purchase. `null` for a top-up, which names nothing — and nullable rather than
+    // an empty string so that a screen cannot accidentally look one up.
+    val planId: String?,
+    // SIGNED, straight from the ledger, and it used to be a magnitude the screen negated. That was
+    // fine while every line was a debit; with credits in the list a screen negating everything would
+    // draw a top-up as money leaving. Direction is a fact about the movement, so it travels with it.
     val amount: Money,
     val at: Instant,
     val status: OrderStatus,
@@ -26,16 +47,20 @@ data class HistoryEntry(
 // A keyset cursor, not an offset.
 //
 // An offset skips or repeats when a row lands above it between two pages, and history grows at
-// exactly the end a subscriber is reading from. The pair is (instant, order id): the instant orders
-// the list and the id breaks ties, because two purchases in one millisecond are not impossible and a
-// tie-break that is not total is a page boundary that loops.
+// exactly the end a subscriber is reading from. The pair is (instant, ledger row id): the instant
+// orders the list and the id breaks ties, because two movements in one millisecond are not
+// impossible and a tie-break that is not total is a page boundary that loops.
+//
+// THE LEDGER ROW'S ID AND NOT THE ORDER'S, since the list became one query over the ledger. They
+// coincide for a purchase and a top-up alike today — one driving row each — and the ledger's own key
+// is the one that stays total if that ever stops being true.
 data class HistoryCursor(
     val before: Instant,
-    val orderId: String,
+    val id: String,
 ) {
     // Opaque on the wire — it is this server's business how a page is addressed, and a client that
     // could construct one would be a client depending on the shape of a query.
-    fun encode(): String = "${before.toEpochMilliseconds()}:$orderId"
+    fun encode(): String = "${before.toEpochMilliseconds()}:$id"
 
     companion object {
         fun decode(raw: String?): HistoryCursor? {

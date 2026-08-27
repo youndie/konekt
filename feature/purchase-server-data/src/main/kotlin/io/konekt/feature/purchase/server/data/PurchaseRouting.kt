@@ -49,7 +49,9 @@ fun Route.purchaseRoutes() {
     suspend fun titlesFor(page: HistoryPage): HistoryScreen.PlanTitles {
         val byId =
             page.entries
-                .map { it.title }
+                // A top-up names no plan, so it contributes no lookup — `mapNotNull` rather than a
+                // placeholder id, which would be one catalogue miss per credit.
+                .mapNotNull { it.planId }
                 .distinct()
                 .associateWith { plans.find(it)?.title }
         return HistoryScreen.PlanTitles { planId -> byId[planId] ?: planId }

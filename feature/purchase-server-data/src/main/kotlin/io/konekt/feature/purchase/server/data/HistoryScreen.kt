@@ -9,6 +9,7 @@ import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.feature.purchase.server.domain.HistoryEntry
+import io.konekt.feature.purchase.server.domain.HistoryKind
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.money.DayFormat
@@ -82,14 +83,23 @@ object HistoryScreen {
         titles: PlanTitles,
     ): OrderRowComponent =
         OrderRowComponent(
-            id = "history-${entry.orderId}",
-            reference = entry.orderId.take(8),
-            title = titles.of(entry.title),
+            id = "history-${entry.reference}",
+            reference = entry.reference.take(8),
+            // A TOP-UP NAMES NOTHING, so the row names the movement. The canvas writes it as
+            // "Top-up · 1 000 ₽" — the amount is already the column beside it, so the title is the
+            // word alone; a plan title would be a lookup with nothing to find.
+            title =
+                when (entry.kind) {
+                    HistoryKind.PURCHASE -> entry.planId?.let(titles::of) ?: entry.reference.take(8)
+                    HistoryKind.TOP_UP -> "Top-up"
+                },
             dateText = DayFormat.dayAndMonth(entry.at),
-            // The debit, always, even on a compensated order. The row says what left; the note says
-            // it came back. Netting the two to zero would make a reversal invisible, which is the one
-            // thing this screen must not do.
-            amountText = MoneyFormat.format(-entry.amount, signed = true),
+            // SIGNED AS THE LEDGER WROTE IT, and this line used to negate. Negating was right while
+            // every row was a debit and became wrong the moment credits joined the list: a top-up
+            // would have been drawn as money leaving. What is NOT netted is a reversal — the row says
+            // what moved and the note says it came back, because netting them to zero makes a
+            // reversal invisible, which is the one thing this screen must not do.
+            amountText = MoneyFormat.format(entry.amount, signed = true),
             // NO `else`, in both `when`s below. `OrderStatus` is an enum, so an exhaustive when makes
             // a value added there and not thought about here a compile error — which is how this
             // repository prefers to be told. The `else` that used to be here drew a REJECTED order as
@@ -106,26 +116,57 @@ object HistoryScreen {
                 },
             statusText =
                 when (entry.status) {
-                    OrderStatus.COMPLETED -> "Paid"
+                    // "Paid" is a word about money LEAVING, and a credit borrowing it reads as a
+                    // charge on the one screen a subscriber reconciles against their bank. The two
+                    // terminal states are the only ones that differ: everything below is about a
+                    // saga's progress, which is the same question whichever way the money was going.
+                    OrderStatus.COMPLETED -> {
+                        when (entry.kind) {
+                            HistoryKind.PURCHASE -> "Paid"
+                            HistoryKind.TOP_UP -> "Added"
+                        }
+                    }
 
-                    OrderStatus.COMPENSATED -> "Reversed"
+                    OrderStatus.COMPENSATED -> {
+                        when (entry.kind) {
+                            HistoryKind.PURCHASE -> "Reversed"
+                            HistoryKind.TOP_UP -> "Taken back"
+                        }
+                    }
 
                     // What a subscriber can act on, rather than what petich calls it. "Refused" says
                     // the operation is over; "Awaiting confirmation" said the opposite.
-                    OrderStatus.REJECTED -> "Refused"
+                    OrderStatus.REJECTED -> {
+                        "Refused"
+                    }
 
                     // Deliberately not "failed". This is the state a person has to look at, and the
                     // honest thing to tell a subscriber is that somebody is.
-                    OrderStatus.COMPENSATING -> "Being reversed"
+                    OrderStatus.COMPENSATING -> {
+                        "Being reversed"
+                    }
 
-                    OrderStatus.PENDING -> "In progress"
+                    OrderStatus.PENDING -> {
+                        "In progress"
+                    }
 
-                    OrderStatus.AWAITING_CONFIRMATION -> "Awaiting confirmation"
+                    OrderStatus.AWAITING_CONFIRMATION -> {
+                        "Awaiting confirmation"
+                    }
                 },
             noteText =
                 entry.reversal?.let {
-                    "${MoneyFormat.format(it.amount)} returned to balance on ${DayFormat.dayAndMonth(it.at)}" +
-                        " — nothing was activated."
+                    val what = MoneyFormat.format(it.amount)
+                    val day = DayFormat.dayAndMonth(it.at)
+                    when (entry.kind) {
+                        HistoryKind.PURCHASE -> "$what returned to balance on $day — nothing was activated."
+
+                        // A top-up reversed is the opposite direction and must not borrow the
+                        // purchase's sentence: nothing was "returned to balance" — it was taken back
+                        // out of it, and a subscriber reading the wrong one goes looking for money
+                        // that is not there.
+                        HistoryKind.TOP_UP -> "$what was taken back on $day — the payment did not settle."
+                    }
                 },
         )
 }

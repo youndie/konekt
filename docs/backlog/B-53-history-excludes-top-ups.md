@@ -1,7 +1,7 @@
 ---
 id: B-53
 title: "History reads entitlements, so the top-up the button beside it starts will never appear"
-status: open
+status: done
 priority: P1
 size: M
 stage: stage-m3-product
@@ -35,3 +35,35 @@ second does not show what the first does.
 - Anchors:
   `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/ExposedHistoryRepository.kt`,
   `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/History.kt`.
+
+## What landed
+
+**The list is driven by the ledger, not by the entitlement.** One query, one driving row per
+movement: a purchase writes exactly one `hold` and a top-up exactly one `top_up`. `capture` and
+`release` are consequences of a movement rather than movements, so they are joined to; `decline` is
+zero-sum and moved nothing to reconcile. The keyset stays over one table, which is what makes it
+honest — the union of two queries pages each source separately and a boundary falling between them
+either repeats a row or drops one.
+
+**The purchase rows are provably the same set as before.** `HoldFundsInterceptor` writes the hold and
+the pending entitlement together, so a hold without an entitlement cannot exist. That is why the
+driver could move without the screen changing for anything that was already on it.
+
+**Three things had to stop being true of the screen**, and each was right until credits joined:
+- the amount was negated on every row — a credit drawn as `−$25` is the opposite of what happened, on
+  the one screen a subscriber reconciles against a bank statement. The ledger's sign travels with the
+  entry now;
+- the reversal sentence said "returned to balance", which for a taken-back top-up is backwards —
+  the money left the balance, and somebody reading the purchase's sentence goes looking for an amount
+  that is not there;
+- `Paid` is a word about money leaving. A credit says `Added`, and a reversed one `Taken back`.
+
+**The fixture had to become honest before the tests could run.** `HistoryPagingTest.order()` wrote an
+entitlement and no ledger row — a purchase that reserved nothing, which the product cannot produce.
+It went unnoticed while the query read entitlements. A fixture that cannot be built the way the
+product builds it was never testing the product.
+
+Verified on the stand: two top-ups and three purchases, newest first, in one list with the right
+signs and words.
+
+**Not done here:** the filter chips, which are [B-58](B-58-orders-filters.md).

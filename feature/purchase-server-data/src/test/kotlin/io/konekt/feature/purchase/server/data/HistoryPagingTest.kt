@@ -121,7 +121,7 @@ class HistoryPagingTest {
 
             do {
                 val page = load(LoadHistoryUseCase.Params(subscriberId, cursor, limit = 3)).getOrThrow()
-                seen += page.entries.map { it.orderId }
+                seen += page.entries.map { it.reference }
                 cursor = page.next?.encode()
                 pages++
                 assertTrue(pages <= 10, "the walk did not terminate — it is looping over $seen")
@@ -173,6 +173,69 @@ class HistoryPagingTest {
             assertTrue(theirs.entries.isEmpty())
         }
 
+    // THE CASE THIS LIST COULD NOT SHOW, and it could not for a whole release: a top-up creates no
+    // entitlement, the list was driven by entitlements, and the `Top up` button sits beside the
+    // `History` button that would not show what it did.
+    @Test
+    fun `a top-up is a line, and it reads as money arriving`() =
+        runBlocking {
+            val topUpId = topUp(at = 1_719_532_800_000)
+
+            val screen =
+                HistoryScreen.build(
+                    load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow(),
+                    PLAN_IDS_AS_TITLES,
+                )
+            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+
+            assertEquals(topUpId.take(8), row.reference)
+            assertEquals("Top-up", row.title, "the row went looking for a plan a top-up does not have")
+            // THE SIGN IS THE ASSERTION. The screen used to negate every amount, which was right
+            // while every line was a debit; a credit drawn as "−$25" is the opposite of what
+            // happened, on the one screen a subscriber reconciles against a bank statement.
+            assertEquals("+$25", row.amountText)
+            assertEquals(OrderStatuses.COMPLETED, row.status)
+            assertEquals("Added", row.statusText, "a credit was labelled with a word about money leaving")
+            assertNull(row.noteText)
+        }
+
+    @Test
+    fun `a top-up taken back does not borrow the purchase's sentence`() =
+        runBlocking {
+            topUp(at = 1_719_532_800_000, reversedAt = 1_719_619_200_000)
+
+            val page = load(LoadHistoryUseCase.Params(subscriberId, null)).getOrThrow()
+            val screen = HistoryScreen.build(page, PLAN_IDS_AS_TITLES)
+            val row = (screen as PaginatedListComponent).initialItems.single() as OrderRowComponent
+
+            assertEquals(OrderStatuses.COMPENSATED, row.status)
+            assertEquals("Taken back", row.statusText)
+            // "returned to balance" would be the exact opposite: the money was taken OUT of it, and a
+            // subscriber reading the purchase's sentence goes looking for an amount that is not there.
+            assertEquals("$25 was taken back on 29 Jun — the payment did not settle.", row.noteText)
+        }
+
+    @Test
+    fun `purchases and top-ups are one list in one order`() =
+        runBlocking {
+            // Interleaved on purpose, and the middle one is the point: a union of two queries pages
+            // each source separately, so a boundary that falls between them either repeats the
+            // purchase or drops the top-up.
+            val first = topUp(at = 1_719_532_800_000)
+            val second = order(at = 1_719_532_800_001, status = Entitlement.ACTIVE, reversedAt = null)
+            val third = topUp(at = 1_719_532_800_002)
+
+            val seen = mutableListOf<String>()
+            var cursor: String? = null
+            do {
+                val page = load(LoadHistoryUseCase.Params(subscriberId, cursor, limit = 2)).getOrThrow()
+                seen += page.entries.map { it.reference }
+                cursor = page.next?.encode()
+            } while (cursor != null)
+
+            assertEquals(listOf(third, second, first), seen, "newest first, one list, each row once")
+        }
+
     @Test
     fun `a cursor survives being written down and read back`() {
         val cursor = HistoryCursor(kotlin.time.Instant.fromEpochMilliseconds(1_719_532_800_000), "order-1")
@@ -184,6 +247,13 @@ class HistoryPagingTest {
         assertNull(HistoryCursor.decode(null))
     }
 
+    // THE HOLD IS NOT OPTIONAL HERE, and it used to be absent.
+    //
+    // This fixture wrote an entitlement and no ledger row, which was a half-real order: the product
+    // writes both in one interceptor (`HoldFundsInterceptor`), because a purchase that reserved
+    // nothing is not a purchase. The list is driven by the ledger now, so the omission stopped being
+    // harmless — and a fixture that cannot be built the way the product builds it was never testing
+    // the product.
     private fun order(
         at: Long,
         status: String,
@@ -203,19 +273,47 @@ class HistoryPagingTest {
                 it[currency] = price.currency.name
                 it[createdAt] = at
             }
+            ledger(theAccountId, orderId, LedgerEntryTable.HOLD, -price.minorUnits, at)
             reversedAt?.let { moment ->
-                LedgerEntryTable.insert {
-                    it[id] = Uuid.random().toString()
-                    it[accountId] = theAccountId
-                    it[LedgerEntryTable.orderId] = orderId
-                    it[kind] = LedgerEntryTable.RELEASE
-                    it[amountMinor] = price.minorUnits
-                    it[currency] = price.currency.name
-                    it[createdAt] = moment
-                }
+                ledger(theAccountId, orderId, LedgerEntryTable.RELEASE, price.minorUnits, moment)
             }
         }
         return orderId
+    }
+
+    // MONEY IN, and it has no entitlement — which is the whole reason no top-up was ever a row.
+    private fun topUp(
+        at: Long,
+        amount: Money = Money.ofMajor(25, Currency.DEFAULT),
+        reversedAt: Long? = null,
+    ): String {
+        val topUpId = Uuid.random().toString()
+        val theAccountId = accountId
+        transaction(PostgresHarness.database) {
+            ledger(theAccountId, topUpId, LedgerEntryTable.TOP_UP, amount.minorUnits, at)
+            reversedAt?.let { moment ->
+                ledger(theAccountId, topUpId, LedgerEntryTable.TOP_UP_REVERSAL, -amount.minorUnits, moment)
+            }
+        }
+        return topUpId
+    }
+
+    private fun ledger(
+        theAccountId: String,
+        reference: String,
+        kind: String,
+        amountMinor: Long,
+        at: Long,
+    ) {
+        LedgerEntryTable.insert {
+            it[id] = Uuid.random().toString()
+            it[accountId] = theAccountId
+            it[orderId] = reference
+            it[LedgerEntryTable.kind] = kind
+            it[LedgerEntryTable.amountMinor] = amountMinor
+            it[currency] = price.currency.name
+            it[createdAt] = at
+        }
     }
 }
 
