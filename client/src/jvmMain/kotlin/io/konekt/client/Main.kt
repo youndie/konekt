@@ -117,7 +117,13 @@ fun main() {
                 // its own subscriber id at all. `UpdateSessionAction` does not carry one, which is why
                 // the e2e stand reads it out of the database.
                 topic = "konekt-session",
-                darkMode = false,
+                // A CLIENT SETTING, and the profile screen says why it is one: which palette to
+                // draw is decided where the drawing happens, so a server-driven row for it would be
+                // this product's one piece of state the server holds and cannot act on.
+                //
+                // An environment variable rather than a control, because the application has no
+                // settings screen and inventing one to test a palette is a feature. `KONEKT_DARK=true`.
+                darkMode = System.getenv("KONEKT_DARK") == "true",
                 // THE ONE TRANSITION THIS BUILD HAS. The home screen's banner offers "See plans" and
                 // the deeplink is spelled once, in the shared module both sides read.
                 routes =

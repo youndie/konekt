@@ -1,10 +1,13 @@
 package io.konekt.client.app
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -18,10 +21,12 @@ import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
+import io.github.youndie.kompot.LocalKompotDesignSystem
 import io.github.youndie.kompot.LocalKompotPageLoader
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
+import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
@@ -182,13 +187,38 @@ fun KonektApp(
             // end. `B-51`.
             val shell = remember(screen) { (screen as? Screen.Tree)?.component?.withoutShell() }
 
-            Column(modifier = Modifier.fillMaxSize()) {
+            // PAINTED, and it was not. `KompotScreen` paints the area it draws in and nothing painted
+            // the rest, so the margin around the content and the strip behind the bar were whatever
+            // the window happened to be — patches of two colours on one screen, and worse in dark.
+            // A frame that owns the window owns its ground.
+            //
+            // RESOLVED THROUGH THE DESIGN SYSTEM, not read off MaterialTheme. Every renderer in this
+            // client asks the design system for its colours, and the served brand kit is what answers
+            // — a ground taken from anywhere else is the one surface in the application a brand
+            // cannot repaint.
+            val content = (screen as? Screen.Tree)?.component ?: shell?.content
+
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(LocalKompotDesignSystem.current.resolveColor(M3Colors.Surface)),
+            ) {
                 Box(
                     modifier =
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                            // SCROLLED HERE, because nothing below does — see `carriesItsOwnScroll`
+                            // for the one case where the frame must keep out of the way, and for why
+                            // a screen taller than the window used to be simply cut off.
+                            .then(
+                                if (content?.carriesItsOwnScroll() == true) {
+                                    Modifier
+                                } else {
+                                    Modifier.verticalScroll(rememberScrollState())
+                                },
+                            ).padding(horizontal = 20.dp, vertical = 16.dp),
                 ) {
                     when {
                         // The tree with its bar taken out. Rendered through the source like any

@@ -2,6 +2,8 @@ package io.konekt.client.app
 
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.PaginatedListComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.BottomNavComponent
 
 // TAKING THE BAR OUT OF THE TREE IT ARRIVED IN.
@@ -38,3 +40,25 @@ fun KompotComponent.withoutShell(): ScreenAndShell {
         else -> ScreenAndShell(root.copy(children = root.children - nav.first()), nav.first())
     }
 }
+
+// WHETHER THE FRAME MAY SCROLL THE SCREEN FOR IT.
+//
+// Nothing in this application scrolled. `KompotScreen` does not, `ColumnRenderer` does not, and a
+// screen taller than the window was simply cut off — which nobody had noticed while the tallest
+// screen was a balance and one counter. The frame is the one place that can add it, because it is
+// the one place that owns the window.
+//
+// IT CANNOT ALWAYS. A `paginated_list` is a lazy column, and a lazy column inside a vertical scroll
+// is measured with an infinite maximum height — Compose throws rather than draws. So a tree that
+// carries one scrolls ITSELF and the frame keeps out of the way; everything else gets the scroll it
+// never had.
+//
+// The whole tree is searched rather than the root's children, and here that is the right depth: a
+// lazy list nested anywhere in the tree breaks a scroll wrapped around all of it.
+fun KompotComponent.carriesItsOwnScroll(): Boolean =
+    when (this) {
+        is PaginatedListComponent -> true
+        is ColumnComponent -> children.any { it.carriesItsOwnScroll() }
+        is RowComponent -> children.any { it.carriesItsOwnScroll() }
+        else -> false
+    }
