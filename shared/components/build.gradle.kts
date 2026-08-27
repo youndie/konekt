@@ -16,11 +16,14 @@ kotlin {
             api(libs.kompot.core)
             implementation(libs.kompot.registryAnnotations)
             api(libs.kotlinx.serialization.json)
-        }
-        commonTest.dependencies {
-            // The standard set is a test dependency rather than a main one: konekt's own components
-            // never embed a toolkit component in their own fields, but the round-trip tests build a
-            // realistic tree — a column of cards — which is the shape a screen actually has.
+            // THE STANDARD SET MOVED HERE FROM `commonTest`, and the comment it replaces is worth
+            // keeping as the reason rather than deleting. It said the standard vocabulary was a test
+            // dependency because "konekt's own components never embed a toolkit component in their
+            // own fields" — true of all nine leaves, and no longer the whole picture: `surface` is a
+            // container, and `konektWalk` beside it has to know which of BOTH halves nest.
+            //
+            // The walk is the only thing in `commonMain` that names a toolkit component, and it names
+            // them to descend into them rather than to hold one.
             implementation(libs.kompot.standard)
         }
     }

@@ -11,6 +11,7 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.UsageCounterCardComponent
+import io.konekt.components.konektWalk
 import io.konekt.devScreensRouteGroup
 import io.konekt.konektRoutes
 import kotlinx.serialization.json.Json
@@ -65,7 +66,7 @@ class ForwardCompatScreenTest {
         // what makes it draw the LINE density while its sibling in the column draws a CARD — so a
         // check that only looks at the column's own children finds one of two and reports the screen
         // as half broken. The nesting IS the feature here.
-        val unknown = asClientSees().walk().filterIsInstance<UnknownComponent>()
+        val unknown = asClientSees().konektWalk().filterIsInstance<UnknownComponent>()
 
         assertEquals(2, unknown.size, "expected both dev components to arrive unknown")
         // The type name survives, which is what lets the block say what it could not draw and what
@@ -81,7 +82,7 @@ class ForwardCompatScreenTest {
         // The claim the screen exists for, and the reason it has known neighbours above and below. A
         // screen containing only the unknown component would look identical whether the rest of the
         // tree survived or not.
-        val counters = asClientSees().walk().filterIsInstance<UsageCounterCardComponent>()
+        val counters = asClientSees().konektWalk().filterIsInstance<UsageCounterCardComponent>()
 
         assertEquals(2, counters.size, "the known neighbours did not survive")
         assertEquals("9.7 GB left", counters.first().valueText)
@@ -101,13 +102,6 @@ class ForwardCompatScreenTest {
     }
 }
 
-// Walks the containers this screen actually builds. A `row` is one of them since the two blocks were
-// separated into the two densities, and a walker that stopped at the column would have counted the
-// nested one as missing.
-private fun KompotComponent.walk(): List<KompotComponent> =
-    listOf(this) +
-        when (this) {
-            is ColumnComponent -> children.flatMap { it.walk() }
-            is RowComponent -> children.flatMap { it.walk() }
-            else -> emptyList()
-        }
+// THE WALK IS `konektWalk`, beside the dictionary. The copy that was here recorded its own near-miss
+// in a comment — "a walker that stopped at the column would have counted the nested one as missing" —
+// which is the whole of `B-63` written down by somebody who had just been bitten and kept the copy.

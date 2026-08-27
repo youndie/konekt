@@ -7,8 +7,8 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.client.net.konektClientJson
-import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
+import io.konekt.components.konektWalk
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -26,24 +26,12 @@ class RecordedScreenIsRealTest {
             }.bufferedReader().use { it.readText() },
         )
 
-    // EVERY CONTAINER, and the list is exhaustive by hand because there is no `children` on
-    // `KompotComponent` — nesting is a convention of each type rather than a property of the
-    // interface. That makes this exactly the kind of list that goes stale without failing, and it
-    // did: the day the balance became a `surface`, this walk stopped seeing the amount and reported
-    // "no formatted amount in the recording" about a recording that had one. A missing container
-    // here does not break the test, it makes it look at less — which is the worse failure.
-    private fun KompotComponent.walk(): List<KompotComponent> =
-        listOf(this) +
-            when (this) {
-                is ColumnComponent -> children.flatMap { it.walk() }
-                is RowComponent -> children.flatMap { it.walk() }
-                is SurfaceComponent -> children.flatMap { it.walk() }
-                else -> emptyList()
-            }
-
+    // THE WALK IS `konektWalk`, beside the dictionary, and this file kept its own — which stopped
+    // seeing the amount the day the balance became a `surface`, and reported "no formatted amount in
+    // the recording" about a recording that had one.
     @Test
     fun `this build can draw every component the server sent`() {
-        val unknown = tree.walk().filterIsInstance<UnknownComponent>()
+        val unknown = tree.konektWalk().filterIsInstance<UnknownComponent>()
 
         // Not "the golden is not blank" — a screen of two degradation blocks is not blank either.
         assertEquals(
@@ -57,7 +45,7 @@ class RecordedScreenIsRealTest {
     @Test
     fun `it carries text only the server could have composed`() {
         val texts =
-            tree.walk().mapNotNull {
+            tree.konektWalk().mapNotNull {
                 when (it) {
                     is TextComponent -> it.text
                     is UsageCounterCardComponent -> it.valueText

@@ -41,13 +41,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (10)
+## Open (9)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[~]` | Four screens and no way between them except a banner | P1 | L | - |
 | [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[~]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
-| [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[ ]` | Four hand-kept lists of which components nest, and each goes stale by looking at less | P1 | S | - |
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
 | [B-55](docs/backlog/B-55-home-header.md) `[?]` | The home screen has no header, and the two things a header names are not in the domain | P2 | S | - |
 | [B-57](docs/backlog/B-57-plans-catalogue-against-section-02.md) `[ ]` | The catalogue has no filters, no per-unit price, one badge for every plan and no loading state | P2 | M | - |
@@ -56,7 +55,7 @@ so re-prioritising must never move a file.
 | [B-60](docs/backlog/B-60-counter-copy-and-grouping.md) `[?]` | The canvas states a counter as used-of-total and groups the three under the plan; we do neither | P2 | M | - |
 | [B-61](docs/backlog/B-61-doc-says-two-renderers-of-nine.md) `[ ]` | The design document says the client renders two of the nine components; it renders all nine | P3 | XS | - |
 
-## Closed (53)
+## Closed (54)
 
 **The wire and the shell**
 
@@ -121,6 +120,7 @@ so re-prioritising must never move a file.
 - [B-44](docs/backlog/B-44-undrawable-components-are-invisible.md) `[x]` - A component that decodes and cannot be drawn is invisible from every guard
 - [B-56](docs/backlog/B-56-unreachable-screen-guard.md) `[x]` - Nothing fails when a screen the server serves is the destination of no action anywhere
 - [B-62](docs/backlog/B-62-the-stand-shared-ports-with-the-machine.md) `[x]` - Three tests accused the services that were working; a local daemon held their ports
+- [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[x]` - Five hand-kept lists of which components nest, and each goes stale by looking at less
 
 **Upstream and the box**
 
