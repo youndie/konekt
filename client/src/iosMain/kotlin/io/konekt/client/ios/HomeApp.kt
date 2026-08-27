@@ -4,6 +4,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
+import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
@@ -109,7 +110,7 @@ fun homeViewController(): UIViewController {
                 // about purchases is this application's holder rather than a reusable one. What
                 // comes back is the order screen's address, and the holder moves to it exactly as
                 // it moves for a `navigate`.
-                buy.addressFor(action) ?: run {
+                buy.addressFor(action)?.let(Destination::next) ?: run {
                     println("konekt-ios: no handler for $action")
                     null
                 }

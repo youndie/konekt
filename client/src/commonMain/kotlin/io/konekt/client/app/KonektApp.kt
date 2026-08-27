@@ -64,7 +64,34 @@ object KonektApp {
     val RECORDS_NOTHING: (KonektDegradation) -> Unit = { }
 
     // Named for the same reason: a deployment that handles no action should be one that chose to.
-    val HANDLES_NOTHING: suspend (KompotAction) -> String? = { null }
+    val HANDLES_NOTHING: suspend (KompotAction) -> Destination? = { null }
+}
+
+// WHERE AN ACTION LEFT THE SUBSCRIBER, and how much of the history that answer survives.
+//
+// A bare address could not say the second half, and the difference is not cosmetic. Signing in and
+// confirming a purchase both answer with an address, and back must behave in OPPOSITE ways: the
+// order screen you confirmed on still sits above the catalogue you came from, while the home screen
+// you signed in to sits above nothing at all — a back control there returns to a login already used,
+// and the mirror of it returns to a home screen whose token has just been cleared.
+//
+// The holder cannot tell the two apart, and must not learn how: a screen holder that knew what a
+// session was would be this application's holder rather than a reusable one. So the runner, which
+// already knows — it is the thing that adopts and drops the tokens — says which of the two this is.
+data class Destination(
+    val address: String,
+    val startsOver: Boolean,
+) {
+    companion object {
+        // A STEP. The screen it came from is replaced rather than pushed behind: an action that
+        // answered with an address ENDED somewhere, so back belongs to whatever was under it.
+        fun next(address: String): Destination = Destination(address, startsOver = false)
+
+        // A BOUNDARY. Nothing before this is reachable, and nothing before it should be: on one side
+        // of a sign-in or a sign-out the tokens are different, so every address behind it answers to
+        // a session that no longer exists.
+        fun startOver(address: String): Destination = Destination(address, startsOver = true)
+    }
 }
 
 @Composable
@@ -98,7 +125,7 @@ fun KonektApp(
     // `null` means the action was handled and moves nothing, or was not handled at all. A handler that
     // silently did nothing would make a button with no handler indistinguishable from one whose
     // handler is missing.
-    onAction: suspend (KompotAction) -> String? = KonektApp.HANDLES_NOTHING,
+    onAction: suspend (KompotAction) -> Destination? = KonektApp.HANDLES_NOTHING,
 ) {
     // THE ADDRESS IS STATE NOW, seeded from the parameter. `remember(address)` on the seed rather
     // than `remember { }`: a caller that changes the address it passes still moves the holder, which
@@ -169,11 +196,23 @@ fun KonektApp(
         val action = pending ?: return@LaunchedEffect
         onAction(action)?.let { destination ->
             updates.clear()
-            // REPLACING THE TOP rather than pushing, and this is the one place the difference shows.
-            // An action that answers with an address ENDED somewhere — a purchase confirmed, a
-            // session adopted — and pushing would put the screen it came from behind it, so back
-            // would return to a plan already bought or a login already used.
-            stack = if (destination == current) stack else stack.pop().push(destination)
+            stack =
+                when {
+                    // NOTHING BEHIND IT. `pop()` on a stack of one returns the stack unchanged — the
+                    // toolkit refuses to leave it empty — so the branch below turned the login screen
+                    // into the home screen's parent and put a back control on a tab. The mirror of it
+                    // put the just-signed-out home screen behind the login screen, one press from a
+                    // 401.
+                    destination.startsOver -> NavigationBackStack(destination.address)
+
+                    // Where we already are: confirming an order ends on the order's own screen.
+                    destination.address == current -> stack
+
+                    // REPLACING THE TOP rather than pushing. An action that answers with an address
+                    // ENDED somewhere — a purchase confirmed — and pushing would put the screen it
+                    // came from behind it, so back would return to a plan already bought.
+                    else -> stack.pop().push(destination.address)
+                }
             // Always, even when the destination is where we already are. What changed is the state
             // behind the address, and only the server knows it.
             reloads += 1

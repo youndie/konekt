@@ -5,6 +5,7 @@ import androidx.compose.ui.window.application
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
+import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
@@ -152,7 +153,11 @@ fun main() {
                         // other transition does.
                         action is UpdateSessionAction -> {
                             session.adopt(SessionTokens(action.accessToken, action.refreshToken))
-                            homeAddress()
+                            // START OVER, and the login screen is the reason. It is where this
+                            // application opens, so it is the bottom of the stack — replacing the top
+                            // left it underneath the home screen, which put a back control on a tab
+                            // and pointed it at a code already spent.
+                            Destination.startOver(homeAddress())
                         }
 
                         // LEAVING. The order is the whole of it: tell the server FIRST, while the
@@ -165,13 +170,15 @@ fun main() {
                         action is SignOutAction -> {
                             suspendRunCatching { http.post(AuthSession.Logout()) }
                             session.clear()
-                            addressOf<LoginScreenResource>()
+                            // The same boundary from the other side, and worse if it is missed: back
+                            // from here would return to a screen whose token this line just dropped.
+                            Destination.startOver(addressOf<LoginScreenResource>())
                         }
 
                         // BUYING, for the same reason: a holder with an opinion about purchases is
                         // this application's holder rather than a reusable one.
                         else -> {
-                            buy.addressFor(action) ?: run {
+                            buy.addressFor(action)?.let(Destination::next) ?: run {
                                 println("konekt: no handler for $action")
                                 null
                             }

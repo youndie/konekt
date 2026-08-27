@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
+import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.net.konektClientJson
@@ -93,7 +94,7 @@ class LoginStandTest {
                     onAction = { action ->
                         if (action is UpdateSessionAction) {
                             session.adopt(SessionTokens(action.accessToken, action.refreshToken))
-                            "/api/v1/screens/home"
+                            Destination.startOver("/api/v1/screens/home")
                         } else {
                             null
                         }

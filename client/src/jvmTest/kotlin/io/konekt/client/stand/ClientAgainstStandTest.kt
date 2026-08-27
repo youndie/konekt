@@ -9,6 +9,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
+import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektDegradation
 import io.konekt.client.app.KonektScreenSource
@@ -236,7 +237,7 @@ class ClientAgainstStandTest {
                     topic = "stand",
                     darkMode = false,
                     routes = mapOf(PLANS_DEEPLINK to "/api/v1/screens/plans"),
-                    onAction = { action -> buy.addressFor(action) },
+                    onAction = { action -> buy.addressFor(action)?.let(Destination::next) },
                 )
             }
 
