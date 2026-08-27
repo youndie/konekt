@@ -14,7 +14,7 @@ A copy of the canvas markup is kept beside this document as
 [`konekt-esim-app.dc.html`](konekt-esim-app.dc.html); it needs the project's `support.js` to render,
 so the canvas link above is the live one and the copy is the record.
 
-Eight sections, 393×852, light and dark side by side, every state as its own frame:
+Nine sections, 393×852, light and dark side by side, every state as its own frame:
 
 | # | Section | What it fixes |
 |---|---|---|
@@ -26,6 +26,15 @@ Eight sections, 393×852, light and dark side by side, every state as its own fr
 | 06 | Component dictionary — all states | every control in every state, including the unknown-component block |
 | 07 | App icon — sketches | vector sketches, explicitly not finished artwork |
 | 08 | Brand B parity | the same markup on an ink palette with tighter radii |
+| 09 | Login & SMS code | the two steps as the server already builds them, plus one richer frame the canvas prices rather than specifies |
+
+**Section 09 was added after `B-46` shipped the screen, and it is drawn FROM the code.** Five of its
+nine frames are `LoginScreens.kt` rendered out with the server's own strings, which makes them a
+record rather than a request — they were checked against the source and match. The last frame is
+labelled *"needs client work — do not read as a spec"* and prices four additions instead of
+demanding them. Two of those prices are too high, because `TextInputComponent` already carries
+`placeholder` and `mask`; see [B-50](../backlog/B-50-login-frame-six.md), which is where the
+corrections live.
 
 ## What the canvas already knows about the stack
 

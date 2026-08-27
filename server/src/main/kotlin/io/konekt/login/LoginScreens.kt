@@ -75,6 +75,19 @@ object LoginScreens {
                                     id = "login-msisdn",
                                     fieldId = MSISDN,
                                     label = "Phone number",
+                                    // AN EXAMPLE, AND NOT A MASK. `TextInputComponent` carries both
+                                    // — `mask` was the obvious way to get the grouped shape the
+                                    // canvas draws — and a mask here would REFUSE every number that
+                                    // does not fit it. `Msisdn.parse` takes seven to fifteen digits
+                                    // from any country on purpose, and a white-label product whose
+                                    // sign-in field only accepts one country's numbers is broken for
+                                    // exactly the operator who bought it.
+                                    //
+                                    // The example itself is deployment-specific in the same way the
+                                    // currency is: it says which country this instance expects. It
+                                    // is a hint rather than a constraint, so being wrong about it
+                                    // costs a reader a moment instead of costing them the product.
+                                    placeholder = "+7 999 120-45-67",
                                 ),
                             )
                             add(
