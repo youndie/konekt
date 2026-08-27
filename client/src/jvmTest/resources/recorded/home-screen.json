@@ -3,6 +3,13 @@
   "id": "home",
   "children": [
     {
+      "type": "text",
+      "id": "home-brand",
+      "text": "Konekt",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
       "type": "surface",
       "id": "balance",
       "children": [
@@ -23,7 +30,7 @@
         {
           "type": "text",
           "id": "balance-msisdn",
-          "text": "+79995550707",
+          "text": "+79995551515",
           "style": "body_medium",
           "color": "on_primary_container"
         },

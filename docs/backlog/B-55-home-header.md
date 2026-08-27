@@ -1,7 +1,7 @@
 ---
 id: B-55
 title: "The home screen has no header, and the two things a header names are not in the domain"
-status: question
+status: done
 priority: P2
 size: S
 stage: stage-m3-product
@@ -34,3 +34,26 @@ Both halves are missing data rather than missing layout:
   `docs/design/design-app-canvas.md` records that this build serves no header and why.
 - Anchors: `server/src/main/kotlin/io/konekt/screens/HomeScreen.kt`,
   `feature/theme-shared-api/`, `docs/design/design-app-canvas.md`.
+
+## What landed
+
+**The brand kit gained a `displayName`,** which is the option taken: it is a fact about the
+deployment, it lives in the one file an operator already edits, and it needed no wire type of its own
+because the server builds the screen. `KompotTheme` is the toolkit's and was not touched — the kit is
+served as bytes, so the field travels harmlessly to a client that ignores unknown keys, and no
+upstream ask was needed.
+
+**Null draws no header.** A white-label product that guessed a name would print the wrong operator's
+name on the operator's own screen, which is worse than printing none.
+
+**The avatar is refused, not deferred.** `subscriber` holds an msisdn and nothing else, so initials
+would have to be invented. It joins the day sign-up asks for a name.
+
+**Binding it found a gap in a guard.** The catalogue was constructed inline inside `routing`, so a
+route injecting it resolved to nothing — `RoutesResolveWhatTheyInjectTest` said so immediately, which
+is what it is for. It is a named `brandModule(catalogue)` now, so both the application and the test's
+module list call the same function rather than keeping two copies of one graph.
+
+**One limit on the goldens, named rather than left to be found:** brand B's frames are recorded off a
+brand-a deployment, so they are drawn in the ink palette and still say "Konekt". The claim those
+frames carry is about markup and palette; a served name is content.

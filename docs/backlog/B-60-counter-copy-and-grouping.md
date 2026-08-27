@@ -1,7 +1,7 @@
 ---
 id: B-60
 title: "The canvas states a counter as used-of-total and groups the three under the plan; we do neither"
-status: question
+status: done
 priority: P2
 size: M
 stage: stage-m3-product
@@ -34,3 +34,17 @@ nothing renews. Drawing a title over the three would mean inventing both.
   states remainders and why.
 - Anchors: `feature/usage-server-data/src/main/kotlin/io/konekt/feature/usage/server/data/`,
   `docs/design/design-app-canvas.md`.
+
+## What was decided
+
+**A counter states what is LEFT, for all three kinds.** The canvas is not consistent — data reads
+`15,8 GB left` and the metered kinds read `18 of 300` — and matching it frame by frame would put two
+directions on one screen. A subscriber who misreads the direction misreads their remaining balance, so
+picking one is worth more than matching each drawing. Recorded in
+[design-app-canvas](../design/design-app-canvas.md); no code changed.
+
+**The grouping stays open and is now purely a domain question.** The container it needed exists —
+[B-52](B-52-the-balance-is-not-a-card.md) added `surface` — so nothing about the wire or the client is
+in the way. What is missing is a subscription: a purchase grants an allowance and that is the end of
+it, so there is no plan for the three counters to belong to and no renewal date to state. Drawing the
+title anyway would mean inventing both.

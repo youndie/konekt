@@ -161,6 +161,16 @@ fun GalleryTopUp() = FormScreen("top-up-screen")
 // one shows.
 //
 // The recordings are the same files. Only the kit differs, which is exactly the claim.
+//
+// AND SINCE `B-55` THERE IS ONE STRING THESE FRAMES GET WRONG, named here rather than left to be
+// discovered: the home screen's header carries the deployment's own name, read out of the served
+// brand kit. These recordings came off a `brand-a` deployment, so brand B's frame is drawn in the ink
+// palette and still says "Konekt" — a brand-b deployment answers "Inkline".
+//
+// It is not a defect in the frames and it IS a limit on what they prove: the claim they carry is
+// about markup and palette, and a served NAME is content. The application frames beside them have the
+// same limit for the same reason. Recording the home screen twice would fix it and cost a second
+// stand cycle for one word; worth doing the day anything else on a screen becomes deployment-specific.
 private const val BRAND_B = "brand-b"
 
 @ViddikScreenshot(name = "B Login", group = "Gallery", width = FRAME_WIDTH, height = 240, darkVariant = true)

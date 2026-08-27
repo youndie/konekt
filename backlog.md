@@ -41,17 +41,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (5)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[~]` | Four screens and no way between them except a banner | P1 | L | - |
 | [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[~]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
-| [B-55](docs/backlog/B-55-home-header.md) `[?]` | The home screen has no header, and the two things a header names are not in the domain | P2 | S | - |
-| [B-60](docs/backlog/B-60-counter-copy-and-grouping.md) `[?]` | The canvas states a counter as used-of-total and groups the three under the plan; we do neither | P2 | M | - |
 
-## Closed (58)
+## Closed (60)
 
 **The wire and the shell**
 
@@ -101,9 +99,11 @@ so re-prioritising must never move a file.
 - [B-52](docs/backlog/B-52-the-balance-is-not-a-card.md) `[x]` - The balance block is four texts in the screen's own column, and the canvas draws a card
 - [B-53](docs/backlog/B-53-history-excludes-top-ups.md) `[x]` - History reads entitlements, so the top-up the button beside it starts will never appear
 - [B-54](docs/backlog/B-54-the-esim-wizard-is-unreachable.md) `[x]` - The eSIM install wizard has routes, a step machine and no screen that leads to it
+- [B-55](docs/backlog/B-55-home-header.md) `[x]` - The home screen has no header, and the two things a header names are not in the domain
 - [B-57](docs/backlog/B-57-plans-catalogue-against-section-02.md) `[x]` - The catalogue has no filters, no per-unit price, one badge for every plan and no loading state
 - [B-58](docs/backlog/B-58-orders-filters.md) `[x]` - Orders has no filters and an active order shows nothing about what is left of it
 - [B-59](docs/backlog/B-59-the-confirmation-screen.md) `[x]` - The confirmation is a banner and a button; the canvas draws what is about to be spent
+- [B-60](docs/backlog/B-60-counter-copy-and-grouping.md) `[x]` - The canvas states a counter as used-of-total and groups the three under the plan; we do neither
 
 **Proof**
 

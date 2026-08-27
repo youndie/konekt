@@ -37,8 +37,28 @@ class BrandThemeCatalogue(
 ) {
     val document: String = load(brand)
 
+    // WHAT THIS DEPLOYMENT IS CALLED, and it lives in the kit rather than in a second environment
+    // variable so an operator has one file to edit and cannot leave the two disagreeing.
+    //
+    // Read out of the document rather than added to a type: the kit is served as BYTES on purpose
+    // (see above), and `KompotTheme` is the toolkit's — a name is konekt's own question. The client
+    // decodes with `ignoreUnknownKeys`, so this field travels harmlessly to a client that has no use
+    // for it, and no upstream ask is needed to put it there.
+    //
+    // NULLABLE, and the home screen draws no header without it. A white-label product that guessed a
+    // name would be printing the wrong operator's name on the operator's own screen, which is worse
+    // than printing none.
+    val displayName: String? = displayNameOf(document)
+
     private companion object {
         const val DIRECTORY = "/themes"
+
+        fun displayNameOf(document: String): String? =
+            (parser.parseToJsonElement(document) as? JsonObject)
+                ?.get("displayName")
+                ?.jsonPrimitive
+                ?.content
+                ?.takeIf { it.isNotBlank() }
 
         // ignoreUnknownKeys is irrelevant here — nothing is decoded into a class — but the parse has
         // to be lenient about what a theme carries, because this server deliberately does not know.

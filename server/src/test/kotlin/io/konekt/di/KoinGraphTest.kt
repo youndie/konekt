@@ -59,6 +59,7 @@ class KoinGraphTest {
                 roamingModule(NO_DATABASE),
                 io.konekt.serverModule(KonektTrace(agent = null)),
                 org.koin.dsl.module { single { kotlinx.serialization.json.Json } },
+                io.konekt.brandModule(io.konekt.theme.BrandThemeCatalogue("brand-a")),
             )
 
         // Everything the application installs, petich's included. That one is left out of `verify()`

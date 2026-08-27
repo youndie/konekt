@@ -183,6 +183,21 @@ and reverts anything a task writes there, so a recording run in the usual place 
 nothing. The goldens then verify unchanged on Linux — measured, not assumed, and it works because the
 fixtures pin viddik's bundled font rather than the host's.
 
+## Two decisions the canvas and this build settled differently
+
+**A counter states what is LEFT, not what was used.** The canvas writes minutes and SMS as
+`18 of 300` and data as `15,8 GB left`; this build says `left` for all three. The two read in opposite
+directions and a subscriber who misreads the direction misreads their remaining balance, so the value
+of picking one is higher than the value of matching each frame. `left` is the one that answers the
+question somebody opens the screen with.
+
+**The home header carries the operator's name and no avatar.** The brand kit gained a `displayName`
+— it is a fact about the deployment, it lives in the file an operator already edits, and the server
+builds the screen, so it needed no wire type. What is NOT drawn is the canvas's avatar chip: a
+`subscriber` holds an msisdn and nothing else, so initials would have to be invented, and a circle
+with made-up letters in it is a mockup wearing the product's clothes. It joins the day sign-up asks
+for a name.
+
 ## What the canvas does not provide
 
 The app icon is vector sketches, and the canvas says so: not finished artwork. A real icon set is an

@@ -9,6 +9,7 @@ import io.konekt.feature.usage.server.domain.LoadCountersUseCase
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.http.subscriberId
 import io.konekt.roaming.RoamingPackageCards
+import io.konekt.theme.BrandThemeCatalogue
 import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
 import kotlinx.serialization.json.Json
@@ -23,6 +24,9 @@ fun Route.homeRoutes() {
     val roaming by inject<RoamingPackages>()
     val roamingCards by inject<RoamingPackageCards>()
     val subscribers by inject<SubscriberRepository>()
+    // The brand kit this deployment serves, for the one string on this screen that is a fact
+    // about the DEPLOYMENT rather than about the subscriber.
+    val brand by inject<BrandThemeCatalogue>()
     val json by inject<Json>()
 
     get<HomeScreenResource> {
@@ -45,6 +49,7 @@ fun Route.homeRoutes() {
                 cards = cards,
                 packages = packages,
                 roamingCards = roamingCards,
+                brandName = brand.displayName,
                 nav = Shell.bottomNav(Shell.Tab.HOME),
             ),
         )

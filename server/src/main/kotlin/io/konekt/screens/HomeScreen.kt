@@ -45,6 +45,10 @@ object HomeScreen {
         // actually open, which is the failure mode this feature exists to fix.
         packages: List<RoamingPackage> = emptyList(),
         roamingCards: RoamingPackageCards? = null,
+        // WHAT THIS DEPLOYMENT IS CALLED, from the served brand kit. `null` draws no header at all:
+        // a white-label product that guessed a name would print the wrong operator's name on the
+        // operator's own screen, which is worse than printing none.
+        brandName: String? = null,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -52,6 +56,27 @@ object HomeScreen {
             spacing = 16,
             children =
                 buildList {
+                    // THE HEADER, and it is the brand's name and nothing else.
+                    //
+                    // Section 01 draws two more things beside it: a plain chip and an avatar carrying
+                    // the subscriber's initials. Neither is drawn, and the reason is the same one that
+                    // kept the whole header out until now — `subscriber` holds an msisdn and nothing
+                    // else, so initials would have to be invented. A circle with made-up letters in it
+                    // is a mockup wearing the product's clothes.
+                    //
+                    // The name itself stopped being missing when the brand kit gained a `displayName`:
+                    // it is a deployment fact, it lives in the file an operator already edits, and it
+                    // needed no wire type of its own because the server builds this screen.
+                    brandName?.let {
+                        add(
+                            TextComponent(
+                                id = "home-brand",
+                                text = it,
+                                style = M3Typography.HeadlineSmall,
+                                color = M3Colors.OnSurface,
+                            ),
+                        )
+                    }
                     balanceCard(msisdn, balance)?.let(::add)
 
                     if (counters.isEmpty() && packages.isEmpty()) {

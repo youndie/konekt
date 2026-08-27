@@ -252,6 +252,17 @@ val konektRoutes: List<RouteGroup> =
 //
 // A function taking the catalogue rather than a value, for the reason `devOtpRouteGroup` gives: the
 // document generator mounts this table with no Koin and no database behind it.
+// THE BRAND KIT IN THE GRAPH, as a function taking the constructed value rather than building one.
+//
+// It reads a resource and validates it, so constructing it twice would validate twice and — worse —
+// let the route group and the container disagree about which kit is served. The same bridge shape
+// `petichModule` uses for the things assembled before the container exists.
+//
+// A function rather than an inline `module { }` at the call site so the TEST list can call it: the
+// injection guard reads the modules it is given, and a binding written inline in `Application.module`
+// is invisible to it. That is how this was found.
+fun brandModule(catalogue: BrandThemeCatalogue) = module { single { catalogue } }
+
 fun brandThemeRouteGroup(catalogue: BrandThemeCatalogue): RouteGroup =
     RouteGroup(AuthTier.PUBLIC) { themeRoutes(BrandTheme.PATH, catalogue) }
 
@@ -319,9 +330,18 @@ fun Application.module(config: KonektConfig) {
     // Not migrating here. Migrations run as their own step before any process serves (see main), so
     // that during a rolling deploy the schema is already current and two processes never race.
 
+    // THE BRAND KIT AS A BINDING, and it was constructed inline in `routing` alone.
+    //
+    // The theme route still takes it as a parameter — a route group is a function and that is the
+    // shape it has — but the home screen needs the deployment's NAME, and a route that injects it
+    // needs the container to know about it. Constructed once here and handed to both, so the
+    // validation that makes a missing kit a startup failure runs exactly once.
+    val brandKit = BrandThemeCatalogue(config.brand)
+
     baseModule(
         listOf(
             module { single { kompotJson } },
+            brandModule(brandKit),
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
             purchaseModule(database, config.paymentMode, config.paymentDelay),
             esimModule(database),
@@ -369,9 +389,7 @@ fun Application.module(config: KonektConfig) {
     // way.
     routing {
         mountKonektRoutes(
-            // Constructed once, here: the catalogue reads a resource and validates it, so a missing or
-            // mis-named kit is a startup failure rather than a 500 on the first request.
-            productionRouteGroups(BrandThemeCatalogue(config.brand)) +
+            productionRouteGroups(brandKit) +
                 (if (config.revealOtpCodes) listOf(devOtpRouteGroup { getKoin().get() }) else emptyList()) +
                 (if (config.devScreens) listOf(devScreensRouteGroup) else emptyList()),
         )
