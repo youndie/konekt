@@ -70,6 +70,9 @@ class ScreenshotCasesTest {
             "Gallery - Profile Dark",
             "Gallery - Purchase result",
             "Gallery - Purchase result Dark",
+            // The two flows that were reachable from nowhere until B-40's screen and B-54's door.
+            "Gallery - Top up",
+            "Gallery - Top up Dark",
             // The same seven on brand B. Section 08's claim — same markup, ink palette, tighter
             // radii — held at the size a screen actually is rather than on a pair of cards.
             "Gallery - B Login",
@@ -105,6 +108,8 @@ class ScreenshotCasesTest {
             "AppFrame - App plan detail Dark",
             "AppFrame - App login",
             "AppFrame - App login Dark",
+            "AppFrame - App esim install",
+            "AppFrame - App esim install Dark",
         )
 
     @Test

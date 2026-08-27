@@ -180,6 +180,16 @@ fun AppProfile() = App("profile-screen")
 @Composable
 fun AppPlanDetail() = App("plan-detail-screen")
 
+@ViddikScreenshot(
+    name = "App esim install",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppEsimInstall() = App("esim-install-screen")
+
 @ViddikScreenshot(name = "App login", group = "AppFrame", width = APP_WIDTH, height = APP_HEIGHT, darkVariant = true)
 @Composable
 fun AppLogin() = App("login-screen")

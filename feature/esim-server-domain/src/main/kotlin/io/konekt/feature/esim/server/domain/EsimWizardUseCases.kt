@@ -144,3 +144,41 @@ private fun EsimWizardRecord?.ownedByOr404(subscriberId: String): EsimWizardReco
     }
     return this
 }
+
+// OPENING THE INSTALL FLOW, which is different from starting one — and the difference is the whole
+// reason this exists beside `StartEsimWizardUseCase`.
+//
+// Until now the only way in was `POST /api/v1/esim-wizard`, which creates a run every time it is
+// called. Nothing in the product called it: no screen carried an action that led there, so a
+// subscriber who bought a plan could not install it (`B-54`). Giving the flow an ADDRESS is what
+// makes it reachable by an ordinary `navigate` like every other screen — and an address is fetched
+// with a GET, which may be repeated.
+//
+// So this resumes. A subscriber who opens the screen, backgrounds the app and opens it again is in
+// the same run, at the step they left; the alternative is a row per arrival and a draft that resets
+// under them. The first arrival still creates one, which is a GET with a side effect exactly once
+// per subscriber per install — worth knowing, and cheaper than the alternatives: a POST cannot be a
+// `navigate` destination, and a screen that refused to exist until something POSTed would put the
+// entry point back where nothing could reach it.
+class OpenEsimWizardUseCase(
+    private val sessions: EsimWizardSessions,
+    private val ids: EsimIds,
+) {
+    suspend operator fun invoke(params: Params): Result<EsimWizardView> =
+        suspendRunCatching {
+            sessions.findUnfinishedBy(params.subscriberId)?.let { return@suspendRunCatching EsimWizardView(it) }
+
+            val record =
+                EsimWizardRecord(
+                    id = ids.next(),
+                    subscriberId = params.subscriberId,
+                    session = esimWizardEngine().start(EsimOrderDraft()),
+                )
+            sessions.create(record)
+            EsimWizardView(record)
+        }
+
+    data class Params(
+        val subscriberId: String,
+    )
+}

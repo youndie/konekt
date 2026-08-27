@@ -7,6 +7,7 @@ import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
 import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
@@ -310,6 +311,14 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 // 404 for somebody else's top-up as well as for one that does not exist — the owner
                 // check answers 404 rather than 403, so it hands out no enumeration oracle.
                 refusals = setOf(404),
+            ),
+        // THE INSTALL FLOW'S ADDRESS. `EsimWizardResource` below is the POST that creates a run;
+        // this is the screen a `navigate` can point at, which is what the feature was missing.
+        endpointKey<EsimInstallScreenResource>("GET") to
+            EndpointFacts(
+                summary = "Open the eSIM install flow, resuming the run in progress if there is one",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
             ),
         endpointKey<PlansScreenResource>("GET") to
             EndpointFacts(

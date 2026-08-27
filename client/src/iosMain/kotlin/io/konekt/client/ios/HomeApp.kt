@@ -21,6 +21,8 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource

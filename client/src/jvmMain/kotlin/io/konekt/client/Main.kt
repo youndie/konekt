@@ -24,6 +24,8 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
@@ -136,6 +138,8 @@ fun main() {
                 routes =
                     mapOf(
                         PLANS_DEEPLINK to plansAddress(),
+                        // The install flow, which had routes and no address until B-54.
+                        ESIM_INSTALL_DEEPLINK to addressOf<EsimInstallScreenResource>(),
                         // Matched by PREFIX for its result: `app://top-up/<id>` carries the id
                         // after the deeplink, exactly as the login step carries a number.
                         TOP_UP_DEEPLINK to addressOf<TopUpScreenResource>(),

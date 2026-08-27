@@ -18,6 +18,11 @@ dependencies {
     // The chrome port, asked for by this feature's own deeplink. A leaf module with no server
     // half that everything may depend on — see `ScreenChrome` for why it goes this way round.
     implementation(project(":feature:shell-shared-api"))
+    // The eSIM feature's deeplink, for the door the purchase result now carries. Its wire half only
+    // — the same argument as the chrome port above: a leaf module with no server half that anything
+    // may depend on, so the purchase feature names a destination without depending on the feature
+    // that serves it.
+    implementation(project(":feature:esim-shared-api"))
     implementation(libs.kompot.ktor)
 
     implementation(libs.ktor.server.core)

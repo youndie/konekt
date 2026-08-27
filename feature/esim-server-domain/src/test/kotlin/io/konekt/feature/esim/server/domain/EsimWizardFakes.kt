@@ -52,6 +52,11 @@ class FakeSessions : EsimWizardSessions {
 
     override suspend fun find(wizardId: String): EsimWizardRecord? = rows[wizardId]
 
+    override suspend fun findUnfinishedBy(subscriberId: String): EsimWizardRecord? =
+        rows.values
+            .filter { it.subscriberId == subscriberId && !it.session.isFinished }
+            .maxByOrNull { it.id }
+
     override suspend fun save(record: EsimWizardRecord) {
         rows[record.id] = record
         writes += 1

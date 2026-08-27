@@ -135,9 +135,22 @@ fun GalleryOrders() = Screen("orders-screen")
 @Composable
 fun GalleryProfile() = Screen("profile-screen")
 
-@ViddikScreenshot(name = "Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 230, darkVariant = true)
+@ViddikScreenshot(name = "Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
 @Composable
 fun GalleryPurchaseResult() = Screen("order-screen")
+
+// TOPPING UP, one of the two flows that had a working server half and no way in. It is not on the
+// canvas as a frame — section 01 draws the `Top up` BUTTON and leaves what is behind it to the
+// build — so this frame is the product's answer rather than the design's.
+//
+// THE INSTALL FLOW IS NOT HERE, and `GoldenContentTest` is the reason: its first step is a step
+// meter, a paragraph and a button on no surface at all, and a frame of it came out 5% opaque —
+// which the guard cannot tell from a capture that failed, and is right not to. It is photographed
+// in `AppFrameScreenshots` instead, where the application paints the ground it is drawn on. That
+// the screen is that thin is a finding about the screen, not about the threshold.
+@ViddikScreenshot(name = "Top up", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
+@Composable
+fun GalleryTopUp() = FormScreen("top-up-screen")
 
 // ── THE SAME SEVEN SCREENS ON THE OTHER BRAND ──────────────────────────────────────────────────
 //
@@ -178,6 +191,6 @@ fun GalleryBOrders() = Screen("orders-screen", BRAND_B)
 @Composable
 fun GalleryBProfile() = Screen("profile-screen", BRAND_B)
 
-@ViddikScreenshot(name = "B Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 230, darkVariant = true)
+@ViddikScreenshot(name = "B Purchase result", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
 @Composable
 fun GalleryBPurchaseResult() = Screen("order-screen", BRAND_B)

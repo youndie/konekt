@@ -810,6 +810,49 @@
                 }
             }
         },
+        "/api/v1/screens/esim-install": {
+            "get": {
+                "summary": "Open the eSIM install flow, resuming the run in progress if there is one",
+                "x-kompot-endpoint-kind": "screen",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Open the eSIM install flow, resuming the run in progress if there is one",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "kompot.profile.schema.json#/$defs/KompotComponent"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No session, or one that no longer means anything.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/screens/history": {
             "get": {
                 "summary": "The operation history, first page included",

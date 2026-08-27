@@ -11,6 +11,8 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -57,6 +59,23 @@ class ExposedEsimWizardSessions(
             EsimWizardSessionTable
                 .selectAll()
                 .where { EsimWizardSessionTable.id eq wizardId }
+                .singleOrNull()
+                ?.toDomain()
+        }
+
+    // The NEWEST unfinished run, and the ordering is not decoration: nothing stops two rows existing
+    // — the route that starts one is still installed and a `POST` may always have been called twice
+    // — so `singleOrNull` here would answer "none" for a subscriber who has two, which reads as
+    // "start a third". Taking the newest is the answer that converges instead of diverging.
+    override suspend fun findUnfinishedBy(subscriberId: String): EsimWizardRecord? =
+        dbQuery {
+            EsimWizardSessionTable
+                .selectAll()
+                .where {
+                    (EsimWizardSessionTable.subscriberId eq subscriberId) and
+                        (EsimWizardSessionTable.finished eq false)
+                }.orderBy(EsimWizardSessionTable.createdAt to SortOrder.DESC)
+                .limit(1)
                 .singleOrNull()
                 ?.toDomain()
         }

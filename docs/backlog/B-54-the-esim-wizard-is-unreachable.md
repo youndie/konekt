@@ -1,7 +1,7 @@
 ---
 id: B-54
 title: "The eSIM install wizard has routes, a step machine and no screen that leads to it"
-status: open
+status: done
 priority: P0
 size: M
 stage: stage-m3-product
@@ -44,3 +44,31 @@ than a binding a test can inspect.
 - Anchors: `server/src/main/kotlin/io/konekt/Application.kt`,
   `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/PurchaseResultScreen.kt`,
   `feature/esim-server-data/`.
+
+## What landed
+
+**The flow gained an address.** `GET /api/v1/screens/esim-install` opens the subscriber's run —
+theirs if one is unfinished, a new one if not — and the purchase result's completed branch carries
+`Install eSIM` pointing at it. Verified against the stand end to end: top up, buy, confirm, and the
+result screen answers with the button; opening the screen twice returns the same `wizardId`.
+
+**Why "open" and not "start", which is the part worth keeping.** The POST that already existed
+creates a run per call, and a POST is not something a `navigate` can point at — the client fetches a
+screen with a GET. So the address had to be a GET, and a GET may be repeated: a refresh, a return
+from the background, a second press. `OpenEsimWizardUseCase` resumes, and `findUnfinishedBy` takes
+the NEWEST row rather than `singleOrNull` — nothing stops two runs existing, and `singleOrNull` would
+answer "none" for a subscriber who has two, which reads as "start a third".
+
+**The first arrival still writes a row**, which is a GET with a side effect exactly once per install.
+Named rather than hidden: the alternatives are a POST nothing can navigate to, or a screen that
+refuses to exist until something POSTs — both put the entry point back where nothing could reach it.
+
+**A finding the goldens produced.** The wizard's first step is a step meter, a paragraph and a button
+on no surface, and a frame of it came out **5% opaque** — which `GoldenContentTest` cannot tell from a
+capture that failed. It is photographed through the application frame instead, where the ground is
+painted. The threshold was right; the screen really is that thin, and that is worth knowing about
+the screen rather than about the guard.
+
+**Not done here:** the roaming package on the home screen, still drawn as a counter card where the
+canvas draws its own row with an `Install` of its own. The purchase result is what makes the feature
+reachable at all; that half can follow.

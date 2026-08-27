@@ -1,0 +1,39 @@
+{
+  "type": "column",
+  "id": "esim-wizard",
+  "children": [
+    {
+      "type": "step_meter",
+      "id": "esim-wizard-progress",
+      "current": 1,
+      "total": 4,
+      "label": "Add an eSIM"
+    },
+    {
+      "type": "text",
+      "id": "esim-wizard-check",
+      "text": "An eSIM is a profile your phone downloads — there is nothing to post and nothing to swap. It takes about a minute, and you can keep using this line while it installs."
+    },
+    {
+      "type": "row",
+      "id": "esim-wizard-controls",
+      "children": [
+        {
+          "type": "button",
+          "id": "esim-wizard-next",
+          "text": "Continue",
+          "action": {
+            "type": "esim_wizard_step",
+            "wizardId": "476a969a-ad15-4a15-bb8f-d04afc9d7a58",
+            "transition": {
+              "type": "next"
+            }
+          },
+          "variant": "primary"
+        }
+      ],
+      "spacing": 12
+    }
+  ],
+  "spacing": 16
+}

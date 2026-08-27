@@ -15,3 +15,16 @@ class EsimWizardResource {
         val parent: EsimWizardResource = EsimWizardResource(),
     )
 }
+
+// THE INSTALL FLOW AS A PLACE, which is what it was missing.
+//
+// `EsimWizardResource` above is a POST that creates a run and answers its screen. That shape can be
+// called and cannot be NAVIGATED TO — the client fetches a screen with a GET — so nothing in any
+// served tree could point at it, and the whole feature was unreachable from the product (`B-54`).
+//
+// A GET on this address opens the subscriber's run: theirs if one is unfinished, a new one if not.
+// The POST stays, because a client that wants a fresh run should not have to finish an old one first.
+@Resource("/api/v1/screens/esim-install")
+class EsimInstallScreenResource
+
+const val ESIM_INSTALL_DEEPLINK: String = "app://esim-install"

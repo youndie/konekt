@@ -65,6 +65,16 @@ interface EsimWizardSessions {
 
     suspend fun find(wizardId: String): EsimWizardRecord?
 
+    // THE RUN THIS SUBSCRIBER IS IN THE MIDDLE OF, if there is one.
+    //
+    // It exists so that opening the install flow twice is opening it twice rather than starting two
+    // runs. Without it the only way in is `create`, and a screen that could be navigated to would
+    // write a row every time somebody arrived at it — including the arrival that is a refresh.
+    //
+    // `finished` is already a column and `subscriber_id` is already indexed, so this costs no
+    // migration; what it buys is that "install my eSIM" is a place rather than an event.
+    suspend fun findUnfinishedBy(subscriberId: String): EsimWizardRecord?
+
     suspend fun save(record: EsimWizardRecord)
 }
 

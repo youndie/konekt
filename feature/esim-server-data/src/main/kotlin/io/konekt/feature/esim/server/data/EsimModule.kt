@@ -4,6 +4,7 @@ import io.konekt.feature.esim.server.domain.AdvanceEsimWizardUseCase
 import io.konekt.feature.esim.server.domain.EsimIds
 import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.feature.esim.server.domain.EsimWizardSessions
+import io.konekt.feature.esim.server.domain.OpenEsimWizardUseCase
 import io.konekt.feature.esim.server.domain.SmDpPlus
 import io.konekt.feature.esim.server.domain.StartEsimWizardUseCase
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -23,5 +24,6 @@ fun esimModule(database: Database) =
         single<EsimIds> { EsimIds { Uuid.random().toString() } }
 
         factory { StartEsimWizardUseCase(get(), get()) }
+        factory { OpenEsimWizardUseCase(get(), get()) }
         factory { AdvanceEsimWizardUseCase(get(), get(), get()) }
     }

@@ -12,6 +12,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.domain.Money
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.Reversal
@@ -154,6 +155,21 @@ object PurchaseResultScreen {
                 status = OrderStatuses.COMPLETED,
                 statusText = "Paid",
             ),
+            // THE DOOR TO THE INSTALL FLOW, and until it existed the flow had none anywhere.
+            //
+            // The wizard's routes, its step machine and its QR renderer all shipped and no served
+            // tree pointed at any of them, so a subscriber who paid could not install what they had
+            // bought (`B-54`). Section 03 of the canvas puts the control exactly here — "Paid. eSIM
+            // is ready to install", then `Install eSIM` — and here rather than on the profile is the
+            // point: nobody opens an account screen after paying.
+            ButtonComponent(
+                id = "purchase-install",
+                text = "Install eSIM",
+                action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+            ),
+            // The canvas's second control is "Later, show receipt" — and the receipt is the screen
+            // this already is, so the honest version of it is the way out that was here before.
             wayOut("purchase-done", "Done"),
         )
 

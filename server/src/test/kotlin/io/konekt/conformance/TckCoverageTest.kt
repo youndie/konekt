@@ -3,6 +3,7 @@ package io.konekt.conformance
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
 import io.konekt.feature.auth.shared.api.LoginScreenResource
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.packages.shared.api.CustomPackageForm
 import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
@@ -113,6 +114,10 @@ class TckCoverageTest {
                 // the login forms. Its SUBMIT is not, and is declared — it changes state, and a walk
                 // that pressed it would top the walking subscriber up on every run.
                 endpointKey<TopUpScreenResource>("GET"),
+                // THE INSTALL FLOW, reachable blind now that it has an address: a secured GET
+                // answering one JSON document. It is also the check that would have caught B-54 —
+                // the walk could not reach a wizard that only a POST could start.
+                endpointKey<EsimInstallScreenResource>("GET"),
                 // The result, addressed by a top-up the walk already creates for itself.
                 endpointKey<TopUpScreenResource.ById>("GET"),
                 endpointKey<ProfileScreenResource>("GET"),

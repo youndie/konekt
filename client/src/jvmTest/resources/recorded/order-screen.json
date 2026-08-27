@@ -1,1 +1,52 @@
-{"type":"column","id":"purchase-result","children":[{"type":"banner","id":"purchase-completed","text":"Europe · 5 GB · 14 days is active."},{"type":"order_row","id":"order-2873c498-76ea-43fd-830e-8d58c3192621","reference":"2873c498","title":"Europe · 5 GB · 14 days","dateText":"","amountText":"$9","status":"completed","statusText":"Paid"},{"type":"button","id":"purchase-done","modifiers":[{"type":"size","width":"Fill"}],"text":"Done","action":{"type":"navigate","deeplink":"app://home"}}],"spacing":16}
+{
+  "type": "column",
+  "id": "purchase-result",
+  "children": [
+    {
+      "type": "banner",
+      "id": "purchase-completed",
+      "text": "Home · 20 GB · 30 days is active."
+    },
+    {
+      "type": "order_row",
+      "id": "order-84404bbf-590f-4cc4-aee2-7c1421a8efe4",
+      "reference": "84404bbf",
+      "title": "Home · 20 GB · 30 days",
+      "dateText": "",
+      "amountText": "$15",
+      "status": "completed",
+      "statusText": "Paid"
+    },
+    {
+      "type": "button",
+      "id": "purchase-install",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Install eSIM",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://esim-install"
+      }
+    },
+    {
+      "type": "button",
+      "id": "purchase-done",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Done",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://home"
+      }
+    }
+  ],
+  "spacing": 16
+}

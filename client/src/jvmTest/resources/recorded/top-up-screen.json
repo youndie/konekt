@@ -1,0 +1,60 @@
+{
+  "schema": {
+    "formId": "top-up",
+    "fields": [
+      {
+        "type": "amount_field",
+        "fieldId": "amount",
+        "rules": [
+          {
+            "type": "required",
+            "errorMessage": "Enter an amount"
+          }
+        ]
+      }
+    ]
+  },
+  "screen": {
+    "type": "column",
+    "id": "top-up",
+    "children": [
+      {
+        "type": "text",
+        "id": "top-up-title",
+        "text": "Top up",
+        "style": "headline_small",
+        "color": "on_surface"
+      },
+      {
+        "type": "amount_input",
+        "id": "top-up-amount",
+        "fieldId": "amount",
+        "label": "Amount",
+        "currencySuffix": "$"
+      },
+      {
+        "type": "text",
+        "id": "top-up-limits",
+        "text": "Between $10 and $50,000.",
+        "style": "body_small",
+        "color": "on_surface_variant"
+      },
+      {
+        "type": "button",
+        "id": "top-up-submit",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Top up",
+        "action": {
+          "type": "submit_form",
+          "formId": "top-up"
+        }
+      }
+    ],
+    "spacing": 16
+  }
+}

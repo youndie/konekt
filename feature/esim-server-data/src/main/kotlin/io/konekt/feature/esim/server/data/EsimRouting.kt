@@ -4,11 +4,14 @@ import io.github.youndie.kompot.decodeKompotAction
 import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.konekt.domain.KonektException
 import io.konekt.feature.esim.server.domain.AdvanceEsimWizardUseCase
+import io.konekt.feature.esim.server.domain.OpenEsimWizardUseCase
 import io.konekt.feature.esim.server.domain.StartEsimWizardUseCase
+import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.esim.shared.api.EsimWizardResource
 import io.konekt.feature.esim.shared.api.EsimWizardStepAction
 import io.konekt.http.subscriberId
 import io.ktor.server.request.receiveText
+import io.ktor.server.resources.get
 import io.ktor.server.resources.post
 import io.ktor.server.routing.Route
 import kotlinx.serialization.json.Json
@@ -19,8 +22,18 @@ import org.koin.ktor.ext.inject
 // somebody and says nothing about whose run this is.
 fun Route.esimWizardRoutes() {
     val startWizard by inject<StartEsimWizardUseCase>()
+    val openWizard by inject<OpenEsimWizardUseCase>()
     val advanceWizard by inject<AdvanceEsimWizardUseCase>()
     val json by inject<Json>()
+
+    // THE ADDRESS, and the reason it is a GET beside a POST that does almost the same thing: a
+    // screen is somewhere a `navigate` can point, and a `navigate` is fetched. Without this the
+    // wizard had routes, a step machine and a QR renderer, and nothing in the product led to any of
+    // it — see `OpenEsimWizardUseCase` for what "open" means here and why it resumes.
+    get<EsimInstallScreenResource> {
+        val view = openWizard(OpenEsimWizardUseCase.Params(subscriberId = call.subscriberId())).getOrThrow()
+        call.respondKompotComponent(json, EsimWizardScreen.build(view))
+    }
 
     post<EsimWizardResource> {
         val view = startWizard(StartEsimWizardUseCase.Params(subscriberId = call.subscriberId())).getOrThrow()
