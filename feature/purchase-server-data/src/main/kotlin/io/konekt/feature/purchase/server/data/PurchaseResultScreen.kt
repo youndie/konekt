@@ -5,6 +5,7 @@ import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.SizeType
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
@@ -15,6 +16,7 @@ import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.Reversal
 import io.konekt.feature.purchase.shared.api.ConfirmPurchaseAction
+import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
 
@@ -120,6 +122,22 @@ object PurchaseResultScreen {
             }
         }
 
+    // A WAY OFF THIS SCREEN, and every state needs one.
+    //
+    // The purchase result is reachable from the catalogue and carries no tab bar — it is not a tab —
+    // so without this a subscriber who bought something had nowhere to go and no way back. Pressing
+    // a plan was a one-way door.
+    private fun wayOut(
+        id: String,
+        text: String,
+    ): KompotComponent =
+        ButtonComponent(
+            id = id,
+            text = text,
+            action = NavigateAction(HOME_DEEPLINK),
+            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+        )
+
     private fun completed(order: OrderView): List<KompotComponent> =
         listOf(
             BannerComponent(
@@ -136,6 +154,7 @@ object PurchaseResultScreen {
                 status = OrderStatuses.COMPLETED,
                 statusText = "Paid",
             ),
+            wayOut("purchase-done", "Done"),
         )
 
     private fun rejected(order: OrderView): List<KompotComponent> =
@@ -147,6 +166,7 @@ object PurchaseResultScreen {
                 text = "This purchase could not be started, and nothing was charged.",
                 tone = MessageTones.ERROR,
             ),
+            wayOut("purchase-rejected-back", "Back"),
         )
 
     // THE ONE ACTION A SUBSCRIBER MUST TAKE, and until now the screen offered no way to take it.
@@ -169,6 +189,10 @@ object PurchaseResultScreen {
                 action = ConfirmPurchaseAction(order.orderId),
                 modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
             ),
+            // LEAVING WITHOUT CONFIRMING IS A PATH, not an escape hatch. The order keeps its
+            // deadline and rolls itself back when it passes — which is the compensated branch this
+            // product exists to demonstrate, reached the way a subscriber would actually reach it.
+            wayOut("purchase-not-now", "Not now"),
         )
 
     private fun inFlight(order: OrderView): List<KompotComponent> =
@@ -178,5 +202,6 @@ object PurchaseResultScreen {
                 text = "Confirming with the payment provider. Keep the app open — this usually takes under 15 seconds.",
                 tone = MessageTones.INFO,
             ),
+            wayOut("purchase-in-flight-back", "Back"),
         )
 }

@@ -66,6 +66,11 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    // OUTSIDE the card, and before the clip so it stays outside. A `paginated_list`
+                    // is a lazy column with no spacing of its own — the toolkit's, not ours — so
+                    // once these rows gained a background they touched, and four orders read as one
+                    // block. A row that draws a surface has to keep its own distance.
+                    .padding(bottom = 8.dp)
                     .clip(surface.shape ?: RoundedCornerShape(20.dp))
                     .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)

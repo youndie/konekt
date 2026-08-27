@@ -109,6 +109,7 @@ fun KonektApp(
     // when cancelling is right.
     var presses by remember { mutableStateOf(0) }
     var pending by remember { mutableStateOf<KompotAction?>(null) }
+    var reloads by remember { mutableStateOf(0) }
 
     // OUR OWN MAP, not `KompotRealtimeProvider`'s. That composable holds its `SnapshotStateMap`
     // privately and empties it only when the topic changes, which konekt never does — so the map has
@@ -125,13 +126,26 @@ fun KonektApp(
     var fetchedTheme by remember { mutableStateOf<KompotTheme?>(null) }
     LaunchedEffect(theme) { if (theme == null) fetchedTheme = screens.brandTheme() }
 
-    LaunchedEffect(current) { screen = screens.fetch(current) }
+    // KEYED ON THE ADDRESS **AND** ON A RELOAD COUNT, and the second half is what makes confirming a
+    // purchase visible.
+    //
+    // An action may answer with the address the client is already on: confirming an order ends on the
+    // order's own screen, in a different state. Keyed on the address alone this effect does not
+    // re-run, so the screen keeps showing "Confirm" while the money has already moved — the button
+    // looks broken and the purchase is complete.
+    //
+    // It is the same shape as the press counter below, and this file already carried that lesson: an
+    // effect keyed on a value that does not change does nothing.
+    LaunchedEffect(current, reloads) { screen = screens.fetch(current) }
 
     LaunchedEffect(presses) {
         val action = pending ?: return@LaunchedEffect
         onAction(action)?.let { destination ->
             updates.clear()
             current = destination
+            // Always, even when the destination is where we already are. What changed is the state
+            // behind the address, and only the server knows it.
+            reloads += 1
         }
     }
 
