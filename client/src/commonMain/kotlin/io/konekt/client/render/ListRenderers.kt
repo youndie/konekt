@@ -98,7 +98,15 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
                 // it is the string a subscriber quotes to support, and the one thing on this row
                 // that connects it to anything outside the screen.
                 Text(
-                    text = "${component.reference} · ${component.dateText}",
+                    // JOINED ONLY WHERE THERE ARE TWO. The purchase-result screen sends an order row
+                    // with an EMPTY `dateText` — the order just happened and the screen is about
+                    // that, not about when — and a separator written unconditionally drew
+                    // "a5906073 · " with nothing after it.
+                    text =
+                        listOf(
+                            component.reference,
+                            component.dateText,
+                        ).filter { it.isNotBlank() }.joinToString(" · "),
                     style = designSystem.resolveTypography(M3Typography.LabelMedium),
                     color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
                 )
