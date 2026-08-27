@@ -74,9 +74,9 @@ val e2e by tasks.registering(Test::class) {
     // THE THREE COLLECTORS. Read back rather than trusted: an agent that is switched off produces
     // exactly the same silence as one that is working, so the only way to tell is to ask the far end
     // whether anything arrived.
-    systemProperty("konekt.stand.metrik", System.getenv("KONEKT_STAND_METRIK") ?: "http://127.0.0.1:8090")
-    systemProperty("konekt.stand.tracy", System.getenv("KONEKT_STAND_TRACY") ?: "http://127.0.0.1:8091")
-    systemProperty("konekt.stand.katcher", System.getenv("KONEKT_STAND_KATCHER") ?: "http://127.0.0.1:8092")
+    systemProperty("konekt.stand.metrik", System.getenv("KONEKT_STAND_METRIK") ?: "http://127.0.0.1:8190")
+    systemProperty("konekt.stand.tracy", System.getenv("KONEKT_STAND_TRACY") ?: "http://127.0.0.1:8191")
+    systemProperty("konekt.stand.katcher", System.getenv("KONEKT_STAND_KATCHER") ?: "http://127.0.0.1:8192")
     systemProperty(
         "konekt.stand.jdbc",
         System.getenv("KONEKT_STAND_JDBC") ?: "jdbc:postgresql://127.0.0.1:55432/konekt",

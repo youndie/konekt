@@ -33,9 +33,9 @@ import kotlin.time.Duration.Companion.seconds
 // whether anything arrived, and fail on zero. That is B-26's second acceptance criterion stated as a
 // test rather than as an intention.
 class ObservabilityScenarioTest {
-    private val metrikUrl: String = System.getProperty("konekt.stand.metrik") ?: "http://127.0.0.1:8090"
-    private val tracyUrl: String = System.getProperty("konekt.stand.tracy") ?: "http://127.0.0.1:8091"
-    private val katcherUrl: String = System.getProperty("konekt.stand.katcher") ?: "http://127.0.0.1:8092"
+    private val metrikUrl: String = System.getProperty("konekt.stand.metrik") ?: "http://127.0.0.1:8190"
+    private val tracyUrl: String = System.getProperty("konekt.stand.tracy") ?: "http://127.0.0.1:8191"
+    private val katcherUrl: String = System.getProperty("konekt.stand.katcher") ?: "http://127.0.0.1:8192"
 
     private val service = "konekt-server"
 

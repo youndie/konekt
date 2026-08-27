@@ -228,6 +228,63 @@ object Stand {
                 appendLine("  NOT RUNNING: ${down.joinToString("; ") { it.substringBefore(' ') }}")
                 appendLine("  That, and not the timeout, is what this run actually hit.")
             }
+            shadowedPorts().takeIf { it.isNotEmpty() }?.let { shadows ->
+                appendLine()
+                appendLine("  SOMETHING ELSE IS ON THESE PORTS:")
+                shadows.forEach { appendLine("    $it") }
+                appendLine("  The container is up and the test is not reaching it. Override the port")
+                appendLine("  (METRIK_PORT / TRACY_PORT / KATCHER_PORT and the KONEKT_STAND_* URLs)")
+                appendLine("  or stop whatever holds it.")
+            }
+        }
+    }
+
+    // A PORT THE STAND PUBLISHES AND SOMEBODY ELSE ANSWERS ON.
+    //
+    // This cost three red tests for six days, and the accusation was wrong in the most expensive way:
+    // the suite said "waited 30s for katcher to show the crash" and katcher was working perfectly —
+    // an unrelated local daemon held 127.0.0.1 on the same port, docker held the wildcard, and IPv4
+    // went to the daemon. Every symptom pointed at the service that was innocent.
+    //
+    // `lsof` rather than a probe of the port's content: there is no request that distinguishes "this
+    // is katcher" from "this is something that also serves JSON", and OWNERSHIP is the fact that
+    // actually decides it. A machine without `lsof` gets nothing extra rather than a wrong answer.
+    private fun shadowedPorts(): List<String> {
+        val published =
+            Regex("""127\.0\.0\.1:(\d+)""")
+                .findAll(listOf(serverUrl, decliningUrl).joinToString(" "))
+                .map { it.groupValues[1] }
+                .toMutableSet()
+        listOf("konekt.stand.metrik", "konekt.stand.tracy", "konekt.stand.katcher").forEach { key ->
+            System
+                .getProperty(key)
+                ?.substringAfterLast(':')
+                ?.takeWhile { it.isDigit() }
+                ?.let(published::add)
+        }
+
+        return published.filter { it.isNotBlank() }.mapNotNull { port ->
+            val holders =
+                try {
+                    ProcessBuilder("lsof", "-nP", "-iTCP:$port", "-sTCP:LISTEN")
+                        .redirectErrorStream(true)
+                        .start()
+                        .let { process ->
+                            val text = process.inputStream.bufferedReader().readText()
+                            process.waitFor()
+                            text
+                        }.lines()
+                        .drop(1)
+                        .filter { it.isNotBlank() }
+                } catch (unavailable: Exception) {
+                    return emptyList()
+                }
+
+            // Docker itself is the expected holder. Anything else on the same port is the finding —
+            // and it is a finding even when docker is there too, because that is exactly the shape:
+            // one process on the wildcard address and one on the loopback, with the loopback winning.
+            val strangers = holders.filterNot { it.contains("docker", ignoreCase = true) }
+            strangers.firstOrNull()?.let { "port $port is held by: ${it.trim().replace(Regex("\\s+"), " ")}" }
         }
     }
 }

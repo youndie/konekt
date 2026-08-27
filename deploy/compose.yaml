@@ -176,7 +176,12 @@ services:
     volumes:
       - metrik-data:/data
     ports:
-      - "${METRIK_PORT:-8090}:8080"
+      # 819x AND NOT 809x, and the move is worth the line it costs. The 808x/809x band is where every
+      # locally-run service lands by default, and two of these three collided with an unrelated daemon
+      # on a developer machine — which the suite reported as "waited 30s for katcher to show the
+      # crash", about a katcher that was working. `Stand.standDiagnosis` now names a shadowed port, so
+      # the next collision reads as one; this is the half that stops it happening here.
+      - "${METRIK_PORT:-8190}:8080"
 
   tracy:
     image: ghcr.io/youndie/tracy:latest
@@ -185,7 +190,7 @@ services:
     volumes:
       - tracy-data:/data
     ports:
-      - "${TRACY_PORT:-8091}:8080"
+      - "${TRACY_PORT:-8191}:8080"
 
   katcher:
     image: ghcr.io/youndie/katcher:latest
@@ -196,7 +201,7 @@ services:
       # have shown exactly the same thing there, which is what made the wrong mount invisible.
       - katcher-data:/app/data
     ports:
-      - "${KATCHER_PORT:-8092}:8080"
+      - "${KATCHER_PORT:-8192}:8080"
 
   # AN APPLICATION AND A KEY, WITHOUT WHICH KATCHER REFUSES EVERY REPORT.
   #

@@ -63,11 +63,11 @@ import io.ktor.client.request.get as httpGet
 @OptIn(ExperimentalTestApi::class)
 class DegradationReachesTracyTest {
     private val baseUrl: String = System.getProperty("konekt.stand.server") ?: "http://127.0.0.1:8080"
-    private val tracyUrl: String = System.getProperty("konekt.stand.tracy") ?: "http://127.0.0.1:8091"
+    private val tracyUrl: String = System.getProperty("konekt.stand.tracy") ?: "http://127.0.0.1:8191"
 
     // The same pair the stand hands the server, because the client reports into the same tracy. A
     // second ingest key would be a second thing to keep in step for no reason.
-    private val tracyIngest: String = System.getProperty("konekt.stand.tracy.ingest") ?: "http://127.0.0.1:8091"
+    private val tracyIngest: String = System.getProperty("konekt.stand.tracy.ingest") ?: "http://127.0.0.1:8191"
     private val tracyKey: String = System.getProperty("konekt.stand.tracy.key") ?: "dev-tracy-key"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
