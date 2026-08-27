@@ -111,7 +111,7 @@ fun GalleryLogin() = FormScreen("login-screen")
 @Composable
 fun GalleryLoginCode() = FormScreen("login-code-screen")
 
-@ViddikScreenshot(name = "Home", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
+@ViddikScreenshot(name = "Home", group = "Gallery", width = FRAME_WIDTH, height = 720, darkVariant = true)
 @Composable
 fun GalleryHome() = Screen("home-screen")
 
@@ -123,6 +123,10 @@ fun GalleryPlans() = Screen("plans-screen")
 // frame of it was 4% drawn, and `GoldenContentTest` cannot tell that from a capture that failed. The
 // missing frame was the record of the delta rather than an exemption from it — and the row has a
 // card now, so the frame returns without anybody touching the guard.
+@ViddikScreenshot(name = "Plan detail", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
+@Composable
+fun GalleryPlanDetail() = Screen("plan-detail-screen")
+
 @ViddikScreenshot(name = "Orders", group = "Gallery", width = FRAME_WIDTH, height = 380, darkVariant = true)
 @Composable
 fun GalleryOrders() = Screen("orders-screen")
@@ -154,13 +158,17 @@ fun GalleryBLogin() = FormScreen("login-screen", BRAND_B)
 @Composable
 fun GalleryBLoginCode() = FormScreen("login-code-screen", BRAND_B)
 
-@ViddikScreenshot(name = "B Home", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
+@ViddikScreenshot(name = "B Home", group = "Gallery", width = FRAME_WIDTH, height = 720, darkVariant = true)
 @Composable
 fun GalleryBHome() = Screen("home-screen", BRAND_B)
 
 @ViddikScreenshot(name = "B Plans", group = "Gallery", width = FRAME_WIDTH, height = 730, darkVariant = true)
 @Composable
 fun GalleryBPlans() = Screen("plans-screen", BRAND_B)
+
+@ViddikScreenshot(name = "B Plan detail", group = "Gallery", width = FRAME_WIDTH, height = 430, darkVariant = true)
+@Composable
+fun GalleryBPlanDetail() = Screen("plan-detail-screen", BRAND_B)
 
 @ViddikScreenshot(name = "B Orders", group = "Gallery", width = FRAME_WIDTH, height = 380, darkVariant = true)
 @Composable
