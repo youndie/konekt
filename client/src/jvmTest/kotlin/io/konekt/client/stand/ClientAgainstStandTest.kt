@@ -250,6 +250,14 @@ class ClientAgainstStandTest {
             }
             onNodeWithText("Home · 20 GB · 30 days").performClick()
 
+            // THE DETAIL SCREEN FIRST, and this step is the point of it existing: pressing a card
+            // used to create an order, so the catalogue was a page of buttons that charge you.
+            // Nothing has been spent yet at this line.
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Buy for \$15").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Buy for \$15").performClick()
+
             // THE ORDER SCREEN, and the address it moved to was not known when the press happened —
             // it is the id the server assigned. That is the difference between this and a `navigate`,
             // and the reason buying needed an action of its own.
