@@ -39,21 +39,48 @@ class ValidatePurchaseInterceptor(
         petich: Petich,
         payload: PurchasePayload,
     ): InterceptorResult {
-        val plan = plans.find(payload.planId) ?: return InterceptorResult.Reject("that plan is not in the catalogue")
-        if (!plan.onSale) return InterceptorResult.Reject("that plan is no longer on sale")
+        // THE ACCOUNT FIRST, and it used to be last. Every refusal below wants to be RECORDED, the
+        // record is a ledger row, and a ledger row needs an account — so an order refused before the
+        // account was resolved had nowhere to put its reason, and the screen was left with a sentence
+        // that named none of the five (`B-68`).
+        //
+        // Which refusal wins when several apply therefore changed, and only between broken states: a
+        // subscriber with no account asking for a plan that does not exist now hears about the
+        // account. Both are states this product should not be able to reach.
+        val account =
+            balances.findAccountOf(payload.subscriberId)
+                // Nowhere to write it, by definition. The screen's generic sentence is the honest
+                // answer here and this is the only branch that gets it.
+                ?: return InterceptorResult.Reject(PurchaseRefusals.NO_ACCOUNT)
+
+        val plan = plans.find(payload.planId) ?: return refuse(account, petich, payload, PurchaseRefusals.NO_SUCH_PLAN)
+        if (!plan.onSale) return refuse(account, petich, payload, PurchaseRefusals.NOT_ON_SALE)
         if (plan.price != payload.price) {
             // The price the subscriber was shown is not the price now. Refusing is the only honest
             // answer: charging the new one is a surprise, and charging the old one is a catalogue
             // anybody can pin by keeping a screen open.
-            return InterceptorResult.Reject("the price has changed, please look again")
+            return refuse(account, petich, payload, PurchaseRefusals.PRICE_CHANGED)
         }
 
-        val account = balances.findAccountOf(payload.subscriberId) ?: return InterceptorResult.Reject("no account")
         if (account.balance < payload.price) {
-            return InterceptorResult.Reject("the balance does not cover this")
+            return refuse(account, petich, payload, PurchaseRefusals.INSUFFICIENT_FUNDS)
         }
 
         return InterceptorResult.Proceed()
+    }
+
+    // RECORDED BEFORE IT IS ANSWERED. A `Reject` ends the saga, and petich keeps no reason of its
+    // own — the message is for a log — so a refusal that is not written down here is a refusal the
+    // screen can never state. Zero-sum, like the provider's decline it sits beside: the row exists to
+    // carry the word, not an amount.
+    private suspend fun refuse(
+        account: AccountSnapshot,
+        petich: Petich,
+        payload: PurchasePayload,
+        code: String,
+    ): InterceptorResult {
+        balances.recordDecline(account.id, petich.id, payload.price, code)
+        return InterceptorResult.Reject(code)
     }
 
     override suspend fun compensate(
@@ -85,7 +112,12 @@ class HoldFundsInterceptor(
         // The refusal lives in the database, not in a read followed by a check: two purchases started
         // together both pass the latter, and what they would overspend is real money.
         if (!balances.hold(payload.accountId, petich.id, payload.price)) {
-            return InterceptorResult.Reject("the balance does not cover this")
+            // THE SAME REFUSAL AS THE VALIDATION STEP'S, recorded the same way. This one is the
+            // authoritative check — it refuses in the database rather than after a read — so a
+            // purchase can reach it having passed the earlier one, and a subscriber who lands here
+            // needs the same sentence and the same way out.
+            balances.recordDecline(payload.accountId, petich.id, payload.price, PurchaseRefusals.INSUFFICIENT_FUNDS)
+            return InterceptorResult.Reject(PurchaseRefusals.INSUFFICIENT_FUNDS)
         }
 
         entitlements.createPending(petich.id, payload.subscriberId, payload.planId, payload.price)

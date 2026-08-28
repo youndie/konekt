@@ -112,6 +112,10 @@ class ScreenshotCasesTest {
             "AppFrame - App esim install Dark",
             "AppFrame - App confirm",
             "AppFrame - App confirm Dark",
+            // The state a first-time subscriber reaches by pressing the first thing they see, and the
+            // one whose copy was rewritable by a green suite for as long as nothing photographed it.
+            "AppFrame - App purchase refused",
+            "AppFrame - App purchase refused Dark",
         )
 
     @Test

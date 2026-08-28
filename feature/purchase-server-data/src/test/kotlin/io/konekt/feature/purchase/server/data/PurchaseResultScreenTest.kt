@@ -8,9 +8,11 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.BannerComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
@@ -20,12 +22,16 @@ import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.PurchasePayload
+import io.konekt.feature.purchase.server.domain.PurchaseRefusals
 import io.konekt.feature.purchase.server.domain.Reversal
 import io.konekt.feature.purchase.shared.api.ConfirmPurchaseAction
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
@@ -57,6 +63,15 @@ class PurchaseResultScreenTest {
 
     private val reversedOn = Instant.fromEpochMilliseconds(1_719_532_800_000) // 28 June
 
+    private fun rejected(declineReason: String?) =
+        OrderView(
+            orderId = "8f214c90-1111-2222-3333-444455556666",
+            status = OrderStatus.REJECTED,
+            payload = payload,
+            requiredAction = null,
+            declineReason = declineReason,
+        )
+
     private fun compensated(declineReason: String?) =
         OrderView(
             orderId = "8f214c90-1111-2222-3333-444455556666",
@@ -78,6 +93,131 @@ class PurchaseResultScreenTest {
     // THE BRANCH NOBODY ASSERTED ON, and it is the one the confirmation button was built for. Its
     // copy could be rewritten wholesale and this file stayed green — which is how it was found: a
     // rewrite passed, and a rewrite passing is the same evidence as a mutation surviving.
+    // EVERY REFUSAL SAYS WHICH ONE IT WAS, and until `B-68` all five said the same sentence.
+    //
+    // Asserted over the whole set rather than over the money branch that prompted the work, and by
+    // COMPARING the sentences rather than matching each: a build that regressed to one constant would
+    // satisfy any number of individual "contains" assertions written one at a time.
+    @Test
+    fun `the five refusals do not all read the same`() {
+        val codes =
+            listOf(
+                PurchaseRefusals.INSUFFICIENT_FUNDS,
+                PurchaseRefusals.NOT_ON_SALE,
+                PurchaseRefusals.PRICE_CHANGED,
+                PurchaseRefusals.NO_SUCH_PLAN,
+                PurchaseRefusals.NO_ACCOUNT,
+            )
+
+        val sentences =
+            codes.associateWith { code ->
+                PurchaseResultScreen
+                    .build(rejected(code), reversal = null, balance = Money.ofMajor(3, Currency.DEFAULT))
+                    .konektWalk()
+                    .filterIsInstance<BannerComponent>()
+                    .single()
+                    .text
+            }
+
+        assertEquals(
+            codes.size,
+            sentences.values.toSet().size,
+            "refusals that should read differently do not: $sentences",
+        )
+
+        // `NO_ACCOUNT` keeps the sentence all five used to share, and shares it with a refusal that
+        // was never recorded — deliberately, because there is nothing truthful to add about either.
+        val generic = "This purchase could not be started, and nothing was charged."
+        assertEquals(
+            generic,
+            sentences[PurchaseRefusals.NO_ACCOUNT],
+            "a refusal with nothing to say invented something",
+        )
+        assertEquals(
+            generic,
+            PurchaseResultScreen
+                .build(rejected(declineReason = null), reversal = null, balance = null)
+                .konektWalk()
+                .filterIsInstance<BannerComponent>()
+                .single()
+                .text,
+            "an unrecorded refusal claimed to know which one it was",
+        )
+        // And none of them contradicts what happened: nothing was held on any of these.
+        sentences.forEach { (code, text) ->
+            assertTrue(
+                "nothing was charged" in text.lowercase(),
+                "$code does not say that nothing was charged: $text",
+            )
+        }
+    }
+
+    // THE ONE A SUBSCRIBER CAN ACT ON. `KonektException.InsufficientFunds` is its own case with the
+    // stated reason that the screen offers a top-up; it did not, and this is what says so.
+    @Test
+    fun `being short of money names both numbers and offers the way to fix it`() {
+        val screen =
+            PurchaseResultScreen.build(
+                rejected(PurchaseRefusals.INSUFFICIENT_FUNDS),
+                reversal = null,
+                balance = Money.ofMajor(3, Currency.DEFAULT),
+            )
+
+        val banner = screen.konektWalk().filterIsInstance<BannerComponent>().single()
+        assertTrue("$12" in banner.text, "the price is not on the screen: ${banner.text}")
+        // The BALANCE too, because "you do not have enough" is a sentence somebody has to do
+        // arithmetic on before they know what to type into the top-up field.
+        assertTrue("$3" in banner.text, "the balance is not on the screen: ${banner.text}")
+
+        val buttons = screen.konektWalk().filterIsInstance<ButtonComponent>()
+        val topUp = buttons.singleOrNull { it.id == "purchase-rejected-top-up" }
+        assertNotNull(topUp, "no way to add money: ${buttons.map { it.text }}")
+        assertEquals(NavigateAction(TOP_UP_DEEPLINK), topUp.action)
+
+        // And it is the ANSWER, so the way out beside it is not drawn as one.
+        val back = buttons.single { it.id == "purchase-rejected-back" }
+        assertEquals(ButtonEmphasis.QUIET, back.variant, "two primaries is a screen asking one question twice")
+    }
+
+    // A BALANCE THAT COULD NOT BE READ IS NOT DRAWN AS ZERO, here as everywhere else. Zero would tell
+    // a subscriber they have nothing when they may have plenty, on the one screen where what they
+    // have is the whole question.
+    @Test
+    fun `being short of money with no readable balance still says the price`() {
+        val banner =
+            PurchaseResultScreen
+                .build(rejected(PurchaseRefusals.INSUFFICIENT_FUNDS), reversal = null, balance = null)
+                .konektWalk()
+                .filterIsInstance<BannerComponent>()
+                .single()
+
+        assertTrue("$12" in banner.text, "the price went missing with the balance: ${banner.text}")
+        assertTrue("$0" !in banner.text, "a balance that could not be read was drawn as zero: ${banner.text}")
+    }
+
+    // A CONTROL ONLY WHERE THERE IS SOMETHING TO PRESS. `Top up` on a plan that left the catalogue is
+    // a button that changes nothing, which is worse than no button.
+    @Test
+    fun `a refusal about the catalogue sends the subscriber to the catalogue, not to the top-up`() {
+        listOf(PurchaseRefusals.NOT_ON_SALE, PurchaseRefusals.PRICE_CHANGED, PurchaseRefusals.NO_SUCH_PLAN)
+            .forEach { code ->
+                val buttons =
+                    PurchaseResultScreen
+                        .build(rejected(code), reversal = null, balance = Money.ofMajor(50, Currency.DEFAULT))
+                        .konektWalk()
+                        .filterIsInstance<ButtonComponent>()
+
+                assertEquals(
+                    NavigateAction(PLANS_DEEPLINK),
+                    buttons.single { it.id == "purchase-rejected-plans" }.action,
+                )
+                assertTrue(
+                    buttons.none { it.id == "purchase-rejected-top-up" },
+                    "$code offered a top-up, which would change nothing",
+                )
+            }
+    }
+
     @Test
     fun `the confirmation says what, how much, and out of what`() {
         val texts =

@@ -327,11 +327,19 @@ class ClientAgainstStandTest {
             // NOT asserted by the plan title disappearing: the order screen carries the plan too, so
             // that condition would have waited out its timeout on a screen that had already arrived.
             // It did, which is how this assertion got written twice.
+            //
+            // THE SENTENCE NAMES THE REFUSAL NOW. It used to be "This purchase could not be started,
+            // and nothing was charged" — true of all five refusals and useful for none (`B-68`) —
+            // and this test waiting on that constant is what noticed the copy had changed.
             waitUntil(timeoutMillis = 20_000) {
-                onAllNodesWithText("This purchase could not be started, and nothing was charged.")
+                onAllNodesWithText("\$15 is more than the \$0 on your balance. Nothing was charged.")
                     .fetchSemanticsNodes()
                     .isNotEmpty()
             }
+
+            // And the way to fix it is on the screen, drawn, reachable by its label. The server-side
+            // tests say the button is in the tree; this says a subscriber can see it.
+            onNodeWithText("Top up").assertIsDisplayed()
 
             // Whatever the order screen says, it must not be a degradation block: `order_row`,
             // `banner` and `step_meter` all appear on it and all had no renderer until B-45.

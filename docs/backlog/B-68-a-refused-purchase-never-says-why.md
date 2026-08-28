@@ -1,7 +1,7 @@
 ---
 id: B-68
 title: "Five reasons a purchase is refused render as one sentence that names none of them"
-status: open
+status: done
 priority: P1
 size: M
 stage: stage-m4-proof
@@ -50,16 +50,46 @@ gone by the time any screen is built.
 from. The purchase result screen should do the same for the reason that matters here: say the
 balance and offer the top-up.
 
-## Fix
+## What was done
 
-Two parts, and the first is worth doing alone:
+Both parts, because the first alone would leave four of the five still unsayable.
 
-1. The screen states what can be acted on. It already receives the balance and the price, so
-   "insufficient" is derivable at render time without any new persistence, and the control is a
-   `navigate` to top-up.
-2. If the other four reasons are to be distinguishable, the reject message needs somewhere to live —
-   a `decline` ledger row written by the validation reject, which is the same shape the payment
-   decline already uses.
+**A code, not a sentence.** `PurchaseRefusals` holds the five words; the interceptor writes one into
+the `decline` ledger row and the screen composes the copy — the same split `EsimRefusal` makes, and
+the same rule every other string in this product follows. A sentence stored in the ledger would be
+copy edited by changing a row, and a reason the screen cannot branch on cannot grow the control that
+goes with it.
+
+**The column carries two things and the STATUS says which.** A `decline` note is one of our codes on a
+REJECTED order and the provider's own words on a COMPENSATED one. The two cannot overlap — a
+validation refusal ends the saga before any provider is called — and `PurchaseResultScreen` switches
+on the status first, so each branch reads the column for exactly one meaning. Written down where the
+codes are declared.
+
+**The account is resolved first.** It used to be last, and every refusal before it had nowhere to
+write its reason. Which refusal wins when several apply therefore changed, and only between states
+this product should not be able to reach.
+
+**The control matches the reason.** Short of money → `Top up`; the plan moved → `See plans`; nothing
+to act on → the way out alone, drawn as the primary, which it then correctly is. And the money branch
+names BOTH numbers, because "you do not have enough" is a sentence somebody has to do arithmetic on
+before they know what to type into the top-up field.
+
+**Guarded at four levels, each answering something the others cannot.**
+
+| Level | What it says |
+|---|---|
+| `PurchaseResultScreenTest` | the five sentences differ, by comparing them rather than matching each — a regression to one constant satisfies any number of one-at-a-time `contains` assertions |
+| `PurchaseSagaTest` | the code is actually written, through a real database, and writing it moves no money |
+| `PurchaseRefusalScenarioTest` | the assembled product answers it — a test per seam cannot see a chain that delivers nothing |
+| `AppFrame - App purchase refused` | somebody looks at it |
+
+The last one is the gap that let this happen: the gallery photographed the COMPLETED order and never
+the refusal, and a state nobody looks at is a state whose copy a green suite can rewrite. It is also
+the frame a first-time subscriber gets by pressing the first thing they see.
+
+`ClientAgainstStandTest` was waiting on the old constant and failed, which is the right way to find
+out that copy changed; it now asserts the new sentence and that `Top up` is on the screen.
 
 ## Anchors
 

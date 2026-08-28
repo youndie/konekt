@@ -19,8 +19,11 @@ import io.konekt.domain.Money
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
+import io.konekt.feature.purchase.server.domain.PurchaseRefusals
 import io.konekt.feature.purchase.server.domain.Reversal
 import io.konekt.feature.purchase.shared.api.ConfirmPurchaseAction
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
@@ -57,7 +60,7 @@ object PurchaseResultScreen {
 
                     OrderStatus.COMPLETED -> completed(order)
 
-                    OrderStatus.REJECTED -> rejected(order)
+                    OrderStatus.REJECTED -> rejected(order, balance)
 
                     OrderStatus.AWAITING_CONFIRMATION -> awaitingConfirmation(order, balance)
 
@@ -195,17 +198,125 @@ object PurchaseResultScreen {
             wayOut("purchase-done", "Done"),
         )
 
-    private fun rejected(order: OrderView): List<KompotComponent> =
-        listOf(
-            BannerComponent(
-                id = "purchase-rejected",
-                // Nothing was held, so there is nothing to reverse and nothing to state in money.
-                // Saying so is the difference between this screen and the one above.
-                text = "This purchase could not be started, and nothing was charged.",
-                tone = MessageTones.ERROR,
-            ),
-            wayOut("purchase-rejected-back", "Back"),
-        )
+    // REFUSED BEFORE ANYTHING HAPPENED, and the screen now says which refusal it was.
+    //
+    // It used to say one sentence for all five — "This purchase could not be started, and nothing was
+    // charged" — which is true of every one of them and useful for none (`B-68`). Worse on the money
+    // branch than on the others: `KonektException.InsufficientFunds` exists as its own case with the
+    // stated reason that *"it is the one refusal a subscriber can act on and the screen offers them a
+    // top-up"*, and the screen offered a **Back** button.
+    //
+    // The reason arrives as a CODE and the sentence is composed here, like every other string in this
+    // product. What the code cannot supply — the balance, the price — comes from the same view the
+    // rest of the screen is built from, so the money branch states the two numbers a person needs to
+    // work out how much to add.
+    private fun rejected(
+        order: OrderView,
+        balance: Money?,
+    ): List<KompotComponent> =
+        buildList {
+            add(
+                BannerComponent(
+                    id = "purchase-rejected",
+                    // Nothing was held, so there is nothing to reverse and nothing to state in money.
+                    // Saying so is the difference between this screen and the one above, and every
+                    // sentence below keeps it.
+                    text = refusalText(order, balance),
+                    tone = MessageTones.ERROR,
+                ),
+            )
+
+            // THE CONTROL THAT MATCHES THE REASON, or none.
+            refusalControl(order)?.let { add(it) }
+
+            add(wayOut("purchase-rejected-back", "Back", emphasis = emphasisFor(order)))
+        }
+
+    // A way out is not a way forward: somebody short of money needs the top-up screen, and somebody
+    // whose plan moved needs the catalogue. Null for the branches with no answer — offering `Top up`
+    // to a subscriber whose plan left the catalogue would be a button that changes nothing.
+    private fun refusalControl(order: OrderView): KompotComponent? =
+        when (order.declineReason) {
+            PurchaseRefusals.INSUFFICIENT_FUNDS -> {
+                ButtonComponent(
+                    id = "purchase-rejected-top-up",
+                    text = "Top up",
+                    action = NavigateAction(TOP_UP_DEEPLINK),
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                )
+            }
+
+            PurchaseRefusals.NOT_ON_SALE, PurchaseRefusals.PRICE_CHANGED, PurchaseRefusals.NO_SUCH_PLAN -> {
+                ButtonComponent(
+                    id = "purchase-rejected-plans",
+                    text = "See plans",
+                    action = NavigateAction(PLANS_DEEPLINK),
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                )
+            }
+
+            // `NO_ACCOUNT` and anything this build does not recognise. Both are states a subscriber
+            // cannot act on, so the way out is the whole answer — and it is then drawn as the
+            // primary, which it correctly is.
+            else -> {
+                null
+            }
+        }
+
+    // The way out is the answer when nothing else on the screen is, and the second option when
+    // something is. Same rule as the confirmation's `Not now`, which is where `quiet` came from.
+    private fun emphasisFor(order: OrderView): String =
+        when (order.declineReason) {
+            PurchaseRefusals.INSUFFICIENT_FUNDS,
+            PurchaseRefusals.NOT_ON_SALE,
+            PurchaseRefusals.PRICE_CHANGED,
+            PurchaseRefusals.NO_SUCH_PLAN,
+            -> ButtonEmphasis.QUIET
+
+            else -> ButtonEmphasis.PRIMARY
+        }
+
+    private fun refusalText(
+        order: OrderView,
+        balance: Money?,
+    ): String =
+        when (order.declineReason) {
+            // BOTH NUMBERS, because "you do not have enough" is a sentence somebody has to do
+            // arithmetic on before they know what to type into the top-up field. The balance is
+            // omitted rather than guessed when it could not be read — the same rule the confirmation
+            // and the home screen follow about the same number: zero is a fact and "we could not
+            // tell" is not.
+            PurchaseRefusals.INSUFFICIENT_FUNDS -> {
+                balance
+                    ?.let {
+                        "${MoneyFormat.format(order.payload.price)} is more than the " +
+                            "${MoneyFormat.format(it)} on your balance. Nothing was charged."
+                    }
+                    ?: "Your balance does not cover ${MoneyFormat.format(order.payload.price)}. Nothing was charged."
+            }
+
+            PurchaseRefusals.NOT_ON_SALE -> {
+                "${order.payload.planTitle} is no longer on sale, so it was not bought. Nothing was charged."
+            }
+
+            // NOT "the price went up". It may have gone down, and a subscriber told it rose when it
+            // fell is one who does not look again.
+            PurchaseRefusals.PRICE_CHANGED -> {
+                "The price of ${order.payload.planTitle} changed while this was open, so it was not " +
+                    "bought at ${MoneyFormat.format(order.payload.price)}. Nothing was charged."
+            }
+
+            PurchaseRefusals.NO_SUCH_PLAN -> {
+                "${order.payload.planTitle} is no longer offered, so it was not bought. Nothing was charged."
+            }
+
+            // `NO_ACCOUNT`, a refusal recorded by a build that knew more than this one, and the case
+            // where nothing was recorded at all. The sentence this screen used to give everybody is
+            // right for exactly these: it claims nothing it cannot support.
+            else -> {
+                "This purchase could not be started, and nothing was charged."
+            }
+        }
 
     // THE ONE ACTION A SUBSCRIBER MUST TAKE, and until now the screen offered no way to take it.
     //

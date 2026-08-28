@@ -55,6 +55,35 @@ const val ACTION_CONFIRM = "CONFIRM"
 // hold was reversed, which is the fact the screen exists to state. A compensation that itself failed
 // does not reach `FAILED` — it stays `COMPENSATING` — so the word is unambiguous inside petich and
 // merely unfortunate outside it.
+// WHY A PURCHASE WAS REFUSED, as a word the screen turns into copy rather than as the sentence itself.
+//
+// The same split `EsimRefusal` makes and for the same reason: the sentence a subscriber reads is
+// composed where every other string in this product is composed — on the screen — and what travels is
+// something a branch can be written on. A sentence stored in the ledger would be copy edited by
+// changing a row, and a reason the screen cannot branch on cannot grow the control that goes with it.
+//
+// WHERE THEY LIVE ON THE WAY OUT is the `decline` ledger row, the same zero-sum entry the payment
+// step already uses. The column then carries two things — one of these codes, or a sentence from the
+// provider — and which one is decided by the ORDER'S STATUS, not by inspecting the text:
+//
+//   REJECTED   — nothing was attempted, and the note is one of these codes
+//   COMPENSATED — the provider was asked and refused, and the note is the provider's own words
+//
+// The two cannot overlap: a validation refusal ends the saga before any provider is called, and a
+// provider refusal happens after validation passed. `PurchaseResultScreen` switches on the status
+// first, so each branch reads the column for exactly one of the two meanings.
+object PurchaseRefusals {
+    const val NO_ACCOUNT = "no_account"
+    const val NO_SUCH_PLAN = "no_such_plan"
+    const val NOT_ON_SALE = "not_on_sale"
+    const val PRICE_CHANGED = "price_changed"
+
+    // THE ONE A SUBSCRIBER CAN ACT ON, which is why `KonektException.InsufficientFunds` is its own
+    // case rather than a Conflict — a promise the screen did not keep for as long as this refusal
+    // existed (`B-68`).
+    const val INSUFFICIENT_FUNDS = "insufficient_funds"
+}
+
 enum class OrderStatus(
     val wireName: String,
 ) {

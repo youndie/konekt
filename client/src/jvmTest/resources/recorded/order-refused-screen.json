@@ -1,0 +1,44 @@
+{
+    "type": "column",
+    "id": "purchase-result",
+    "children": [
+        {
+            "type": "banner",
+            "id": "purchase-rejected",
+            "text": "$12 is more than the $0 on your balance. Nothing was charged.",
+            "tone": "error"
+        },
+        {
+            "type": "button",
+            "id": "purchase-rejected-top-up",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Top up",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://top-up"
+            }
+        },
+        {
+            "type": "button",
+            "id": "purchase-rejected-back",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Back",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://home"
+            },
+            "variant": "quiet"
+        }
+    ],
+    "spacing": 16
+}

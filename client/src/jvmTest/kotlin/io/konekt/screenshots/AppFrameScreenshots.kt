@@ -199,6 +199,25 @@ fun AppPlanDetail() = App("plan-detail-screen")
 @Composable
 fun AppConfirm() = App("confirm-screen")
 
+// THE REFUSAL, WHICH NOTHING PHOTOGRAPHED while it was one sentence for five different reasons.
+//
+// It is the frame a first-time subscriber gets by pressing the first thing they see — no money yet,
+// so the saga is refused before anything is held — and the gallery had only the COMPLETED order. A
+// state nobody looks at is a state whose copy can be rewritten by a green suite, which is exactly
+// what `B-68` was: the sentence named none of its five causes and the only control was `Back`.
+//
+// In the app frame rather than the gallery for the same reason the confirmation is: a banner and two
+// buttons on no card is a frame `GoldenContentTest` reads as too thin to tell from a failed capture.
+@ViddikScreenshot(
+    name = "App purchase refused",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppPurchaseRefused() = App("order-refused-screen")
+
 @ViddikScreenshot(
     name = "App esim install",
     group = "AppFrame",

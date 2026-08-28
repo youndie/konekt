@@ -9,6 +9,7 @@ import io.konekt.feature.purchase.server.domain.Entitlement
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
+import io.konekt.feature.purchase.server.domain.PurchaseRefusals
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
@@ -215,6 +216,10 @@ class PurchaseSagaTest {
             assertEquals(OrderStatus.REJECTED, started.status)
             assertEquals(opening, balance())
             assertEquals(null, entitlementStatus(started.orderId))
+            // WHICH REFUSAL, and this is what the screen reads. petich keeps no reason of its own —
+            // the message on a `Reject` is for a log — so a refusal not written down here is one the
+            // subscriber can never be told about (`B-68`).
+            assertEquals(PurchaseRefusals.NOT_ON_SALE, started.declineReason)
         }
 
     @Test
@@ -226,6 +231,25 @@ class PurchaseSagaTest {
 
             assertEquals(OrderStatus.REJECTED, started.status)
             assertEquals(Money.ofMajor(5, Currency.DEFAULT), balance())
+            assertEquals(PurchaseRefusals.INSUFFICIENT_FUNDS, started.declineReason)
+        }
+
+    // A REFUSAL IS RECORDED WITHOUT MOVING MONEY, which is the property that lets the reason live in
+    // the ledger at all. The entry is zero-sum and exists to carry the word.
+    //
+    // Read as a BALANCE rather than by counting rows: the assertions above already say the balance
+    // did not move, and this says the same thing about the mechanism that writes the reason — a
+    // `decline` entry that carried an amount would be a refusal that charged for itself.
+    @Test
+    fun `recording why a purchase was refused moves no money`() =
+        runBlocking {
+            spend(Money.ofMajor(45, Currency.DEFAULT))
+            val before = balance()
+
+            val started = start(StartPurchaseUseCase.Params(subscriberId, planId)).getOrThrow()
+
+            assertEquals(PurchaseRefusals.INSUFFICIENT_FUNDS, started.declineReason)
+            assertEquals(before, balance(), "writing down the reason moved the balance")
         }
 
     @Test

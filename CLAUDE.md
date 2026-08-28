@@ -213,6 +213,14 @@ circular dependency inside `:server` naming neither module.
 - **Inside `Table.insert { }` the table is the receiver**, so a bare name resolves to the COLUMN. A
   parameter wins that resolution and a class property does not — which is why it bites in a test seed
   and not in a repository, and why the fix is a differently named local.
+- **A refusal travels as a code and becomes a sentence on the screen.** petich keeps no reason of its
+  own — the message on a `Reject` is for a log — so a refusal not written into the `decline` ledger
+  row is one no screen can ever state; that is why five distinct purchase refusals read as one
+  sentence naming none of them for as long as the screen existed (`B-68`). The note column then means
+  two things and the ORDER'S STATUS decides which: our code on REJECTED, the provider's own words on
+  COMPENSATED. They cannot overlap, because a validation refusal ends the saga before any provider is
+  called. And a refusal a subscriber can act on carries the CONTROL that acts: `Top up` for money,
+  `See plans` for a plan that moved, nothing for a state they cannot change.
 - **A refusal is a `KonektException`**, and the `when` mapping it to a status has no `else` — add a
   case to the sealed hierarchy without mapping it and the build fails. A route answers
   `.getOrThrow()` and stops; `.onFailure` is for the one error that needs a body of its own.
