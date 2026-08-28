@@ -9,6 +9,8 @@ import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
+import io.konekt.domain.Currency
+import io.konekt.domain.Money
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
@@ -154,7 +156,12 @@ object Stand {
         client: HttpClient,
         session: Session,
         majorUnits: Long,
-    ): TopUpResponse = topUpRaw(client, session, amountMinor = majorUnits * 100)
+    ): TopUpResponse = topUpRaw(client, session, amountMinor = Money.ofMajor(majorUnits, Currency.DEFAULT).minorUnits)
+
+    // THROUGH `Money.ofMajor` AND NOT `* 100`. The exponent belongs to the currency — which is the
+    // whole reason `Money` exists rather than a `formatMoney(minor, currency)` helper — and a hundred
+    // written out here is right for the dollar, wrong for the dinar, and a second place to change.
+    // `B-67` is what a loose factor of a hundred costs when it is on the other side of a boundary.
 
     // Minor units, for the scenarios that are about the amount itself rather than about the money.
     suspend fun topUpRaw(

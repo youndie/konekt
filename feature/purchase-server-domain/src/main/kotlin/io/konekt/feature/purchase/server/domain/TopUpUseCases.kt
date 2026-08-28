@@ -29,7 +29,12 @@ class StartTopUpUseCase(
             // The currency is the ACCOUNT'S, never the request's. A subscriber holds one balance, so
             // a request naming another currency is a question this product has no answer to — and
             // taking it from the account is what makes that unrepresentable rather than validated.
-            val amount = Money(params.amountMinor, account.balance.currency)
+            //
+            // And the UNIT comes from the caller rather than being assumed here. It used to be
+            // assumed — the parameter was `amountMinor` and the form route handed it whole units —
+            // which is `B-67`, a hundredfold error that no type objected to because both sides were a
+            // `Long`. `TopUpAmount` converts at this line, where the currency's exponent is known.
+            val amount = params.amount.toMoney(account.balance.currency)
 
             val topUpId = Uuid.random().toString()
 
@@ -73,7 +78,7 @@ class StartTopUpUseCase(
 
     class Params(
         val subscriberId: String,
-        val amountMinor: Long,
+        val amount: TopUpAmount,
     )
 }
 

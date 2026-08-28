@@ -10,6 +10,7 @@ import io.github.youndie.kompot.standard.NavigateAction
 import io.konekt.domain.KonektException
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
+import io.konekt.feature.purchase.server.domain.TopUpAmount
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TopUpForms
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
@@ -49,7 +50,20 @@ fun Route.topUpScreenRoutes() {
         // The use case returns a view for a refusal it can describe — out of range, provider
         // declined — so throwing would give a 422 and a screen that did not change. A refusal it
         // cannot describe is still an exception and StatusPages still maps it.
-        val view = startTopUp(StartTopUpUseCase.Params(call.subscriberId(), amount.long)).getOrThrow()
+        // WHOLE UNITS, because that is what the field holds. kompot's amount input filters the
+        // keystrokes to digits and hands back the integer it is displaying, so the number here is the
+        // number under the `$` on the subscriber's screen. Handing it to a parameter called
+        // `amountMinor` — which is what this line used to do — credited a hundredth of it: typing
+        // 5000 added $50, and typing 50 was refused by the screen that had just named $10 as the
+        // minimum (`B-67`).
+        //
+        // `AmountValue` also carries a currency, and it is deliberately not read: the use case takes
+        // the currency from the ACCOUNT, and the conversion to minor units happens there, where the
+        // exponent is known.
+        val view =
+            startTopUp(
+                StartTopUpUseCase.Params(call.subscriberId(), TopUpAmount.whole(amount.long)),
+            ).getOrThrow()
 
         // A `navigate` and not the result's tree: the endpoint says WHERE, the client fetches, and
         // arriving at a screen has one shape rather than two.

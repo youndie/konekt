@@ -9,6 +9,7 @@ import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
+import io.konekt.feature.purchase.server.domain.TopUpAmount
 import io.konekt.feature.purchase.server.domain.TopUpLimits
 import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.topUpInterceptors
@@ -107,7 +108,7 @@ class TopUpSagaTest {
         runBlocking {
             val start = sagaWith(MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE))
 
-            val view = start(StartTopUpUseCase.Params(subscriberId, amount.minorUnits)).getOrThrow()
+            val view = start(StartTopUpUseCase.Params(subscriberId, TopUpAmount.minor(amount.minorUnits))).getOrThrow()
 
             assertEquals(OrderStatus.COMPLETED, view.status)
             assertEquals(opening + amount, view.balance)
@@ -126,7 +127,7 @@ class TopUpSagaTest {
                     ),
                 )
 
-            val view = start(StartTopUpUseCase.Params(subscriberId, amount.minorUnits)).getOrThrow()
+            val view = start(StartTopUpUseCase.Params(subscriberId, TopUpAmount.minor(amount.minorUnits))).getOrThrow()
 
             assertEquals(OrderStatus.COMPENSATED, view.status)
             // The assertion the ordering exists for. A balance raised before the provider confirmed is
@@ -141,7 +142,10 @@ class TopUpSagaTest {
         runBlocking {
             val start = sagaWith(MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE))
 
-            val view = start(StartTopUpUseCase.Params(subscriberId, TopUpLimits.MIN_MINOR - 1)).getOrThrow()
+            val view =
+                start(
+                    StartTopUpUseCase.Params(subscriberId, TopUpAmount.minor(TopUpLimits.MIN_MINOR - 1)),
+                ).getOrThrow()
 
             // REJECTED and not COMPENSATED: a rule refused before anything happened, so there is
             // nothing to undo and no compensating step runs at all.
@@ -155,7 +159,10 @@ class TopUpSagaTest {
         runBlocking {
             val start = sagaWith(MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE))
 
-            val view = start(StartTopUpUseCase.Params(subscriberId, TopUpLimits.MAX_MINOR + 1)).getOrThrow()
+            val view =
+                start(
+                    StartTopUpUseCase.Params(subscriberId, TopUpAmount.minor(TopUpLimits.MAX_MINOR + 1)),
+                ).getOrThrow()
 
             assertEquals(OrderStatus.REJECTED, view.status)
             assertEquals(opening, balances.balanceOf(accountId))

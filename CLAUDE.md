@@ -258,6 +258,16 @@ circular dependency inside `:server` naming neither module.
 - **`KonektSchemaTest` is what proves the migrations are complete**, not review: it asks Exposed,
   after Flyway has run, whether any DDL is still required for petich's four tables and konekt's
   three, and asserts the answer is empty. It has no exemptions and should not grow one.
+- **A number crossing a boundary carries its unit in its type.** The top-up form and the DTO endpoint
+  met at one `Long` called `amountMinor`, and the form was handing it whole units: typing 5000
+  credited $50, and typing 50 was refused by the screen that had just named $10 as the minimum
+  (`B-67`). `TopUpAmount.Whole`/`Minor` now says which, and the conversion happens inside the use
+  case where the currency — and therefore the exponent — is known, never at the edge. The same rule
+  bans a hand-written `* 100` anywhere: `Money.ofMajor` exists because a hundred is right for the
+  dollar and wrong for the dinar. Note what stayed green throughout: every test below the wire calls
+  the use case and hands it minor units, which is the correct unit AT THAT BOUNDARY. The boundary
+  nothing crossed was the one a person stands on, which is why the guard is a stand scenario that
+  reads the minimum off the served screen and types it.
 - **Money is `io.konekt.domain.Money`, and only `:server` can format it.** The product runs in
   `Currency.DEFAULT` (USD). A currency added to the enum needs a row in `MoneyFormat`'s layout table
   or the screen cannot be built.

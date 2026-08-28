@@ -90,6 +90,17 @@ object TopUpScreens {
                                     // toolkit has. It is the deployment's currency and not a choice:
                                     // an account holds one balance, so a top-up naming another
                                     // currency is a question this product has no answer to.
+                                    //
+                                    // WHOLE UNITS ONLY, and that is the field's limit rather than a
+                                    // rule of the product: kompot's amount input filters keystrokes
+                                    // to digits, so there is no way to type $12.50 here. The limits
+                                    // are whole dollars and every price in the catalogue is, so
+                                    // nothing is currently unreachable — but a plan priced in cents
+                                    // would be, and the fix would be upstream rather than here.
+                                    //
+                                    // The number this sends is the number it displays. `B-67`: it was
+                                    // read as minor units for as long as this screen existed, so
+                                    // typing 5000 credited $50.
                                     currencySuffix = MoneyFormat.symbol(Currency.DEFAULT),
                                 ),
                             )

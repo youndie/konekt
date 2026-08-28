@@ -1,7 +1,7 @@
 ---
 id: B-67
 title: "The top-up field reads minor units while every number printed beside it is major"
-status: open
+status: done
 priority: P0
 size: S
 stage: stage-m4-proof
@@ -41,15 +41,41 @@ Every test of this feature supplies the amount in minor units directly, because 
 use case — which is the correct unit AT THAT BOUNDARY. The conversion that does not happen is the
 one between the form field and the use case, and no test crosses it with a number a person typed.
 
-## Fix
+## What was done
 
-The boundary needs one conversion and one name that says which side it is on. Either the field
-declares itself in minor units and the client renders accordingly, or — better, since the label,
-the limits line and every other figure in this product are major — the route multiplies at the edge
-and `Params` stops being called `amountMinor` by a caller handing it majors.
+**The unit is part of the type.** `TopUpAmount.Whole` / `TopUpAmount.Minor`, and
+`StartTopUpUseCase.Params` takes one instead of a bare `Long` called `amountMinor`. The form route
+says `TopUpAmount.whole(amount.long)` and the DTO route says `TopUpAmount.minor(request.amountMinor)`;
+neither can be read as the other by accident.
 
-Then a test that starts from what somebody TYPED rather than from what the use case expects. The
-stand is the right level: type an amount, assert the balance moved by that amount.
+**The conversion happens where the currency is known**, inside the use case, not at the edge. That is
+not tidiness: the exponent belongs to the currency and the currency belongs to the ACCOUNT —
+deliberately, so a request naming a different one is unrepresentable rather than validated. A route
+multiplying by a hundred itself would reintroduce exactly the assumption the use case exists to
+avoid, and would be right only while this product has one currency. `Money.ofMajor` already does it.
+
+**And a test that starts from what somebody typed.** There was no form scenario in the stand at all —
+`TopUpScenarioTest` posts the DTO endpoint, whose unit was never in doubt. `TopUpFormScenarioTest`
+posts the form the way the client does, and its first assertion needs no constant of its own:
+
+> the smallest amount the screen names is an amount the screen accepts
+
+It reads the minimum out of the served limits line and types it. A label in one unit over a field in
+another fails that by construction — and a test carrying its own copy of `MIN_MINOR` would have
+agreed with the server about the number and still missed that the field could not express it. The
+other side of the boundary is asserted too, so a server that accepts everything fails as well.
+
+Measured both ways on a rebuilt stand. Without the fix the failure reads:
+
+> the screen names 10 as its smallest top-up and then refused it
+
+**One thing this does not fix, deliberately:** the field cannot express cents. kompot's amount input
+filters keystrokes to digits, so $12.50 is untypeable. Every price in the catalogue and both limits
+are whole dollars, so nothing is unreachable today; a plan priced in cents would be, and the fix
+would be upstream rather than in this repository.
+
+Found along the way and fixed with it: `Stand.topUp` converted with a hand-written `* 100`, which is
+the exact thing `Money`'s own comment warns against. It goes through `Money.ofMajor` now.
 
 ## Anchors
 

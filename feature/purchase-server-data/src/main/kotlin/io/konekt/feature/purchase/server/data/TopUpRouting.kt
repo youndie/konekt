@@ -2,6 +2,7 @@ package io.konekt.feature.purchase.server.data
 
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
+import io.konekt.feature.purchase.server.domain.TopUpAmount
 import io.konekt.feature.purchase.server.domain.TopUpView
 import io.konekt.feature.purchase.shared.api.CreateTopUpRequest
 import io.konekt.feature.purchase.shared.api.TopUpResponse
@@ -29,7 +30,8 @@ fun Route.topUpRoutes() {
             startTopUp(
                 StartTopUpUseCase.Params(
                     subscriberId = call.subscriberId(),
-                    amountMinor = request.amountMinor,
+                    // The DTO endpoint speaks the domain's unit, and now says so at the call site.
+                    amount = TopUpAmount.minor(request.amountMinor),
                 ),
             ).getOrThrow()
 
