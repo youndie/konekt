@@ -6,6 +6,7 @@ import io.konekt.domain.suspendRunCatching
 
 class StartEsimWizardUseCase(
     private val sessions: EsimWizardSessions,
+    private val esims: EsimRepository,
     private val ids: EsimIds,
 ) {
     suspend operator fun invoke(params: Params): Result<EsimWizardView> =
@@ -21,7 +22,10 @@ class StartEsimWizardUseCase(
             // screen, so a client that received one and could not find it afterwards would be holding
             // a button that does nothing.
             sessions.create(record)
-            EsimWizardView(record)
+            // Through the shared builder even though a run this new can hold no profile. The point is
+            // that no use case here gets to decide separately whether a view carries one — see
+            // `viewOf`, and `B-66` for what deciding separately cost.
+            esims.viewOf(record)
         }
 
     data class Params(
@@ -48,14 +52,14 @@ class AdvanceEsimWizardUseCase(
             // A finished run is read-only rather than an error. The client may still be holding its
             // last screen, and answering 404 to the button on it would replace a finished wizard with
             // a failure.
-            if (record.session.isFinished) return@suspendRunCatching view(record)
+            if (record.session.isFinished) return@suspendRunCatching esims.viewOf(record)
 
             if (params.transition.movesForward()) {
                 refusalFor(record)?.let { refusal ->
                     // Held exactly where it was: same step, same draft, nothing written. The screen
                     // that comes back is the one the subscriber is already looking at, with the
                     // reason on it.
-                    return@suspendRunCatching view(record, refusal)
+                    return@suspendRunCatching esims.viewOf(record, refusal)
                 }
             }
 
@@ -82,20 +86,8 @@ class AdvanceEsimWizardUseCase(
 
             val updated = record.copy(session = session)
             sessions.save(updated)
-            view(updated)
+            esims.viewOf(updated)
         }
-
-    private suspend fun view(
-        record: EsimWizardRecord,
-        refusal: EsimRefusal? = null,
-    ): EsimWizardView =
-        EsimWizardView(
-            record = record,
-            refusal = refusal,
-            esim =
-                record.session.draft.issuedEsimId
-                    ?.let { esims.findById(it) },
-        )
 
     private suspend fun refusalFor(record: EsimWizardRecord): EsimRefusal? =
         when (record.session.currentStepId) {
@@ -162,11 +154,16 @@ private fun EsimWizardRecord?.ownedByOr404(subscriberId: String): EsimWizardReco
 // entry point back where nothing could reach it.
 class OpenEsimWizardUseCase(
     private val sessions: EsimWizardSessions,
+    private val esims: EsimRepository,
     private val ids: EsimIds,
 ) {
     suspend operator fun invoke(params: Params): Result<EsimWizardView> =
         suspendRunCatching {
-            sessions.findUnfinishedBy(params.subscriberId)?.let { return@suspendRunCatching EsimWizardView(it) }
+            // RESUMING CARRIES THE PROFILE, and for a long time it did not — which made the one step
+            // this flow exists for undrawable by the only path the client ever takes. See `B-66`: the
+            // step served over POST answered a QR and the same step served over GET answered "we
+            // could not read your activation code", seconds apart, over a row holding a valid one.
+            sessions.findUnfinishedBy(params.subscriberId)?.let { return@suspendRunCatching esims.viewOf(it) }
 
             val record =
                 EsimWizardRecord(
@@ -175,10 +172,33 @@ class OpenEsimWizardUseCase(
                     session = esimWizardEngine().start(EsimOrderDraft()),
                 )
             sessions.create(record)
-            EsimWizardView(record)
+            esims.viewOf(record)
         }
 
     data class Params(
         val subscriberId: String,
     )
 }
+
+// THE ONE PLACE A VIEW IS BUILT, and it is a shared function rather than three agreeing copies
+// because three agreeing copies is what this was and they did not agree.
+//
+// A view carries the profile whenever the draft names one. Deciding that per use case looks harmless
+// — a fresh run has no profile, so two of the three callers are correct with a null — right up to the
+// caller that RESUMES a run, where the draft names a profile and the step being drawn is the one that
+// needs it. That was `B-66`: the wizard's activate step told subscribers their activation code could
+// not be read, over a database row that held it, for every arrival except the one the client does not
+// make.
+//
+// So the rule is not "fill it in where it matters". It is that no caller chooses.
+internal suspend fun EsimRepository.viewOf(
+    record: EsimWizardRecord,
+    refusal: EsimRefusal? = null,
+): EsimWizardView =
+    EsimWizardView(
+        record = record,
+        refusal = refusal,
+        esim =
+            record.session.draft.issuedEsimId
+                ?.let { findById(it) },
+    )

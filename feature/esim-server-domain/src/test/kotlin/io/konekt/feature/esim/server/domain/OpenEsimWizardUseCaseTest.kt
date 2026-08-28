@@ -17,7 +17,8 @@ class OpenEsimWizardUseCaseTest {
             var n = 0
         }
 
-    private fun openerOver(sessions: FakeSessions) = OpenEsimWizardUseCase(sessions, EsimIds { "wizard-${++ids.n}" })
+    private fun openerOver(sessions: FakeSessions) =
+        OpenEsimWizardUseCase(sessions, FakeEsims(), EsimIds { "wizard-${++ids.n}" })
 
     @Test
     fun `opening twice is one run, not two`() =

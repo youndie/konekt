@@ -23,7 +23,7 @@ fun esimModule(database: Database) =
         single<SmDpPlus> { MockSmDpPlus() }
         single<EsimIds> { EsimIds { Uuid.random().toString() } }
 
-        factory { StartEsimWizardUseCase(get(), get()) }
-        factory { OpenEsimWizardUseCase(get(), get()) }
+        factory { StartEsimWizardUseCase(get(), get(), get()) }
+        factory { OpenEsimWizardUseCase(get(), get(), get()) }
         factory { AdvanceEsimWizardUseCase(get(), get(), get()) }
     }

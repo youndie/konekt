@@ -41,11 +41,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (7)
+## Open (6)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-66](docs/backlog/B-66-the-esim-qr-is-unreachable-through-the-app.md) `[ ]` | The activation code cannot be reached from the app: the resume path never carries the profile | P0 | S | - |
 | [B-67](docs/backlog/B-67-the-top-up-field-is-off-by-a-hundred.md) `[ ]` | The top-up field reads minor units while every number printed beside it is major | P0 | S | - |
 | [B-68](docs/backlog/B-68-a-refused-purchase-never-says-why.md) `[ ]` | Five reasons a purchase is refused render as one sentence that names none of them | P1 | M | - |
 | [B-69](docs/backlog/B-69-held-is-not-installed.md) `[ ]` | "1 eSIM installed" over a number that counts profiles held, installed or not | P1 | S | - |
@@ -53,7 +52,7 @@ so re-prioritising must never move a file.
 | [B-71](docs/backlog/B-71-two-primary-buttons-on-the-completed-purchase.md) `[ ]` | The way out is drawn with the same weight as the action, so the completed purchase has two primaries | P2 | XS | - |
 | [B-72](docs/backlog/B-72-orders-is-the-only-tab-without-a-title.md) `[ ]` | Orders is the only tab that opens with no title | P3 | XS | - |
 
-## Closed (65)
+## Closed (67)
 
 **The wire and the shell**
 
@@ -130,6 +129,8 @@ so re-prioritising must never move a file.
 - [B-62](docs/backlog/B-62-the-stand-shared-ports-with-the-machine.md) `[x]` - Three tests accused the services that were working; a local daemon held their ports
 - [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[x]` - Five hand-kept lists of which components nest, and each goes stale by looking at less
 - [B-65](docs/backlog/B-65-an-edited-migration-rolls-the-deploy-back.md) `[x]` - Editing a comment in a deployed migration rolled the deploy back, and nothing before the contour noticed
+- [B-66](docs/backlog/B-66-the-esim-qr-is-unreachable-through-the-app.md) `[x]` - The activation code cannot be reached from the app: the resume path never carries the profile
+- [B-73](docs/backlog/B-73-the-stand-registered-no-actions.md) `[x]` - The stand's Json registered none of the three action modules, so every action it read was unknown
 
 **Upstream and the box**
 

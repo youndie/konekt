@@ -77,6 +77,41 @@ class EsimWizardScreenTest {
         esim = esim,
     )
 
+    // A SCREEN THAT CANNOT SHOW THE CODE MUST NOT ASK WHETHER IT WAS SCANNED.
+    //
+    // This branch should now be unreachable in the product — the path that lost the profile is fixed
+    // (`B-66`) — but it remains for the state it was written for: a profile issued and its row gone.
+    // What was wrong is what it drew. "I have scanned it" invites the subscriber to confirm scanning
+    // something that is not there, and confirming MOVES the run off the only step that would have
+    // shown the code once the row came back.
+    //
+    // Back stays, because the copy above it tells them to go back.
+    @Test
+    fun `the activate step offers nothing to confirm when there is no code to scan`() {
+        val screen = EsimWizardScreen.build(viewAt(EsimWizardSteps.ACTIVATE, esim = null))
+
+        val buttons = screen.all<ButtonComponent>()
+        assertTrue(
+            buttons.none { it.text == "I have scanned it" },
+            "the screen asked for confirmation of a scan it could not offer: ${buttons.map { it.text }}",
+        )
+        // Not a screen with no controls at all, which is the other way to pass the assertion above
+        // and is a subscriber stuck on a step.
+        assertTrue(buttons.any { it.text == "Back" }, "no way off the step: ${buttons.map { it.text }}")
+    }
+
+    // The control for the control: with a profile, the same step DOES ask. Without this the
+    // assertion above passes on a wizard whose activate step lost its button entirely.
+    @Test
+    fun `the activate step asks about the scan when the code is on it`() {
+        val screen = EsimWizardScreen.build(viewAt(EsimWizardSteps.ACTIVATE, esim = profile))
+
+        assertTrue(
+            screen.all<ButtonComponent>().any { it.text == "I have scanned it" },
+            "the step that shows the code offers no way to say it was scanned",
+        )
+    }
+
     @Test
     fun `the slot limit is drawn on step one, with the meter still reading one of four`() {
         val screen =

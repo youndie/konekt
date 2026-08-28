@@ -59,7 +59,7 @@ object EsimWizardScreen {
                     }
 
                     addAll(contentOf(step, view.esim))
-                    add(controlsOf(step, wizardId))
+                    add(controlsOf(step, wizardId, view.esim))
                 },
         )
     }
@@ -210,6 +210,7 @@ object EsimWizardScreen {
     private fun controlsOf(
         step: String,
         wizardId: String,
+        esim: EsimProfile?,
     ): KompotComponent {
         val back =
             ButtonComponent(
@@ -230,7 +231,16 @@ object EsimWizardScreen {
                 }
 
                 EsimWizardSteps.ACTIVATE -> {
-                    forwardButton(wizardId, "I have scanned it")
+                    // NOTHING TO HAVE SCANNED. When the code could not be read, the content above is
+                    // an apology and this button asks the subscriber to confirm scanning something
+                    // that is not on the screen — and confirming MOVES the run, so the one state that
+                    // still had the code behind it is left behind.
+                    //
+                    // Only Back, which is what the copy above already tells them to press. This is
+                    // the second half of `B-66`: the first half is that the branch should be
+                    // unreachable, and a control that contradicts its own screen is worth removing
+                    // whatever made the screen say it.
+                    esim?.activationCode?.let { forwardButton(wizardId, "I have scanned it") }
                 }
 
                 EsimWizardSteps.DONE -> {
@@ -253,7 +263,11 @@ object EsimWizardScreen {
         // No Back on the first step: there is nowhere to go, and wizard-core would keep the session
         // where it is. A button that is always there and sometimes does nothing teaches people that
         // buttons sometimes do nothing.
-        val buttons = if (step == EsimWizardSteps.CHECK) listOf(forward) else listOf(back, forward)
+        // `forward` is nullable now, and only for the step above. `listOfNotNull` rather than a
+        // branch on the step, so a step that later has nothing to go forward to does the right thing
+        // without this line being edited again.
+        val buttons =
+            if (step == EsimWizardSteps.CHECK) listOfNotNull(forward) else listOfNotNull(back, forward)
 
         return RowComponent(
             id = "esim-wizard-controls",

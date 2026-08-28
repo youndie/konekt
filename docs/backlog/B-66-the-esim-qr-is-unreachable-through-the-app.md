@@ -1,7 +1,7 @@
 ---
 id: B-66
 title: "The activation code cannot be reached from the app: the resume path never carries the profile"
-status: open
+status: done
 priority: P0
 size: S
 stage: stage-m4-proof
@@ -57,14 +57,30 @@ After the purchase, Home's install banner is gone: it renders when `esimsHeld ==
 that is `ready` counts as held. So the eSIM is unreachable from the running product altogether —
 no entry point on Home, and the wizard's own step refuses to show the code.
 
-## Fix
+## What was done
 
-`OpenEsimWizardUseCase` resolves the profile the way `AdvanceEsimWizardUseCase` does — the same
-helper, not a second copy of it. Then a test that asserts the two paths agree, over every step
-rather than over ACTIVATE: the step added next is the one that will disagree next.
+**One builder, and no caller chooses.** `viewOf` is now a single `EsimRepository` extension that all
+three use cases call — including the two for which a null profile is currently correct, because
+"correct today" is exactly what the two agreeing copies were before they stopped agreeing.
 
-Separately, the missing-code branch should not offer **I have scanned it**. A control to confirm
-scanning something that is not on the screen is wrong whatever the reason the code is absent.
+**A test over every step, not over the one that broke.** `EsimWizardViewsAgreeTest` walks the flow and
+compares the two views at each step, with a vacuity guard on both ends: the walk must visit every id
+in `EsimWizardSteps.order`, and a profile must actually have been issued — otherwise both paths agree
+about nothing. Proved by mutation: restoring the old line fails it, naming the step.
+
+**The contradictory control is gone.** The missing-code branch no longer draws **I have scanned it**.
+The branch stays, for the state it was written for, but a control that asks a subscriber to confirm
+scanning something absent — and MOVES the run when they press it — is wrong whatever put them there.
+Two tests, one either way, so removing the button everywhere would fail too.
+
+**And the stand asks the question the client asks.** `EsimInstallScenarioTest` walks the install flow
+the way `EsimInstall` does — POST to move, GET to look, never asserting on what a POST returned — and
+there was no eSIM scenario in the suite at all before, which is the whole reason this reached a
+contour. Measured both ways on a rebuilt stand: green with the fix, red without it.
+
+Finding along the way, filed separately as
+[B-73](B-73-the-stand-registered-no-actions.md): the suite's `Json` carried none of the three action
+modules, so reading a control's action off a served tree answered `UnknownAction` — silently.
 
 ## Anchors
 

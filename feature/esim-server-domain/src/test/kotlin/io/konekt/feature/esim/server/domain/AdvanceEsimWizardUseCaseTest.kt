@@ -18,7 +18,7 @@ class AdvanceEsimWizardUseCaseTest {
     private val esims = FakeEsims()
     private val smDpPlus = FakeSmDpPlus(refusalText = "This device already holds 8 eSIM profiles.")
 
-    private val start = StartEsimWizardUseCase(sessions, EsimIds { "wiz-1" })
+    private val start = StartEsimWizardUseCase(sessions, esims, EsimIds { "wiz-1" })
     private val advance = AdvanceEsimWizardUseCase(sessions, esims, smDpPlus)
 
     private suspend fun startRun() = start(StartEsimWizardUseCase.Params(subscriber)).getOrThrow()

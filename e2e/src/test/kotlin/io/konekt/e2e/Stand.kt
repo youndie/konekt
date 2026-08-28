@@ -14,9 +14,15 @@ import io.konekt.feature.auth.shared.api.DevOtp
 import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
+import io.konekt.feature.auth.shared.api.authActionsSerializersModule
+import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
+import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
 import io.konekt.feature.purchase.shared.api.CreateTopUpRequest
+import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
+import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUpResponse
 import io.konekt.feature.purchase.shared.api.TopUps
+import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -53,9 +59,14 @@ object Stand {
     private val jdbcUrl: String = System.getProperty("konekt.stand.jdbc") ?: "jdbc:postgresql://127.0.0.1:55432/konekt"
     private val composeFile: String? = System.getProperty("konekt.stand.compose")
 
-    // The same module set the server assembles. Two lists that must agree and cannot share a
+    // The module set a CLIENT of this server assembles. Two lists that must agree and cannot share a
     // definition is a seam that drifts — and this suite is the one place where a drift between them
-    // would be visible as a screen that decodes to nothing.
+    // would be visible at all.
+    //
+    // "Visible" was too generous. A missing COMPONENT module decodes a screen to nothing, which is
+    // loud; a missing ACTION module decodes a button's action to `UnknownAction`, which is silent and
+    // reads as a screen that offers nothing. All three action modules were absent here for as long as
+    // this file has existed, and no test noticed because none of them read an action.
     val json: Json =
         Json {
             ignoreUnknownKeys = true
@@ -73,7 +84,20 @@ object Stand {
                 // decodes the screen and fails on `$.schema.fields[0]`, which is exactly what this
                 // suite did the first time it asked for a form.
                 generatedFormsSerializersModule +
-                formStandardSerializersModule
+                formStandardSerializersModule +
+                // THE ACTIONS, and all three were missing until an install scenario tried to read one.
+                //
+                // Nothing failed. kompot answers an unregistered action with `UnknownAction`, so a
+                // test that pulls the action off a button and looks at it gets null and concludes the
+                // screen has no control — which is indistinguishable from a server that drew none.
+                // The suite's own walk stood on step one for eight iterations and reported that the
+                // activation code was never drawn, while the server was serving it.
+                //
+                // The three the CLIENT registers, not the five the server does: `petich` and the dev
+                // screens are the server talking to itself.
+                authActionsSerializersModule +
+                esimActionsSerializersModule +
+                purchaseActionsSerializersModule
         }
 
     fun client(baseUrl: String = serverUrl): HttpClient =
@@ -143,6 +167,29 @@ object Stand {
                 bearerAuth(session.accessToken)
                 setBody(CreateTopUpRequest(amountMinor = amountMinor))
             }.body()
+
+    // A COMPLETED PURCHASE, which several scenarios need as a precondition rather than as a subject.
+    //
+    // Through the product's own two steps — create, then confirm — for the same reason `topUp` runs
+    // the saga instead of seeding SQL: a precondition arranged behind the application proves the rest
+    // works given a state nothing can reach.
+    suspend fun buyAndConfirm(
+        client: HttpClient,
+        session: Session,
+        planId: String,
+    ): PurchaseOrderResponse {
+        val started =
+            client
+                .post(Purchases()) {
+                    bearerAuth(session.accessToken)
+                    setBody(CreatePurchaseRequest(planId))
+                }.body<PurchaseOrderResponse>()
+
+        return client
+            .post(Purchases.ById.Confirm(Purchases.ById(orderId = started.orderId))) {
+                bearerAuth(session.accessToken)
+            }.body()
+    }
 
     private fun subscriberIdOf(msisdn: String): String =
         connection().use { connection ->

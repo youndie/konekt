@@ -302,6 +302,17 @@ circular dependency inside `:server` naming neither module.
   the CARD branch is unreachable in production and no arrangement of components demonstrates both.
   `B-25` carries the finding and the open question of who should choose. The wire name goes to the degradation sink, where
   an operator can count it; on the screen it is a word nobody can act on.
+- **A screen reachable two ways must be built one way.** The eSIM wizard's activate step was served
+  by a step POST and by a screen GET; only the first resolved the issued profile, so the step told
+  subscribers their activation code could not be read while the database held it (`B-66`). Both paths
+  now go through one `viewOf` — including the callers for which a null is currently correct, because
+  "correct today" is what the two copies were before they diverged. The general rule: when a client
+  posts and then REFETCHES — which `EsimInstall` does deliberately, and says so — every assertion on
+  the POST's body is an assertion about a payload nothing renders.
+- **A missing action module is silent, unlike a missing component module.** kompot answers an
+  unregistered action with `UnknownAction`, so the tree still decodes and a test reading a control's
+  action gets null — indistinguishable from a screen that drew none. The stand's `Json` was missing
+  all three of ours (`B-73`) and no test noticed, because none of them read an action.
 - **The stand is the only thing that asks the application.** Four defects fatal to the running server
   survived 191 green tests, because every test below that level builds its own object graph and
   supplies what it needs: a broadcaster nothing bound (the server could not start), a `Json` missing
