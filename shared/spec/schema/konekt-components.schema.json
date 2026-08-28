@@ -15,6 +15,7 @@
       "skeleton": "#/$defs/KompotComponentSkeleton",
       "snackbar": "#/$defs/KompotComponentSnackbar",
       "step_meter": "#/$defs/KompotComponentStepMeter",
+      "surface": "#/$defs/KompotComponentSurface",
       "usage_counter_card": "#/$defs/KompotComponentUsageCounterCard"
     }
   },
@@ -302,6 +303,12 @@
             "type": "string"
           }
         },
+        "perUnitText": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "zoneText": {
           "type": [
             "string",
@@ -448,6 +455,43 @@
         "id",
         "current",
         "total"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentSurface": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "surface",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "surface"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotComponent"
+          }
+        },
+        "tone": {
+          "type": "string"
+        },
+        "spacing": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "children"
       ],
       "additionalProperties": true
     },
