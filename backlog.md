@@ -45,9 +45,9 @@ so re-prioritising must never move a file.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-75](docs/backlog/B-75-the-scroll-survives-a-wizard-step.md) `[ ]` | A wizard step keeps the previous step's scroll, so the new screen opens part-way down | P2 | S | - |
+| [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand that has been up all day, and pass on a fresh one | P2 | S | - |
 
-## Closed (75)
+## Closed (76)
 
 **The wire and the shell**
 
@@ -133,6 +133,7 @@ so re-prioritising must never move a file.
 - [B-72](docs/backlog/B-72-orders-is-the-only-tab-without-a-title.md) `[x]` - Orders is the only tab that opens with no title
 - [B-73](docs/backlog/B-73-the-stand-registered-no-actions.md) `[x]` - The stand's Json registered none of the three action modules, so every action it read was unknown
 - [B-74](docs/backlog/B-74-the-qr-fills-the-screen-and-buries-what-to-do-with-it.md) `[x]` - The activation code has no maximum size, so it grows with the window until the controls leave the screen
+- [B-75](docs/backlog/B-75-the-scroll-survives-a-wizard-step.md) `[x]` - A wizard step keeps the previous step's scroll, so the new screen opens part-way down
 - [B-76](docs/backlog/B-76-done-returns-to-the-first-step-instead-of-leaving.md) `[x]` - Done finishes the install and lands the subscriber back on step one of a new one
 
 **Upstream and the box**

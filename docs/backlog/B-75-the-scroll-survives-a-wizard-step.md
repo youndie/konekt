@@ -1,7 +1,7 @@
 ---
 id: B-75
 title: "A wizard step keeps the previous step's scroll, so the new screen opens part-way down"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m4-proof
@@ -33,13 +33,33 @@ The one sentence a subscriber has been waiting for since they paid is the one th
 is broken and nothing reports it — the tree is right, the golden is right, and the screen is right if
 you scroll.
 
-## What to decide
+## What was done
 
-Whether "the tree at this address changed" should reset the scroll, and how the holder can tell that
-apart from a refetch that arrives with the same content — a live update, a filter chip, a poll.
-Resetting on every refetch would jump a subscriber to the top when a counter ticks, which is worse.
+**The holder already knew, and the answer is not the step id.** The question is not "did the tree
+change" but WHY it was fetched, and `reloads` is exactly that: it is bumped in one place — the action
+path, after a press answered with somewhere to be, including the case where that somewhere is where
+we already are. A live update does not touch it, and neither does the refetch after a stream gap.
 
-The wizard has a signal the others do not: the step id.
+So the scroll state is `key(current, reloads) { rememberScrollState() }`: a new address or a press
+gives a new one, an update leaves it alone. `key` rather than `remember(...)` so what is inside stays
+the saveable state the toolkit gives.
+
+No knowledge of wizards was needed, which matters — a holder that knew what a step was would be this
+application's holder rather than a reusable one.
+
+**Both halves are asserted, and the second one took two goes to become real.**
+`ScrollAcrossScreensTest` scrolls, then presses; and scrolls, then fires a stream restart. Proved by
+mutation in both directions: removing the key fails the first, keying on the fetched screen as well
+fails the second.
+
+That second mutation initially passed, and the reason is worth keeping. The fake answered an
+IDENTICAL tree every time, so `key(..., screen)` saw no change and reset nothing — the guard was
+vacuous against exactly the implementation it exists to refuse. A refetch after a gap exists to bring
+back changed data, so the fake now answers differently each time.
+
+**And the assertions are about what is DISPLAYED, not what exists.** A `Column` with `verticalScroll`
+composes every child whatever its position, so `onAllNodesWithText` finds a row that left the screen
+long ago. The first version of the test failed on its own precondition for that reason.
 
 ## Anchors
 

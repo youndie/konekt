@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -296,6 +297,24 @@ fun KonektApp(
         }
     }
 
+    // A NEW SCREENFUL STARTS AT THE TOP, AND AN UPDATED ONE DOES NOT.
+    //
+    // The scroll state used to be remembered at the call site with no key, so it survived everything:
+    // pressing a wizard step replaced the content underneath a position half a screen down, and the
+    // banner the subscriber had been waiting for since they paid — "Your eSIM is ready." — arrived
+    // above the fold (`B-75`). The address does not change between steps, so keying on it alone was
+    // not enough.
+    //
+    // `reloads` is what tells the two apart, and it already existed. It is bumped in ONE place — the
+    // action path, after a press answered with somewhere to be, including the case where that
+    // somewhere is where we already are. A live update does not touch it and neither does the
+    // refetch after a stream gap, both of which mean "the same screen, newer" and must leave a
+    // reader where they were.
+    //
+    // `key` rather than `remember(...)`, so the state inside stays the saveable one the toolkit
+    // gives; what changes is that a new screenful gets a new one.
+    val scroll = key(current, reloads) { rememberScrollState() }
+
     KonektTheme(theme = theme ?: fetchedTheme, darkMode = darkMode) {
         CompositionLocalProvider(
             LocalKompotRealtimeUpdates provides updates,
@@ -415,7 +434,7 @@ fun KonektApp(
                                 if (content?.carriesItsOwnScroll() == true) {
                                     Modifier
                                 } else {
-                                    Modifier.verticalScroll(rememberScrollState())
+                                    Modifier.verticalScroll(scroll)
                                 },
                             ).padding(horizontal = 20.dp, vertical = 16.dp),
                 ) {
