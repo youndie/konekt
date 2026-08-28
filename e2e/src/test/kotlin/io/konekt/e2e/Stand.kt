@@ -267,6 +267,20 @@ object Stand {
         val lines = output.trim().lines().filter { it.isNotBlank() }
         if (lines.isEmpty()) return "  THE STAND IS NOT RUNNING — nothing is up. Start it: make stand-up"
 
+        // HOW LOADED THE STAND IS, which was invisible and is the difference between two very
+        // different failures wearing the same message.
+        //
+        // Several scenarios wait for the traffic simulator to move a counter belonging to a
+        // subscriber they just made. The simulator publishes for EVERY subscriber holding one, every
+        // five seconds, so what it produces grows with this number while the consumer that applies
+        // the events does not. On a stand torn down that morning it is three; after a day of walking
+        // through the application by hand it is dozens, and the same timeout means something else
+        // entirely (`B-77`).
+        //
+        // A count and no verdict. What a large number MEANS is measured in that item and not decided
+        // here — a harness that accused the stand of being busy would be as wrong as one that
+        // accused the product of being slow.
+
         // A service is fine if it is running, or if it exited cleanly — the migration job is meant to
         // exit, and exiting with anything but 0 is exactly the case worth reporting. Parenthesised
         // because a mixed `&&`/`||` is where a precedence mistake hides, and this line decides what a
@@ -277,6 +291,7 @@ object Stand {
         return buildString {
             appendLine("  the stand right now:")
             lines.forEach { appendLine("    $it") }
+            simulatedSubscribers()?.let { appendLine("    the traffic simulator is publishing for $it subscribers") }
             if (down.isNotEmpty()) {
                 appendLine()
                 appendLine("  NOT RUNNING: ${down.joinToString("; ") { it.substringBefore(' ') }}")
@@ -292,6 +307,21 @@ object Stand {
             }
         }
     }
+
+    // Null rather than a guess when the database cannot be asked: this line is context beside a
+    // failure, and a failure message that invents a number is worse than one that omits it.
+    private fun simulatedSubscribers(): Int? =
+        try {
+            connection().use { connection ->
+                connection
+                    .prepareStatement("SELECT count(DISTINCT subscriber_id) FROM usage_counter")
+                    .use { statement ->
+                        statement.executeQuery().use { rows -> if (rows.next()) rows.getInt(1) else null }
+                    }
+            }
+        } catch (unavailable: Exception) {
+            null
+        }
 
     // A PORT THE STAND PUBLISHES AND SOMEBODY ELSE ANSWERS ON.
     //

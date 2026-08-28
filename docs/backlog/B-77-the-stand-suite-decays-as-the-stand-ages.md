@@ -38,22 +38,45 @@ The offset the simulator logs on startup — `from offset 11605` — was the evi
 it does not support it: it says a great many events had been published, which is equally true of the
 explanation below.
 
-## The better candidate, read rather than measured
+## Measured, and the subscriber count is not the cause
 
-**Production scales with the number of subscribers and consumption does not.** The simulator sends
-three events per subscriber every five seconds — 0.6 events per second per subscriber — while
-`UsageConsumer` polls every 200 ms and applies each record with a database write and a realtime push.
-Once 0.6 × N exceeds what the consumer sustains, the backlog grows without bound, and the wait for
-any one subscriber's counter to move grows with it. Both failing scenarios wait for exactly that.
+`probes/lag.sh` creates subscribers with counters, then times how long a BRAND NEW one waits for its
+data counter to move — which is what both failing scenarios are waiting for. Three readings per point,
+because one is an anecdote and there is a broker in this.
 
-What is NOT established: the consumer's actual throughput, and therefore where the crossing point is.
-Everything above is read out of two files.
+| subscribers | run 1 | run 2 |
+|---|---|---|
+| 3 | 11, 17, 15 s | 13, 15, 16 s |
+| 23 | 18, 15, 17 s | 15, 14, 17 s |
+| 43 | 11, 16, 16 s | 16, 17, 14 s |
+| 83 | 14, 18, 14 s | 13, 15, 17 s |
 
-**How to settle it**, and it needs the stand rather than more reading: create N subscribers with
-counters on a fresh stand and measure the delay between a new subscriber appearing and their data
-counter moving, for N of 0, 20, 40, 80. If the lag is flat, the explanation above is wrong too. The
-measurement was written and not run — the build machine went off the network before it could be — so
-this item stays open with a hypothesis rather than a cause.
+**Flat.** Every reading between 11 and 18 seconds, at every load, in both runs. And the two scenarios
+that failed pass on that same stand at 83 subscribers.
+
+So the hypothesis this item was filed with is refuted, and so is the one that replaced it: neither
+"the simulator queues subscribers" nor "production outruns consumption" survives the numbers.
+
+**Run 1 was nearly thrown away and is reported because it agrees, not because it is sound.** After it
+finished the box turned out to have rebooted mid-measurement — `uptime` was seven minutes against a
+run of thirty. That is why run 2 carries the machine's uptime on every line: 491 s at the start and
+688 s at the end, monotone, one boot. A measurement whose harness restarts underneath it is not a
+measurement, and the only reason to trust the first one at all is that the second reproduces it.
+
+## What is left, and it is time rather than load
+
+The stand that failed had been **up five hours**. This one was four minutes old and heavily loaded,
+and it was fine — so what accumulates is not the number of subscribers but something that grows with
+elapsed time. The candidates, none of them measured:
+
+- **Postgres row bloat.** The simulator UPDATEs three counter rows per subscriber every five seconds
+  and never stops. Five hours of that is a great many dead row versions on the one table every one of
+  these scenarios reads.
+- **The broker's log**, which nothing truncates.
+- Something outside the product entirely — the box's own load, its disk.
+
+The soak that would settle it: leave a loaded stand alone for an hour and re-run the two scenarios,
+changing nothing else. It has not been run.
 
 ## Why it is worth an item
 
@@ -71,9 +94,8 @@ make sense if the cause is the one now suspected, and the first is worth having 
 - **The scenario says what it was waiting for and how far behind the chain was.** "waited 45s" reads
   like the product being slow; "waited 45s, and the consumer was 900 events behind" names a cause.
   Worth doing whatever the answer turns out to be.
-- **The simulator's output stops scaling with the subscriber count** — a cap per tick, or only
-  subscribers seen recently. It publishes for everyone because the demonstration wants every screen
-  to move; a stand with eighty abandoned subscribers wants no such thing.
+- **~~The simulator's output stops scaling with the subscriber count~~** — struck out by the
+  measurement above. Eighty-three subscribers cost nothing.
 - **`make e2e` says how old the stand is.** The crudest, and the only one that needs no theory about
   the simulator at all.
 
