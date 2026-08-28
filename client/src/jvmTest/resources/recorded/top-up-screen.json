@@ -29,7 +29,8 @@
                 "type": "amount_input",
                 "id": "top-up-amount",
                 "fieldId": "amount",
-                "label": "Amount ($)"
+                "label": "Amount",
+                "currencyPrefix": "$"
             },
             {
                 "type": "text",

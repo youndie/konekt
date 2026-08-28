@@ -321,7 +321,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
 | U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | open; konekt carries a `surface` component whose only job is the corner |
 | U15 | kompot | `kompot-tck` follows a graph route's endpoint literally, so a parameterised destination cannot be in a `NavigationGraph` | not filed yet | konekt keeps that one deeplink in the client instead |
-| U16 | kompot | `amount_input` can only put the currency symbol AFTER the number, and two of five currencies put it first | [kompot#97](https://github.com/youndie/kompot/issues/97) | open; konekt puts the symbol in the field's LABEL for a symbol-first currency, driven by its own layout table |
+| U16 | kompot | `amount_input` can only put the currency symbol AFTER the number, and two of five currencies put it first | [kompot#97](https://github.com/youndie/kompot/issues/97) | closed, released in `0.33.1.93` as a `currencyPrefix` beside the suffix; our label workaround deleted |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -530,12 +530,23 @@ per currency — symbol, side, separators — so the limits line under the field
 $50,000" while the field said "50 $", six lines apart, in one response (`B-70`). Two of konekt's five
 currencies are symbol-first, so neither half of the table could be hard-coded away.
 
-The local answer leaves `currencySuffix` unset for a symbol-first currency and names it in the LABEL
-instead — `Amount ($)` — which claims no position and stays visible once the label floats. It is
+The local answer left `currencySuffix` unset for a symbol-first currency and named it in the LABEL
+instead — `Amount ($)` — which claimed no position and stayed visible once the label floated. It was
 driven by the same table every other amount in this product is, and `AmountFieldPlacementTest` asserts
 it over EVERY currency rather than over the deployment's: a hard-coded choice is right for half the
 table, so a test written about `Currency.DEFAULT` would have agreed with the bug for the other half.
-Delete the workaround the day the field learns a side, not the day the deployment happens to be USD.
+
+**That workaround is deleted.** `0.33.1.93` took the first of the two shapes the issue offered — a
+`currencyPrefix` beside the `currencySuffix`, at most one set — which needed no new type and left
+every existing screen where it was. **Both halves were checked in the artefact before the version was
+bumped**, because a component that carries a field and a renderer that ignores it are the same green
+build: `AmountInputComponent` declares `currencyPrefix`, and `AmountInputRenderer` reads it.
+
+`MoneyFormat` lost its asymmetry with the workaround. It answers `leadingSymbol` and `trailingSymbol`,
+exactly one of which is non-null for any currency — two questions rather than one returning a side, so
+a caller cannot hold the answer and put it in the wrong field. The test that guards it did not change
+shape: it still reads how the formatter writes a real amount in each currency and requires the field
+to agree, still over the whole table, and still with the vacuity assertion that both branches ran.
 
 **U15 is what `B-49` ran into on its last criterion.** The client resolves a deeplink through the
 served `NavigationGraph` now, which is the whole point of that item — and one destination cannot go in

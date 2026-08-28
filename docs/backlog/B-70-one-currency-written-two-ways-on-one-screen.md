@@ -22,16 +22,19 @@ So the product already has one answer to "where does the symbol go", and the fie
 ## What was done
 
 **Both halves, in the order this repository prescribes.** The gap went upstream as
-[kompot#97](https://github.com/youndie/kompot/issues/97) — `amount_input` has a `currencySuffix` and
-no way to say "before" — and konekt works around it locally with a comment naming the issue, to be
-deleted when the field learns a side.
+[kompot#97](https://github.com/youndie/kompot/issues/97) — `amount_input` had a `currencySuffix` and
+no way to say "before" — and konekt worked around it locally with a comment naming the issue.
 
-**The workaround is driven by the same table, not by this deployment.** `MoneyFormat.trailingSymbol`
-answers with the symbol when the currency writes it after the amount and with **null** when it writes
-it in front. Answering null rather than the symbol is the point: it makes "this cannot be drawn that
-way" a case the caller must handle instead of a placement it can get wrong. The screen then uses the
-field the toolkit has where it fits, and names the currency in the LABEL where it does not —
-`Amount ($)`, which claims no position and stays visible once the label floats.
+**The issue is closed and the workaround is gone.** `0.33.1.93` added a `currencyPrefix` beside the
+suffix, at most one set; the screen now fills whichever side the currency's own layout names, and the
+symbol is out of the label. Both halves were checked in the artefact before the bump — a component
+carrying a field and a renderer ignoring it are the same green build — and the guard below did not
+change shape, only which field it looks at.
+
+**The placement comes from the same table, not from this deployment.** `MoneyFormat` answers
+`leadingSymbol` and `trailingSymbol`, exactly one of which is non-null for any currency — two
+questions rather than one returning a side, so a caller cannot hold the answer and put it in the wrong
+field. Nothing on the screen spells a symbol or picks a side.
 
 The item's own warning turned out to be about the majority rather than a future: **two of the five
 currencies already in the table are symbol-first**, so neither half could be hard-coded away.

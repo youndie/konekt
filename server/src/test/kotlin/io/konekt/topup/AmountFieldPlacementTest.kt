@@ -10,18 +10,21 @@ import kotlin.test.assertTrue
 
 // THE FIELD AND THE TEXT BESIDE IT MUST WRITE THE CURRENCY THE SAME WAY.
 //
-// They did not. `amount_input` has a `currencySuffix` and nothing else — the toolkit can draw the
-// symbol after the number and has no way to draw it before (kompot#97) — and the screen filled it
-// unconditionally. So a subscriber typing a top-up saw "50 $" six lines above "Between $10 and
-// $50,000": one screen, one currency, one response, two conventions (`B-70`).
+// They did not. `amount_input` had a `currencySuffix` and nothing else — the toolkit could draw the
+// symbol after the number and had no way to draw it before (kompot#97, closed in `0.33.1.93`) — and
+// the screen filled it unconditionally. So a subscriber typing a top-up saw "50 $" six lines above
+// "Between $10 and $50,000": one screen, one currency, one response, two conventions (`B-70`).
 //
-// ASSERTED OVER EVERY CURRENCY IN THE TABLE and not over the one this deployment uses. That is the
-// whole point of the item: a hard-coded choice is right for half the table and wrong for the other
-// half, and picking the half that happens to be `Currency.DEFAULT` today would leave the test
-// agreeing with the bug for every other currency.
+// The field takes both sides now and the workaround that put the symbol in the label is gone, so what
+// this asserts has changed while the property has not: the symbol goes where this currency puts it,
+// and on one side only.
+//
+// ASSERTED OVER EVERY CURRENCY IN THE TABLE and not over the one this deployment uses. A hard-coded
+// choice is right for half the table and wrong for the other half, and a test written about
+// `Currency.DEFAULT` would have agreed with the bug for every other currency.
 class AmountFieldPlacementTest {
     @Test
-    fun `the amount field puts the symbol where this currency puts it, or does not put it there at all`() {
+    fun `the amount field puts the symbol where this currency puts it, and on one side only`() {
         var writtenFirst = 0
         var writtenLast = 0
 
@@ -34,15 +37,14 @@ class AmountFieldPlacementTest {
 
             if (formatted.startsWith(symbol)) {
                 writtenFirst += 1
-                // The toolkit cannot draw it in front, so it must not draw it behind instead.
+                assertEquals(
+                    symbol,
+                    field.currencyPrefix,
+                    "$currency is written as \"$formatted\" and the field does not lead with the symbol",
+                )
                 assertNull(
                     field.currencySuffix,
-                    "$currency is written as \"$formatted\" and the field appends the symbol",
-                )
-                // And it still has to say which currency, somewhere that claims no position.
-                assertTrue(
-                    symbol in field.label,
-                    "$currency's symbol is nowhere on the field: ${field.label}",
+                    "$currency is written as \"$formatted\" and the field also appends the symbol",
                 )
             } else {
                 writtenLast += 1
@@ -51,12 +53,16 @@ class AmountFieldPlacementTest {
                     field.currencySuffix,
                     "$currency is written as \"$formatted\" and the field does not append the symbol",
                 )
-                // Not twice: the suffix already says it.
-                assertTrue(
-                    symbol !in field.label,
-                    "$currency's symbol is on the field twice: ${field.label} + ${field.currencySuffix}",
+                assertNull(
+                    field.currencyPrefix,
+                    "$currency is written as \"$formatted\" and the field also leads with the symbol",
                 )
             }
+
+            // NEVER IN THE LABEL, on either branch. That was the workaround while the toolkit had one
+            // side, and a label that kept saying "($)" beside a field that now draws it would be the
+            // same defect wearing the other hat.
+            assertTrue(symbol !in field.label, "$currency's symbol is in the label as well: ${field.label}")
         }
 
         // VACUITY, and it is the assertion that makes the rest mean anything. A table that had drifted
@@ -69,10 +75,11 @@ class AmountFieldPlacementTest {
     // The deployment's own currency, stated plainly, because the property above would also be
     // satisfied by a field that said nothing at all about dollars.
     @Test
-    fun `the dollar is named on the field and not appended to the number`() {
+    fun `the dollar leads the number, as it does everywhere else in this product`() {
         val field = TopUpScreens.amountField(Currency.USD)
 
+        assertEquals("$", field.currencyPrefix)
         assertNull(field.currencySuffix)
-        assertEquals("Amount ($)", field.label)
+        assertEquals("Amount", field.label)
     }
 }

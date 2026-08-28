@@ -244,30 +244,22 @@ object TopUpScreens {
 
     private fun TopUpView.balanceText() = MoneyFormat.format(balance)
 
-    // THE FIELD, and where the currency symbol goes on it.
+    // THE FIELD, and where the currency symbol goes on it — asked of the table every other amount in
+    // this product is written from, never spelled here.
     //
-    // `amount_input` has a `currencySuffix` and nothing else — the toolkit can draw the symbol after
-    // the number and has no way to draw it before (kompot#97, and see
-    // [research-upstream-proposals](../../../../../../../docs/research/research-upstream-proposals.md)
-    // U16). Filling it unconditionally is what put "50 $" six lines above this screen's own
-    // "Between $10 and $50,000": one screen writing one currency two ways, in one response (`B-70`).
-    //
-    // So the placement comes from the same table every other amount in this product comes from. A
-    // currency written after the amount gets the field the toolkit has; one written before it gets the
-    // symbol in the LABEL, which claims no position at all and stays visible once the label floats.
-    // Neither branch spells a symbol here.
-    //
-    // Delete this and go back to a plain suffix the day `amount_input` learns a side — not the day
-    // this deployment happens to be USD, because the table holds two of each.
-    internal fun amountField(currency: Currency): AmountInputComponent {
-        val trailing = MoneyFormat.trailingSymbol(currency)
-        return AmountInputComponent(
+    // `amount_input` took only a `currencySuffix` until `0.33.1.93` (kompot#97), and filling it
+    // whatever the currency is what drew "50 $" six lines above this screen's own "Between $10 and
+    // $50,000": one screen writing one currency two ways, in one response (`B-70`). The workaround
+    // put the symbol in the LABEL for a symbol-first currency; it is deleted, because the field now
+    // takes both sides and at most one is set.
+    internal fun amountField(currency: Currency): AmountInputComponent =
+        AmountInputComponent(
             id = "top-up-amount",
             fieldId = TopUpForms.FIELD_AMOUNT,
-            label = if (trailing != null) "Amount" else "Amount (${MoneyFormat.symbol(currency)})",
-            currencySuffix = trailing,
+            label = "Amount",
+            currencyPrefix = MoneyFormat.leadingSymbol(currency),
+            currencySuffix = MoneyFormat.trailingSymbol(currency),
         )
-    }
 
     private fun limitsLine(): String {
         val currency = Currency.DEFAULT
