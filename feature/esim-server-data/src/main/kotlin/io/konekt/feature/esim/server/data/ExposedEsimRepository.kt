@@ -2,6 +2,7 @@ package io.konekt.feature.esim.server.data
 
 import io.konekt.components.EsimStatuses
 import io.konekt.db.tables.EsimTable
+import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.server.domain.EsimProfile
 import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.time.KonektClock
@@ -28,17 +29,46 @@ class ExposedEsimRepository(
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         withContext(Dispatchers.IO) { suspendTransaction(db = db) { block() } }
 
-    // A TERMINATED profile does not occupy a slot, and that is the whole content of this query.
+    // A TERMINATED profile does not occupy a slot, and that is the whole content of the `held` figure.
     // Counting every row the subscriber has ever had would refuse an eighth profile to somebody
     // holding two, which is the sort of wrong answer that reads as a device limit and is not one.
-    override suspend fun countHeldBy(subscriberId: String): Int =
+    //
+    // THE OTHER TWO SPLIT IT BY WHETHER THE PROFILE IS ON A DEVICE, and this is the layer that gets to
+    // know that, because it is a fact about the status column rather than about the domain. The `when`
+    // has no `else`: a status added to the vocabulary stops here rather than being counted as
+    // something it is not — and being counted as installed is what made a subscriber who had scanned
+    // nothing read "1 eSIM installed" (`B-69`).
+    override suspend fun holdingsOf(subscriberId: String): EsimHoldings =
         dbQuery {
-            EsimTable
-                .selectAll()
-                .where {
-                    (EsimTable.subscriberId eq subscriberId) and (EsimTable.status neq EsimStatuses.TERMINATED)
-                }.count()
-                .toInt()
+            val statuses =
+                EsimTable
+                    .selectAll()
+                    .where { EsimTable.subscriberId eq subscriberId }
+                    .map { row -> row[EsimTable.status] }
+
+            var awaiting = 0
+            var installed = 0
+            statuses.forEach { status ->
+                when (status) {
+                    EsimStatuses.ORDERED, EsimStatuses.READY -> awaiting += 1
+
+                    EsimStatuses.INSTALLED, EsimStatuses.ACTIVE, EsimStatuses.SUSPENDED -> installed += 1
+
+                    // Holds no slot and is on no device, so it is in neither bucket and in no total.
+                    EsimStatuses.TERMINATED -> Unit
+
+                    // A row written by a build that knew more than this one. Counted as HELD — it
+                    // occupies a slot until something says otherwise — and claimed for neither of the
+                    // other two, because guessing which is exactly the mistake this replaced.
+                    else -> Unit
+                }
+            }
+
+            EsimHoldings(
+                held = statuses.count { it != EsimStatuses.TERMINATED },
+                awaitingInstall = awaiting,
+                installed = installed,
+            )
         }
 
     override suspend fun create(

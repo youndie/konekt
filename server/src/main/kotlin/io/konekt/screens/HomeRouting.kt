@@ -53,7 +53,7 @@ fun Route.homeRoutes() {
                 packages = packages,
                 roamingCards = roamingCards,
                 brandName = brand.displayName,
-                esimsHeld = esims.countHeldBy(subscriberId),
+                esims = esims.holdingsOf(subscriberId),
                 nav = Shell.bottomNav(Shell.Tab.HOME),
             ),
         )

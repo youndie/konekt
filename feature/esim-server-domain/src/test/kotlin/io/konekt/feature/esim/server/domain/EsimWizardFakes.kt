@@ -13,7 +13,15 @@ class FakeEsims(
     val created = mutableListOf<EsimProfile>()
     val installed = mutableListOf<String>()
 
-    override suspend fun countHeldBy(subscriberId: String): Int = held
+    // The wizard's capacity rule only reads `held`; the buckets are the screens' question and are
+    // derived here from what this fake has actually created, so a test cannot set them to disagree
+    // with the profiles it holds.
+    override suspend fun holdingsOf(subscriberId: String): EsimHoldings =
+        EsimHoldings(
+            held = held,
+            awaitingInstall = created.count { it.status == "ready" || it.status == "ordered" },
+            installed = created.count { it.status == "installed" || it.status == "active" },
+        )
 
     override suspend fun create(
         subscriberId: String,

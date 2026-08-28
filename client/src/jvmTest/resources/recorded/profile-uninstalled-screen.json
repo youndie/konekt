@@ -1,0 +1,89 @@
+{
+    "type": "column",
+    "id": "profile",
+    "children": [
+        {
+            "type": "text",
+            "id": "profile-title",
+            "text": "Profile",
+            "style": "headline_small",
+            "color": "on_surface"
+        },
+        {
+            "type": "text",
+            "id": "profile-msisdn-label",
+            "text": "Number",
+            "style": "label_medium",
+            "color": "on_surface_variant"
+        },
+        {
+            "type": "text",
+            "id": "profile-msisdn",
+            "text": "+79990009876",
+            "style": "title_medium",
+            "color": "on_surface"
+        },
+        {
+            "type": "text",
+            "id": "profile-esims",
+            "text": "1 eSIM not installed yet",
+            "style": "body_medium",
+            "color": "on_surface_variant"
+        },
+        {
+            "type": "banner",
+            "id": "profile-support",
+            "text": "Support answers around the clock. Have your order reference ready."
+        },
+        {
+            "type": "button",
+            "id": "profile-sign-out",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Sign out",
+            "action": {
+                "type": "sign_out"
+            }
+        },
+        {
+            "type": "bottom_nav",
+            "id": "shell-nav",
+            "items": [
+                {
+                    "label": "Home",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://home"
+                    }
+                },
+                {
+                    "label": "Plans",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://plans"
+                    }
+                },
+                {
+                    "label": "Orders",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders"
+                    }
+                },
+                {
+                    "label": "Profile",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://profile"
+                    },
+                    "selected": true
+                }
+            ]
+        }
+    ],
+    "spacing": 12
+}

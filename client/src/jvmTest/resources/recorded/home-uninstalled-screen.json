@@ -1,0 +1,149 @@
+{
+    "type": "column",
+    "id": "home",
+    "children": [
+        {
+            "type": "text",
+            "id": "home-brand",
+            "text": "Konekt",
+            "style": "headline_small",
+            "color": "on_surface"
+        },
+        {
+            "type": "surface",
+            "id": "balance",
+            "children": [
+                {
+                    "type": "text",
+                    "id": "balance-label",
+                    "text": "Balance",
+                    "style": "label_medium",
+                    "color": "on_primary_container"
+                },
+                {
+                    "type": "text",
+                    "id": "balance-amount",
+                    "text": "$35",
+                    "style": "display_small",
+                    "color": "on_primary_container"
+                },
+                {
+                    "type": "text",
+                    "id": "balance-msisdn",
+                    "text": "+79996660001",
+                    "style": "body_medium",
+                    "color": "on_primary_container"
+                },
+                {
+                    "type": "row",
+                    "id": "balance-actions",
+                    "children": [
+                        {
+                            "type": "button",
+                            "id": "balance-top-up",
+                            "text": "Top up",
+                            "action": {
+                                "type": "navigate",
+                                "deeplink": "app://top-up"
+                            }
+                        },
+                        {
+                            "type": "button",
+                            "id": "balance-history",
+                            "text": "History",
+                            "action": {
+                                "type": "navigate",
+                                "deeplink": "app://orders"
+                            }
+                        }
+                    ],
+                    "spacing": 8
+                }
+            ],
+            "tone": "accent",
+            "spacing": 4
+        },
+        {
+            "type": "usage_counter_card",
+            "id": "counter-data",
+            "title": "Data",
+            "valueText": "20 GB left",
+            "progress": 0.0
+        },
+        {
+            "type": "usage_counter_card",
+            "id": "counter-minutes",
+            "title": "Minutes",
+            "valueText": "300 min left",
+            "progress": 0.0
+        },
+        {
+            "type": "usage_counter_card",
+            "id": "counter-messages",
+            "title": "Messages",
+            "valueText": "50 SMS left",
+            "progress": 0.0
+        },
+        {
+            "type": "banner",
+            "id": "home-install-esim",
+            "text": "Your eSIM is not installed yet. Install it to start using what you have bought.",
+            "actionText": "Install eSIM",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://esim-install"
+            }
+        },
+        {
+            "type": "button",
+            "id": "home-buy",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Buy a package",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://plans"
+            }
+        },
+        {
+            "type": "bottom_nav",
+            "id": "shell-nav",
+            "items": [
+                {
+                    "label": "Home",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://home"
+                    },
+                    "selected": true
+                },
+                {
+                    "label": "Plans",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://plans"
+                    }
+                },
+                {
+                    "label": "Orders",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders"
+                    }
+                },
+                {
+                    "label": "Profile",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://profile"
+                    }
+                }
+            ]
+        }
+    ],
+    "spacing": 16
+}

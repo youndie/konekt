@@ -213,6 +213,14 @@ circular dependency inside `:server` naming neither module.
 - **Inside `Table.insert { }` the table is the receiver**, so a bare name resolves to the COLUMN. A
   parameter wins that resolution and a class property does not — which is why it bites in a test seed
   and not in a repository, and why the fix is a differently named local.
+- **A number two screens read is a number they will come to disagree about.** One count of eSIM
+  profiles served three callers: the device's slot limit, the profile screen's sentence, and the home
+  screen's decision whether to offer the install flow. It means SLOTS, so the profile said "1 eSIM
+  installed" about one nobody had scanned, and the install door vanished at the moment there was
+  something to install (`B-69`). `EsimHoldings` splits it once, in the port, with the buckets in the
+  domain and the statuses in the data layer. When a count is about to answer a second question, split
+  it rather than reuse it — and give the new state a frame, because a state nobody photographs is one
+  whose copy a green suite can rewrite.
 - **A refusal travels as a code and becomes a sentence on the screen.** petich keeps no reason of its
   own — the message on a `Reject` is for a log — so a refusal not written into the `decline` ledger
   row is one no screen can ever state; that is why five distinct purchase refusals read as one

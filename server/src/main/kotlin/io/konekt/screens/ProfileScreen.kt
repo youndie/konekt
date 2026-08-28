@@ -8,6 +8,7 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
+import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
 
 // THE ACCOUNT, as its owner sees it — and deliberately shorter than the canvas draws it.
@@ -25,7 +26,7 @@ import io.konekt.feature.shell.shared.api.SignOutAction
 object ProfileScreen {
     fun build(
         msisdn: String,
-        esimsHeld: Int,
+        esims: EsimHoldings,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -71,7 +72,7 @@ object ProfileScreen {
                     add(
                         TextComponent(
                             id = "profile-esims",
-                            text = esimLine(esimsHeld),
+                            text = esimLine(esims),
                             style = M3Typography.BodyMedium,
                             color = M3Colors.OnSurfaceVariant,
                         ),
@@ -105,12 +106,28 @@ object ProfileScreen {
                 },
         )
 
-    // Singular and plural, composed here like every other string on the wire. "1 eSIMs" is the sort
-    // of thing a reader stops trusting a product over.
-    private fun esimLine(held: Int): String =
-        when (held) {
-            0 -> "No eSIM installed on this line yet"
-            1 -> "1 eSIM installed"
-            else -> "$held eSIMs installed"
+    // WHAT IS ON THIS LINE, and the word has to match the number.
+    //
+    // It said "installed" over a count of profiles HELD — a figure that exists for the device's slot
+    // limit and says nothing about whether anything was ever scanned. So a subscriber who had bought
+    // a profile and not installed it read "1 eSIM installed", on the one screen that exists to tell
+    // them what they have (`B-69`).
+    //
+    // Both numbers when both are non-zero, rather than a total: "2 eSIMs" would be true and would
+    // hide the one fact worth acting on. Singular and plural composed here like every other string on
+    // the wire — "1 eSIMs" is the sort of thing a reader stops trusting a product over.
+    private fun esimLine(esims: EsimHoldings): String =
+        when {
+            esims.held == 0 -> "No eSIM on this line yet"
+
+            esims.awaitingInstall == 0 -> "${count(esims.installed)} installed"
+
+            // NOT "ready to install". A profile still being prepared is in this bucket too, and it is
+            // not ready for anything yet; what is true of both is that neither is on a device.
+            esims.installed == 0 -> "${count(esims.awaitingInstall)} not installed yet"
+
+            else -> "${count(esims.installed)} installed, ${esims.awaitingInstall} not installed yet"
         }
+
+    private fun count(n: Int): String = if (n == 1) "1 eSIM" else "$n eSIMs"
 }

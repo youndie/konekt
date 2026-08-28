@@ -13,6 +13,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.SurfaceComponent
 import io.konekt.components.SurfaceTones
 import io.konekt.domain.Money
+import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
@@ -50,10 +51,10 @@ object HomeScreen {
         // a white-label product that guessed a name would print the wrong operator's name on the
         // operator's own screen, which is worse than printing none.
         brandName: String? = null,
-        // HOW MANY PROFILES THIS LINE HOLDS. Zero is what makes the install door worth drawing, and
-        // it is a count rather than a boolean because the profile screen already reads one — two
-        // shapes of the same question is how two screens come to disagree about it.
-        esimsHeld: Int = 0,
+        // WHAT THIS LINE HOLDS, split by whether anything is on a device. It was one count — profiles
+        // held — and the profile screen read the same number under the word "installed"; two screens
+        // disagreeing about one question is exactly what that shape produced (`B-69`).
+        esims: EsimHoldings = EsimHoldings.none,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -118,23 +119,18 @@ object HomeScreen {
                         // is the one thing on this screen that is not about what they have but about
                         // what they cannot yet use.
                         //
-                        // Drawn on the COUNT and not on the roaming packages: what makes an eSIM
-                        // installable is holding none, and a home bundle needs one exactly as much as
-                        // a trip does. Tying it to roaming would have been the canvas's example
-                        // mistaken for the rule.
-                        if (esimsHeld == 0) {
-                            add(
-                                BannerComponent(
-                                    id = "home-install-esim",
-                                    text =
-                                        "Your line has no eSIM yet. Install one to start using what " +
-                                            "you have bought.",
-                                    tone = MessageTones.INFO,
-                                    actionText = "Install eSIM",
-                                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
-                                ),
-                            )
-                        }
+                        // Drawn on the HOLDINGS and not on the roaming packages: what makes an eSIM
+                        // installable has nothing to do with where the allowance works, and a home
+                        // bundle needs a profile exactly as much as a trip does. Tying it to roaming
+                        // would have been the canvas's example mistaken for the rule.
+                        //
+                        // TWO STATES, AND THE SECOND ONE USED TO HIDE THE DOOR. The condition was
+                        // `held == 0`, so the banner appeared only for a line with no profile at all —
+                        // and vanished the moment one was issued, which is precisely when there is
+                        // something to install and a subscriber who has paid for it. The heading above
+                        // this block already said "something bought and not yet installed"; the
+                        // condition said something else (`B-69`).
+                        installBanner(esims)?.let(::add)
 
                         // AFTER what the subscriber already has, because that is the order the
                         // question comes in: what have I got, then what else is there. The empty
@@ -243,4 +239,39 @@ object HomeScreen {
                 },
         )
     }
+
+    // The door to the install flow, or none. Two sentences because the two states are different
+    // errands: one issues a profile, the other shows the code for one that already exists, and a
+    // subscriber told "your line has no eSIM yet" about a profile they have bought would reasonably
+    // think the purchase failed.
+    private fun installBanner(esims: EsimHoldings): KompotComponent? =
+        when {
+            esims.held == 0 -> {
+                BannerComponent(
+                    id = "home-install-esim",
+                    text = "Your line has no eSIM yet. Install one to start using what you have bought.",
+                    tone = MessageTones.INFO,
+                    actionText = "Install eSIM",
+                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                )
+            }
+
+            esims.awaitingInstall > 0 -> {
+                BannerComponent(
+                    id = "home-install-esim",
+                    // Not "ready to install": a profile still being prepared is in this bucket too.
+                    // What is true of both is that it is not on the phone.
+                    text = "Your eSIM is not installed yet. Install it to start using what you have bought.",
+                    tone = MessageTones.INFO,
+                    actionText = "Install eSIM",
+                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                )
+            }
+
+            // Everything this line holds is on a device. Nothing to offer, and a banner here would be
+            // a door to a wizard that would issue a profile nobody asked for.
+            else -> {
+                null
+            }
+        }
 }

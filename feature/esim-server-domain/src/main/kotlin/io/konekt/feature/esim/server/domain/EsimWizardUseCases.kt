@@ -94,7 +94,7 @@ class AdvanceEsimWizardUseCase(
             EsimWizardSteps.CHECK -> {
                 // The count is ours and the rule is the manager's. See SmDpPlus for why the split is
                 // that way round.
-                val capacity = smDpPlus.capacityFor(esims.countHeldBy(record.subscriberId))
+                val capacity = smDpPlus.capacityFor(esims.holdingsOf(record.subscriberId).held)
                 when (capacity) {
                     is SmDpPlus.Capacity.Available -> null
                     is SmDpPlus.Capacity.Refused -> EsimRefusal(capacity.code, capacity.text)

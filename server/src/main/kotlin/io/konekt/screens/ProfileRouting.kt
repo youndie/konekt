@@ -35,7 +35,7 @@ fun Route.profileRoutes() {
             json,
             ProfileScreen.build(
                 msisdn = subscriber.msisdn.value,
-                esimsHeld = esims.countHeldBy(subscriberId),
+                esims = esims.holdingsOf(subscriberId),
                 nav = Shell.bottomNav(Shell.Tab.PROFILE),
             ),
         )

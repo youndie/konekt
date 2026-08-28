@@ -41,10 +41,36 @@ object EsimRefusals {
     const val SLOT_LIMIT = "slot_limit"
 }
 
+// WHAT A LINE HOLDS, split by the only question two of the three callers are really asking: is it on
+// a device yet.
+//
+// It used to be one number, `countHeldBy`, and one number cannot answer both. That count means SLOTS
+// — it exists for the device's eight-profile limit — and the profile screen printed it under the word
+// "installed" while the home screen used it to decide whether to offer the install flow at all. So a
+// subscriber who had bought a profile and never scanned it was told they had one installed, and the
+// door to the wizard disappeared at exactly the moment they needed it (`B-69`).
+//
+// The BUCKETS are the domain's and the statuses are the data layer's: this module does not know the
+// wire vocabulary, and which status string means "on a device" is a fact about the table.
+data class EsimHoldings(
+    // Occupies a slot. A terminated profile does not, which is the difference between a subscriber
+    // who has used eight and one who has ever had eight.
+    val held: Int,
+    // Issued and not on a device — so there is something to install, and something the subscriber has
+    // paid for and cannot yet use.
+    val awaitingInstall: Int,
+    // On a device, whatever it is doing there.
+    val installed: Int,
+) {
+    companion object {
+        val none = EsimHoldings(held = 0, awaitingInstall = 0, installed = 0)
+    }
+}
+
 interface EsimRepository {
-    // Profiles that occupy a slot. A terminated one does not, which is the difference between a
-    // subscriber who has used eight and one who has ever had eight.
-    suspend fun countHeldBy(subscriberId: String): Int
+    // ONE QUESTION AND ONE ANSWER. Two shapes of "how many profiles" is how two screens come to
+    // disagree about it, which is precisely what happened.
+    suspend fun holdingsOf(subscriberId: String): EsimHoldings
 
     suspend fun create(
         subscriberId: String,

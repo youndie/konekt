@@ -116,6 +116,11 @@ class ScreenshotCasesTest {
             // one whose copy was rewritable by a green suite for as long as nothing photographed it.
             "AppFrame - App purchase refused",
             "AppFrame - App purchase refused Dark",
+            // Between paying and scanning, on the two screens that both got it wrong the same way.
+            "AppFrame - App home uninstalled",
+            "AppFrame - App home uninstalled Dark",
+            "AppFrame - App profile uninstalled",
+            "AppFrame - App profile uninstalled Dark",
         )
 
     @Test

@@ -228,6 +228,34 @@ fun AppPurchaseRefused() = App("order-refused-screen")
 @Composable
 fun AppEsimInstall() = App("esim-install-screen")
 
+// BOUGHT AND NOT YET INSTALLED — the state a subscriber is in between paying and scanning, and the
+// one no frame in this repository showed.
+//
+// Both screens got it wrong in the same direction and for the same reason: one number meant profiles
+// HELD, the profile screen printed it under the word "installed", and the home screen used it to
+// decide whether to offer the install flow at all. So the person who most needed the door was told
+// they had already walked through it (`B-69`). Two frames rather than one, because the defect was two
+// screens disagreeing about one question.
+@ViddikScreenshot(
+    name = "App home uninstalled",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppHomeUninstalled() = App("home-uninstalled-screen")
+
+@ViddikScreenshot(
+    name = "App profile uninstalled",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppProfileUninstalled() = App("profile-uninstalled-screen")
+
 @ViddikScreenshot(name = "App login", group = "AppFrame", width = APP_WIDTH, height = APP_HEIGHT, darkVariant = true)
 @Composable
 fun AppLogin() = App("login-screen")

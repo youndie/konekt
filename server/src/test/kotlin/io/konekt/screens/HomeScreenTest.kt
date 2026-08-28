@@ -17,6 +17,8 @@ import io.konekt.components.UsageCounterCardComponent
 import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
+import io.konekt.feature.esim.server.domain.EsimHoldings
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
@@ -57,6 +59,81 @@ class HomeScreenTest {
         limit: Long,
         remaining: Long,
     ) = UsageCounter("sub-1", kind, limit, remaining, startedAt = start)
+
+    // THE DOOR TO THE INSTALL FLOW, over every state a line can be in — and nothing asserted on it
+    // before, which is how its condition came to contradict the paragraph above it.
+    //
+    // The heading in `HomeScreen` says "something bought and not yet installed" and the condition
+    // said `held == 0`, so the banner appeared for a line with NO profile and vanished the moment one
+    // was issued: exactly the state where there is something to install and somebody who has paid for
+    // it (`B-69`). Asserted as a table over the whole space rather than as the one case that was
+    // wrong, because the next bucket added is the one that will be wrong next.
+    @Test
+    fun `the install door is open exactly while something is not on a device`() {
+        val cases =
+            mapOf(
+                "nothing at all" to EsimHoldings.none to true,
+                "issued, not installed" to EsimHoldings(held = 1, awaitingInstall = 1, installed = 0) to true,
+                "installed" to EsimHoldings(held = 1, awaitingInstall = 0, installed = 1) to false,
+                "one of each" to EsimHoldings(held = 2, awaitingInstall = 1, installed = 1) to true,
+            )
+
+        cases.forEach { (named, expected) ->
+            val (name, esims) = named
+            val screen =
+                HomeScreen.build(
+                    msisdn = null,
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                    counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
+                    cards = cards,
+                    esims = esims,
+                )
+
+            val banner =
+                screen.konektWalk().filterIsInstance<BannerComponent>().singleOrNull {
+                    it.id ==
+                        "home-install-esim"
+                }
+            assertEquals(
+                expected,
+                banner != null,
+                "'$name': the install banner is ${if (expected) "missing" else "offered"}",
+            )
+            banner?.let {
+                assertEquals("Install eSIM", it.actionText)
+                assertEquals(NavigateAction(ESIM_INSTALL_DEEPLINK), it.action)
+            }
+        }
+    }
+
+    // THE TWO OPEN STATES ARE DIFFERENT ERRANDS and must not share a sentence. One issues a profile,
+    // the other shows the code for one that already exists — and a subscriber told "your line has no
+    // eSIM yet" about a profile they have paid for would reasonably think the purchase failed.
+    @Test
+    fun `a line with nothing and a line with something uninstalled are not told the same thing`() {
+        fun bannerFor(esims: EsimHoldings) =
+            HomeScreen
+                .build(
+                    msisdn = null,
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                    counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
+                    cards = cards,
+                    esims = esims,
+                ).konektWalk()
+                .filterIsInstance<BannerComponent>()
+                .single { it.id == "home-install-esim" }
+                .text
+
+        val nothing = bannerFor(EsimHoldings.none)
+        val uninstalled = bannerFor(EsimHoldings(held = 1, awaitingInstall = 1, installed = 0))
+
+        assertTrue(nothing != uninstalled, "both states read the same: $nothing")
+        assertTrue("no eSIM yet" in nothing, "a line holding nothing was not told so: $nothing")
+        assertTrue(
+            "no eSIM yet" !in uninstalled,
+            "a subscriber holding a profile they paid for was told they have none: $uninstalled",
+        )
+    }
 
     @Test
     fun `the balance is stated and every counter gets a card`() {
