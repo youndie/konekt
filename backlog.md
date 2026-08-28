@@ -41,9 +41,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (3)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-76](docs/backlog/B-76-done-returns-to-the-first-step-instead-of-leaving.md) `[ ]` | Done finishes the install and lands the subscriber back on step one of a new one | P1 | S | - |
+| [B-74](docs/backlog/B-74-the-qr-fills-the-screen-and-buries-what-to-do-with-it.md) `[ ]` | The activation code fills the whole frame, so what to do with it is below the fold | P2 | S | - |
+| [B-75](docs/backlog/B-75-the-scroll-survives-a-wizard-step.md) `[ ]` | A wizard step keeps the previous step's scroll, so the new screen opens part-way down | P2 | S | - |
 
 ## Closed (73)
 
