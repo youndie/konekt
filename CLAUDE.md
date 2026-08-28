@@ -234,6 +234,15 @@ circular dependency inside `:server` naming neither module.
   migration hangs, which during a deploy reads as a slow rollout. `ConcurrentIndexTest` runs the
   recipe against a real Postgres with a live writer, and measures the plain variant in the same run
   as its control: a threshold in milliseconds would measure the runner.
+- **A migration that has run anywhere is immutable, comments included.** Flyway checksums the whole
+  file, so correcting a comment in a deployed migration stops the next release: the `migrate` init
+  container refuses on validation, the deployment never becomes available, and helm rolls back on its
+  timeout with a message about readiness — nothing in that chain names the edit. It happened, to
+  exactly one comment (`B-65`). `applied-migrations.checksums` now locks a number per file and
+  `AppliedMigrationsAreImmutableTest` fails on a laptop instead; `MigrationChecksumOracleTest` keeps
+  the lock honest by comparing it to what real Flyway writes into `flyway_schema_history`, because a
+  guard that checks its own arithmetic agrees with itself whatever the toolkit does. Note that the
+  stand cannot catch this class at all: it migrates from empty, so no checksum is ever compared.
 - **Every migration sets `SET lock_timeout`.** A statement waiting for a lock queues every later
   reader behind it, and a blocked table is downtime whatever the deploy is doing.
 - **A component is registered by KSP, so `build` proves nothing about the dictionary.**

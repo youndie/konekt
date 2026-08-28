@@ -45,7 +45,7 @@ so re-prioritising must never move a file.
 
 No open tasks.
 
-## Closed (64)
+## Closed (65)
 
 **The wire and the shell**
 
@@ -121,6 +121,7 @@ No open tasks.
 - [B-61](docs/backlog/B-61-doc-says-two-renderers-of-nine.md) `[x]` - The design document says the client renders two of the nine components; it renders all nine
 - [B-62](docs/backlog/B-62-the-stand-shared-ports-with-the-machine.md) `[x]` - Three tests accused the services that were working; a local daemon held their ports
 - [B-63](docs/backlog/B-63-four-copies-of-one-walk.md) `[x]` - Five hand-kept lists of which components nest, and each goes stale by looking at less
+- [B-65](docs/backlog/B-65-an-edited-migration-rolls-the-deploy-back.md) `[x]` - Editing a comment in a deployed migration rolled the deploy back, and nothing before the contour noticed
 
 **Upstream and the box**
 

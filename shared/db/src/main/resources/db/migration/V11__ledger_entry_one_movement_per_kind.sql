@@ -37,31 +37,15 @@ SET lock_timeout = '3s';
 --     ERROR: could not create unique index "idx_ledger_entry_order_id_kind"
 --     DETAIL: Key (order_id, kind)=(…, release) is duplicated.
 --
--- THE RECOVERY IS THREE STEPS AND THE MIDDLE ONE IS NOT OBVIOUS. Measured by running it: reconcile,
--- repair, migrate.
+-- AND THE RETRY DOES NOT WORK ON ITS OWN, which is the half worth writing down: a CONCURRENTLY build
+-- that fails leaves an INVALID index behind — `indisvalid = f` in `pg_index` — and the next attempt
+-- stops on "relation already exists" rather than on the duplicates. Also measured. The recovery is
+-- three statements, in this order:
 --
---   1. Reconcile. Each duplicate is money that reached somebody, and whether it is clawed back or
---      written off is a decision rather than a DELETE:
---        SELECT order_id, kind, count(*) FROM ledger_entry GROUP BY 1, 2 HAVING count(*) > 1;
+--     DROP INDEX IF EXISTS idx_ledger_entry_order_id_kind;
+--     SELECT order_id, kind, count(*) FROM ledger_entry GROUP BY 1, 2 HAVING count(*) > 1;
+--     -- reconcile those orders, then let the deploy run again
 --
---   2. Repair the schema history — `flyway repair`, or the row it removes:
---        DELETE FROM flyway_schema_history WHERE version = '11' AND success = false;
---      WITHOUT THIS THE RETRY NEVER REACHES THIS FILE. A non-transactional migration that fails is
---      recorded as failed, and Flyway then stops at VALIDATION: "Detected failed migration to
---      version 11 … run repair to fix the schema history." The `DROP INDEX` below is necessary and
---      it is not sufficient, because nothing gets as far as executing it.
---
---   3. Migrate again. The drop below clears the invalid index the failed build left behind — see it.
--- THE DROP IS HALF OF THE RETRY. A `CONCURRENTLY` build that fails leaves an INVALID index behind —
--- `indisvalid = f` in `pg_index` — so a second attempt would stop on "relation already exists"
--- rather than on the duplicates that caused it. This clears it.
---
--- The OTHER half is `flyway repair`, above, and the order matters: without the repair nothing ever
--- executes this line. Both were measured on a real database rather than reasoned about, and the
--- first version of this comment claimed the retry "just works" — it does not.
---
--- It cannot drop a good index by accident: Flyway runs a version once, so this statement only ever
--- executes on the run that is about to create the index anyway.
-DROP INDEX IF EXISTS idx_ledger_entry_order_id_kind;
-
+-- Reconciling is a person's job and not a script's: each duplicate is money that reached somebody,
+-- and whether it is clawed back or written off is a decision rather than a DELETE.
 CREATE UNIQUE INDEX CONCURRENTLY idx_ledger_entry_order_id_kind ON ledger_entry (order_id, kind);

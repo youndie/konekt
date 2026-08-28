@@ -203,6 +203,23 @@ the list. Do not copy it here; what is worth stating is the shape of the default
 - **The saga's storage format depends on the application's `Json`.** `classDiscriminator = "type"`
   and the `@SerialName` on `PurchasePayload` are what make an already-persisted saga readable;
   changing either is a data migration, not a refactor.
+- **An applied migration is immutable, and its comments are part of it.** Flyway checksums the whole
+  file. V11 was deployed, then its comment was corrected to record a recovery procedure that had been
+  measured — no SQL changed — and the next release could not start: the `migrate` init container
+  crash-looped on validation, the deployment never became available, and helm rolled back after its
+  ten-minute timeout with a message about readiness. Nothing in that chain names the edit. Recovery on
+  a contour that already ran the version is `flyway repair` (or deleting its `flyway_schema_history`
+  row) before the pod will boot. `AppliedMigrationsAreImmutableTest` now holds a checksum per file so
+  the edit stops on a laptop, and `MigrationChecksumOracleTest` checks those numbers against what real
+  Flyway writes.
+- **A migration that refuses needs three steps to retry, not one.** V11 builds a unique index
+  `CONCURRENTLY`, so on a database with a duplicate ledger movement it fails — deliberately: the
+  duplicates are money that was given away. The recovery was measured rather than reasoned about:
+  reconcile the rows (a decision, not a `DELETE`), then `flyway repair`, then migrate. **The middle
+  step is the one that is easy to miss**: a non-transactional migration that fails is recorded as
+  failed, and Flyway then stops at validation before executing any SQL — so the `DROP INDEX IF EXISTS`
+  at the top of V11, which clears the invalid index a failed concurrent build leaves behind, is
+  necessary and never reached on its own.
 - **Actions are not generated.** kompot's KSP processor covers components; `KompotAction` subclasses
   are registered by hand in `esimActionsSerializersModule`. Leaving one out compiles, starts and
   draws every screen — and fails the decode on the one request the action exists for.

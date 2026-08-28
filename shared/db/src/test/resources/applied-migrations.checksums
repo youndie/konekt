@@ -1,0 +1,26 @@
+# THE CHECKSUM FLYWAY RECORDED FOR EVERY MIGRATION, SO THAT EDITING ONE STOPS HERE RATHER THAN ON
+# THE CONTOUR. Flyway stores a checksum per applied version and refuses to start when the file no
+# longer matches — the init container then crash-loops and the deploy rolls back on a timeout,
+# which reads as a slow rollout rather than as an edit.
+#
+# It happened, to a COMMENT. V11 was deployed, then its comment was corrected — no SQL changed, and
+# the checksum is over the whole file — and the next release could not start. Recovery needs
+# `flyway repair` against every contour that already ran it.
+#
+# ADDING A LINE IS ROUTINE; CHANGING ONE IS THE DEFECT THIS FILE EXISTS TO CATCH. If a number here
+# has to move, the migration has already run somewhere and you owe every one of those places a
+# repair — a new migration is nearly always the cheaper answer, comments included.
+#
+# The arithmetic is not trusted: `MigrationChecksumOracleTest` runs real Flyway against a real
+# Postgres and asserts these numbers are the ones it writes into `flyway_schema_history`.
+V1__petich_storage.sql -2045143830
+V2__subscriber_account_esim.sql -273996047
+V3__otp_challenge.sql -1259623264
+V4__session_family.sql 786084059
+V5__purchase.sql 1600772439
+V6__ledger_note.sql -1786983226
+V7__usage_counter.sql -1223938428
+V8__esim_wizard_session.sql 922638373
+V9__tariff_change.sql 60871863
+V10__roaming_package.sql -764021912
+V11__ledger_entry_one_movement_per_kind.sql 194226170
