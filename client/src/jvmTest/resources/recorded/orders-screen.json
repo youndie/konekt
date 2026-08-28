@@ -1,140 +1,167 @@
 {
-  "type": "column",
-  "id": "orders",
-  "children": [
-    {
-      "type": "row",
-      "id": "history-filters",
-      "children": [
+    "type": "column",
+    "id": "orders",
+    "children": [
         {
-          "type": "button",
-          "id": "history-filter-all",
-          "text": "All",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://orders"
-          },
-          "variant": "primary"
+            "type": "text",
+            "id": "orders-title",
+            "text": "Orders",
+            "style": "headline_small",
+            "color": "on_surface"
         },
         {
-          "type": "button",
-          "id": "history-filter-active",
-          "text": "Active",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://orders?filter=active"
-          },
-          "variant": "quiet"
+            "type": "row",
+            "id": "history-filters",
+            "children": [
+                {
+                    "type": "button",
+                    "id": "history-filter-all",
+                    "text": "All",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders"
+                    },
+                    "variant": "primary"
+                },
+                {
+                    "type": "button",
+                    "id": "history-filter-active",
+                    "text": "Active",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders?filter=active"
+                    },
+                    "variant": "quiet"
+                },
+                {
+                    "type": "button",
+                    "id": "history-filter-refunded",
+                    "text": "Refunded",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders?filter=refunded"
+                    },
+                    "variant": "quiet"
+                }
+            ],
+            "spacing": 8
         },
         {
-          "type": "button",
-          "id": "history-filter-refunded",
-          "text": "Refunded",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://orders?filter=refunded"
-          },
-          "variant": "quiet"
+            "type": "paginated_list",
+            "id": "history",
+            "initialItems": [
+                {
+                    "type": "order_row",
+                    "id": "history-663829ea-9fb6-4c2b-b859-1e948cc6bdf9",
+                    "reference": "663829ea",
+                    "title": "Top-up",
+                    "dateText": "28 Aug",
+                    "amountText": "+$15",
+                    "status": "completed",
+                    "statusText": "Added",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://top-up/663829ea-9fb6-4c2b-b859-1e948cc6bdf9"
+                    }
+                },
+                {
+                    "type": "order_row",
+                    "id": "history-9d80f6be-ce0f-4963-9477-9eca4e829b56",
+                    "reference": "9d80f6be",
+                    "title": "Europe \u00b7 5 GB \u00b7 14 days",
+                    "dateText": "28 Aug",
+                    "amountText": "\u2212$9",
+                    "status": "completed",
+                    "statusText": "Paid",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://order/9d80f6be-ce0f-4963-9477-9eca4e829b56"
+                    }
+                },
+                {
+                    "type": "order_row",
+                    "id": "history-5c6f9b9c-77f1-41ae-94b8-75f4bf6822d0",
+                    "reference": "5c6f9b9c",
+                    "title": "Turkey \u00b7 10 GB \u00b7 30 days",
+                    "dateText": "28 Aug",
+                    "amountText": "\u2212$12",
+                    "status": "completed",
+                    "statusText": "Paid",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://order/5c6f9b9c-77f1-41ae-94b8-75f4bf6822d0"
+                    }
+                },
+                {
+                    "type": "order_row",
+                    "id": "history-9f3995b2-8628-459f-abea-777c8f53c826",
+                    "reference": "9f3995b2",
+                    "title": "Home \u00b7 20 GB \u00b7 30 days",
+                    "dateText": "28 Aug",
+                    "amountText": "\u2212$15",
+                    "status": "completed",
+                    "statusText": "Paid",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://order/9f3995b2-8628-459f-abea-777c8f53c826"
+                    }
+                },
+                {
+                    "type": "order_row",
+                    "id": "history-614a5670-3234-4178-9a6f-f27c64b51a57",
+                    "reference": "614a5670",
+                    "title": "Top-up",
+                    "dateText": "28 Aug",
+                    "amountText": "+$60",
+                    "status": "completed",
+                    "statusText": "Added",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://top-up/614a5670-3234-4178-9a6f-f27c64b51a57"
+                    }
+                }
+            ],
+            "emptyState": {
+                "type": "text",
+                "id": "history-empty",
+                "text": "Nothing here yet. Your purchases and top-ups will appear on this screen."
+            }
+        },
+        {
+            "type": "bottom_nav",
+            "id": "shell-nav",
+            "items": [
+                {
+                    "label": "Home",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://home"
+                    }
+                },
+                {
+                    "label": "Plans",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://plans"
+                    }
+                },
+                {
+                    "label": "Orders",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://orders"
+                    },
+                    "selected": true
+                },
+                {
+                    "label": "Profile",
+                    "action": {
+                        "type": "navigate",
+                        "deeplink": "app://profile"
+                    }
+                }
+            ]
         }
-      ],
-      "spacing": 8
-    },
-    {
-      "type": "paginated_list",
-      "id": "history",
-      "initialItems": [
-        {
-          "type": "order_row",
-          "id": "history-8820e9a4-0bd5-48b1-a39e-d0417c30dddc",
-          "reference": "8820e9a4",
-          "title": "Top-up",
-          "dateText": "27 Aug",
-          "amountText": "+$15",
-          "status": "completed",
-          "statusText": "Added"
-        },
-        {
-          "type": "order_row",
-          "id": "history-10fac943-8cce-4203-996b-679c4b15027d",
-          "reference": "10fac943",
-          "title": "Europe · 5 GB · 14 days",
-          "dateText": "27 Aug",
-          "amountText": "−$9",
-          "status": "completed",
-          "statusText": "Paid"
-        },
-        {
-          "type": "order_row",
-          "id": "history-7d3f18f7-089d-436b-ad28-59ebd3540f40",
-          "reference": "7d3f18f7",
-          "title": "Turkey · 10 GB · 30 days",
-          "dateText": "27 Aug",
-          "amountText": "−$12",
-          "status": "completed",
-          "statusText": "Paid"
-        },
-        {
-          "type": "order_row",
-          "id": "history-bc6298a0-29b7-4ba6-baba-89b0c34b5cc4",
-          "reference": "bc6298a0",
-          "title": "Home · 20 GB · 30 days",
-          "dateText": "27 Aug",
-          "amountText": "−$15",
-          "status": "completed",
-          "statusText": "Paid"
-        },
-        {
-          "type": "order_row",
-          "id": "history-30213eeb-9077-46a6-a197-4f0b30a2fbf0",
-          "reference": "30213eeb",
-          "title": "Top-up",
-          "dateText": "27 Aug",
-          "amountText": "+$60",
-          "status": "completed",
-          "statusText": "Added"
-        }
-      ],
-      "emptyState": {
-        "type": "text",
-        "id": "history-empty",
-        "text": "Nothing here yet. Your purchases and top-ups will appear on this screen."
-      }
-    },
-    {
-      "type": "bottom_nav",
-      "id": "shell-nav",
-      "items": [
-        {
-          "label": "Home",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://home"
-          }
-        },
-        {
-          "label": "Plans",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://plans"
-          }
-        },
-        {
-          "label": "Orders",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://orders"
-          },
-          "selected": true
-        },
-        {
-          "label": "Profile",
-          "action": {
-            "type": "navigate",
-            "deeplink": "app://profile"
-          }
-        }
-      ]
-    }
-  ],
-  "spacing": 12
+    ],
+    "spacing": 12
 }

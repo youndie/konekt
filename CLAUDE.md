@@ -213,6 +213,19 @@ circular dependency inside `:server` naming neither module.
 - **Inside `Table.insert { }` the table is the receiver**, so a bare name resolves to the COLUMN. A
   parameter wins that resolution and a class property does not — which is why it bites in a test seed
   and not in a repository, and why the fix is a differently named local.
+- **A recording is a screenshot of the server, and it goes stale silently.** The frames in
+  `client/src/jvmTest/resources/recorded/` are committed trees, so a change to the screen that built
+  one leaves the golden photographing the OLD screen and every check green — which happened three
+  times in one session (`B-70`, `B-71`, `B-72`). After changing a screen, re-record the frames that
+  draw it and regenerate: `make stand-up`, capture through the API, `LOCAL=1 ./gradlew
+  :client:viddikRecord`. And re-record with at least the content the previous frame carried; a
+  regenerated golden of an emptier screen is a frame that has quietly stopped covering things.
+- **Weight that each branch chooses is weight some branch will choose wrong.** Five states of the
+  purchase result each picked their own button emphasis and four got it right; the fifth drew
+  `Install eSIM` and `Done` as identical primaries (`B-71`). The rule is now derived in one place from
+  whether the screen has anything else to press. Same shape as `B-72`, where the missing thing was a
+  heading and the guard had to be over the SET of tabs — a frame of one screen cannot show that it
+  starts differently from its siblings.
 - **A number two screens read is a number they will come to disagree about.** One count of eSIM
   profiles served three callers: the device's slot limit, the profile screen's sentence, and the home
   screen's decision whether to offer the install flow. It means SLOTS, so the profile said "1 eSIM

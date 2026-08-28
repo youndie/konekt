@@ -1,52 +1,53 @@
 {
-  "type": "column",
-  "id": "purchase-result",
-  "children": [
-    {
-      "type": "banner",
-      "id": "purchase-completed",
-      "text": "Home · 20 GB · 30 days is active."
-    },
-    {
-      "type": "order_row",
-      "id": "order-84404bbf-590f-4cc4-aee2-7c1421a8efe4",
-      "reference": "84404bbf",
-      "title": "Home · 20 GB · 30 days",
-      "dateText": "",
-      "amountText": "$15",
-      "status": "completed",
-      "statusText": "Paid"
-    },
-    {
-      "type": "button",
-      "id": "purchase-install",
-      "modifiers": [
+    "type": "column",
+    "id": "purchase-result",
+    "children": [
         {
-          "type": "size",
-          "width": "Fill"
-        }
-      ],
-      "text": "Install eSIM",
-      "action": {
-        "type": "navigate",
-        "deeplink": "app://esim-install"
-      }
-    },
-    {
-      "type": "button",
-      "id": "purchase-done",
-      "modifiers": [
+            "type": "banner",
+            "id": "purchase-completed",
+            "text": "Home \u00b7 20 GB \u00b7 30 days is active."
+        },
         {
-          "type": "size",
-          "width": "Fill"
+            "type": "order_row",
+            "id": "order-9f3995b2-8628-459f-abea-777c8f53c826",
+            "reference": "9f3995b2",
+            "title": "Home \u00b7 20 GB \u00b7 30 days",
+            "dateText": "",
+            "amountText": "$15",
+            "status": "completed",
+            "statusText": "Paid"
+        },
+        {
+            "type": "button",
+            "id": "purchase-install",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Install eSIM",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://esim-install"
+            }
+        },
+        {
+            "type": "button",
+            "id": "purchase-done",
+            "modifiers": [
+                {
+                    "type": "size",
+                    "width": "Fill"
+                }
+            ],
+            "text": "Done",
+            "action": {
+                "type": "navigate",
+                "deeplink": "app://home"
+            },
+            "variant": "quiet"
         }
-      ],
-      "text": "Done",
-      "action": {
-        "type": "navigate",
-        "deeplink": "app://home"
-      }
-    }
-  ],
-  "spacing": 16
+    ],
+    "spacing": 16
 }

@@ -1,6 +1,8 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.material3.M3Colors
+import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
@@ -80,7 +82,26 @@ object HistoryScreen {
         ColumnComponent(
             id = "orders",
             spacing = 12,
-            children = listOfNotNull(chips(filter), list(page, titles, filter), nav),
+            children = listOfNotNull(title(), chips(filter), list(page, titles, filter), nav),
+        )
+
+    // THE HEADING ITS THREE SIBLINGS HAVE, and the only tab that opened without one.
+    //
+    // Home opens with the brand, Plans with "Plans", Profile with "Profile"; this opened with the
+    // filter chips flush against the top edge (`B-72`). Small, and invisible to the gallery by
+    // construction: every frame there is sized to its own content, so "this screen starts differently
+    // from its siblings" is a fact about four screens seen in one frame and none of them alone.
+    //
+    // Composed here rather than supplied by the shell, which is the more interesting question and the
+    // wrong one to answer while fixing this: the shell draws the bar at the bottom and knows which tab
+    // is current, so it COULD, and then a screen reached outside a tab would lose its title or grow a
+    // second one. Every screen naming itself is the arrangement the other three already use.
+    private fun title(): KompotComponent =
+        TextComponent(
+            id = "orders-title",
+            text = "Orders",
+            style = M3Typography.HeadlineSmall,
+            color = M3Colors.OnSurface,
         )
 
     // WHICH SLICE IS OPEN, said by the SERVER — the same argument the bottom bar's `selected` makes.

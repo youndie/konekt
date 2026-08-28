@@ -139,30 +139,43 @@ object PurchaseResultScreen {
             // The others were fixed together when the purchase result gained its exits, and this
             // branch is longer than the rest, so the missing call is at the bottom of a `buildList`
             // rather than in a `listOf` where it would have been one line out of four.
-            add(wayOut("purchase-reversed-back", "Back"))
+            addAll(controls("purchase-reversed-back", "Back"))
         }
 
-    // A WAY OFF THIS SCREEN, and every state needs one.
+    // A WAY OFF THIS SCREEN, and every state needs one. The purchase result is reachable from the
+    // catalogue and carries no tab bar, so without one a subscriber who bought something had nowhere
+    // to go: pressing a plan was a one-way door.
     //
-    // The purchase result is reachable from the catalogue and carries no tab bar — it is not a tab —
-    // so without this a subscriber who bought something had nowhere to go and no way back. Pressing
-    // a plan was a one-way door.
-    private fun wayOut(
-        id: String,
-        text: String,
-        // QUIET WHERE SOMETHING ELSE IS THE ANSWER. On every terminal state this IS the answer and
-        // draws as one; beside `Pay $X` it is the other option, and two equal-looking buttons are a
-        // screen asking one question twice. `ButtonEmphasis`'s own comment says exactly this, and it
-        // could not be acted on until `B-58` gave `quiet` a look of its own.
-        emphasis: String = ButtonEmphasis.PRIMARY,
-    ): KompotComponent =
-        ButtonComponent(
-            id = id,
-            text = text,
-            action = NavigateAction(HOME_DEEPLINK),
-            variant = emphasis,
-            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-        )
+    // THE FOOT OF THE SCREEN, and the way out's weight is DERIVED here rather than chosen by each
+    // branch.
+    //
+    // A way out is the answer when nothing else on the screen is, and the second option when
+    // something is — which the `quiet` variant existed for and which four of the five states got
+    // right by hand. The completed purchase did not: `Install eSIM` and `Done` were both filled
+    // primaries of the same width and colour, so the screen asked one question twice (`B-71`).
+    //
+    // Deciding it per branch is what produced that, and would produce it again on the next state to
+    // gain a second control. So no branch decides: it hands over whatever else it has to press, and
+    // the rule is applied in one place.
+    private fun controls(
+        wayOutId: String,
+        wayOutText: String,
+        vararg actions: KompotComponent?,
+    ): List<KompotComponent> {
+        val present = actions.filterNotNull()
+
+        return present +
+            ButtonComponent(
+                id = wayOutId,
+                text = wayOutText,
+                // HOME AND NOT BACK. The purchase result is reachable from the catalogue and carries
+                // no tab bar — it is not a tab — so without this a subscriber who bought something
+                // had nowhere to go. Pressing it lands them where the tabs are.
+                action = NavigateAction(HOME_DEEPLINK),
+                variant = if (present.isEmpty()) ButtonEmphasis.PRIMARY else ButtonEmphasis.QUIET,
+                modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+            )
+    }
 
     private fun completed(order: OrderView): List<KompotComponent> =
         listOf(
@@ -187,15 +200,18 @@ object PurchaseResultScreen {
             // bought (`B-54`). Section 03 of the canvas puts the control exactly here — "Paid. eSIM
             // is ready to install", then `Install eSIM` — and here rather than on the profile is the
             // point: nobody opens an account screen after paying.
-            ButtonComponent(
-                id = "purchase-install",
-                text = "Install eSIM",
-                action = NavigateAction(ESIM_INSTALL_DEEPLINK),
-                modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-            ),
-            // The canvas's second control is "Later, show receipt" — and the receipt is the screen
-            // this already is, so the honest version of it is the way out that was here before.
-            wayOut("purchase-done", "Done"),
+            *controls(
+                "purchase-done",
+                // The canvas's second control is "Later, show receipt" — and the receipt is the
+                // screen this already is, so the honest version of it is the way out.
+                "Done",
+                ButtonComponent(
+                    id = "purchase-install",
+                    text = "Install eSIM",
+                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                ),
+            ).toTypedArray(),
         )
 
     // REFUSED BEFORE ANYTHING HAPPENED, and the screen now says which refusal it was.
@@ -226,10 +242,9 @@ object PurchaseResultScreen {
                 ),
             )
 
-            // THE CONTROL THAT MATCHES THE REASON, or none.
-            refusalControl(order)?.let { add(it) }
-
-            add(wayOut("purchase-rejected-back", "Back", emphasis = emphasisFor(order)))
+            // THE CONTROL THAT MATCHES THE REASON, or none — and the way out weighs itself against
+            // whichever it was.
+            addAll(controls("purchase-rejected-back", "Back", refusalControl(order)))
         }
 
     // A way out is not a way forward: somebody short of money needs the top-up screen, and somebody
@@ -261,19 +276,6 @@ object PurchaseResultScreen {
             else -> {
                 null
             }
-        }
-
-    // The way out is the answer when nothing else on the screen is, and the second option when
-    // something is. Same rule as the confirmation's `Not now`, which is where `quiet` came from.
-    private fun emphasisFor(order: OrderView): String =
-        when (order.declineReason) {
-            PurchaseRefusals.INSUFFICIENT_FUNDS,
-            PurchaseRefusals.NOT_ON_SALE,
-            PurchaseRefusals.PRICE_CHANGED,
-            PurchaseRefusals.NO_SUCH_PLAN,
-            -> ButtonEmphasis.QUIET
-
-            else -> ButtonEmphasis.PRIMARY
         }
 
     private fun refusalText(
@@ -376,21 +378,26 @@ object PurchaseResultScreen {
                 )
             }
 
-            add(
-                ButtonComponent(
-                    id = "purchase-confirm",
-                    // THE AMOUNT ON THE BUTTON, like the plan detail's `Buy for $X`. A subscriber who
-                    // reads only the control they are about to press still reads the price.
-                    text = "Pay ${MoneyFormat.format(order.payload.price)}",
-                    action = ConfirmPurchaseAction(order.orderId),
-                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-                ),
-            )
-
             // LEAVING WITHOUT CONFIRMING IS A PATH, not an escape hatch. The order keeps its
             // deadline and rolls itself back when it passes — which is the compensated branch this
             // product exists to demonstrate, reached the way a subscriber would actually reach it.
-            add(wayOut("purchase-not-now", "Not now", ButtonEmphasis.QUIET))
+            //
+            // `Not now` comes back quiet without this branch saying so: `Pay` is beside it, and that
+            // is the whole of the rule.
+            addAll(
+                controls(
+                    "purchase-not-now",
+                    "Not now",
+                    ButtonComponent(
+                        id = "purchase-confirm",
+                        // THE AMOUNT ON THE BUTTON, like the plan detail's `Buy for $X`. A subscriber
+                        // who reads only the control they are about to press still reads the price.
+                        text = "Pay ${MoneyFormat.format(order.payload.price)}",
+                        action = ConfirmPurchaseAction(order.orderId),
+                        modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                    ),
+                ),
+            )
         }
 
     // ONE FACT, AS A ROW: the label on the left and the value on the right, which is how the canvas
@@ -428,6 +435,6 @@ object PurchaseResultScreen {
                 text = "Confirming with the payment provider. Keep the app open — this usually takes under 15 seconds.",
                 tone = MessageTones.INFO,
             ),
-            wayOut("purchase-in-flight-back", "Back"),
+            *controls("purchase-in-flight-back", "Back").toTypedArray(),
         )
 }

@@ -93,6 +93,73 @@ class PurchaseResultScreenTest {
     // THE BRANCH NOBODY ASSERTED ON, and it is the one the confirmation button was built for. Its
     // copy could be rewritten wholesale and this file stayed green — which is how it was found: a
     // rewrite passed, and a rewrite passing is the same evidence as a mutation surviving.
+    // THE WAY OUT IS THE ANSWER OR THE OTHER OPTION, never both — over every state, because the one
+    // that got it wrong is not the one that will get it wrong next.
+    //
+    // `Install eSIM` and `Done` were both filled primaries of the same width and colour, so the
+    // completed purchase asked one question twice (`B-71`). Four of the five states had it right, by
+    // each branch choosing correctly — which is exactly the arrangement that produced the fifth.
+    @Test
+    fun `no state draws two controls of equal weight`() {
+        val states =
+            listOf(
+                OrderStatus.COMPLETED,
+                OrderStatus.COMPENSATED,
+                OrderStatus.REJECTED,
+                OrderStatus.AWAITING_CONFIRMATION,
+                OrderStatus.PENDING,
+                OrderStatus.COMPENSATING,
+            )
+        assertEquals(OrderStatus.entries.size, states.size, "OrderStatus gained a value and this list did not")
+
+        var withASecondControl = 0
+
+        states.forEach { status ->
+            val buttons =
+                PurchaseResultScreen
+                    .build(
+                        order = compensated(PurchaseRefusals.INSUFFICIENT_FUNDS).copy(status = status),
+                        reversal = Reversal(Money.ofMajor(12, Currency.DEFAULT), reversedOn),
+                        balance = Money.ofMajor(3, Currency.DEFAULT),
+                    ).konektWalk()
+                    .filterIsInstance<ButtonComponent>()
+
+            val primaries = buttons.filter { it.variant != ButtonEmphasis.QUIET }
+            assertEquals(
+                1,
+                primaries.size,
+                "$status draws ${primaries.size} controls of full weight: ${primaries.map { it.text }}",
+            )
+            if (buttons.size > 1) withASecondControl += 1
+        }
+
+        // VACUITY. Every state having exactly one button would satisfy the assertion above while
+        // saying nothing about the rule, which is only about screens that have two.
+        assertTrue(
+            withASecondControl > 0,
+            "no state drew a second control, so the rule under test was never exercised",
+        )
+    }
+
+    // AND THE FULL-WEIGHT ONE IS THE ACTION, not the exit. A screen that demoted both, or demoted the
+    // wrong one, satisfies "exactly one primary" — this says which.
+    @Test
+    fun `where there is something to do, the way out is the quiet one`() {
+        val screen =
+            PurchaseResultScreen.build(
+                order = compensated(null).copy(status = OrderStatus.COMPLETED),
+                reversal = null,
+                balance = Money.ofMajor(3, Currency.DEFAULT),
+            )
+        val buttons = screen.konektWalk().filterIsInstance<ButtonComponent>()
+
+        assertEquals(ButtonEmphasis.QUIET, buttons.single { it.id == "purchase-done" }.variant)
+        assertTrue(
+            buttons.single { it.id == "purchase-install" }.variant != ButtonEmphasis.QUIET,
+            "the thing the subscriber came here to do is drawn as the afterthought",
+        )
+    }
+
     // EVERY REFUSAL SAYS WHICH ONE IT WAS, and until `B-68` all five said the same sentence.
     //
     // Asserted over the whole set rather than over the money branch that prompted the work, and by
