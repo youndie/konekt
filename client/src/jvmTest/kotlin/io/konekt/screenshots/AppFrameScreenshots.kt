@@ -70,6 +70,10 @@ private class Recorded(
         }
     }
 
+    // NO GRAPH. A still frame navigates nowhere, and a fixture that answered one would let a golden
+    // depend on which destinations a deployment happened to serve.
+    override suspend fun navigation(): Map<String, String>? = null
+
     // The kit comes from the fixture's own frame, not from here: these cases are recorded per brand
     // and a second source of palette would be a second answer to the same question.
     override suspend fun brandTheme(): KompotTheme? = null

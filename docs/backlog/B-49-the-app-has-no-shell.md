@@ -1,7 +1,7 @@
 ---
 id: B-49
 title: "Four screens and no way between them except a banner"
-status: wip
+status: done
 priority: P1
 size: L
 stage: stage-m3-product
@@ -58,3 +58,42 @@ to show, *Running low* and *Used up*, cannot appear beside a normal one on any r
 Background: [B-45](B-45-the-client-draws-one-screen-of-four.md) is where the route map was written and
 where `kompot-navigation` was deferred — citing research §1.11, which is about `call.respond` dropping
 a discriminator and says nothing about navigation. The decision was real; the reference was not.
+
+## What landed
+
+The bar, the tabs, the profile screen and the conformance walk's `graph` endpoint arrived earlier.
+What closed the item is the last criterion: **`Main.kt` holds no route table, and a deeplink resolves
+through the graph the client fetched.**
+
+`KonektApp` asks `ScreenSource.navigation()` and merges the answer over what it opened with. It asks
+**at a session boundary and nowhere else**, which is exactly when the answer can change: the graph
+sits behind the user tier, so before a session it refuses, after one it is available, and after
+signing out it refuses again. `Destination.startsOver` is the runner's own word for that moment — the
+holder still does not learn what a token is.
+
+A refusal is `null` and keeps what was there, rather than emptying the table: a deployment that serves
+no graph is a coherent thing to be, and an application that lost every destination on one failed
+request would be worse than one that never asked.
+
+## What is left in the client, and the two different reasons
+
+**The login screens**, because the graph cannot be asked before there is a session and those two ARE
+the way in. That is a bootstrap and it stays one — a screen added there that is not part of signing in
+is a screen the graph should have named.
+
+**`app://order/<id>`, and that one is an upstream gap.** It is parameterised, and `kompot-tck` follows
+every route of a served graph to its endpoint exactly as written, substituting nothing: the prefix
+answered 404 and so did the pattern, both measured. A graph carrying it is a graph the walk reports as
+broken; a graph without it is a history whose rows open nothing. Recorded as
+[U15](../research/research-upstream-proposals.md) and written where the entry is, so it goes rather
+than being inherited.
+
+## The guard that replaced the guard
+
+`NavigationGraphMatchesTheClientTest` held the served graph against the client's copy — and this item
+deleted the copy, so it had no subject left. What it was worth moved into
+`EveryScreenIsReachableTest`, from the other direction: **a `navigate` the server emits that the
+client cannot resolve.** With one table left that is the only way the failure can happen, and it is now
+the failure the walk names. Proved by mutation: removing `top-up` from the graph makes it name the
+deeplinks that resolve to nothing — which before this change would have been three dead buttons and
+one red test elsewhere.

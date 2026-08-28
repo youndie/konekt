@@ -252,10 +252,10 @@ class ClientAgainstStandTest {
             setContent {
                 KonektApp(
                     screens = sourceOver(http),
-                    address = KonektRoutes.map.getValue(ESIM_INSTALL_DEEPLINK),
+                    address = "/api/v1/screens/esim-install",
                     topic = "stand",
                     darkMode = false,
-                    routes = KonektRoutes.map,
+                    routes = KonektRoutes.bootstrap,
                     onAction = { action -> install.addressFor(action)?.let(Destination::next) },
                 )
             }

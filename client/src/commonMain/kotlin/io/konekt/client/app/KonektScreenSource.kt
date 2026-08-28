@@ -14,12 +14,15 @@ import io.github.youndie.kompot.form.FormSchema
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.FormPatchRequest
 import io.github.youndie.kompot.forms.KompotFormResponse
+import io.github.youndie.kompot.navigation.NavigationGraph
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.realtime.SseRealtimeSource
+import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.resources.get
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -127,6 +130,25 @@ class KonektScreenSource(
                     }
                 return json.decodeFromString(KompotPageResponse.serializer(), response.bodyAsText())
             }
+        }
+
+    // THE ROUTE TABLE, FETCHED. `B-49`'s last acceptance criterion: a deeplink is resolved through the
+    // graph the SERVER publishes rather than through a copy the client wrote — the copy is the one
+    // place a deployment could change its destinations and the client would not follow.
+    //
+    // `null` rather than an exception on a refusal, and the refusal is the ordinary case: the graph
+    // sits behind the user tier, and the application opens on the login screen with no session. The
+    // holder keeps whatever it had, which before a session is the two screens that ARE the way in.
+    override suspend fun navigation(): Map<String, String>? =
+        try {
+            json
+                .decodeFromString(NavigationGraph.serializer(), http.get(NavigationResource()).bodyAsText())
+                .routes
+                .associate { it.deeplink to it.endpoint }
+        } catch (e: IOException) {
+            null
+        } catch (e: SerializationException) {
+            null
         }
 
     override suspend fun brandTheme(): KompotTheme? =

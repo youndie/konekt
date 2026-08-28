@@ -51,6 +51,10 @@ class BackControlTest {
     private inner class Fake : ScreenSource {
         override suspend fun fetch(address: String): Screen = Screen.Tree(screen)
 
+        // No graph: this fixture is about the STACK, and a route table would add a second thing
+        // deciding where a press lands.
+        override suspend fun navigation(): Map<String, String>? = null
+
         override suspend fun brandTheme(): KompotTheme? = null
 
         override suspend fun fetchForm(address: String): KompotFormResponse =

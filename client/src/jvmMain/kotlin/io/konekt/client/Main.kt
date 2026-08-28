@@ -105,12 +105,11 @@ fun main() {
                 // An environment variable rather than a control, because the application has no
                 // settings screen and inventing one to test a palette is a feature. `KONEKT_DARK=true`.
                 darkMode = System.getenv("KONEKT_DARK") == "true",
-                // ONE TABLE, IN ONE PLACE, and it was two. The desktop runner knew six
-                // deeplinks and the iOS one knew three, so the same `navigate` moved here and
-                // printed "no handler" there. A table written at a call site is not something
-                // a guard can be handed — `KonektRoutes` is, and `EveryScreenIsReachableTest`
-                // reads it.
-                routes = KonektRoutes.map,
+                // THE BOOTSTRAP, and not a route table: the two destinations reachable before
+                // there is a session. Everything else arrives from the graph the server publishes
+                // and the holder fetches — `B-49`'s last criterion, and the reason a deployment
+                // can change where a deeplink goes without a client release.
+                routes = KonektRoutes.bootstrap,
                 // Announced rather than swallowed: a handler that silently did nothing would make a
                 // button that does nothing indistinguishable from one whose handler is missing.
                 onAction = { action ->

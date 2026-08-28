@@ -89,10 +89,10 @@ fun homeViewController(): UIViewController {
             // the overlay map. The client cannot learn its own subscriber id at all.
             topic = "konekt-ios",
             darkMode = false,
-            // THE SAME TABLE THE DESKTOP RUNNER USES, which it was not: this one knew three
-            // deeplinks against the other's six, so the tabs and the two flows below moved on
-            // one platform and printed "no handler" on the other.
-            routes = KonektRoutes.map,
+            // THE BOOTSTRAP, the same two the desktop runner opens with. What used to be here was a
+            // route table three entries long against the other's six — the same `navigate` moving on
+            // one platform and printing "no handler" on the other. Neither holds a table now.
+            routes = KonektRoutes.bootstrap,
             onAction = { action ->
                 when {
                     // SIGNING IN, and this runner could not. It imported `UpdateSessionAction` and

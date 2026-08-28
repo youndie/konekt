@@ -49,6 +49,10 @@ class KonektAppTest {
         val frames = MutableSharedFlow<ComponentUpdate>(extraBufferCapacity = 8)
         var fetches = 0
 
+        // No graph, for the same reason there is no theme: this fixture drives the clear-then-refetch
+        // order, and a second suspending call is one more thing to reason about for nothing.
+        override suspend fun navigation(): Map<String, String>? = null
+
         // No kit: this fixture is about the ORDER of clear-then-refetch, and a theme fetch would
         // add a second suspending call to reason about for nothing.
         override suspend fun brandTheme(): io.github.youndie.kompot.theme.KompotTheme? = null

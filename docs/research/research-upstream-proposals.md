@@ -320,6 +320,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U12 | kompot | a form patch cannot reach a non-editable field, so a server-computed value is editable or stale | [kompot#89](https://github.com/youndie/kompot/issues/89) | closed, released in `0.33.0.86` as an optional `fieldId` on `read_only_field`; B-20's first acceptance criterion met and the form's refetch deleted |
 | U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
 | U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | open; konekt carries a `surface` component whose only job is the corner |
+| U15 | kompot | `kompot-tck` follows a graph route's endpoint literally, so a parameterised destination cannot be in a `NavigationGraph` | not filed yet | konekt keeps that one deeplink in the client instead |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -516,3 +517,19 @@ What is actually missing is one argument — the `Shape` passed to `Modifier.bac
 `null`. That is a much smaller ask than the one that would have been filed, and it is only visible to
 somebody who opened the artefact. The premise of a task can be wrong, and a task whose premise is
 wrong produces an upstream request that is wrong in the same direction.
+
+**U15 is what `B-49` ran into on its last criterion.** The client resolves a deeplink through the
+served `NavigationGraph` now, which is the whole point of that item — and one destination cannot go in
+it. `app://order/<id>` is parameterised, and the conformance kit follows every route of a graph to its
+endpoint EXACTLY as written: the prefix `/api/v1/screens/orders` is not a route and answered 404, and
+the pattern `/api/v1/screens/orders/{orderId}` answered 404 as well, because nothing substitutes an id
+for a graph route the way `TckConfig.pathParameters` does for an endpoint. Both measured against a
+running stand rather than reasoned about.
+
+So a graph carrying it is a graph the walk reports as broken, and a graph without it is a history whose
+rows open nothing. konekt keeps that one deeplink client-side and says so where it is written; the
+entry goes when the kit can be handed a value for a graph route.
+
+Not filed yet — it wants a smaller reproduction than "our whole stand", and a parameterised
+destination is common enough that the ask should propose the shape of the fix rather than only the
+symptom.

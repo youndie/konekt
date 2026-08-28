@@ -7,53 +7,53 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
-import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
-import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
-import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
 import io.konekt.feature.purchase.shared.api.OrderScreen
-import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
-import io.konekt.feature.purchase.shared.api.PlansScreenResource
-import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TopUpForms
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
-import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
-import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
-import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
-import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.serialization.serializer
 
-// WHERE A DEEPLINK GOES, in ONE place rather than once per entry point.
+// WHAT THE RUNNERS NEED BEFORE THE SERVER CAN BE ASKED.
 //
 // It was written inline in each runner, and the two had drifted: the desktop knew six deeplinks and
 // the iOS one knew three, so the same `navigate` moved on one platform and printed "no handler" on
 // the other. Nothing could notice — a route table built at a call site is not something a test can
 // be handed.
 //
-// IT IS STILL A MAP AND NOT `kompot-navigation`'s graph, for the reason research §1.11 gives, and it
-// is still a second copy of a pairing the server publishes at `/api/v1/navigation` — which is what
-// `B-49` exists to delete. What changed is that the copy is now one object a guard can read, and
-// `EveryScreenIsReachableTest` reads it.
+// AND THE COPY IS GONE. It used to hold every destination, which was a second spelling of the graph
+// the server publishes — `B-49`'s last criterion. What is left is a bootstrap, below, plus the two
+// tables that are genuinely the CLIENT's: where a form posts, and where the application opens.
 object KonektRoutes {
-    val map: Map<String, String> =
+    // WHAT IS REACHABLE BEFORE THERE IS A SESSION, and that is all this map is since `B-49`.
+    //
+    // It used to be the whole route table, written by hand at each runner's call site, and it was a
+    // second copy of the pairing the server publishes at `/api/v1/navigation` — the one place a
+    // deployment could change its destinations without the client following. The graph is now what
+    // resolves a deeplink; `KonektApp` fetches it at every session boundary and merges it over this.
+    //
+    // These two survive because the graph cannot answer yet. It sits behind the user tier — a public
+    // one would promise destinations that all answer 401 — and the application opens on the login
+    // screen with nothing to ask with. So the bootstrap is exactly the screens that ARE the way in,
+    // which is a shorter list than "the ones we happened to write down" and stays that way: a screen
+    // added here that is not part of signing in is a screen the graph should have named.
+    val bootstrap: Map<String, String> =
         mapOf(
-            HOME_DEEPLINK to addressOf<HomeScreenResource>(),
-            PLANS_DEEPLINK to addressOf<PlansScreenResource>(),
-            ORDERS_DEEPLINK to addressOf<HistoryScreenResource>(),
-            PROFILE_DEEPLINK to addressOf<ProfileScreenResource>(),
-            TOP_UP_DEEPLINK to addressOf<TopUpScreenResource>(),
-            // ONE ORDER, addressed by the PREFIX of its own pattern. `OrderScreen` carries the
-            // placeholder inline — `/api/v1/screens/orders/{orderId}` — and `resolve` appends the
-            // tail after a matched prefix, so the entry has to be the part before it. Stripped from
-            // the pattern rather than typed: the address is still spelled once, in the annotation.
-            ORDER_DEEPLINK to addressOf<OrderScreen>().substringBefore("/{"),
-            ESIM_INSTALL_DEEPLINK to addressOf<EsimInstallScreenResource>(),
             // Matched by PREFIX: the server puts the number in the query, and a map keyed on the
             // whole string would need an entry per subscriber. `resolve` carries the tail across.
             LOGIN_CODE_DEEPLINK to addressOf<LoginCodeScreenResource>(),
             LOGIN_DEEPLINK to addressOf<LoginScreenResource>(),
+            // AND ONE THE GRAPH CANNOT CARRY, which is a different reason from the two above and
+            // worth keeping separate from them.
+            //
+            // `app://order/<id>` is parameterised. `kompot-tck` follows every route of a served
+            // graph to its endpoint EXACTLY as written and substitutes nothing, so the prefix
+            // answers 404 and so does the pattern — measured both ways. A graph carrying it is a
+            // graph the conformance walk reports as broken, and a graph without it is a history
+            // whose rows open nothing. Filed as `U15`; this entry goes when the kit can be handed a
+            // value for a graph route, and the day it does the client stops knowing this address.
+            ORDER_DEEPLINK to addressOf<OrderScreen>().substringBefore("/{"),
         )
 
     // WHERE EACH FORM POSTS. The toolkit's `submit_form` carries a form id and no address — routing

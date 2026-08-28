@@ -113,6 +113,17 @@ fun KonektApp(
     // toolkit's graph, and the shape is unchanged — one screen at a time, addressed. What changes is
     // that the address is a value the holder can be handed AGAIN, which is the whole of navigation
     // until there is a back stack.
+    // WHAT IS KNOWN BEFORE THE SERVER IS ASKED, and it is no longer the route table.
+    //
+    // `B-49`'s last criterion is that a deeplink resolves through the GRAPH the server publishes: a
+    // client with its own copy is the one place a deployment could change its destinations and not be
+    // followed. The graph sits behind the user tier, though, and this application opens on the login
+    // screen with no session — so what is passed here is a BOOTSTRAP: the destinations reachable
+    // before there is anything to ask with, which are the two that are the way in.
+    //
+    // Everything else arrives from `screens.navigation()` and replaces nothing: the fetched table is
+    // merged over this one, so a deployment that serves no graph keeps working with what it opened
+    // with.
     routes: Map<String, String> = emptyMap(),
     // Everything that is not a transition, and it may ANSWER WITH AN ADDRESS.
     //
@@ -165,6 +176,18 @@ fun KonektApp(
     // a bar: the purchase result carries none, and "Done" on it goes to a tab.
     var tabs by remember { mutableStateOf(emptySet<String>()) }
 
+    // THE ROUTE TABLE AS STATE, seeded from the bootstrap and replaced by the served graph.
+    var routeTable by remember(routes) { mutableStateOf(routes) }
+
+    // REFETCHED AT A SESSION BOUNDARY AND NOWHERE ELSE, which is exactly when the answer can change:
+    // before a session the graph refuses, after one it is available, and after signing out it refuses
+    // again. `startsOver` is the runner's own word for that moment — the holder does not learn what a
+    // token is to use it.
+    var sessions by remember { mutableStateOf(0) }
+    LaunchedEffect(sessions) {
+        screens.navigation()?.let { routeTable = routes + it }
+    }
+
     // OUR OWN MAP, not `KompotRealtimeProvider`'s. That composable holds its `SnapshotStateMap`
     // privately and empties it only when the topic changes, which konekt never does — so the map has
     // to be ours for the clear below to be possible at all. Reported upstream rather than forked.
@@ -203,15 +226,23 @@ fun KonektApp(
                     // into the home screen's parent and put a back control on a tab. The mirror of it
                     // put the just-signed-out home screen behind the login screen, one press from a
                     // 401.
-                    destination.startsOver -> NavigationBackStack(destination.address)
+                    destination.startsOver -> {
+                        // The graph is a different answer on the other side of this, so ask again.
+                        sessions += 1
+                        NavigationBackStack(destination.address)
+                    }
 
                     // Where we already are: confirming an order ends on the order's own screen.
-                    destination.address == current -> stack
+                    destination.address == current -> {
+                        stack
+                    }
 
                     // REPLACING THE TOP rather than pushing. An action that answers with an address
                     // ENDED somewhere — a purchase confirmed — and pushing would put the screen it
                     // came from behind it, so back would return to a plan already bought.
-                    else -> stack.pop().push(destination.address)
+                    else -> {
+                        stack.pop().push(destination.address)
+                    }
                 }
             // Always, even when the destination is where we already are. What changed is the state
             // behind the address, and only the server knows it.
@@ -249,7 +280,7 @@ fun KonektApp(
                 // first to decide whether this was a tab, and the screen needs the second.
                 val move =
                     (action as? NavigateAction)?.let { nav ->
-                        resolve(nav.deeplink, routes)?.let { nav.deeplink to it }
+                        resolve(nav.deeplink, routeTable)?.let { nav.deeplink to it }
                     }
                 if (move != null) {
                     val (deeplink, destination) = move
@@ -421,6 +452,11 @@ interface ScreenSource {
     ): PatchFetcher
 
     suspend fun brandTheme(): KompotTheme?
+
+    // WHERE A DEEPLINK GOES, ASKED OF THE SERVER. `null` means the question could not be answered —
+    // no session yet, or a deployment that serves no graph — and the holder keeps what it had rather
+    // than losing every destination it knows.
+    suspend fun navigation(): Map<String, String>?
 
     // HOW A LIST ASKS FOR ITS NEXT PAGE, and it is on the source for the same reason the brand kit
     // is: every entry point would otherwise have to remember to provide it, and one that forgot

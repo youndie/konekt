@@ -4,9 +4,12 @@ import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.github.youndie.kompot.standard.NavigateAction
 import io.konekt.client.app.KonektRoutes
+import io.konekt.client.app.KonektScreenSource
 import io.konekt.client.app.resolve
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
+import io.konekt.client.realtime.SseRealtimeSource
+import io.konekt.client.render.konektRegistry
 import io.konekt.client.session.KonektSession
 import io.konekt.client.session.SessionTokens
 import io.konekt.feature.auth.shared.api.AuthOtp
@@ -51,9 +54,10 @@ import kotlin.test.assertTrue
 // property of the data rather than of the object graph, which is why it needs a check of its own and
 // why that check has to fetch real screens from a real deployment (`B-56`).
 //
-// IT READS THE CLIENT'S OWN ROUTE TABLE rather than a copy: `KonektRoutes` is what both runners are
-// wired with, so a deeplink the server sends and the client cannot resolve fails here too — which is
-// the same bug seen from the other end.
+// ITS SUBJECT IS THE SERVED GRAPH, which is what a client resolves a deeplink through since `B-49`.
+// A destination the graph names and nothing points at is a screen nobody can open; a deeplink a tree
+// carries and the graph does not name is a button that does nothing. Both are the same defect from
+// opposite ends, and both are visible from here because both halves now come from the server.
 class EveryScreenIsReachableTest {
     // The wire name, read off the serializer rather than typed. `"navigate"` written here would be a
     // second spelling of a name that lives in the toolkit's `@SerialName`, and a rename upstream
@@ -65,6 +69,27 @@ class EveryScreenIsReachableTest {
     // WHAT NOTHING POINTS AT, DELIBERATELY — and the list is asserted as a SET EQUALITY rather than
     // as a floor, so a screen that becomes reachable and stays here fails. An exemption list checked
     // with `containsAll` is how a guard like this quietly stops guarding anything.
+    // Fetched once and shared by both assertions: it is what the client would resolve with.
+    // WHAT THE CLIENT WOULD RESOLVE WITH: the served graph merged over the bootstrap, which is
+    // exactly what `KonektApp` holds. Asserting against the graph alone would call the order screen
+    // unreachable — it is the one destination the graph cannot carry (see `KonektRoutes`, U15) — and
+    // asserting against the bootstrap alone would be the copy `B-49` deleted.
+    private fun routeTable(http: HttpClient): Map<String, String> =
+        KonektRoutes.bootstrap +
+            runBlocking {
+                requireNotNull(navigationOf(http)) { "the deployment served no graph" }
+            }
+
+    private fun navigationOf(http: HttpClient): Map<String, String>? =
+        runBlocking {
+            KonektScreenSource(
+                http = http,
+                realtime = SseRealtimeSource(http, konektClientJson),
+                registry = konektRegistry(),
+                json = konektClientJson,
+            ).navigation()
+        }
+
     private val reachedByNothing =
         mapOf(
             // The way in. Nothing can navigate to it because it is where the application OPENS —
@@ -81,6 +106,7 @@ class EveryScreenIsReachableTest {
     fun `every screen the client knows an address for is the destination of something served`() {
         val http = signedInClient()
 
+        val routeTable = routeTable(http)
         val reachable =
             runBlocking {
                 // Buying and topping up FIRST, so the screens that only exist once something has
@@ -97,11 +123,11 @@ class EveryScreenIsReachableTest {
                 // empty body and the decode below fails on nothing. The seeded order screen below IS
                 // that screen, with an id, so the walk loses no coverage by skipping the bare prefix.
                 val addresses =
-                    KonektRoutes.map.values
+                    routeTable.values
                         .distinct()
                         .filterNot { orderScreen.startsWith("$it/") } + orderScreen
                 deeplinksFoundIn(http, addresses)
-            }.mapNotNull { routeFor(it) }.toSet()
+            }.mapNotNull { routeFor(it, routeTable) }.toSet()
 
         // Vacuity first, and it is not ceremony: a run that fetched nothing — a stand answering 401,
         // a decode that returned no actions — would make every screen "unreachable" and the assertion
@@ -112,7 +138,7 @@ class EveryScreenIsReachableTest {
             "only ${reachable.size} destinations were found across every served screen; the walk did not run",
         )
 
-        val unreached = KonektRoutes.map.keys - reachable
+        val unreached = routeTable.keys - reachable
 
         assertEquals(
             reachedByNothing.keys,
@@ -138,11 +164,48 @@ class EveryScreenIsReachableTest {
     // and comparing resolved ADDRESSES would call the route unreached because no tree carries the bare
     // prefix. The plans detail hid the same mistake by accident — its route is also a tab, so the bar
     // pointed at it whatever the cards did.
-    private fun routeFor(deeplink: String): String? {
-        if (deeplink in KonektRoutes.map) return deeplink
-        return KonektRoutes.map.keys
+    private fun routeFor(
+        deeplink: String,
+        routeTable: Map<String, String>,
+    ): String? {
+        if (deeplink in routeTable) return deeplink
+        return routeTable.keys
             .filter { deeplink.startsWith("$it?") || deeplink.startsWith("$it/") }
             .maxByOrNull { it.length }
+    }
+
+    // THE OTHER DIRECTION, and it replaces a test that no longer has a subject.
+    //
+    // `NavigationGraphMatchesTheClientTest` held the served graph against the client's copy of it, and
+    // `B-49` deleted the copy: a deeplink resolves through the graph now, so there is nothing to
+    // disagree with. What that test was actually worth is this — a `navigate` the server EMITS that
+    // the client cannot resolve is a button that does nothing, and it is now the only way that
+    // failure can happen.
+    //
+    // It caught the graph three destinations short once already; with one table left it would have
+    // been three dead buttons instead.
+    @Test
+    fun `every deeplink the server sends resolves to somewhere`() {
+        val http = signedInClient()
+        val routeTable = routeTable(http)
+
+        val emitted =
+            runBlocking {
+                val orderScreen = seed(http)
+                deeplinksFoundIn(
+                    http,
+                    routeTable.values.distinct().filterNot { orderScreen.startsWith("$it/") } + orderScreen,
+                )
+            }
+
+        assertTrue(emitted.size >= 4, "only ${emitted.size} deeplinks were found; the walk did not run")
+
+        assertEquals(
+            emptyList(),
+            emitted.filter { routeFor(it, routeTable) == null }.sorted(),
+            "the server sends these and the client resolves none of them — every one is a control " +
+                "that looks pressable and does nothing",
+        )
     }
 
     // THE POSITIVE CONTROL. Without it the assertion above passes on a walk that found every address
@@ -150,7 +213,7 @@ class EveryScreenIsReachableTest {
     // from the client's table must make it disappear from the reachable set, not survive it.
     @Test
     fun `a screen the client cannot resolve is not counted as reached`() {
-        val withoutPlans = KonektRoutes.map - "app://plans"
+        val withoutPlans = routeTable(signedInClient()) - "app://plans"
 
         assertEquals(
             null,
@@ -159,8 +222,8 @@ class EveryScreenIsReachableTest {
         )
         // And the other half, which is what the assertion above is actually made of now: a deeplink
         // under a prefix reaches the ROUTE, not an address of its own.
-        assertEquals("app://order", routeFor("app://order/8f214c90"))
-        assertEquals(null, routeFor("app://nothing-like-this/1"))
+        assertEquals("app://plans", routeFor("app://plans/tr-10gb-30d", withoutPlans + ("app://plans" to "/x")))
+        assertEquals(null, routeFor("app://nothing-like-this/1", withoutPlans))
     }
 
     private suspend fun deeplinksFoundIn(
