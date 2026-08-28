@@ -16,6 +16,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.minus
 import org.jetbrains.exposed.v1.core.plus
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -73,16 +74,34 @@ class ExposedAccountBalances(
             moved == 1
         }
 
+    // RETURNING A HOLD, AT MOST ONCE, and it used to be once per caller.
+    //
+    // Nothing claims an expired saga before compensating it, so every process running a sweeper
+    // compensated the same abandoned order — two contours on one database here, two replicas in a
+    // deployment — and each one gave the money back. Read out of a running stand: one `hold` of -900
+    // and two `release`s of +900 two milliseconds apart, with the account and the ledger agreeing on
+    // a subscriber $9 richer than they paid in (`B-64`).
+    //
+    // THE ORDER OF THE TWO STATEMENTS IS THE FIX. The ledger entry goes first, under a unique index
+    // on `(order_id, kind)`; a second attempt violates it, the exception rolls the whole transaction
+    // back, and the balance is never touched. Written the other way round the balance would move and
+    // then be rolled back too — the same outcome by luck rather than by construction, and only while
+    // both statements stay in one transaction.
+    //
+    // The violation is SWALLOWED and not rethrown: a second compensation of the same order is not an
+    // error to report, it is work that was already done. What would be an error is doing it twice.
     override suspend fun release(
         accountId: String,
         orderId: String,
         amount: Money,
     ) {
-        dbQuery {
-            AccountTable.update({ AccountTable.id eq accountId }) {
-                it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
+        alreadyDoneIsNotAFailure {
+            dbQuery {
+                entry(accountId, orderId, LedgerEntryTable.RELEASE, amount.minorUnits, amount.currency)
+                AccountTable.update({ AccountTable.id eq accountId }) {
+                    it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
+                }
             }
-            entry(accountId, orderId, LedgerEntryTable.RELEASE, amount.minorUnits, amount.currency)
         }
     }
 
@@ -91,15 +110,23 @@ class ExposedAccountBalances(
         topUpId: String,
         amount: Money,
     ) {
-        dbQuery {
-            // No WHERE guard on the amount, unlike `hold`. A credit cannot make the balance negative,
-            // so there is nothing for a concurrent one to race against — two top-ups landing together
-            // both add, which is the correct answer. The refusal that matters for a top-up happened
-            // one step earlier, at the provider.
-            AccountTable.update({ AccountTable.id eq accountId }) {
-                it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
+        // The same protection as `release`, and for a reason that has not bitten yet: the top-up saga
+        // never suspends, so no sweeper reaches it. It is symmetric because the invariant is about the
+        // LEDGER rather than about which saga happens to be racing today, and because the index the
+        // guard rests on already covers this kind.
+        alreadyDoneIsNotAFailure {
+            dbQuery {
+                // The entry first, so a duplicate rolls the balance back with it — see `release`.
+                //
+                // No WHERE guard on the amount, unlike `hold`. A credit cannot make the balance
+                // negative, so there is nothing for a concurrent one to race against — two top-ups
+                // landing together both add, which is the correct answer. The refusal that matters
+                // for a top-up happened one step earlier, at the provider.
+                entry(accountId, topUpId, LedgerEntryTable.TOP_UP, amount.minorUnits, amount.currency)
+                AccountTable.update({ AccountTable.id eq accountId }) {
+                    it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
+                }
             }
-            entry(accountId, topUpId, LedgerEntryTable.TOP_UP, amount.minorUnits, amount.currency)
         }
     }
 
@@ -108,15 +135,19 @@ class ExposedAccountBalances(
         topUpId: String,
         amount: Money,
     ) {
-        dbQuery {
-            // Allowed to go negative, and that is deliberate. This runs when a step after the credit
-            // failed, so the money was never the subscriber's; refusing to take it back because they
-            // have already spent some of it would leave the operator paying for it. A negative
-            // balance is visible and recoverable — a silent gift is neither.
-            AccountTable.update({ AccountTable.id eq accountId }) {
-                it[balanceMinor] = AccountTable.balanceMinor minus amount.minorUnits
+        alreadyDoneIsNotAFailure {
+            dbQuery {
+                // The entry first, so a duplicate rolls the balance back with it — see `release`.
+                //
+                // Allowed to go negative, and that is deliberate. This runs when a step after the
+                // credit failed, so the money was never the subscriber's; refusing to take it back
+                // because they have already spent some of it would leave the operator paying for it.
+                // A negative balance is visible and recoverable — a silent gift is neither.
+                entry(accountId, topUpId, LedgerEntryTable.TOP_UP_REVERSAL, -amount.minorUnits, amount.currency)
+                AccountTable.update({ AccountTable.id eq accountId }) {
+                    it[balanceMinor] = AccountTable.balanceMinor minus amount.minorUnits
+                }
             }
-            entry(accountId, topUpId, LedgerEntryTable.TOP_UP_REVERSAL, -amount.minorUnits, amount.currency)
         }
     }
 
@@ -180,6 +211,26 @@ class ExposedAccountBalances(
                 ?.let { Money(it[AccountTable.balanceMinor], Currency.valueOf(it[AccountTable.currency].trim())) }
         }
 
+    // A MOVEMENT THAT WAS ALREADY MADE IS NOT A FAILURE, and the difference is the whole of `B-64`.
+    //
+    // The unique index on `(order_id, kind)` is what makes a second `release` impossible; this is what
+    // makes it QUIET. A compensation that runs twice is ordinary — two sweepers, a retried step — and
+    // the second one has nothing to do, so it must not surface as an error a caller has to decide
+    // about. What must never happen is the work being done twice, and that is the index's job.
+    //
+    // CAUGHT BY NAME AND NARROWLY. `ExposedSQLException` wraps whatever the driver threw, so the
+    // SQLState is read rather than the message: `23505` is the standard code for a unique violation
+    // and is the same on every Postgres in every language. Anything else — a broken connection, a
+    // constraint that is not this one — is rethrown, because swallowing those is how a balance stops
+    // moving with nothing in the log.
+    private inline fun alreadyDoneIsNotAFailure(block: () -> Unit) {
+        try {
+            block()
+        } catch (violation: ExposedSQLException) {
+            if (violation.sqlState != UNIQUE_VIOLATION) throw violation
+        }
+    }
+
     private fun entry(
         accountId: String,
         orderId: String,
@@ -198,6 +249,12 @@ class ExposedAccountBalances(
             it[LedgerEntryTable.note] = note
             it[createdAt] = clock.now().toEpochMilliseconds()
         }
+    }
+
+    private companion object {
+        // SQLState 23505, the standard code for a unique violation. A number rather than a message
+        // because the message is the driver's and changes with it.
+        const val UNIQUE_VIOLATION = "23505"
     }
 }
 

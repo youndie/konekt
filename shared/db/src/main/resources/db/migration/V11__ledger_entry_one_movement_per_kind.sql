@@ -1,0 +1,51 @@
+-- ONE MOVEMENT OF EACH KIND PER ORDER, enforced where the money is rather than where the callers are.
+--
+-- A purchase abandoned at the confirmation expires and every process running `SuspendedPetichSweeper`
+-- compensates it — nothing claims the saga first — so a stand with two contours on one database, or a
+-- deployment with two replicas, returned the hold once per process. Read out of a running stand: one
+-- `hold` of -900 and two `release`s of +900, two milliseconds apart, with the account and the ledger
+-- agreeing on a subscriber $9 richer than they paid in. Agreeing, which is why no reconciliation
+-- between the two would ever have found it (`B-64`).
+--
+-- THE INVARIANT LIVES HERE AND NOT IN A LOCK. A second `release` for an order is inventing money
+-- whatever caused the second call — a racing sweeper today, a retried step tomorrow — so the record
+-- refuses it and the transaction that tried rolls back with the balance untouched. A claim in the
+-- sweeper would make the race rarer; this makes the outcome impossible.
+--
+-- EVERY KIND IS AT MOST ONE PER ORDER TODAY: hold, capture, release and decline are written once by
+-- the purchase saga, `top_up` and `top_up_reversal` once by the top-up saga. The index says so, which
+-- is a stronger statement than a comment and the reason it is unique rather than an ordinary index.
+--
+-- `order_id` IS NULLABLE and Postgres treats nulls as distinct, so a movement with no order behind it
+-- would not conflict with another. Nothing writes one today — the column's own comment in `V5` says a
+-- top-up has no order and the code has since put the top-up's id there — and this index deliberately
+-- does not depend on that staying true.
+
+-- Both settings, and one of them is a hang rather than a failure: see the sidecar. Flyway's own lock
+-- is transactional and deadlocks against a concurrent build, which during a deploy reads as a slow
+-- rollout.
+SET lock_timeout = '3s';
+
+-- CONCURRENTLY, because this table is written on every purchase and every top-up. A plain
+-- CREATE UNIQUE INDEX holds a lock that blocks writers for the length of the build, and a ledger that
+-- cannot be written to is a product that cannot take money.
+--
+-- IT FAILS ON A DATABASE THAT HAS ALREADY DOUBLE-REFUNDED, and that is the right way round: the
+-- duplicates are money that was given away, and a deploy that stops is cheaper than one that buries
+-- them. Measured rather than assumed — a duplicate pair was inserted and the build refused it:
+--
+--     ERROR: could not create unique index "idx_ledger_entry_order_id_kind"
+--     DETAIL: Key (order_id, kind)=(…, release) is duplicated.
+--
+-- AND THE RETRY DOES NOT WORK ON ITS OWN, which is the half worth writing down: a CONCURRENTLY build
+-- that fails leaves an INVALID index behind — `indisvalid = f` in `pg_index` — and the next attempt
+-- stops on "relation already exists" rather than on the duplicates. Also measured. The recovery is
+-- three statements, in this order:
+--
+--     DROP INDEX IF EXISTS idx_ledger_entry_order_id_kind;
+--     SELECT order_id, kind, count(*) FROM ledger_entry GROUP BY 1, 2 HAVING count(*) > 1;
+--     -- reconcile those orders, then let the deploy run again
+--
+-- Reconciling is a person's job and not a script's: each duplicate is money that reached somebody,
+-- and whether it is clawed back or written off is a decision rather than a DELETE.
+CREATE UNIQUE INDEX CONCURRENTLY idx_ledger_entry_order_id_kind ON ledger_entry (order_id, kind);

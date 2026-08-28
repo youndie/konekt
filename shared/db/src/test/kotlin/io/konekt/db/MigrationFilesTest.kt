@@ -24,11 +24,21 @@ class MigrationFilesTest {
 
     private val versioned = Regex("""^V(\d+(?:[._]\d+)*)__(.+)\.sql$""")
 
+    // SIDECARS ARE NOT MIGRATIONS, and this read them as two more of them the first time one existed.
+    //
+    // A `V<n>__x.sql.conf` beside a script is how Flyway is told that a statement cannot run inside a
+    // transaction — the concurrent-index recipe this repository documents. Nothing had used it, so
+    // both assertions below fired on the first one: the name is not a versioned migration, and its
+    // version duplicates the script it belongs to.
+    //
+    // Excluded by SUFFIX rather than by pattern: a file that is neither a migration nor a sidecar
+    // should still fail the naming check, which is what that check is for.
     private fun files() =
         migrations
             .listDirectoryEntries()
             .filter { !it.isDirectory() }
             .map { it.name }
+            .filterNot { it.endsWith(".sql.conf") }
             .sorted()
 
     @Test

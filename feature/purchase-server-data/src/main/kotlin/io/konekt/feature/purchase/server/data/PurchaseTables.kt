@@ -34,6 +34,17 @@ object LedgerEntryTable : Table("ledger_entry") {
 
     override val primaryKey = PrimaryKey(id, name = "pk_ledger_entry")
 
+    // ONE MOVEMENT OF EACH KIND PER ORDER, and it is here as well as in `V11` because
+    // `KonektSchemaTest` asks Exposed what DDL the migrated schema still needs — an index the
+    // migration creates and this object does not declare comes back as a `DROP`, which is the guard
+    // saying the two halves disagree. It said so within a minute of the migration landing.
+    //
+    // What it enforces is why `B-64` is closed: a second `release` for an order is inventing money,
+    // whatever caused the second call, and the record refuses it rather than a lock preventing it.
+    init {
+        uniqueIndex("idx_ledger_entry_order_id_kind", orderId, kind)
+    }
+
     const val HOLD = "hold"
     const val RELEASE = "release"
     const val CAPTURE = "capture"

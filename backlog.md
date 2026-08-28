@@ -41,16 +41,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-64](docs/backlog/B-64-a-rollback-refunds-once-per-replica.md) `[ ]` | A purchase abandoned at the confirmation refunds once per running replica | P0 | M | - |
 | [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[~]` | Four screens and no way between them except a banner | P1 | L | - |
 | [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[~]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
 | [B-50](docs/backlog/B-50-login-frame-six.md) `[ ]` | The login screen the canvas draws last is four additions, and two of them are not what they look like | P2 | M | - |
 
-## Closed (60)
+## Closed (61)
 
 **The wire and the shell**
 
@@ -76,6 +75,7 @@ so re-prioritising must never move a file.
 - [B-10](docs/backlog/B-10-payment-mock.md) `[x]` - A payment mock that can refuse and can be slow
 - [B-11](docs/backlog/B-11-rollback-screen.md) `[x]` - The rollback screen states the reversal in money, not in apology
 - [B-12](docs/backlog/B-12-operation-history.md) `[x]` - Operation history, including the entries that did not happen
+- [B-64](docs/backlog/B-64-a-rollback-refunds-once-per-replica.md) `[x]` - A purchase abandoned at the confirmation refunds once per running replica
 
 **Live**
 

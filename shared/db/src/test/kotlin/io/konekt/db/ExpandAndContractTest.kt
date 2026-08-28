@@ -115,13 +115,18 @@ class ExpandAndContractTest {
                     val missing =
                         listOfNotNull(
                             "executeInTransaction=false".takeIf { it !in configuration.replace(" ", "") },
-                            // WITHOUT THIS ONE IT HANGS RATHER THAN FAILING. Flyway's own lock is
-                            // transactional and deadlocks against the concurrent build, and during a
-                            // deploy a hang reads as a slow rollout — the failure mode that costs the
-                            // most to diagnose.
-                            "postgresql.transactional.lock=false".takeIf {
-                                it !in configuration.replace(" ", "")
-                            },
+                            // THE SECOND HALF OF THE RECIPE IS NOT ASKED FOR HERE, and demanding it
+                            // was wrong: `postgresql.transactional.lock` is a CONFIGURATION property,
+                            // not a script one, and Flyway refuses a run whose script config carries
+                            // it — "Unknown configuration property". This guard therefore required a
+                            // sidecar that could not work, and nothing noticed because no migration
+                            // had ever used CONCURRENTLY.
+                            //
+                            // It still matters — without it Flyway's transactional lock deadlocks
+                            // against the concurrent build, and a hang during a deploy reads as a slow
+                            // rollout. It is set once in `DatabaseFactory`, and `ConcurrentIndexTest`
+                            // is what proves the pair works: it runs the real recipe against a real
+                            // Postgres with a live writer.
                         )
 
                     if (missing.isEmpty()) null else "${file.name}.conf is missing ${missing.joinToString(", ")}"
