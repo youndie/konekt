@@ -1,7 +1,12 @@
 package io.konekt.feature.auth.shared.api
 
+import io.github.youndie.kompot.KompotAction
 import io.ktor.resources.Resource
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 
 // The paths of this feature, written once.
 //
@@ -81,6 +86,15 @@ class LoginCodeScreenResource(
     // A code means the copy stays composed on the server, where D15 puts it, and the query carries a
     // word from a list this build owns.
     val error: String? = null,
+    // HOW LONG BEFORE ANOTHER CODE MAY BE ASKED FOR, and it is the refusal's own number rather than a
+    // clock the screen runs. `RequestOtpUseCase` already answers `RateLimited(secondsLeft)`; carrying
+    // it here is what lets the screen say "in 42 seconds" without a timer, a poll, or a wire type for
+    // one. The canvas draws a live countdown and this is the honest version of it: a subscriber asks
+    // and is told, rather than watching a number the server never confirmed.
+    val retryInSeconds: Long = 0,
+    // A NEW CODE IS ON ITS WAY, so the screen says so. Without it a resend is silent and looks like a
+    // button that did nothing — which is the failure this whole item is about.
+    val sent: Boolean = false,
 )
 
 @Resource("/api/v1/auth/login")
@@ -101,6 +115,11 @@ const val LOGIN_CODE_DEEPLINK: String = "app://login/code"
 // and an unknown word must draw no banner rather than an empty one.
 object LoginRefusals {
     const val WRONG_CODE = "wrong_code"
+
+    // ASKED FOR A NEW CODE TOO SOON. It travels with a NUMBER of seconds rather than a sentence, for
+    // the reason the wrong-code word does: a link is something anybody can hand somebody, and text in
+    // one is text on this product's login screen. A number can only change a number.
+    const val TOO_SOON = "too_soon"
 }
 
 object LoginForms {
@@ -110,3 +129,29 @@ object LoginForms {
     const val FIELD_MSISDN = "msisdn"
     const val FIELD_CODE = "code"
 }
+
+// ASKING FOR ANOTHER CODE, as an action rather than as a form submit — and the first attempt was the
+// form submit.
+//
+// The code screen carries a `SubmitFormAction`, and the toolkit intercepts one only for the form the
+// screen HOLDS: a button sending the number form's id from the code form's screen falls straight
+// through to the runner, which has no handler for it. The button looked pressed and posted nothing,
+// which is the exact shape of the defect it was added to fix. Measured — one OTP in the log where two
+// were expected.
+//
+// So it is a verb, like `buy_plan`, `confirm_purchase`, `sign_out` and `esim_wizard_step`: the runner
+// posts it and the holder moves to whatever the server answers with. It carries the NUMBER because
+// this build keeps no session between the two steps — the same reason the code form seeds it as a
+// bound field.
+@Serializable
+@SerialName("resend_code")
+data class ResendCodeAction(
+    val msisdn: String,
+) : KompotAction
+
+val authActionsSerializersModule =
+    SerializersModule {
+        polymorphic(KompotAction::class) {
+            subclass(ResendCodeAction::class)
+        }
+    }

@@ -8,6 +8,7 @@ import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
+import io.konekt.feature.auth.shared.api.authActionsSerializersModule
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
@@ -40,6 +41,7 @@ val konektClientJson: Json =
             generatedStandardSerializersModule +
             generatedKonektSerializersModule +
             kompotAuthSerializersModule +
+            authActionsSerializersModule +
             esimActionsSerializersModule +
             purchaseActionsSerializersModule +
             shellActionsSerializersModule +

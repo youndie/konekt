@@ -107,7 +107,7 @@ private fun FormScreen(
 @Composable
 fun GalleryLogin() = FormScreen("login-screen")
 
-@ViddikScreenshot(name = "Login code", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
+@ViddikScreenshot(name = "Login code", group = "Gallery", width = FRAME_WIDTH, height = 460, darkVariant = true)
 @Composable
 fun GalleryLoginCode() = FormScreen("login-code-screen")
 
@@ -177,7 +177,7 @@ private const val BRAND_B = "brand-b"
 @Composable
 fun GalleryBLogin() = FormScreen("login-screen", BRAND_B)
 
-@ViddikScreenshot(name = "B Login code", group = "Gallery", width = FRAME_WIDTH, height = 300, darkVariant = true)
+@ViddikScreenshot(name = "B Login code", group = "Gallery", width = FRAME_WIDTH, height = 460, darkVariant = true)
 @Composable
 fun GalleryBLoginCode() = FormScreen("login-code-screen", BRAND_B)
 

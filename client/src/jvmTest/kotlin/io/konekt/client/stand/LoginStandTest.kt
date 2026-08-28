@@ -10,7 +10,9 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.konekt.client.app.Destination
 import io.konekt.client.app.KonektApp
+import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
+import io.konekt.client.app.ResendCode
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
 import io.konekt.client.realtime.SseRealtimeSource
@@ -58,6 +60,68 @@ class LoginStandTest {
     fun resetMain() {
         Dispatchers.resetMain()
         mainThread.shutdown()
+    }
+
+    // THE WAY OUT OF THE CODE SCREEN, and until `B-50` there was none.
+    //
+    // This screen REPLACES the first one — the login submit answers a `navigate`, which is a step
+    // rather than a push — so a subscriber whose message never arrived had no back control, no resend
+    // and no way to correct a number they had mistyped. The only path out was closing the
+    // application.
+    //
+    // Driven through the client's own chain: the button submits the CODE form's values under the
+    // NUMBER form's id, and the client's `submits` map does the routing it already did. What is
+    // asserted is that the screen comes back saying something happened — a resend that changes
+    // nothing on screen is indistinguishable from a button that does not work.
+    @Test
+    fun `asking for a new code says so, and asking twice says how long`() {
+        val session = KonektSession()
+        val http = konektHttpClient(CIO.create(), baseUrl, session, konektClientJson)
+        val msisdn = "1555${(1_000_000..9_999_999).random()}"
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens =
+                        KonektScreenSource(
+                            http = http,
+                            realtime = SseRealtimeSource(http, konektClientJson),
+                            registry = konektRegistry(),
+                            json = konektClientJson,
+                            submits = KonektRoutes.submits,
+                        ),
+                    address = KonektRoutes.loginAddress,
+                    topic = "stand",
+                    darkMode = false,
+                    routes = KonektRoutes.bootstrap,
+                    // The runner's own handler, which is where a verb lives in this application.
+                    onAction = { action ->
+                        ResendCode(http, konektClientJson).addressFor(action)?.let(Destination::next)
+                    },
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Send me a code").fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("Phone number").performTextInput(msisdn)
+            onNodeWithText("Send me a code").performClick()
+
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Send a new code").fetchSemanticsNodes().isNotEmpty()
+            }
+            // The first arrival already says one was sent, which is the notice the resend reuses.
+            onNodeWithText("A code is on its way. Only the newest one works.").assertIsDisplayed()
+
+            onNodeWithText("Send a new code").performClick()
+
+            // ASKED TOO SOON, AND TOLD HOW LONG — which is this build's answer to the canvas's live
+            // countdown: the refusal already knows the number, so nothing has to run a clock.
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("A code was sent already.", substring = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            onNodeWithText("seconds.", substring = true).assertIsDisplayed()
+        }
     }
 
     @Test

@@ -1,1 +1,105 @@
-{"schema":{"formId":"login-code","fields":[{"type":"text_field","fieldId":"msisdn","rules":[],"initialValue":{"type":"text_value","text":"+79990009876"}},{"type":"text_field","fieldId":"code","rules":[{"type":"required","errorMessage":"Enter the code you were sent"}]}]},"screen":{"type":"column","id":"login-code","children":[{"type":"text","id":"login-code-title","text":"Enter the code","style":"headline_small","color":"on_surface"},{"type":"read_only_field","id":"login-code-msisdn","label":"Sent to","value":"+79990009876","fieldId":"msisdn"},{"type":"text_input","id":"login-code-input","fieldId":"code","label":"Code"},{"type":"button","id":"login-code-submit","modifiers":[{"type":"size","width":"Fill"}],"text":"Sign in","action":{"type":"submit_form","formId":"login-code"}}],"spacing":16}}
+{
+  "schema": {
+    "formId": "login-code",
+    "fields": [
+      {
+        "type": "text_field",
+        "fieldId": "msisdn",
+        "rules": [],
+        "initialValue": {
+          "type": "text_value",
+          "text": "+79997770001"
+        }
+      },
+      {
+        "type": "text_field",
+        "fieldId": "code",
+        "rules": [
+          {
+            "type": "required",
+            "errorMessage": "Enter the code you were sent"
+          }
+        ]
+      }
+    ]
+  },
+  "screen": {
+    "type": "column",
+    "id": "login-code",
+    "children": [
+      {
+        "type": "text",
+        "id": "login-code-title",
+        "text": "Enter the code",
+        "style": "headline_small",
+        "color": "on_surface"
+      },
+      {
+        "type": "banner",
+        "id": "login-code-sent",
+        "text": "A code is on its way. Only the newest one works."
+      },
+      {
+        "type": "read_only_field",
+        "id": "login-code-msisdn",
+        "label": "Sent to",
+        "value": "+79997770001",
+        "fieldId": "msisdn"
+      },
+      {
+        "type": "text_input",
+        "id": "login-code-input",
+        "fieldId": "code",
+        "label": "Code"
+      },
+      {
+        "type": "button",
+        "id": "login-code-resend",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Send a new code",
+        "action": {
+          "type": "resend_code",
+          "msisdn": "+79997770001"
+        },
+        "variant": "quiet"
+      },
+      {
+        "type": "button",
+        "id": "login-code-restart",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Use a different number",
+        "action": {
+          "type": "navigate",
+          "deeplink": "app://login"
+        },
+        "variant": "quiet"
+      },
+      {
+        "type": "button",
+        "id": "login-code-submit",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Sign in",
+        "action": {
+          "type": "submit_form",
+          "formId": "login-code"
+        }
+      }
+    ],
+    "spacing": 16
+  }
+}

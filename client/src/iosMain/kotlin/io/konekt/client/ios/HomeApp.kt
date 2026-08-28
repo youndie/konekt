@@ -9,6 +9,7 @@ import io.konekt.client.app.EsimInstall
 import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
+import io.konekt.client.app.ResendCode
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
 import io.konekt.client.observability.KonektClientObservability
@@ -71,6 +72,8 @@ fun homeViewController(): UIViewController {
     val buy = BuyPlan(http)
     // Stepping the install wizard, which nothing did until B-54's door was walked through.
     val install = EsimInstall(http, konektClientJson)
+    // Asking for another one-time code, which the code screen had no way to do at all.
+    val resend = ResendCode(http, konektClientJson)
     val screens =
         KonektScreenSource(
             http = http,
@@ -113,10 +116,15 @@ fun homeViewController(): UIViewController {
                     // comes back is the order screen's address, and the holder moves to it exactly
                     // as it moves for a `navigate`.
                     else -> {
-                        (buy.addressFor(action) ?: install.addressFor(action))?.let(Destination::next) ?: run {
-                            println("konekt-ios: no handler for $action")
-                            null
-                        }
+                        (
+                            buy.addressFor(
+                                action,
+                            ) ?: install.addressFor(action) ?: resend.addressFor(action)
+                        )?.let(Destination::next)
+                            ?: run {
+                                println("konekt-ios: no handler for $action")
+                                null
+                            }
                     }
                 }
             },

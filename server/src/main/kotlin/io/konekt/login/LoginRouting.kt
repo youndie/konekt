@@ -48,7 +48,10 @@ fun Route.loginRoutes() {
             call.respondForm(json, LoginScreens.number())
             return@get
         }
-        call.respondForm(json, LoginScreens.code(params.msisdn, params.error))
+        call.respondForm(
+            json,
+            LoginScreens.code(params.msisdn, params.error, params.retryInSeconds, params.sent),
+        )
     }
 
     post<LoginSubmit> {
@@ -56,16 +59,27 @@ fun Route.loginRoutes() {
         val msisdn =
             values.text(LoginScreens.MSISDN) ?: throw KonektException.Validation(LoginScreens.MSISDN, "no number")
 
-        // `.getOrThrow()`, and nothing else: StatusPages maps every refusal this can produce, and a
-        // malformed number is a 422 the client shows rather than a screen the server rebuilds.
-        requestOtp(msisdn).getOrThrow()
+        // ASKED TOO SOON IS AN ANSWER, not a failure — the same distinction the wrong code makes one
+        // route below, and it became load-bearing when the code screen grew a `Send a new code`
+        // button. Thrown, this is a 429 and a screen that did not change: the subscriber presses,
+        // nothing happens, and they press again. Sent back as a refusal, the screen says how long.
+        //
+        // The SECONDS come from the use case rather than from a policy read here: it is the one that
+        // knows how much of the wait is left, and it already answers with it.
+        val refusal =
+            requestOtp(msisdn).exceptionOrNull()?.let { failure ->
+                val seconds = (failure as? KonektException.RateLimited)?.retryAfterSeconds ?: throw failure
+                "&error=${LoginRefusals.TOO_SOON}&retryInSeconds=$seconds"
+            }
 
         // A `navigate` and not the next screen's tree. The endpoint's job is to say WHERE, and the
         // client fetches — which keeps one shape for arriving at a screen instead of two.
         // ENCODED, because a number can carry a `+` and an unencoded one arrives as a space.
         call.respondKompotAction(
             json,
-            NavigateAction("$LOGIN_CODE_DEEPLINK?msisdn=${msisdn.encodeURLParameter()}"),
+            NavigateAction(
+                "$LOGIN_CODE_DEEPLINK?msisdn=${msisdn.encodeURLParameter()}" + (refusal ?: "&sent=true"),
+            ),
         )
     }
 

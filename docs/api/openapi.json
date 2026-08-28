@@ -1061,6 +1061,22 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "retryInSeconds",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sent",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {

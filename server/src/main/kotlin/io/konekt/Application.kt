@@ -21,6 +21,7 @@ import io.konekt.feature.auth.server.data.authenticatedSessionRoutes
 import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.feature.auth.server.data.devOtpRoutes
 import io.konekt.feature.auth.server.data.sessionRoutes
+import io.konekt.feature.auth.shared.api.authActionsSerializersModule
 import io.konekt.feature.esim.server.data.esimModule
 import io.konekt.feature.esim.server.data.esimWizardRoutes
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
@@ -617,6 +618,7 @@ internal val kompotJson: Json =
             // Hand-written, because actions are not generated: @KompotComponentMarker covers
             // components and the KompotAction hierarchy is registered by hand. Omitting it
             // fails nothing at build time and fails every wizard step at runtime.
+            authActionsSerializersModule +
             esimActionsSerializersModule +
             // Buying, konekt's second action. Registered by hand like the first: nothing fails at
             // build time if it is missing, the press simply cannot be decoded.

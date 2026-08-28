@@ -23,4 +23,8 @@ val konektActionWireNames: List<String> =
         "confirm_purchase",
         "esim_wizard_step",
         "sign_out",
+        // Asking for another one-time code. A verb rather than a form submit: the toolkit
+        // intercepts a `submit_form` only for the form its screen holds, so a button sending another
+        // form's id posted nothing at all.
+        "resend_code",
     )

@@ -12,11 +12,15 @@ import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.MessageTones
+import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginRefusals
+import io.konekt.feature.auth.shared.api.ResendCodeAction
 import io.konekt.screens.FILLS_THE_ROW
 
 // THE WAY IN, BUILT BY THE SERVER LIKE EVERY OTHER SCREEN.
@@ -106,18 +110,41 @@ object LoginScreens {
     // THE SENTENCE IS COMPOSED HERE, from a code the query carried. The text never travels in a URL:
     // it has spaces, and it would let anybody who can hand somebody a link put their own words on this
     // product's login screen.
-    private fun refusalText(code: String?): String? =
+    private fun refusalText(
+        code: String?,
+        retryInSeconds: Long,
+    ): String? =
         when (code) {
-            LoginRefusals.WRONG_CODE -> "That code is wrong or has expired. Ask for a new one."
+            LoginRefusals.WRONG_CODE -> {
+                "That code is wrong or has expired. Ask for a new one."
+            }
+
+            // THE NUMBER IS THE REFUSAL'S OWN, composed here like every other string. It is what
+            // `RequestOtpUseCase` answered — the seconds it will keep refusing for — so the sentence
+            // is true at the moment it is drawn rather than a countdown nobody confirmed.
+            //
+            // A number that arrived as zero or nonsense degrades to the sentence without one: a link
+            // is something anybody can hand somebody, and the worst it can do here is drop a figure.
+            LoginRefusals.TOO_SOON -> {
+                if (retryInSeconds > 0) {
+                    "A code was sent already. You can ask for another in $retryInSeconds seconds."
+                } else {
+                    "A code was sent already. Give it a moment before asking for another."
+                }
+            }
 
             // A word this build does not know draws NO banner rather than an empty one — the same rule
             // every open vocabulary here follows, and the reason a crafted link says nothing.
-            else -> null
+            else -> {
+                null
+            }
         }
 
     fun code(
         msisdn: String,
         error: String? = null,
+        retryInSeconds: Long = 0,
+        sent: Boolean = false,
     ): KompotFormResponse =
         KompotFormResponse(
             schema =
@@ -154,7 +181,27 @@ object LoginScreens {
                                     color = M3Colors.OnSurface,
                                 ),
                             )
-                            refusalText(error)?.let { add(refusal("login-code-error", it)) }
+                            refusalText(error, retryInSeconds)?.let { add(refusal("login-code-error", it)) }
+
+                            // SAID OUT LOUD, because a resend that changes nothing on the screen is
+                            // indistinguishable from a button that does not work — and the code the
+                            // subscriber is holding is now the wrong one, which they have no other way
+                            // of learning.
+                            if (sent) {
+                                add(
+                                    BannerComponent(
+                                        id = "login-code-sent",
+                                        // TRUE ON BOTH ARRIVALS. The first draft said "the one before
+                                        // it no longer works", which is a claim about a code that did
+                                        // not exist the first time this screen is reached — and the
+                                        // endpoint cannot tell the two apart, because asking again IS
+                                        // step one. Saying which one works is true either way and is
+                                        // the half a subscriber acts on.
+                                        text = "A code is on its way. Only the newest one works.",
+                                        tone = MessageTones.INFO,
+                                    ),
+                                )
+                            }
                             add(
                                 ReadOnlyFieldComponent(
                                     id = "login-code-msisdn",
@@ -168,6 +215,45 @@ object LoginScreens {
                                     id = "login-code-input",
                                     fieldId = CODE,
                                     label = "Code",
+                                ),
+                            )
+                            // ASK AGAIN, and until now there was no way to.
+                            //
+                            // A subscriber whose message never arrived had nothing to press and
+                            // nowhere to go: this screen REPLACES the first one in the stack — the
+                            // login submit answers a `navigate`, which is a step rather than a push —
+                            // so there was no back control either. The one path out was closing the
+                            // application.
+                            //
+                            // `SubmitFormAction(NUMBER_FORM)` and not a new endpoint: the number is
+                            // already a field on THIS form, seeded and bound, so submitting these
+                            // values under the first form's id posts exactly what step one posts. The
+                            // client's `submits` map does the routing it already did.
+                            add(
+                                ButtonComponent(
+                                    id = "login-code-resend",
+                                    text = "Send a new code",
+                                    // A VERB AND NOT A FORM SUBMIT, and the form submit was the first
+                                    // attempt. The toolkit intercepts a `submit_form` only for the
+                                    // form the SCREEN holds, so a button carrying the number form's
+                                    // id from this screen fell through to the runner, which had no
+                                    // handler — it posted nothing, which is the shape of the defect
+                                    // it was added to fix. One OTP in the log where two were expected
+                                    // is what said so.
+                                    action = ResendCodeAction(msisdn),
+                                    variant = ButtonEmphasis.QUIET,
+                                    modifiers = FILLS_THE_ROW,
+                                ),
+                            )
+                            // AND A WAY BACK, for the other half of the same hole: a number typed
+                            // wrong cannot be corrected by asking the same number again.
+                            add(
+                                ButtonComponent(
+                                    id = "login-code-restart",
+                                    text = "Use a different number",
+                                    action = NavigateAction(LOGIN_DEEPLINK),
+                                    variant = ButtonEmphasis.QUIET,
+                                    modifiers = FILLS_THE_ROW,
                                 ),
                             )
                             add(
