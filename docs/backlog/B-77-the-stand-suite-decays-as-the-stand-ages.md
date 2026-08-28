@@ -1,7 +1,7 @@
 ---
 id: B-77
-title: "Two stand scenarios fail on a stand that has been up all day, and pass on a fresh one"
-status: open
+title: "Two stand scenarios failed once and could not be reproduced; the host was on its way down"
+status: done
 priority: P2
 size: S
 stage: stage-m4-proof
@@ -63,41 +63,56 @@ run of thirty. That is why run 2 carries the machine's uptime on every line: 491
 688 s at the end, monotone, one boot. A measurement whose harness restarts underneath it is not a
 measurement, and the only reason to trust the first one at all is that the second reproduces it.
 
-## What is left, and it is time rather than load
+## Time does not reproduce it either
 
-The stand that failed had been **up five hours**. This one was four minutes old and heavily loaded,
-and it was fine — so what accumulates is not the number of subscribers but something that grows with
-elapsed time. The candidates, none of them measured:
+The loaded stand was then left alone for an hour and the two scenarios re-run, changing nothing else.
+Machine uptime 812 s at the start and 4145 s at the end — one boot, 56 minutes, 83 subscribers
+publishing throughout, on the order of 160,000 events produced and applied. **Both pass**, and so does
+the whole suite.
 
-- **Postgres row bloat.** The simulator UPDATEs three counter rows per subscriber every five seconds
-  and never stops. Five hours of that is a great many dead row versions on the one table every one of
-  these scenarios reads.
-- **The broker's log**, which nothing truncates.
-- Something outside the product entirely — the box's own load, its disk.
+That is more traffic than the stand which failed could have accumulated in its five hours, so the
+"something builds up" story has now failed in both dimensions this machine can produce: load, and an
+hour of time under load.
 
-The soak that would settle it: leave a loaded stand alone for an hour and re-run the two scenarios,
-changing nothing else. It has not been run.
+## What it most likely was, and the evidence is not about konekt
 
-## Why it is worth an item
+Within about two hours of those two failures the build machine **stopped answering** — no ping, every
+mutagen session stuck — and came back having **rebooted**. It rebooted a second time during the first
+lag measurement, which is why that measurement was repeated with the machine's uptime on every line.
 
-Not because the tests are wrong: on a clean stand they are right, and the stand is meant to be torn
-down. It is worth an item because of what it looks like from the outside. A suite that goes red on a
-commit that changed nothing, on a stand nobody thought about, is a morning spent looking for a
-regression that is not there — and the failure says "waited 45s", which reads like the product being
-slow.
+A host that is on its way down is a much better explanation of two timeouts than anything measured
+here, and it is the only explanation with independent evidence behind it. The stand was five hours
+old; so was the machine's problem.
 
-## What would fix it
+## What this item was wrong about, in order
 
-Deliberately not decided until the measurement above exists: the second and third options below only
-make sense if the cause is the one now suspected, and the first is worth having either way.
+1. **"The simulator walks subscribers in order."** It does not — `tick` publishes for every subscriber
+   with a counter, every interval. Read.
+2. **"Production outruns consumption."** Measured: the lag is flat from 3 to 83 subscribers.
+3. **"Something accumulates with time."** Measured: an hour of a loaded stand changes nothing.
 
-- **The scenario says what it was waiting for and how far behind the chain was.** "waited 45s" reads
-  like the product being slow; "waited 45s, and the consumer was 900 events behind" names a cause.
-  Worth doing whatever the answer turns out to be.
-- **~~The simulator's output stops scaling with the subscriber count~~** — struck out by the
-  measurement above. Eighty-three subscribers cost nothing.
-- **`make e2e` says how old the stand is.** The crudest, and the only one that needs no theory about
-  the simulator at all.
+The offset the simulator logs on startup was quoted as evidence for the first, and supports none of
+the three. It says events were published, which is true of every stand that has ever run.
+
+## Closed as not reproduced, and two things stay
+
+- `probes/lag.sh`, so the next person asking this question starts from a measurement rather than from
+  a story. It carries the uptime because of what happened to the first run.
+- `Stand.standDiagnosis` now reports how many subscribers the simulator is publishing for. A count and
+  no verdict — it was invisible, and a number nobody can see is a number every theory can lean on.
+
+Reopen if it happens again on a machine that stays up. One observation and three refuted mechanisms
+is not a defect in this repository; it is a morning that was spent looking for one.
+
+## Why it was worth the day anyway
+
+Not for the fix — there is none. For what the chase produced: a measurement where there had been a
+story, a probe that can be re-run, a failure message that now names the stand's load, and three
+mechanisms ruled out in writing so nobody proposes them again.
+
+And the rule it leaves behind, which is in `CLAUDE.md`: before chasing a stand failure, tear the stand
+down and put it back up. If it survives that, it is a finding; if it does not, look at the machine
+before looking at the code.
 
 ## Anchors
 

@@ -41,13 +41,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (0)
 
-| Task | | Priority | Size | Blocked by |
-|---|---|---|---|---|
-| [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand that has been up all day, and pass on a fresh one | P2 | S | - |
+No open tasks.
 
-## Closed (76)
+## Closed (77)
 
 **The wire and the shell**
 
@@ -135,6 +133,7 @@ so re-prioritising must never move a file.
 - [B-74](docs/backlog/B-74-the-qr-fills-the-screen-and-buries-what-to-do-with-it.md) `[x]` - The activation code has no maximum size, so it grows with the window until the controls leave the screen
 - [B-75](docs/backlog/B-75-the-scroll-survives-a-wizard-step.md) `[x]` - A wizard step keeps the previous step's scroll, so the new screen opens part-way down
 - [B-76](docs/backlog/B-76-done-returns-to-the-first-step-instead-of-leaving.md) `[x]` - Done finishes the install and lands the subscriber back on step one of a new one
+- [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[x]` - Two stand scenarios failed once and could not be reproduced; the host was on its way down
 
 **Upstream and the box**
 
