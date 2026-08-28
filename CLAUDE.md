@@ -341,6 +341,13 @@ circular dependency inside `:server` naming neither module.
   the CARD branch is unreachable in production and no arrangement of components demonstrates both.
   `B-25` carries the finding and the open question of who should choose. The wire name goes to the degradation sink, where
   an operator can count it; on the screen it is a word nobody can act on.
+- **A destination has three arrivals, not two.** `Destination` carried one boolean meaning both "clear
+  the stack" and "the session changed", and a finished flow fits neither: `next` replaces only the top
+  and leaves the flow's screens underneath — a back control on the home screen, the first defect this
+  application was reported for — while `startOver` would refetch the navigation graph because an eSIM
+  was installed. `Arrival.NEXT` / `FLOW_ENDED` / `SESSION_CHANGED` (`B-76`). And the rule behind it:
+  when the client posts an action and then refetches, the ONE transition that ends the flow needs a
+  destination of its own, because the address it came from will happily start the flow again.
 - **A screen reachable two ways must be built one way.** The eSIM wizard's activate step was served
   by a step POST and by a screen GET; only the first resolved the issued profile, so the step told
   subscribers their activation code could not be read while the database held it (`B-66`). Both paths

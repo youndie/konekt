@@ -148,11 +148,14 @@ fun main() {
                         // BUYING, for the same reason: a holder with an opinion about purchases is
                         // this application's holder rather than a reusable one.
                         else -> {
+                            // `install` answers a DESTINATION and its two siblings answer addresses,
+                            // because finishing the wizard is the one action here that leaves its
+                            // flow rather than moving within it (`B-76`).
                             (
-                                buy.addressFor(
-                                    action,
-                                ) ?: install.addressFor(action) ?: resend.addressFor(action)
-                            )?.let(Destination::next)
+                                buy.addressFor(action)?.let(Destination::next)
+                                    ?: install.destinationFor(action)
+                                    ?: resend.addressFor(action)?.let(Destination::next)
+                            )
                                 ?: run {
                                     println("konekt: no handler for $action")
                                     null

@@ -122,13 +122,26 @@ class BackControlTest {
         )
     }
 
-    // THE POSITIVE CONTROL, and without it the assertion above passes on a holder that draws no back
-    // control at all — which is the shape of vacuous check this repository has been bitten by before.
+    // THE SAME EMPTY STACK FOR A DIFFERENT REASON. A flow that ended leaves nothing inside it
+    // reachable either — a finished install wizard sits on top of the order and the catalogue, and
+    // `next` would have replaced only the top and left both underneath, which puts a back control on
+    // the home screen (`B-76`).
+    @Test
+    fun `a finished flow leaves nothing to go back to`() {
+        assertTrue(
+            !drawsBackAfterThePress(Destination.endOfFlow("/second")),
+            "finishing a flow left the screens inside it behind, so home has a back control",
+        )
+    }
+
+    // THE POSITIVE CONTROL, and without it the two assertions above pass on a holder that draws no
+    // back control at all — which is the shape of vacuous check this repository has been bitten by
+    // before.
     @Test
     fun `an ordinary step still has one`() {
         assertTrue(
             drawsBackAfterThePress(Destination.next("/second")),
-            "no back control after an ordinary move — the check above proves nothing",
+            "no back control after an ordinary move — the checks above prove nothing",
         )
     }
 }

@@ -2,6 +2,7 @@ package io.konekt.client.app
 
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.encodeKompotAction
+import io.github.youndie.kompot.wizard.core.WizardTransition
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
 import io.konekt.feature.esim.shared.api.EsimWizardResource
@@ -29,15 +30,18 @@ import kotlinx.serialization.serializer
 // creates something and the destination depends on WHAT was created, while a wizard step moves a run
 // that already has an address. So this posts and answers with that address, unchanged.
 //
-// THE SAME ADDRESS EVERY TIME, which is what makes it work rather than a shortcut: the run is
-// persisted and `/api/v1/screens/esim-install` OPENS it — resuming rather than starting — so
-// re-fetching after a step shows the step it moved to. `KonektApp` refetches when an action answers
-// with the address it is already on, which is the path confirming a purchase already takes.
+// THE SAME ADDRESS FOR EVERY STEP THAT MOVES THE RUN, which is what makes it work rather than a
+// shortcut: the run is persisted and `/api/v1/screens/esim-install` OPENS it — resuming rather than
+// starting — so re-fetching after a step shows the step it moved to. `KonektApp` refetches when an
+// action answers with the address it is already on, which is the path confirming a purchase takes.
+//
+// AND ONE TRANSITION THAT DOES NOT MOVE THE RUN BUT ENDS IT. `Finish` is the exception, and treating
+// it like the others is `B-76`: see the branch below.
 class EsimInstall(
     private val http: HttpClient,
     private val json: Json,
 ) {
-    suspend fun addressFor(action: KompotAction): String? {
+    suspend fun destinationFor(action: KompotAction): Destination? {
         if (action !is EsimWizardStepAction) return null
 
         // The action posted back UNCHANGED, which is the contract the server states on its side: the
@@ -72,12 +76,29 @@ class EsimInstall(
             "the wizard refused a step: ${response.status}"
         }
 
-        return installAddress
+        // FINISH IS THE ONE TRANSITION THAT LEAVES, and answering the wizard's own address for it is
+        // what made `Done` start the flow again.
+        //
+        // The refetch below is right for every step that MOVES the run: the address is stable, the
+        // server answers wherever the run now is, and one shape covers all of them. `Finish` ends the
+        // run — and a `GET` of this address with no unfinished run correctly STARTS one, which is
+        // deliberate and documented in `OpenEsimWizardUseCase` for the subscriber who comes back to
+        // install a second line. So a subscriber who pressed `Done` was shown step one of a new
+        // wizard, and each press wrote another session row (`B-76`).
+        //
+        // `endOfFlow` and not `next`: the wizard is pushed on top of wherever it was opened from, so
+        // replacing only the top would leave the order and the catalogue underneath and put a back
+        // control on the home screen — the first defect this application was reported for. And not
+        // `startOver`, which would refetch the navigation graph because an eSIM was installed.
+        return when (action.transition) {
+            WizardTransition.Finish -> Destination.endOfFlow(KonektRoutes.homeAddress)
+            else -> Destination.next(installAddress)
+        }
     }
 
-    // `finish` ends the run, and the next `GET` starts a new one rather than answering a finished
-    // screen — which is the right behaviour for a subscriber who pressed Done and came back to
-    // install a second line, and worth knowing before somebody reads it as a bug.
+    // Where every step that moves the run lands. NOT where `Finish` lands: a `GET` here with no
+    // unfinished run starts a new one — right for a subscriber who comes back to install a second
+    // line, wrong for one who has just pressed `Done`.
     private val installAddress: String
         get() =
             ResourcesFormat()

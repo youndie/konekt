@@ -31,6 +31,13 @@ suite" — does not look at the one screen in this flow with a size problem.
 The gallery cannot see it either, by construction: it sizes each frame to its content, so a QR that
 overflows a phone is a taller picture rather than a clipped one.
 
+## It is not only about reading
+
+Writing [B-76](B-76-done-returns-to-the-first-step-instead-of-leaving.md)'s test made it concrete: a
+Compose walk pressing the controls in order timed out at `I have scanned it`, because a press on a
+node below the fold lands on nothing. The test now scrolls to each control first — which is what a
+person does — but the fact that it had to is a measurement of how far down the control is.
+
 ## What to decide
 
 Not simply "make it smaller". A code meant to be scanned by another phone's camera wants to be large,

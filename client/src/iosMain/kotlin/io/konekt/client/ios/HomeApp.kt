@@ -116,11 +116,15 @@ fun homeViewController(): UIViewController {
                     // comes back is the order screen's address, and the holder moves to it exactly
                     // as it moves for a `navigate`.
                     else -> {
+                        // `install` answers a DESTINATION and its two siblings answer addresses,
+                        // because finishing the wizard is the one action here that leaves its flow
+                        // rather than moving within it (`B-76`). Written the same way as the desktop
+                        // runner, which is what the two of them drifting apart already cost once.
                         (
-                            buy.addressFor(
-                                action,
-                            ) ?: install.addressFor(action) ?: resend.addressFor(action)
-                        )?.let(Destination::next)
+                            buy.addressFor(action)?.let(Destination::next)
+                                ?: install.destinationFor(action)
+                                ?: resend.addressFor(action)?.let(Destination::next)
+                        )
                             ?: run {
                                 println("konekt-ios: no handler for $action")
                                 null

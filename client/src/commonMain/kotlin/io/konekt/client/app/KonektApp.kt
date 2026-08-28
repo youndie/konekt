@@ -80,17 +80,38 @@ object KonektApp {
 // already knows — it is the thing that adopts and drops the tokens — says which of the two this is.
 data class Destination(
     val address: String,
-    val startsOver: Boolean,
+    val arrival: Arrival,
 ) {
-    companion object {
+    // THREE ARRIVALS AND NOT TWO, because "clear the stack" and "the session changed" are different
+    // facts that happened to want the same thing.
+    //
+    // They were one boolean, and the third case had nowhere to go: finishing the install wizard
+    // needed the stack cleared and the session untouched, so it arrived as a `next` — which replaces
+    // only the top and left the order and the catalogue underneath. The subscriber landed on HOME
+    // with a back control on it, which is the first defect this application was ever reported for.
+    // Reusing `startOver` instead would have refetched the navigation graph on the strength of an
+    // eSIM being installed.
+    enum class Arrival {
         // A STEP. The screen it came from is replaced rather than pushed behind: an action that
         // answered with an address ENDED somewhere, so back belongs to whatever was under it.
-        fun next(address: String): Destination = Destination(address, startsOver = false)
+        NEXT,
+
+        // A FLOW IS OVER. Nothing inside it should be reachable — a finished wizard, most of all by
+        // the back control — and the session is exactly what it was.
+        FLOW_ENDED,
 
         // A BOUNDARY. Nothing before this is reachable, and nothing before it should be: on one side
         // of a sign-in or a sign-out the tokens are different, so every address behind it answers to
-        // a session that no longer exists.
-        fun startOver(address: String): Destination = Destination(address, startsOver = true)
+        // a session that no longer exists. The graph is a different answer here too.
+        SESSION_CHANGED,
+    }
+
+    companion object {
+        fun next(address: String): Destination = Destination(address, Arrival.NEXT)
+
+        fun endOfFlow(address: String): Destination = Destination(address, Arrival.FLOW_ENDED)
+
+        fun startOver(address: String): Destination = Destination(address, Arrival.SESSION_CHANGED)
     }
 }
 
@@ -181,8 +202,9 @@ fun KonektApp(
 
     // REFETCHED AT A SESSION BOUNDARY AND NOWHERE ELSE, which is exactly when the answer can change:
     // before a session the graph refuses, after one it is available, and after signing out it refuses
-    // again. `startsOver` is the runner's own word for that moment — the holder does not learn what a
-    // token is to use it.
+    // again. `Arrival.SESSION_CHANGED` is the runner's own word for that moment — the holder does not
+    // learn what a token is to use it, and a flow that merely ENDED does not ask, which is why the two
+    // are separate arrivals rather than one flag.
     var sessions by remember { mutableStateOf(0) }
     LaunchedEffect(sessions) {
         screens.navigation()?.let { routeTable = routes + it }
@@ -226,9 +248,17 @@ fun KonektApp(
                     // into the home screen's parent and put a back control on a tab. The mirror of it
                     // put the just-signed-out home screen behind the login screen, one press from a
                     // 401.
-                    destination.startsOver -> {
+                    destination.arrival == Destination.Arrival.SESSION_CHANGED -> {
                         // The graph is a different answer on the other side of this, so ask again.
                         sessions += 1
+                        NavigationBackStack(destination.address)
+                    }
+
+                    // THE SAME EMPTY STACK AND NO SESSION QUESTION. A finished flow leaves nothing
+                    // behind it — that is the whole of what "finished" means here — and the tokens
+                    // are the ones it started with, so asking the server for its graph again would be
+                    // a request made because an eSIM was installed.
+                    destination.arrival == Destination.Arrival.FLOW_ENDED -> {
                         NavigationBackStack(destination.address)
                     }
 

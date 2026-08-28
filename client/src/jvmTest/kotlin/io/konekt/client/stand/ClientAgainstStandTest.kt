@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.printToString
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
@@ -256,7 +256,7 @@ class ClientAgainstStandTest {
                     topic = "stand",
                     darkMode = false,
                     routes = KonektRoutes.bootstrap,
-                    onAction = { action -> install.addressFor(action)?.let(Destination::next) },
+                    onAction = { action -> install.destinationFor(action) },
                 )
             }
 
@@ -272,6 +272,70 @@ class ClientAgainstStandTest {
                 onAllNodesWithText("Get my eSIM").fetchSemanticsNodes().isNotEmpty()
             }
             onNodeWithText("Get my eSIM").assertIsDisplayed()
+        }
+    }
+
+    // PRESSING DONE LEAVES THE FLOW, and it did not.
+    //
+    // `Finish` was answered with the wizard's own address like every other transition, so the holder
+    // refetched — and a `GET` there with no unfinished run correctly STARTS one. A subscriber who had
+    // just installed their eSIM and pressed the button that says they are finished was shown step one
+    // of a new wizard, and each press wrote another session row (`B-76`).
+    //
+    // Asserted at THIS level and not below it, because both halves are right on their own: the server
+    // is right to start a run for a subscriber who arrives, and the client is right to refetch after a
+    // step. Only the pair is wrong, and only for one transition.
+    @Test
+    fun `pressing Done leaves the install wizard instead of starting another`() {
+        val http = signedInClient()
+        val install = EsimInstall(http, konektClientJson)
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/screens/esim-install",
+                    topic = "stand",
+                    darkMode = false,
+                    routes = KonektRoutes.bootstrap,
+                    onAction = { action -> install.destinationFor(action) },
+                )
+            }
+
+            // Walked to the last step through the controls the SERVER puts on each screen, so the
+            // flow's shape stays the server's and this test does not carry a second copy of it.
+            listOf("Continue", "Get my eSIM", "I have scanned it", "Done").forEach { control ->
+                waitUntil(timeoutMillis = 15_000) {
+                    onAllNodesWithText(control).fetchSemanticsNodes().isNotEmpty()
+                }
+                // SCROLLED TO FIRST, like a person. The activate step's QR is about 490 points tall
+                // on a phone-shaped frame, so its controls are below the fold and a press without
+                // this lands on nothing — which is `B-74` costing something concrete rather than
+                // looking untidy.
+                onNodeWithText(control).performScrollTo().performClick()
+            }
+
+            // THE HOME SCREEN, which is where a finished install leaves somebody. Waited for by its
+            // own control rather than by the wizard's absence: "the wizard is gone" is also true of a
+            // screen that failed to load.
+            waitUntil(timeoutMillis = 15_000) {
+                onAllNodesWithText("Top up").fetchSemanticsNodes().isNotEmpty()
+            }
+
+            // AND NOT BACK AT THE BEGINNING. This is the defect itself: the first step's copy is what
+            // a subscriber saw after pressing Done.
+            assertEquals(
+                0,
+                onAllNodesWithText("Continue").fetchSemanticsNodes().size,
+                "pressing Done showed step one of a new wizard",
+            )
+            // Nor anything to go back INTO. The wizard sat on top of whatever opened it, so a way back
+            // is a way back into a finished run.
+            assertEquals(
+                0,
+                onAllNodesWithText("← Back").fetchSemanticsNodes().size,
+                "the finished wizard is still behind the home screen",
+            )
         }
     }
 
