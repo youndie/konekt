@@ -41,13 +41,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (0)
 
-| Task | | Priority | Size | Blocked by |
-|---|---|---|---|---|
-| [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[~]` | Every screen photographed and held against the canvas, and what the two disagree about | P1 | L | - |
+No open tasks.
 
-## Closed (63)
+## Closed (64)
 
 **The wire and the shell**
 
@@ -97,6 +95,7 @@ so re-prioritising must never move a file.
 - [B-46](docs/backlog/B-46-no-login-screen.md) `[x]` - Both runners sign in through a route that must never ship
 - [B-49](docs/backlog/B-49-the-app-has-no-shell.md) `[x]` - Four screens and no way between them except a banner
 - [B-50](docs/backlog/B-50-login-frame-six.md) `[x]` - The login screen the canvas draws last is four additions, and two of them are not what they look like
+- [B-51](docs/backlog/B-51-the-screens-against-the-canvas.md) `[x]` - Every screen photographed and held against the canvas, and what the two disagree about
 - [B-52](docs/backlog/B-52-the-balance-is-not-a-card.md) `[x]` - The balance block is four texts in the screen's own column, and the canvas draws a card
 - [B-53](docs/backlog/B-53-history-excludes-top-ups.md) `[x]` - History reads entitlements, so the top-up the button beside it starts will never appear
 - [B-54](docs/backlog/B-54-the-esim-wizard-is-unreachable.md) `[x]` - The eSIM install wizard has routes, a step machine and no screen that leads to it

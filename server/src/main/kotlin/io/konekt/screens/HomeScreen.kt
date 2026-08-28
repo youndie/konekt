@@ -13,6 +13,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.SurfaceComponent
 import io.konekt.components.SurfaceTones
 import io.konekt.domain.Money
+import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.roaming.server.domain.RoamingPackage
@@ -49,6 +50,10 @@ object HomeScreen {
         // a white-label product that guessed a name would print the wrong operator's name on the
         // operator's own screen, which is worse than printing none.
         brandName: String? = null,
+        // HOW MANY PROFILES THIS LINE HOLDS. Zero is what makes the install door worth drawing, and
+        // it is a count rather than a boolean because the profile screen already reads one — two
+        // shapes of the same question is how two screens come to disagree about it.
+        esimsHeld: Int = 0,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -102,6 +107,34 @@ object HomeScreen {
                         // the answer to the question they opened the screen with; a package for a trip
                         // in three weeks is context.
                         if (roamingCards != null) addAll(packages.map(roamingCards::of))
+
+                        // SOMETHING BOUGHT AND NOT YET INSTALLED, offered here because this is the
+                        // screen a subscriber opens.
+                        //
+                        // Section 01 draws it as a row with `Install`, and until now the install flow
+                        // could be reached from exactly two places — the purchase result, and a
+                        // history row once one carried an action. Both are places somebody has to
+                        // think to go. An allowance that cannot be used until a profile is installed
+                        // is the one thing on this screen that is not about what they have but about
+                        // what they cannot yet use.
+                        //
+                        // Drawn on the COUNT and not on the roaming packages: what makes an eSIM
+                        // installable is holding none, and a home bundle needs one exactly as much as
+                        // a trip does. Tying it to roaming would have been the canvas's example
+                        // mistaken for the rule.
+                        if (esimsHeld == 0) {
+                            add(
+                                BannerComponent(
+                                    id = "home-install-esim",
+                                    text =
+                                        "Your line has no eSIM yet. Install one to start using what " +
+                                            "you have bought.",
+                                    tone = MessageTones.INFO,
+                                    actionText = "Install eSIM",
+                                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                                ),
+                            )
+                        }
 
                         // AFTER what the subscriber already has, because that is the order the
                         // question comes in: what have I got, then what else is there. The empty

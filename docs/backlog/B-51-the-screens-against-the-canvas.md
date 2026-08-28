@@ -1,7 +1,7 @@
 ---
 id: B-51
 title: "Every screen photographed and held against the canvas, and what the two disagree about"
-status: wip
+status: done
 priority: P1
 size: L
 stage: stage-m3-product
@@ -99,3 +99,37 @@ same hour by refusing a build.
 - **The margin and the pinned bar are not photographed.** The gallery renders a screen TREE; the
   frame belongs to `KonektApp`, which the goldens do not go through. Verified by running the desktop
   client instead — which is a real gap in the harness rather than in the frame.
+
+## What closed it
+
+The third criterion — *the home screen serves what section 01 draws, or the canvas records what this
+build will not serve* — and it took both halves.
+
+**Served:** the header (the brand kit gained a `displayName`), the balance as a card on a ground the
+brand paints, `Top up` beside `History`, all three counters with the states that were unreachable, and
+**the install door**. That last one is what this item was really missing: the flow could be reached
+from the purchase result and, once a history row carried an action, from there — both places somebody
+has to think to go. It is a banner on the screen a subscriber opens, drawn on the COUNT of profiles
+held rather than on there being a roaming package, because what makes an eSIM installable is holding
+none and a home bundle needs one exactly as much as a trip does. Tying it to roaming would have been
+the canvas's example mistaken for the rule.
+
+**Recorded rather than served:** the avatar, the subscription heading, the `Roaming` button and the
+roaming row, each with the reason and the item it belongs to, in
+[design-app-canvas](../design/design-app-canvas.md). A difference nobody has decided about is a
+difference that stays forever.
+
+## The finding this item is actually about
+
+Every frame-level defect in this product was found by a person looking at the running application
+while the suite was green — the missing margin, the bar a third of the way down, the unpainted ground,
+the back control on a tab. The goldens photographed the screen TREE and never the application, so none
+of them could be in a frame. `AppFrameScreenshots` drives the same recordings through the real
+composition root at the canvas's own frame height, and the class of defect stopped being invisible.
+
+It is also the item that produced the method: **hold the served tree against the canvas markup, not
+the screenshot against the drawing.** In a backend-driven product a mockup is an assertion about a
+tree, and the raster only shows whether the renderer honoured it. Every subsequent finding — the
+balance that was four siblings rather than a card, the card that already had the fields nobody sent,
+the history rows carrying no action — came out of reading the two structures side by side, and none of
+them is visible in a picture.

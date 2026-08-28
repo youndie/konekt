@@ -2,6 +2,7 @@ package io.konekt.screens
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.konekt.feature.auth.server.domain.SubscriberRepository
+import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.feature.purchase.server.domain.AccountBalances
 import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.usage.server.data.UsageCounterCards
@@ -24,6 +25,8 @@ fun Route.homeRoutes() {
     val roaming by inject<RoamingPackages>()
     val roamingCards by inject<RoamingPackageCards>()
     val subscribers by inject<SubscriberRepository>()
+    // Whether this line holds a profile yet, which decides whether the install door is drawn.
+    val esims by inject<EsimRepository>()
     // The brand kit this deployment serves, for the one string on this screen that is a fact
     // about the DEPLOYMENT rather than about the subscriber.
     val brand by inject<BrandThemeCatalogue>()
@@ -50,6 +53,7 @@ fun Route.homeRoutes() {
                 packages = packages,
                 roamingCards = roamingCards,
                 brandName = brand.displayName,
+                esimsHeld = esims.countHeldBy(subscriberId),
                 nav = Shell.bottomNav(Shell.Tab.HOME),
             ),
         )

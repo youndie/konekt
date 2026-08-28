@@ -183,6 +183,21 @@ and reverts anything a task writes there, so a recording run in the usual place 
 nothing. The goldens then verify unchanged on Linux — measured, not assumed, and it works because the
 fixtures pin viddik's bundled font rather than the host's.
 
+## What section 01 draws and this build does not serve
+
+Recorded here rather than left as a permanent difference, because a difference is only a defect once
+somebody has decided which of the two moves ([B-51](../backlog/B-51-the-screens-against-the-canvas.md)).
+
+| Drawn | Why it is not served |
+|---|---|
+| the avatar chip with initials | `subscriber` holds an msisdn and nothing else, so initials would be invented. It joins the day sign-up asks for a name — [B-55](../backlog/B-55-home-header.md). |
+| `Smart 20 · renews 12 Sep` over the counters | there is no subscription. A purchase grants an allowance and that is the end of it, so nothing renews and there is no plan for the three counters to belong to. The container to draw the group exists — [B-60](../backlog/B-60-counter-copy-and-grouping.md). |
+| a `Roaming` button beside `Buy a package` | the catalogue is one list and roaming plans are in it. A second button filtering the same screen is [B-57](../backlog/B-57-plans-catalogue-against-section-02.md)'s filters, not a control of its own. |
+| the roaming package as its own row | it is drawn as a `usage_counter_card`, which carries the quota the canvas's row does not. What the row is FOR — the install control — is served as a banner on the same screen and on the same condition, and on the count of profiles held rather than on there being a roaming package: what makes an eSIM installable is holding none, and a home bundle needs one exactly as much as a trip does. |
+
+**The counter values state what is LEFT**, and section 05's three-tab bar is not the four this build
+serves — both already recorded below and in the tab note.
+
 ## Two decisions the canvas and this build settled differently
 
 **A counter states what is LEFT, not what was used.** The canvas writes minutes and SMS as

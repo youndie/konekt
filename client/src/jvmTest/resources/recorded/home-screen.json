@@ -23,14 +23,14 @@
         {
           "type": "text",
           "id": "balance-amount",
-          "text": "$39",
+          "text": "$63",
           "style": "display_small",
           "color": "on_primary_container"
         },
         {
           "type": "text",
           "id": "balance-msisdn",
-          "text": "+79995551515",
+          "text": "+79996660001",
           "style": "body_medium",
           "color": "on_primary_container"
         },
@@ -83,6 +83,25 @@
       "title": "Messages",
       "valueText": "50 SMS left",
       "progress": 0.0
+    },
+    {
+      "type": "usage_counter_card",
+      "id": "roaming-48bb4361-7cab-4ece-8d41-bf8ee0eb8f31",
+      "title": "Turkey data",
+      "valueText": "10 GB ready",
+      "captionText": "Starts when you first connect in Turkey, then runs for 30 days.",
+      "progress": 1.0,
+      "state": "dormant"
+    },
+    {
+      "type": "banner",
+      "id": "home-install-esim",
+      "text": "Your line has no eSIM yet. Install one to start using what you have bought.",
+      "actionText": "Install eSIM",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://esim-install"
+      }
     },
     {
       "type": "button",
