@@ -218,6 +218,51 @@ fun AppConfirm() = App("confirm-screen")
 @Composable
 fun AppPurchaseRefused() = App("order-refused-screen")
 
+// THE TWO STEPS OF THE INSTALL FLOW THAT NOTHING PHOTOGRAPHED, and the flow's only screens with a
+// size question on them.
+//
+// `App esim install` is step ONE — a paragraph and a button. The step that hands over the activation
+// code, and the one that confirms it, are where a 361-point square meets an 852-point phone, and
+// neither had a frame. `B-74` was reported off a DESKTOP window, where the code stretches to the
+// window's width and buries everything; these two exist so the question is asked at the size the
+// product is for, rather than at whatever size somebody's window happened to be.
+@ViddikScreenshot(
+    name = "App esim activate",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppEsimActivate() = App("esim-activate-screen")
+
+@ViddikScreenshot(
+    name = "App esim done",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppEsimDone() = App("esim-done-screen")
+
+// THE SAME STEP IN A DESKTOP WINDOW, which is the only frame in this file that is not phone-shaped
+// and the only one where the code's ceiling is visible at all.
+//
+// `fillMaxWidth(0.7f)` has no maximum, so at 900 points the code was 630 and everything under it left
+// the screen. On a phone it was always fine, which is why the frames above show nothing wrong and why
+// this one has to exist: a size that is right at one width and absurd at another cannot be
+// photographed at one width.
+@ViddikScreenshot(
+    name = "Esim activate wide",
+    group = "AppFrame",
+    width = 900,
+    height = 700,
+    darkVariant = false,
+)
+@Composable
+fun EsimActivateWide() = App("esim-activate-screen")
+
 @ViddikScreenshot(
     name = "App esim install",
     group = "AppFrame",

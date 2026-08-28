@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -61,6 +62,20 @@ class EsimQrRenderer : KompotComponentRenderer<EsimQrComponent> {
             Canvas(
                 modifier =
                     Modifier
+                        // THE CEILING GOES FIRST, and that is not a style choice.
+                        //
+                        // A fraction alone has no maximum: seven tenths of a phone is about 275
+                        // points, seven tenths of a desktop window is however wide somebody dragged
+                        // it, and at 900 the code became 630 and pushed the instruction, the typed
+                        // code and both buttons off the screen — far enough that a Compose walk
+                        // pressing the controls in order hit nothing and timed out (`B-74`).
+                        //
+                        // `.fillMaxWidth(f).widthIn(max = x)` does NOT cap it — measured, at 900 the
+                        // code was still 630. `fillMaxWidth` resolves to an exact width and the later
+                        // constraint does not shrink it. So the cap is on the width the FRACTION IS
+                        // TAKEN OF, before it: below the cap a phone is unaffected, above it the
+                        // code stops growing at seven tenths of the cap.
+                        .widthIn(max = QR_LAYOUT_MAX_DP.dp)
                         .fillMaxWidth(QR_WIDTH_FRACTION)
                         // Square, because a QR that is not is a QR nothing reads.
                         .aspectRatio(1f)
@@ -122,6 +137,11 @@ class EsimQrRenderer : KompotComponentRenderer<EsimQrComponent> {
 
     internal companion object {
         const val QR_WIDTH_FRACTION = 0.7f
+
+        // The widest this block is allowed to believe it has. Above a phone's own width, so the size
+        // the product is for is untouched; the code itself therefore stops at 0.7 × 400 = 280 points,
+        // which is a comfortable seven centimetres for a camera held up to a screen.
+        const val QR_LAYOUT_MAX_DP = 400
         const val QUIET_ZONE_DP = 12
         const val SEAM_BLEED = 0.5f
 

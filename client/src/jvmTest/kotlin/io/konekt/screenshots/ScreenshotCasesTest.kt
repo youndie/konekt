@@ -121,6 +121,14 @@ class ScreenshotCasesTest {
             "AppFrame - App home uninstalled Dark",
             "AppFrame - App profile uninstalled",
             "AppFrame - App profile uninstalled Dark",
+            // The two steps with a size question on them, at the size the product is for.
+            "AppFrame - App esim activate",
+            "AppFrame - App esim activate Dark",
+            "AppFrame - App esim done",
+            "AppFrame - App esim done Dark",
+            // The one frame in the file that is not phone-shaped, and the only place the code's
+            // ceiling is visible. No dark variant: what it is photographing is a size.
+            "AppFrame - Esim activate wide",
         )
 
     @Test

@@ -1,57 +1,67 @@
 ---
 id: B-74
-title: "The activation code fills the whole frame, so what to do with it is below the fold"
-status: open
+title: "The activation code has no maximum size, so it grows with the window until the controls leave the screen"
+status: done
 priority: P2
 size: S
 stage: stage-m4-proof
 epic: feature-esim
 ---
 
-# B-74 — A subscriber reaching the code sees only the code
+# B-74 — Reported off a desktop window, and the phone was never wrong
 
-The `activate` step, on a 393×852 phone frame, draws the QR at roughly 490 points. The step meter and
-the code fit; **everything else is off-screen** — the caption, the manual code to type when the camera
-will not read it, the instruction that says to open Settings, and both buttons.
+## What this item first said, and why it was wrong
 
-So the screen that exists to tell somebody what to do shows them a square and nothing else. The
-sentence explaining it is one flick away and nothing on the frame says so.
+> The `activate` step, on a 393×852 phone frame, draws the QR at roughly 490 points… everything else
+> is off-screen.
 
-The last step has the same shape with the stakes reversed: `done` draws its banner —
-**"Your eSIM is ready."** — above a second copy of the code, and by the time the flow gets there the
-scroll is not at the top ([B-75](B-75-the-scroll-survives-a-wizard-step.md)), so the sentence a
-subscriber is waiting for is above the fold instead of below it.
+The first half is false and I wrote it. The observation was real — the caption, the typed code, the
+instruction and both buttons were below the fold — but it was made in a **desktop window about 740
+points wide**, and attributed to a phone frame that had never been photographed.
 
-## Why nothing sees it
+The first thing this item actually produced was that frame. At 393×852 the code is about 230 points
+and every part of the screen fits above the fold with room to spare. Nothing was wrong at the size the
+product is for.
 
-`AppFrame - App esim install` photographs step ONE. The activate step has no frame, so the harness
-built for exactly this class of defect — "six frame-level defects found by a person and none by the
-suite" — does not look at the one screen in this flow with a size problem.
+## What was wrong
 
-The gallery cannot see it either, by construction: it sizes each frame to its content, so a QR that
-overflows a phone is a taller picture rather than a clipped one.
+`fillMaxWidth(0.7f)` has no maximum. Seven tenths of a phone is 275 points; seven tenths of whatever
+window somebody drags is however wide they dragged it. At 900 the code was 630 points and everything
+under it left the screen — far enough that a Compose walk pressing the controls in order hit nothing
+and timed out, which is how [B-76](B-76-done-returns-to-the-first-step-instead-of-leaving.md)'s test
+found it.
 
-## It is not only about reading
+So the defect is a missing ceiling, not a wrong size.
 
-Writing [B-76](B-76-done-returns-to-the-first-step-instead-of-leaving.md)'s test made it concrete: a
-Compose walk pressing the controls in order timed out at `I have scanned it`, because a press on a
-node below the fold lands on nothing. The test now scrolls to each control first — which is what a
-person does — but the fact that it had to is a measurement of how far down the control is.
+## What was done
 
-## What to decide
+**The cap goes on the width the fraction is taken OF, and the order is the whole of it.**
+`.fillMaxWidth(f).widthIn(max = x)` does not cap anything — measured, at 900 the code was still 630,
+because `fillMaxWidth` resolves to an exact width that a later constraint does not shrink. Constraining
+first and taking the fraction second gives `min(0.7 × parent, 0.7 × 400)`: a phone is below the cap
+and untouched, and above it the code stops at 280 points.
 
-Not simply "make it smaller". A code meant to be scanned by another phone's camera wants to be large,
-and shrinking it to fit the instructions is trading the primary job for the secondary one. The options
-worth weighing are a maximum height that keeps the first control on screen, moving the instruction
-ABOVE the code, or both.
+**Three frames, and each answers something the others cannot.**
 
-Whatever is chosen, the activate and done steps need frames, because a size decision that nothing
-photographs is one that drifts back.
+| Frame | What it is for |
+|---|---|
+| `App esim activate` | the step that hands over the code, at the size the product is for — and the frame that corrected this item |
+| `App esim done` | the same question on the last step, which draws the code again under a banner and a card |
+| `Esim activate wide` | 900×700, the only non-phone frame in the file: a size that is right at one width and absurd at another cannot be photographed at one width |
+
+The phone goldens are byte-identical before and after the cap, which is the assertion that the fix
+changed nothing where nothing was wrong.
+
+## What was NOT done, deliberately
+
+The item proposed moving the instruction above the code, or both. Neither is needed: with the ceiling
+in place the instruction is on screen at both sizes, and reordering would move a sentence that is
+correctly placed for the phone in order to fix a window that is now fixed.
 
 ## Anchors
 
 | What | Where |
 |---|---|
-| The step | `feature/esim-server-data/.../EsimWizardScreen.kt` (`activateContent`, `qrOf`) |
-| The renderer | `client/src/commonMain/.../render/` |
-| The frames that exist | `client/src/jvmTest/kotlin/io/konekt/screenshots/AppFrameScreenshots.kt` |
+| The ceiling | `client/src/commonMain/kotlin/io/konekt/client/render/EsimQrRenderer.kt` |
+| The frames | `client/src/jvmTest/kotlin/io/konekt/screenshots/AppFrameScreenshots.kt` |
+| The step | `feature/esim-server-data/.../EsimWizardScreen.kt` (`activateContent`) |

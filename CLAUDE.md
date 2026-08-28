@@ -213,6 +213,13 @@ circular dependency inside `:server` naming neither module.
 - **Inside `Table.insert { }` the table is the receiver**, so a bare name resolves to the COLUMN. A
   parameter wins that resolution and a class property does not — which is why it bites in a test seed
   and not in a repository, and why the fix is a differently named local.
+- **A frame photographs one width, and some defects are about the other one.** The install wizard's
+  code was reported as burying its own controls; it does, in a desktop window, and never did on a
+  phone — the claim was made off a 740-point window and attributed to a 393-point frame that had not
+  been photographed (`B-74`). `fillMaxWidth(fraction)` has no ceiling, so a size that is right at one
+  width is absurd at another, and one frame cannot show that. When a size is the subject, photograph
+  BOTH widths. And the cap goes on the width the fraction is taken of: `.fillMaxWidth(f).widthIn(max)`
+  does not shrink anything, because `fillMaxWidth` resolves to an exact width first — measured.
 - **A recording is a screenshot of the server, and it goes stale silently.** The frames in
   `client/src/jvmTest/resources/recorded/` are committed trees, so a change to the screen that built
   one leaves the golden photographing the OLD screen and every check green — which happened three
