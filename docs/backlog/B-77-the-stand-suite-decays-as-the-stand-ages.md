@@ -20,21 +20,40 @@ first use abroad starts it, and the screen …    — waited 45s for the package
 Nothing server-side had changed since they last passed — the working tree held client files only —
 and `make stand-down && make stand-up && make e2e` was green on the same commit, twice over.
 
-## What is accumulating
+## What is accumulating — the first answer here was wrong
 
-The traffic simulator logs where it is when it starts:
+This item first said the simulator "walks subscribers in order" and so "reaches a new one later and
+later as the stand fills up". **It does not.** `TrafficSimulator.tick` publishes for EVERY subscriber
+holding a counter, every interval, three events each:
 
+```kotlin
+val ids = subscribers()
+ids.forEach { subscriberId -> usageAmounts.forEach { (kind, units) -> topic.send(…) } }
 ```
-DEV ONLY — traffic simulator starting on partition 0 from offset 11605
-```
 
-Both failing scenarios wait for a counter belonging to a subscriber THEY just created to move. A
-simulator walking subscribers in order reaches a new one later and later as the stand fills up, and a
-day of manual walking through the app leaves dozens of them. The waits are 45 and 90 seconds; the
-queue outgrew them.
+A subscriber created a second ago is in the very next tick. There is no queue of subscribers to be at
+the back of.
 
-That is a hypothesis with one piece of evidence — the offset, and the fact that a wipe fixes it. It
-has not been measured against subscriber count.
+The offset the simulator logs on startup — `from offset 11605` — was the evidence for that story, and
+it does not support it: it says a great many events had been published, which is equally true of the
+explanation below.
+
+## The better candidate, read rather than measured
+
+**Production scales with the number of subscribers and consumption does not.** The simulator sends
+three events per subscriber every five seconds — 0.6 events per second per subscriber — while
+`UsageConsumer` polls every 200 ms and applies each record with a database write and a realtime push.
+Once 0.6 × N exceeds what the consumer sustains, the backlog grows without bound, and the wait for
+any one subscriber's counter to move grows with it. Both failing scenarios wait for exactly that.
+
+What is NOT established: the consumer's actual throughput, and therefore where the crossing point is.
+Everything above is read out of two files.
+
+**How to settle it**, and it needs the stand rather than more reading: create N subscribers with
+counters on a fresh stand and measure the delay between a new subscriber appearing and their data
+counter moving, for N of 0, 20, 40, 80. If the lag is flat, the explanation above is wrong too. The
+measurement was written and not run — the build machine went off the network before it could be — so
+this item stays open with a hypothesis rather than a cause.
 
 ## Why it is worth an item
 
@@ -46,15 +65,17 @@ slow.
 
 ## What would fix it
 
-Something that makes the state visible rather than something that hides it. Options, in the order
-they seem worth trying:
+Deliberately not decided until the measurement above exists: the second and third options below only
+make sense if the cause is the one now suspected, and the first is worth having either way.
 
-- the scenario states what it waited for and how far behind the simulator was, so the message names
-  the cause instead of the symptom;
-- the simulator prefers subscribers with open streams, or a scenario nudges the counter it is waiting
-  on directly, so the wait does not depend on a queue;
-- `make e2e` refuses, or warns loudly, on a stand older than some age — the crudest of the three and
-  the only one that needs no thought about the simulator.
+- **The scenario says what it was waiting for and how far behind the chain was.** "waited 45s" reads
+  like the product being slow; "waited 45s, and the consumer was 900 events behind" names a cause.
+  Worth doing whatever the answer turns out to be.
+- **The simulator's output stops scaling with the subscriber count** — a cap per tick, or only
+  subscribers seen recently. It publishes for everyone because the demonstration wants every screen
+  to move; a stand with eighty abandoned subscribers wants no such thing.
+- **`make e2e` says how old the stand is.** The crudest, and the only one that needs no theory about
+  the simulator at all.
 
 ## Anchors
 
