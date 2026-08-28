@@ -82,27 +82,7 @@ object TopUpScreens {
                                 )
                             }
                             add(
-                                AmountInputComponent(
-                                    id = "top-up-amount",
-                                    fieldId = TopUpForms.FIELD_AMOUNT,
-                                    label = "Amount",
-                                    // The SUFFIX rather than a prefix, because that is the field the
-                                    // toolkit has. It is the deployment's currency and not a choice:
-                                    // an account holds one balance, so a top-up naming another
-                                    // currency is a question this product has no answer to.
-                                    //
-                                    // WHOLE UNITS ONLY, and that is the field's limit rather than a
-                                    // rule of the product: kompot's amount input filters keystrokes
-                                    // to digits, so there is no way to type $12.50 here. The limits
-                                    // are whole dollars and every price in the catalogue is, so
-                                    // nothing is currently unreachable — but a plan priced in cents
-                                    // would be, and the fix would be upstream rather than here.
-                                    //
-                                    // The number this sends is the number it displays. `B-67`: it was
-                                    // read as minor units for as long as this screen existed, so
-                                    // typing 5000 credited $50.
-                                    currencySuffix = MoneyFormat.symbol(Currency.DEFAULT),
-                                ),
+                                amountField(Currency.DEFAULT),
                             )
                             add(
                                 TextComponent(
@@ -263,6 +243,31 @@ object TopUpScreens {
     private fun TopUpView.amountText() = MoneyFormat.format(amount)
 
     private fun TopUpView.balanceText() = MoneyFormat.format(balance)
+
+    // THE FIELD, and where the currency symbol goes on it.
+    //
+    // `amount_input` has a `currencySuffix` and nothing else — the toolkit can draw the symbol after
+    // the number and has no way to draw it before (kompot#97, and see
+    // [research-upstream-proposals](../../../../../../../docs/research/research-upstream-proposals.md)
+    // U16). Filling it unconditionally is what put "50 $" six lines above this screen's own
+    // "Between $10 and $50,000": one screen writing one currency two ways, in one response (`B-70`).
+    //
+    // So the placement comes from the same table every other amount in this product comes from. A
+    // currency written after the amount gets the field the toolkit has; one written before it gets the
+    // symbol in the LABEL, which claims no position at all and stays visible once the label floats.
+    // Neither branch spells a symbol here.
+    //
+    // Delete this and go back to a plain suffix the day `amount_input` learns a side — not the day
+    // this deployment happens to be USD, because the table holds two of each.
+    internal fun amountField(currency: Currency): AmountInputComponent {
+        val trailing = MoneyFormat.trailingSymbol(currency)
+        return AmountInputComponent(
+            id = "top-up-amount",
+            fieldId = TopUpForms.FIELD_AMOUNT,
+            label = if (trailing != null) "Amount" else "Amount (${MoneyFormat.symbol(currency)})",
+            currencySuffix = trailing,
+        )
+    }
 
     private fun limitsLine(): String {
         val currency = Currency.DEFAULT

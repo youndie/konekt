@@ -94,6 +94,23 @@ object MoneyFormat {
     // to how this deployment writes its currency.
     fun symbol(currency: Currency): String = layouts[currency]?.symbol ?: error("no layout configured for $currency")
 
+    // THE SYMBOL IF THIS CURRENCY WRITES IT AFTER THE AMOUNT, and null if it writes it in front.
+    //
+    // It exists because `amount_input` has a `currencySuffix` and nothing else: the toolkit can draw
+    // the symbol after the number and has no way to draw it before (kompot#97). Two of the five
+    // currencies in the table above are written the other way round, so filling that field
+    // unconditionally puts the symbol on the wrong side — which is what the top-up screen did, drawing
+    // "50 $" six lines above its own "Between $10 and $50,000" (`B-70`).
+    //
+    // Answering with null rather than with the symbol is the point: it makes "this currency cannot be
+    // drawn that way" a case the caller must handle, instead of a placement it can get wrong. The
+    // caller's other half — putting the symbol somewhere honest — is a screen decision and lives on
+    // the screen.
+    fun trailingSymbol(currency: Currency): String? =
+        layouts[currency]
+            ?.takeUnless { it.symbolFirst }
+            ?.symbol
+
     // A PRICE PER UNIT, and the rounding is the whole of why this is a function rather than a
     // division at a call site.
     //

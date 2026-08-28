@@ -321,6 +321,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
 | U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | open; konekt carries a `surface` component whose only job is the corner |
 | U15 | kompot | `kompot-tck` follows a graph route's endpoint literally, so a parameterised destination cannot be in a `NavigationGraph` | not filed yet | konekt keeps that one deeplink in the client instead |
+| U16 | kompot | `amount_input` can only put the currency symbol AFTER the number, and two of five currencies put it first | [kompot#97](https://github.com/youndie/kompot/issues/97) | open; konekt puts the symbol in the field's LABEL for a symbol-first currency, driven by its own layout table |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -517,6 +518,24 @@ What is actually missing is one argument — the `Shape` passed to `Modifier.bac
 `null`. That is a much smaller ask than the one that would have been filed, and it is only visible to
 somebody who opened the artefact. The premise of a task can be wrong, and a task whose premise is
 wrong produces an upstream request that is wrong in the same direction.
+
+**U16 is the smallest of these and the one whose failure is quietest.** `AmountInputComponent` has a
+`currencySuffix` and nothing else, so a server filling it from its own currency table is right for the
+currencies written `10 €` and wrong for the ones written `$10` — and there is no third option. Nothing
+fails: the field renders, the form submits, the amount is correct, and the symbol sits on the wrong
+side of it.
+
+What made it visible here was a screen writing the SAME currency twice. `MoneyFormat` holds a layout
+per currency — symbol, side, separators — so the limits line under the field said "Between $10 and
+$50,000" while the field said "50 $", six lines apart, in one response (`B-70`). Two of konekt's five
+currencies are symbol-first, so neither half of the table could be hard-coded away.
+
+The local answer leaves `currencySuffix` unset for a symbol-first currency and names it in the LABEL
+instead — `Amount ($)` — which claims no position and stays visible once the label floats. It is
+driven by the same table every other amount in this product is, and `AmountFieldPlacementTest` asserts
+it over EVERY currency rather than over the deployment's: a hard-coded choice is right for half the
+table, so a test written about `Currency.DEFAULT` would have agreed with the bug for the other half.
+Delete the workaround the day the field learns a side, not the day the deployment happens to be USD.
 
 **U15 is what `B-49` ran into on its last criterion.** The client resolves a deeplink through the
 served `NavigationGraph` now, which is the whole point of that item — and one destination cannot go in
