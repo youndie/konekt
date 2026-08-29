@@ -1,6 +1,7 @@
 # docs — konekt
 
-A white-label subscriber account for an eSIM MVNO, built as a reference for six Kotlin toolkits.
+A reference implementation of six Kotlin toolkits on the domain of an eSIM MVNO subscriber account.
+Not a product an operator deploys: the telecom is the fixture that loads the stack honestly.
 The documentation is layered; links run top to bottom.
 
 ```

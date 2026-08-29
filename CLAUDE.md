@@ -1,8 +1,10 @@
 # CLAUDE.md — konekt
 
-A white-label subscriber account for an eSIM MVNO: Ktor on Kotlin/JVM, Compose Multiplatform on
-Android and iOS, backend-driven UI. Built as a reference for six toolkits — kompot, petich, booblik,
-katcher, metrik, tracy — with every external system (BSS/OCS, SM-DP+, payments, SMSC) mocked.
+A reference implementation of six toolkits — kompot, petich, booblik, katcher, metrik, tracy — on the
+domain of an eSIM MVNO subscriber account: Ktor on Kotlin/JVM, Compose Multiplatform on desktop and
+iOS, backend-driven UI, with every external system (BSS/OCS, SM-DP+, payments, SMSC) mocked. It is
+not a product an operator deploys and sells service on; the telecom is the fixture that loads the
+stack. What is deliberately absent, and why, is `B-80`.
 
 Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 is mandatory
 rather than chosen: kompot and petich publish variants tagged `org.gradle.jvm.version = 25`, and

@@ -1,4 +1,4 @@
-# Backlog: a white-label eSIM account that proves the stack carries it
+# Backlog: a reference implementation that shows what the stack costs
 
 > Role of this document: the product backlog. **One file per item in
 > [`docs/backlog/`](docs/backlog/)** — `M-NN-<slug>.md`. What lives here is the index (generated) and
@@ -9,10 +9,10 @@
 
 ## Goal
 
-konekt is a reference build, so "done" is not "the feature works" but "the feature works and what it
-cost is visible". Two things are being demonstrated at once and they pull in different directions:
-a subscriber account good enough that its screens are worth photographing, and six toolkits each
-carrying the load it was written for on a domain that loads them without contrivance.
+konekt is a reference implementation, so "done" is not "the feature works" but "the feature works and
+what it cost is visible". Two things are being demonstrated at once and they pull in different
+directions: a subscriber account good enough that its screens are worth photographing, and six
+toolkits each carrying the load it was written for on a domain that loads them without contrivance.
 
 The order below follows that second goal. The wire comes first because in a backend-driven product
 the component dictionary is the API and renaming a type later is a coordinated release of both sides.
@@ -33,7 +33,9 @@ so re-prioritising must never move a file.
 | `stage-m2-live` | Live | The broker, the outbox bridge, the realtime transport, and the eSIM wizard that gives them something to carry. |
 | `stage-m3-product` | The rest of the product | Roaming, the custom builder, the tariff change, and the second brand. |
 | `stage-m4-proof` | Proof | Conformance that cannot pass vacuously, observability in three tools, screenshots, and the gaps written down. |
-| `stage-m5-upstream` | Upstream and the box | The findings filed where the next reader will look, and the boundaries stated where the buyer will read them. |
+| `stage-m5-upstream` | Upstream and the boundaries | The findings filed where the next reader will look, and the price of a rebrand stated where it will be read. |
+| `stage-m6-reframe` | What this build claims to be | Every entry point described a product an operator buys, and what is here is a reference implementation on a telecom domain. The claim is the one thing no test checks, so it is corrected first — and the non-goals are written down beside it, because an absence with a reason and an absence without one look identical. |
+| `stage-m7-completeness` | The reference, complete | The gaps that are gaps *of a reference*: a platform the multiplatform claim was never compiled for, verticals whose only user is an e2e test, and a demonstration chain welded to its own mock. Not the gaps of a product for sale — those are non-goals now. |
 
 ## Marks
 
@@ -41,13 +43,26 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (14)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
+| [B-80](docs/backlog/B-80-the-non-goals-are-nowhere.md) `[ ]` | Nothing states what this build is deliberately not, so every absence reads as unfinished work | P0 | S | B-79 |
+| [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[ ]` | The client claims Compose Multiplatform on two platforms and declares no Android target at all | P0 | L | - |
+| [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[ ]` | Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it | P0 | M | - |
+| [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[ ]` | The custom package form prices a package and cannot sell one, and nothing in the app leads to it | P0 | M | - |
+| [B-81](docs/backlog/B-81-the-boundaries-table-has-no-row-for-language.md) `[ ]` | The boundaries table has no row for language, currency, date format, time zone or the app's own name | P1 | S | - |
+| [B-84](docs/backlog/B-84-a-guard-four-comments-cite-does-not-exist.md) `[ ]` | Four files name DevRoutesAreNotProductionTest as what keeps the dev routes out of a real build, and there is no such test | P1 | S | - |
+| [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[ ]` | Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query | P1 | M | - |
+| [B-89](docs/backlog/B-89-the-usage-consumer-only-runs-with-the-simulator.md) `[ ]` | The only consumer of the usage topic is constructed inside the simulator's own starter, so reading real usage means also inventing some | P1 | S | - |
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
+| [B-82](docs/backlog/B-82-the-brand-kit-document-says-the-theme-is-unwired.md) `[ ]` | The brand-kit document says no theme is served over HTTP, and the server has been serving one since B-22 | P2 | XS | - |
+| [B-83](docs/backlog/B-83-typography-does-not-ship-from-the-server.md) `[ ]` | Two documents promise typography from the server; no kit carries any and a font family cannot cross the wire | P2 | XS | - |
+| [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
+| [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[ ]` | A second replica silently loses live updates, and the only guard in the chart is about the simulator | P2 | S | - |
+| [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 
-## Closed (77)
+## Closed (78)
 
 **The wire and the shell**
 
@@ -137,12 +152,16 @@ so re-prioritising must never move a file.
 - [B-76](docs/backlog/B-76-done-returns-to-the-first-step-instead-of-leaving.md) `[x]` - Done finishes the install and lands the subscriber back on step one of a new one
 - [B-78](docs/backlog/B-78-one-line-one-esim.md) `[x]` - Every completed install mints another eSIM, and every purchase offers to do it again
 
-**Upstream and the box**
+**Upstream and the boundaries**
 
 - [B-29](docs/backlog/B-29-file-upstream-issues.md) `[x]` - File U1–U5 upstream and record what came back
 - [B-30](docs/backlog/B-30-operator-material.md) `[x]` - Operator material: what is configuration and what is a release
 - [B-47](docs/backlog/B-47-first-release-tag.md) `[x]` - Nothing has ever been released, so three checks stand in for the one that matters
 - [B-48](docs/backlog/B-48-deployed-instance.md) `[x]` - Everything that runs this product is a file on somebody's laptop
+
+**What this build claims to be**
+
+- [B-79](docs/backlog/B-79-the-repository-calls-itself-a-box.md) `[x]` - The repository calls itself a box an operator buys, and it is a reference implementation on a telecom domain
 
 <!-- END INDEX -->
 

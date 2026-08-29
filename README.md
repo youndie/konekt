@@ -1,16 +1,20 @@
 # konekt
 
-**a white-label subscriber account for an eSIM operator** — the operator rebrands the box and gets a
-phone application and a server without writing a client
+**a reference implementation of six Kotlin toolkits, on the domain of an eSIM MVNO subscriber
+account** — not a product an operator can deploy and sell service on. The telecom is the fixture; what
+the stack costs to carry it is the subject.
 
 > 📱 a new screen ships from the server; a new *kind* of screen ships with the client
 
 ### 🤔 What it is
 
-konekt is a reference build. The product is real enough to photograph — balance and quotas, plans and
-packages, ordering and installing an eSIM, roaming, history — and everything outside its boundary is
-mocked on purpose: the billing system, the SM-DP+ that issues eSIM profiles, the payment gateway, the
-SMSC that would carry an OTP.
+The product is real enough to photograph — balance and quotas, plans and packages, ordering and
+installing an eSIM, roaming, history — and everything outside its boundary is mocked on purpose: the
+billing system, the SM-DP+ that issues eSIM profiles, the payment gateway, the SMSC that would carry
+an OTP. There is also no management surface, no catalogue anyone edits without a deploy, no seam
+under the billing and no second tenant — and none of those is a to-do. A domain that loads the
+toolkits honestly is the whole requirement; building past it would produce a worse version of a
+product several vendors already sell.
 
 What is not mocked is the wiring. Six Kotlin toolkits each carry the load they were written for, on a
 domain that loads them without contrivance:
@@ -26,6 +30,12 @@ domain that loads them without contrivance:
 
 One purchase runs through a kompot form, a petich saga, the outbox, booblik and back to an open
 screen over the realtime channel — and is visible whole in tracy by its order id.
+
+Two things are written down beside the code, and they are the reason to read this rather than a
+sample application. **What each toolkit costs**: 17 database writes for a six-interceptor saga, a
+client release for a corner radius, a broker restart for a topic. And **the failures a green build
+does not show**, each with the guard that now catches it: petich dropping outbox events silently, a
+conformance kit passing vacuously, an Apple target nobody published.
 
 ### 🚧 Status
 
@@ -72,9 +82,11 @@ exception before an uncaught-exception handler could run.
 The remaining blank is metrik on the client, which measures route latency and has no routes to
 measure there.
 
-### 🎨 What "white-label" actually covers
+### 🎨 The rebrand, as a demonstrated property
 
-Worth stating precisely, because the boundary is not where it is usually assumed to be:
+A second brand's palette ships from the server and the client applies it without a rebuild — that
+much is built and photographed. It is worth stating precisely what it covers, because the boundary is
+not where it is usually assumed to be:
 
 | Axis | Ships as |
 |---|---|
