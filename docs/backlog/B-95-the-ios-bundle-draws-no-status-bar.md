@@ -28,16 +28,41 @@ It is a regression only in the narrow sense. Before `B-94` the clock WAS visible
 letterbox band that the system drew *outside* the app; the app never drew it either. What changed is
 that the app now owns the whole screen, so the absence is now the app's.
 
-## The leading hypothesis, untested
+## Five things it is not
 
-`KonektAppDelegate` creates its own `UIWindow` and calls `makeKeyAndVisible` from
-`application(_:didFinishLaunchingWithOptions:)`. There is no `UIApplicationSceneManifest` in the
-bundle, so there is no `UISceneDelegate` and the window may never be attached to a window scene — and
-the status bar belongs to the scene. An Xcode-generated app has one; a hand-written bundle has
-whatever it declares.
+Followed up the same evening, and every one of these was run rather than reasoned about. None fixed
+it, and together they are most of the work: the item is now a short list of candidates rather than an
+open question.
 
-That is a hypothesis and it is written as one. It was not tested, because the alternative to writing
-it down was another round of guessing at plist keys, and this repository has a rule about that.
+| Tried | Result | What it rules out |
+|---|---|---|
+| `UIStatusBarStyleDarkContent` + `UIViewControllerBasedStatusBarAppearance` false in the plist | no change | the plist route — that key is read through `UIApplication.statusBarStyle`, which modern iOS ignores |
+| `xcrun simctl status_bar override --time 9:41` | no change | **nothing**, as it turned out: an override changes the bar's CONTENT, not whether it is drawn. It was read as "the bar is hidden" and that reading was wrong |
+| instrumenting the delegate at launch | `windowScene=true appStatusBarHidden=false vcPrefersHidden=false connectedScenes=1` | all three original hypotheses at once: the window has a scene, a scene exists, the app does not think the bar is hidden, and the compose view controller does not ask for it hidden |
+| a container `UIViewController` returning `.darkContent` from `preferredStatusBarStyle` | no change | the view-controller route, and with it "the clock is drawn in a colour that matches the ground" |
+| — | — | the container was **reverted**: structure added on a falsified hypothesis, changing nothing observable, is what this item's first round already removed once |
+
+So the app's own state is entirely consistent — it believes it has a visible status bar — and the
+system draws none for it.
+
+## What is left
+
+**SpringBoard does not composite a bar for this bundle.** The one structural difference from an
+Xcode-generated application still untested is the absence of `UIApplicationSceneManifest`: this bundle
+runs on the legacy app-delegate lifecycle, and the simulator's log shows SpringBoard managing
+status-bar settings per *scene* (`SBWindowSceneStatusBarSettingsAssertion`). Adding a manifest needs a
+`UISceneDelegate`, which is a real change to the entry point rather than a plist line, and a bundle
+that gets it wrong shows nothing at all — which is why it is written down rather than attempted at the
+end of a long session.
+
+## The original hypothesis, now refuted
+
+It said the manually created `UIWindow` might never be attached to a window scene, since the status
+bar belongs to the scene. **Instrumenting the delegate answered `windowScene=true`, so it is.**
+
+Kept rather than deleted: "the window may never be attached" is exactly the sort of plausible sentence
+that survives being wrong if nobody writes down that it was measured — and it is what produced the
+instrumentation that refuted it.
 
 - **The decision: establish the cause before changing anything.** Either the window needs a scene, or
   `ComposeUIViewController` reports `prefersStatusBarHidden`, or the bundle needs a scene manifest —
@@ -48,8 +73,8 @@ it down was another round of guessing at plist keys, and this repository has a r
 - **Not urgent.** No screen in this build puts anything at the top edge that the missing bar hides,
   and the screenshots this product is photographed from are taken on the JVM.
 
-- AC: the cause is established and written down — which of the three it is, with what was run to tell
-  them apart.
+- AC: the cause is established and written down. Five candidates are eliminated above; what remains is
+  the scene manifest, and testing it means giving the entry point a `UISceneDelegate`.
 - AC: either the status bar is drawn, or the reason it cannot be is a line in
   `docs/services/operator-boundaries.md` alongside the other things a hand-assembled bundle gives up.
 - Anchors: `scripts/ios-home-app.sh`, `client/src/iosMain/kotlin/io/konekt/client/ios/HomeEntryPoint.kt`.
