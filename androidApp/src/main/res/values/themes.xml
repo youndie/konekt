@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  THE PLATFORM THEME, and it draws nothing this product shows: everything on screen comes from
+  KonektDesignSystem, over the kit the server serves. What this file decides is the window before the
+  first frame - a NoActionBar theme, because the shell draws its own bar and the canvas has no
+  toolbar on any of its nine sections.
+-->
+<resources>
+    <style name="Theme.Konekt" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

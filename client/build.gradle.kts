@@ -3,6 +3,9 @@ import org.gradle.api.tasks.PathSensitivity
 plugins {
     id("konekt.base")
     id("org.jetbrains.kotlin.multiplatform")
+    // The Android LIBRARY half of AGP. This module names its own targets rather than taking
+    // `konekt.multiplatform`, so it names this plugin too.
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     // KSP is viddik's requirement rather than a choice of ours: the screenshot cases are GENERATED
@@ -32,8 +35,27 @@ kotlin {
             .toInt(),
     )
 
-    // Android joins with the item that first needs an .aar.
     jvm()
+
+    // ANDROID, AND THE CLAIM IT MAKES TRUE. This module used to say "Android joins with the item that
+    // first needs an .aar" — `B-85` is that item, and the reason is not packaging. The claim this
+    // repository makes is that ONE component registry draws the same server-built screens wherever
+    // the client runs, and it was compiled on two platforms of the three it named.
+    //
+    // The library half is here and the application is `:androidApp`, for the same reason `:client`
+    // has no desktop `main`: a module that draws is not a module that starts.
+    android {
+        namespace = "io.konekt.client"
+        compileSdk =
+            libs.versions.androidCompileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.androidMinSdk
+                .get()
+                .toInt()
+    }
+
     iosArm64()
     iosSimulatorArm64 {
         // AN EXECUTABLE, AND THEREFORE NO XCODE PROJECT. B-27 asks for a deliberate crash in the iOS
@@ -170,6 +192,32 @@ kotlin {
         // host so a `@Composable` can be put inside a `UIViewController`.
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+        }
+
+        // The Android half's own needs, and every line is a platform PROVIDER rather than a feature.
+        androidMain.dependencies {
+            // An engine that exists on Android. OkHttp rather than CIO because it is the one the
+            // platform's own stack is built on, and it carries the TLS the device trusts.
+            //
+            // `api` and not `implementation`, unlike the Darwin line above, and the difference is
+            // where the application lives: the iOS entry point is inside this module and Android's is
+            // `:androidApp`, so the engine has to be on ITS compile classpath to be named there.
+            api(libs.ktor.client.okhttp)
+            // THE MAIN DISPATCHER, exactly as `jvmMain` supplies Swing's. `kotlinx-coroutines-core`
+            // declares `Dispatchers.Main` and implements it nowhere; on Android the provider is this
+            // artefact, and without it the first code that names `Main` throws rather than being slow.
+            implementation(libs.kotlinx.coroutines.android)
+            // AND NOT `katcher:client-android`, which is the finding this target produced.
+            //
+            // katcher's multiplatform `client` publishes no android variant, so an Android consumer
+            // resolves `client-jvm`; `client-android` is a separate coordinate on a separate version
+            // line that declares `object Katcher` in the SAME package. The two on one classpath fail
+            // `checkDebugDuplicateClasses` outright — which is the loud version of the failure
+            // kompot's README records the quiet version of.
+            //
+            // So this build uses the multiplatform client on Android as everywhere else: one API and
+            // one call site, which is what the multiplatform claim is about. What that costs, and the
+            // workaround, is in `CrashActivity` — filed as youndie/katcher#26.
         }
 
         // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop

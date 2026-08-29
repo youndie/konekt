@@ -51,10 +51,15 @@ dependencyResolutionManagement {
 }
 
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,
-// and nothing else. JVM plus the three iOS targets; ANDROID IS NOT HERE YET, deliberately — the
-// convention plugin says it joins with "the item that first needs an .aar", and drawing a design
-// system and diffing two renders of it does not. B-26/B-27 do.
+// and nothing else. JVM, Android, and the two iOS targets Compose publishes. Android joined in
+// `B-85`, the item that first needed an `.aar` — the multiplatform claim is that ONE registry draws
+// the server's screens everywhere, and it was compiled on two platforms of the three it named.
 include(":client")
+
+// THE ANDROID APPLICATION, and it is a separate module for the same reason iOS has no Xcode project
+// inside `:client`: a module that draws is not a module that starts. It is the thinnest thing that
+// can put `KonektComposition` on a screen — one activity that draws and one that crashes.
+include(":androidApp")
 
 // The server: Ktor on CIO, the sagas, the mocks, the screens.
 include(":server")

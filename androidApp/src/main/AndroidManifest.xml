@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The whole of what this application needs from the device: a network. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:label="konekt"
+        android:theme="@style/Theme.Konekt"
+        android:usesCleartextTraffic="true">
+
+        <!--
+          CLEARTEXT IS ON, and it is right for a stand and for nothing else. The stand serves plain
+          HTTP on a laptop, an emulator reaches it at 10.0.2.2, and a debug build that could not talk
+          to it would prove nothing. The iOS bundle carries the same decision as
+          `NSAllowsArbitraryLoads` and the same caveat with it.
+        -->
+        <activity
+            android:name=".KonektActivity"
+            android:exported="true"
+            android:label="konekt">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          THE CRASH, in an activity of its own rather than behind a button. It is the Android half of
+          what `scripts/ios-crash-app.sh` does with a second executable, and for the same reason: the
+          thing that crashes must link the reporter and as little else as possible, or "the reporter
+          runs on a real device" becomes a statement about a much larger program.
+
+          Exported so `adb shell am start` can reach it, and reachable no other way — no launcher
+          entry, no control in the interface.
+        -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="true" />
+    </application>
+</manifest>

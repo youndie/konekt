@@ -2,7 +2,11 @@ package io.konekt.client.observability
 
 import ru.workinprogress.katcher.Katcher
 
-// CRASH REPORTING FOR THE APPLE BUILD, which reported nothing until now — and not because nobody had
+// CRASH REPORTING, FOR EVERY PLATFORM THIS CLIENT RUNS ON. It lived in `iosMain` until `B-85`, and
+// nothing in it was ever Apple-specific: the whole file is the common `Katcher` API plus three
+// refusals. Android would have been a second copy of it.
+//
+// It was written for the Apple build, which reported nothing until then — and not because nobody had
 // wired it. `katcher:client:0.5.1` published `jvm` and `linux_x64` and no Apple target at all, so the
 // iOS half of this application had no reporter it could depend on. That was filed as U5 and
 // youndie/katcher#25 closed it: `0.6.2` publishes `ios_arm64`, `ios_simulator_arm64` and `ios_x64`,
@@ -36,10 +40,10 @@ object KonektCrashReporter {
         environment: String,
         debug: Boolean = false,
     ) {
-        require(appKey.isNotBlank()) { "katcher appKey is blank — the iOS build would report nothing and say nothing" }
+        require(appKey.isNotBlank()) { "katcher appKey is blank — this build would report nothing and say nothing" }
         require(
             remoteHost.isNotBlank(),
-        ) { "katcher remoteHost is blank — the iOS build would report nothing and say nothing" }
+        ) { "katcher remoteHost is blank — this build would report nothing and say nothing" }
         // Not defaulted. `KatcherConfig.release` defaults to the string "Unspecified", and a crash
         // group that cannot say which build produced it is a crash group nobody can act on — the AC
         // of B-27 is a report NAMING the release for that reason.

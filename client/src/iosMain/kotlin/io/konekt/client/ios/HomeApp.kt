@@ -1,138 +1,48 @@
 package io.konekt.client.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
-import io.github.youndie.kompot.auth.UpdateSessionAction
-import io.github.youndie.kompot.decodeKompotAction
-import io.konekt.client.app.BuyPlan
-import io.konekt.client.app.Destination
-import io.konekt.client.app.EsimInstall
-import io.konekt.client.app.KonektApp
-import io.konekt.client.app.KonektRoutes
-import io.konekt.client.app.KonektScreenSource
-import io.konekt.client.app.ResendCode
-import io.konekt.client.net.konektClientJson
-import io.konekt.client.net.konektHttpClient
-import io.konekt.client.observability.KonektClientObservability
-import io.konekt.client.realtime.SseRealtimeSource
-import io.konekt.client.render.konektRegistry
-import io.konekt.client.session.KonektSession
-import io.konekt.client.session.SessionTokens
-import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
-import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
-import io.konekt.time.SystemClock
-import io.ktor.client.call.body
+import io.konekt.client.app.KonektComposition
+import io.konekt.client.app.KonektPlatform
 import io.ktor.client.engine.darwin.Darwin
-import io.ktor.client.plugins.resources.get
-import io.ktor.client.plugins.resources.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.runBlocking
 import platform.Foundation.NSProcessInfo
 import platform.UIKit.UIViewController
 
 // THE APPLE HALF OF B-43'S COMPOSITION ROOT: an iOS application that draws the home screen the SERVER
 // built, through the same holder, source and registry the desktop runner uses.
 //
-// The desktop runner proved the root works; this proves it works on the platform the product is
-// actually for. Nothing about the holder is duplicated here — `KonektApp` is the same composable, and
-// what this file adds is the twelve lines of platform between a `@Composable` and a phone.
+// It is now literally the same one. This file used to carry its own copy of the root, and the copy
+// had drifted: it handled `update_session` and NOT `SignOutAction`, so signing out worked on a laptop
+// and printed "no handler" on a phone. `B-85` moved the root into `KonektComposition` while adding
+// the third platform, which is the point at which a third copy would have been written.
 //
-// IT OPENS ON THE LOGIN SCREEN, like the desktop one and for the same reason: both used to sign in
-// through `/api/v1/dev/otp` — the endpoint that reads back a one-time code — and both said in their
-// own comments what that is. `B-46` built the way in, so neither knows the development route exists.
+// What is left here is what iOS actually differs in: an engine that exists on Apple targets,
+// `NSProcessInfo` instead of an environment, and Compose's UIKit host so a `@Composable` can be put
+// inside a `UIViewController`.
 @OptIn(ExperimentalForeignApi::class)
 fun homeViewController(): UIViewController {
     val env = NSProcessInfo.processInfo.environment
 
-    fun setting(name: String): String = (env[name] as? String).orEmpty()
-
-    // ON THE SIMULATOR, `127.0.0.1` IS THE HOST MAC. That is why this needs no address of its own by
-    // default and why a device would: a phone on a desk has no route to a laptop's loopback.
-    val baseUrl = setting("KONEKT_URL").ifBlank { "http://127.0.0.1:8080" }
-
-    val session = KonektSession()
-    val http = konektHttpClient(Darwin.create(), baseUrl, session, konektClientJson)
-
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val observability =
-        KonektClientObservability.of(
-            endpoint = setting("TRACY_ENDPOINT").ifBlank { null },
-            apiKey = setting("TRACY_KEY").ifBlank { null },
-            release = setting("KONEKT_RELEASE").ifBlank { "ios-dev" },
-            instanceId = "simulator",
-            scope = scope,
-            clock = SystemClock,
+    val composition =
+        KonektComposition(
+            engine = Darwin.create(),
+            settings = { name -> env[name] as? String },
+            platform =
+                KonektPlatform(
+                    name = "konekt-ios",
+                    // ON THE SIMULATOR, `127.0.0.1` IS THE HOST MAC. That is why this needs no address
+                    // of its own by default and why a device would: a phone on a desk has no route to
+                    // a laptop's loopback.
+                    defaultBaseUrl = "http://127.0.0.1:8080",
+                    defaultRelease = "ios-dev",
+                    topicKey = "konekt-ios",
+                ),
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         )
-    observability.start()
+    composition.start()
 
-    val buy = BuyPlan(http)
-    // Stepping the install wizard, which nothing did until B-54's door was walked through.
-    val install = EsimInstall(http, konektClientJson)
-    // Asking for another one-time code, which the code screen had no way to do at all.
-    val resend = ResendCode(http, konektClientJson)
-    val screens =
-        KonektScreenSource(
-            http = http,
-            realtime = SseRealtimeSource(http, konektClientJson),
-            registry = konektRegistry(),
-            json = konektClientJson,
-            submits = KonektRoutes.submits,
-        )
-
-    return ComposeUIViewController {
-        KonektApp(
-            screens = screens,
-            address = KonektRoutes.loginAddress,
-            // A LOCAL KEY, NOT AN ADDRESS. `SseRealtimeSource.subscribe` ignores its topic: the path
-            // is fixed and the SERVER derives the topic from the caller's token, so this only keys
-            // the overlay map. The client cannot learn its own subscriber id at all.
-            topic = "konekt-ios",
-            darkMode = false,
-            // THE BOOTSTRAP, the same two the desktop runner opens with. What used to be here was a
-            // route table three entries long against the other's six — the same `navigate` moving on
-            // one platform and printing "no handler" on the other. Neither holds a table now.
-            routes = KonektRoutes.bootstrap,
-            onAction = { action ->
-                when {
-                    // SIGNING IN, and this runner could not. It imported `UpdateSessionAction` and
-                    // `SessionTokens`, held a `KonektSession`, opened on the login screen — and
-                    // handled neither, so the second step answered an action nothing adopted and the
-                    // application printed "no handler" and stayed where it was. The iOS build could
-                    // not get past its first screen, and nothing said so: the imports compiled, the
-                    // session object was constructed, and every part existed except the branch.
-                    action is UpdateSessionAction -> {
-                        session.adopt(SessionTokens(action.accessToken, action.refreshToken))
-                        // START OVER: the login screen is the bottom of this stack, so replacing the
-                        // top would leave it under the home screen and put a back control on a tab.
-                        Destination.startOver(KonektRoutes.homeAddress)
-                    }
-
-                    // BUYING IS HANDLED HERE and not in the holder: a screen holder with an opinion
-                    // about purchases is this application's holder rather than a reusable one. What
-                    // comes back is the order screen's address, and the holder moves to it exactly
-                    // as it moves for a `navigate`.
-                    else -> {
-                        // `install` answers a DESTINATION and its two siblings answer addresses,
-                        // because finishing the wizard is the one action here that leaves its flow
-                        // rather than moving within it (`B-76`). Written the same way as the desktop
-                        // runner, which is what the two of them drifting apart already cost once.
-                        (
-                            buy.addressFor(action)?.let(Destination::next)
-                                ?: install.destinationFor(action)
-                                ?: resend.addressFor(action)?.let(Destination::next)
-                        )
-                            ?: run {
-                                println("konekt-ios: no handler for $action")
-                                null
-                            }
-                    }
-                }
-            },
-            onDegradation = observability.recorder(),
-        )
-    }
+    return ComposeUIViewController { composition.Screen() }
 }

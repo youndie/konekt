@@ -16,6 +16,20 @@ ksp = "2.3.11"
 # `com.android.library`. See docs/research/research-stack.md §1.1.
 agp = "9.3.1"
 
+# WHAT THE ANDROID HALF COMPILES AND RUNS AGAINST. `compileSdk` is the API the code is compiled
+# against and `minSdk` the floor a device must meet; they are separate numbers because raising the
+# first is a build concern and raising the second drops devices.
+#
+# 36 rather than 37 deliberately: the build box carries both platforms, and compiling against the
+# newest available API is how a build starts depending on something no released device has. 26 is the
+# floor Compose Multiplatform itself states, so a lower number here would not buy a device.
+androidCompileSdk = "36"
+androidMinSdk = "26"
+
+# `activity-compose`, and it moves on its own line because AndroidX does: it is not part of the
+# Compose Multiplatform distribution and is not versioned with it.
+androidxActivity = "1.12.0"
+
 # Compose Multiplatform. NOT the newest — 1.12.0 was released — and the difference is not caution.
 # The toolkit's Compose modules are compiled against 1.11.1, and mixing a newer foundation with the
 # material3 they carry fails at RUNTIME, inside a renderer:
@@ -130,6 +144,14 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 # does, through a ServiceLoader — `-android` on Android, this one on Swing. Without it `Main` is not
 # a slow dispatcher, it throws.
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
+# The same hole on the other platform: on Android the `Dispatchers.Main` provider is this artefact,
+# and a build without it throws at the first line that names `Main` rather than running slowly.
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# THE ONE ANDROID-ONLY UI DEPENDENCY. `ComponentActivity.setContent` is what puts a `@Composable` on
+# an Android screen — the platform's equivalent of `ComposeUIViewController` and of Compose Desktop's
+# `Window`, and the only piece of the three that AndroidX owns.
+androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
@@ -167,6 +189,10 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 # Apple ones — a fact that surfaces as an unresolved `CIO` in `iosMain` rather than as a version
 # conflict, which is why it is worth a line here rather than a guess at the call site.
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+# The Android engine. CIO runs on Android too, and OkHttp is what the platform's own networking is
+# built on: it carries the device's trust store and its connection pooling rather than reimplementing
+# both on top of NIO.
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 
 # --- kompot ------------------------------------------------------------------------------------
 #
@@ -290,6 +316,10 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
+# AGP as a LIBRARY, for `build-logic`'s compile classpath. A convention plugin that configures an
+# Android target names the Variant API by type, and the plugin marker does not carry it.
+androidGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+
 [plugins]
 
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -297,6 +327,10 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+# The APPLICATION plugin, for the one module that produces an APK. A different id from the line
+# above and the same AGP: the library plugin cannot build an application and vice versa.
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+
 
 # TWO plugins and they are versioned apart. `org.jetbrains.compose` is the Compose Multiplatform
 # distribution; `org.jetbrains.kotlin.plugin.compose` is the compiler plugin, which ships with Kotlin
