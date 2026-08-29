@@ -114,6 +114,21 @@ the constants and the guard asks for it.
   e2e tests, 0 failures.
 - `./gradlew check` green; `make check` green.
 
+### The door was conditional, and the guard caught it after the merge
+
+The banner leading to the travel screen was drawn only when the subscriber already had a package. So
+the screen's EMPTY state — *no travel package on this line yet*, with the way to the catalogue — could
+be reached by nobody: the only door to it closed exactly when it was the state you would see.
+
+`EveryScreenIsReachableTest` said so in one line — *reachable from nowhere and not declared:
+app://roaming* — and it was right about the product rather than only about the graph. The banner is
+unconditional now; the cards stay conditional, because a subscriber with no packages needs no empty
+list on the home screen and that is what the screen behind the banner is for.
+
+**It was caught by CI and not by me**, and the reason is worth writing down: `make e2e` runs
+`:e2e:e2e` **and** `:client:standTest`, and I had been running the first task directly. The target was
+right and the habit was wrong.
+
 ## What is deliberately not in scope
 
 Observing a real network attachment — [B-19](B-19-roaming.md) recorded it as out of scope and it

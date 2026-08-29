@@ -110,23 +110,29 @@ object HomeScreen {
                         // in three weeks is context.
                         if (roamingCards != null) addAll(packages.map(roamingCards::of))
 
-                        // AND THE WAY TO THE TRAVEL SCREEN, drawn only when there is something to
-                        // look at there. `B-88` gave roaming a screen of its own — packages grouped
-                        // by zone, which is the question a subscriber going abroad actually has —
-                        // and a screen nothing leads to is what that item was about in the first
-                        // place. The cards stay here: a package bought for a trip must be visible on
-                        // the screen somebody opens, not only behind a link.
-                        if (packages.isNotEmpty()) {
-                            add(
-                                BannerComponent(
-                                    id = "home-roaming",
-                                    text = "See what you have for each trip.",
-                                    tone = MessageTones.INFO,
-                                    action = NavigateAction(ROAMING_DEEPLINK),
-                                    actionText = "Travel packages",
-                                ),
-                            )
-                        }
+                        // AND THE WAY TO THE TRAVEL SCREEN, drawn ALWAYS — which is not what it was
+                        // and is what the reachability guard caught.
+                        //
+                        // `B-88` gave roaming a screen of its own, and this door was conditional on
+                        // the subscriber already having a package. So the screen's EMPTY state — "no
+                        // travel package on this line yet", with the way to the catalogue — could
+                        // never be reached by anybody: the only door to it was closed exactly when it
+                        // was the state you would see. `EveryScreenIsReachableTest` said so in one
+                        // line, *reachable from nowhere and not declared: app://roaming*, and it was
+                        // right about the product and not only about the graph.
+                        //
+                        // The CARDS stay conditional: a package bought for a trip must be visible on
+                        // the screen somebody opens, and a subscriber with none needs no empty list
+                        // here — that is what the screen behind this banner is for.
+                        add(
+                            BannerComponent(
+                                id = "home-roaming",
+                                text = "Going abroad? See what you have for each trip.",
+                                tone = MessageTones.INFO,
+                                action = NavigateAction(ROAMING_DEEPLINK),
+                                actionText = "Travel packages",
+                            ),
+                        )
 
                         // SOMETHING BOUGHT AND NOT YET INSTALLED, offered here because this is the
                         // screen a subscriber opens.
