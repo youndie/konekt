@@ -90,7 +90,7 @@ Not in the map, because the checker guards only the five layer directories:
 [design-app-canvas](design/design-app-canvas.md) — the interface design and the component dictionary
 it commits konekt to.
 
-### Services (4)
+### Services (5)
 
 - [x] [konekt-server](services/konekt-server.md) — the Ktor process: every table, every screen, every
   route, the saga engine and the workers
@@ -100,6 +100,8 @@ it commits konekt to.
   fixed at startup, no published port, no consumer offsets
 - [x] [operator-boundaries](services/operator-boundaries.md) — per axis, whether a change is a
   variable, a server deploy, a client release or a broker restart, and which research section says so
+- [x] [reference-scope](services/reference-scope.md) — what is deliberately absent, with the reason
+  and the shape of the change that would end it; the list of what is *not* for sale
 
 ### Features (5)
 

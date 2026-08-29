@@ -43,11 +43,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (14)
+## Open (13)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-80](docs/backlog/B-80-the-non-goals-are-nowhere.md) `[ ]` | Nothing states what this build is deliberately not, so every absence reads as unfinished work | P0 | S | B-79 |
 | [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[ ]` | The client claims Compose Multiplatform on two platforms and declares no Android target at all | P0 | L | - |
 | [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[ ]` | Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it | P0 | M | - |
 | [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[ ]` | The custom package form prices a package and cannot sell one, and nothing in the app leads to it | P0 | M | - |
@@ -62,7 +61,7 @@ so re-prioritising must never move a file.
 | [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[ ]` | A second replica silently loses live updates, and the only guard in the chart is about the simulator | P2 | S | - |
 | [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 
-## Closed (78)
+## Closed (79)
 
 **The wire and the shell**
 
@@ -162,6 +161,7 @@ so re-prioritising must never move a file.
 **What this build claims to be**
 
 - [B-79](docs/backlog/B-79-the-repository-calls-itself-a-box.md) `[x]` - The repository calls itself a box an operator buys, and it is a reference implementation on a telecom domain
+- [B-80](docs/backlog/B-80-the-non-goals-are-nowhere.md) `[x]` - Nothing states what this build is deliberately not, so every absence reads as unfinished work
 
 <!-- END INDEX -->
 

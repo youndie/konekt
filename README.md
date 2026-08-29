@@ -14,7 +14,8 @@ billing system, the SM-DP+ that issues eSIM profiles, the payment gateway, the S
 an OTP. There is also no management surface, no catalogue anyone edits without a deploy, no seam
 under the billing and no second tenant — and none of those is a to-do. A domain that loads the
 toolkits honestly is the whole requirement; building past it would produce a worse version of a
-product several vendors already sell.
+product several vendors already sell. Each absence, with its reason and with what would end it, is
+[reference-scope](docs/services/reference-scope.md).
 
 What is not mocked is the wiring. Six Kotlin toolkits each carry the load they were written for, on a
 domain that loads them without contrivance:
