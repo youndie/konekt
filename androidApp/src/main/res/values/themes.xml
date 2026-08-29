@@ -6,5 +6,35 @@
   toolbar on any of its nine sections.
 -->
 <resources>
-    <style name="Theme.Konekt" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      SPLIT IN TWO, and the split is the tool's own advice rather than ours. `windowLightNavigationBar`
+      arrived in API 27 and this build's floor is 26, so lint refuses it here - and the explanation it
+      prints is worth keeping: an `android:` attribute in a STYLE belongs in a `values-vNN` folder
+      rather than behind `tools:targetApi`, because some manufacturers have added custom attributes
+      whose ids collide with the newer ones, and the conflict is a runtime one.
+
+      Base carries everything both versions share, so `values-v27` adds one line instead of repeating
+      a style.
+    -->
+    <style name="Theme.Konekt.Base" parent="android:Theme.Material.Light.NoActionBar">
+        <!--
+          DARK ICONS IN THE SYSTEM BARS, over this build's light surface.
+
+          Set HERE and not only from the activity, and the difference is a frame: the bars are drawn
+          before any Kotlin of ours runs. Measured on a Pixel 6a - with the appearance set only in
+          `onCreate` the clock and the status icons stayed light over a white ground and were simply
+          invisible. The activity still sets it, because that is the half that can follow a palette
+          this file cannot know about.
+        -->
+        <item name="android:windowLightStatusBar">true</item>
+        <!--
+          TRANSPARENT BARS rather than a colour, because the frame paints its own ground edge to edge
+          from the served kit. A colour named here would be the one surface in the application a
+          brand cannot repaint.
+        -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="Theme.Konekt" parent="Theme.Konekt.Base" />
 </resources>

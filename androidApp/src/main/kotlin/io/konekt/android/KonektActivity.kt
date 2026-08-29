@@ -3,6 +3,7 @@ package io.konekt.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.view.WindowCompat
 import io.konekt.client.app.KonektComposition
 import io.konekt.client.app.KonektPlatform
 import io.ktor.client.engine.okhttp.OkHttp
@@ -19,6 +20,29 @@ import kotlinx.coroutines.SupervisorJob
 class KonektActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // THE OTHER HALF OF EDGE-TO-EDGE: who draws the bars' CONTENT.
+        //
+        // Painting the ground to the edges is one thing; the clock and the status icons are the
+        // system's, and it draws them light or dark on request. Left alone they came out light over
+        // this build's light surface and vanished — a status bar with no time in it, which reads as a
+        // rendering fault rather than as a setting.
+        //
+        // THIS LINE ALONE DID NOT FIX IT. Measured on a Pixel 6a: with the appearance set here and
+        // nowhere else the icons stayed light. The bars are drawn before any of this runs, so what
+        // holds from the first frame is the THEME — `windowLightStatusBar` in `themes.xml` — and this
+        // is the half that can afterwards follow a palette the theme cannot know about. Both, and for
+        // different moments.
+        //
+        // TAKEN FROM THE SAME SETTING THE PALETTE IS, so the two cannot disagree: `KONEKT_DARK`
+        // decides which half of the served kit is drawn, and dark icons belong over the light half.
+        // The limit is worth stating — a served kit whose LIGHT palette had a dark surface would need
+        // this to come from the resolved colour instead, and that colour does not leave the frame.
+        val darkMode = intent?.getStringExtra("KONEKT_DARK") == "true"
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !darkMode
+            isAppearanceLightNavigationBars = !darkMode
+        }
 
         // SETTINGS FROM THE LAUNCH INTENT, which is the honest Android equivalent of an environment
         // variable: it is what `adb shell am start --es KONEKT_URL http://10.0.2.2:8080` sends, so a

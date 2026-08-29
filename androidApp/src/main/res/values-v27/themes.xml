@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The same theme with the one attribute API 27 added: dark icons in the NAVIGATION bar, which matter
+  on a device drawing a gesture bar over the application's own ground. Everything else is inherited,
+  so this file is one line rather than a copy that goes stale.
+-->
+<resources>
+    <style name="Theme.Konekt" parent="Theme.Konekt.Base">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

@@ -15,10 +15,10 @@
           to it would prove nothing. The iOS bundle carries the same decision as
           `NSAllowsArbitraryLoads` and the same caveat with it.
         -->
+        <!-- No `android:label`: it would repeat the application's, which is what lint calls redundant. -->
         <activity
             android:name=".KonektActivity"
-            android:exported="true"
-            android:label="konekt">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
