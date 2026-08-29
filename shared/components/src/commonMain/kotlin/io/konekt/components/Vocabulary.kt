@@ -26,6 +26,15 @@ object CounterStates {
     // Safe to add mid-flight for the reason the field is an open string: a client built before this
     // word existed draws the ordinary card, which is wrong in its colour and right in its numbers.
     const val DORMANT = "dormant"
+
+    // EVERY WORD THIS BUILD KNOWS, as a list, because a guard needs to ask.
+    //
+    // `ScreenshotCasesTest` keeps a negative fixture — a state name this client genuinely does not
+    // know — and checked it against a set of three retyped by hand. `DORMANT` had been here since
+    // `B-19` and was not in that set, so the guard would have passed on a fixture naming a state the
+    // build knows perfectly well, which is the opposite of what it asserts. A list beside the
+    // constants cannot fall behind them.
+    val all: List<String> = listOf(NORMAL, LOW, EXHAUSTED, DORMANT)
 }
 
 // Availability of a plan in the catalogue. `LOADING` is a real state on the wire rather than a

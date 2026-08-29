@@ -14,11 +14,8 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.resources.get
 import io.ktor.client.plugins.resources.post
 import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.parameter
-import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -77,18 +74,27 @@ class RoamingScenarioTest {
                 Stand.topUp(client, session, majorUnits = 50)
                 buy(client, session, roamingPlan)
 
-                Stand.awaitOrExplain("the roaming package to appear") {
+                // WAITED FOR AS DORMANT FIRST, and that is not a formality: the assertion after the
+                // arrival is that the state CHANGED, and without seeing the dormant state first a
+                // simulator that started every package on the first tick would satisfy it.
+                Stand.awaitOrExplain("the roaming package to appear, and to be dormant before anything starts it") {
                     client
                         .homeScreen(session.accessToken)
                         .all<UsageCounterCardComponent>()
                         .firstOrNull { it.title == "Turkey data" && it.state == CounterStates.DORMANT }
                 }
 
-                // THE ARRIVAL, through the development route rather than by touching the database.
-                // The route publishes to the broker, so what this exercises is the same pipe real
-                // traffic would take: broker, consumer, package, screen.
-                assertEquals(HttpStatusCode.Accepted, arrive(client, session.subscriberId, zone = "tr").status)
-
+                // THE ARRIVAL, AND NOTHING CALLS FOR IT. `B-88` deleted the development route that
+                // used to start a package — public, taking `subscriberId` from the query — and moved
+                // arrival into the traffic simulator: a package lies dormant for a stated time and
+                // then the simulation flies its owner out.
+                //
+                // So this test does not act here. It WAITS, which is what makes it a test of the
+                // product rather than of a route: the same pipe real traffic takes — broker,
+                // consumer, package, screen — with nothing outside the process deciding.
+                //
+                // The stand sets `SIMULATED_ARRIVAL_AFTER_SECONDS` low so this wait is seconds rather
+                // than the ninety a demonstration wants.
                 val started =
                     Stand.awaitOrExplain("the package to start counting after the arrival") {
                         client
@@ -136,19 +142,6 @@ class RoamingScenarioTest {
                 }.body<PurchaseOrderResponse>()
 
         assertEquals(OrderStatuses.COMPLETED, confirmed.status, "the purchase did not complete: ${confirmed.status}")
-    }
-
-    // Typed through the raw path rather than the @Resource class: `ArriveResource` lives in :server,
-    // which the e2e module deliberately does not depend on — the suite talks to the stand over HTTP
-    // like any other client, and a suite that imported the server's classes could no longer tell the
-    // difference between the product working and the product compiling.
-    private suspend fun arrive(
-        client: HttpClient,
-        subscriberId: String,
-        zone: String,
-    ) = client.post("/api/v1/dev/roaming/arrive") {
-        parameter("subscriberId", subscriberId)
-        parameter("zone", zone)
     }
 
     private suspend fun HttpClient.homeScreen(token: String): KompotComponent =

@@ -20,6 +20,8 @@ import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
+import io.konekt.feature.roaming.shared.api.ROAMING_DEEPLINK
+import io.konekt.feature.roaming.shared.api.RoamingScreenResource
 import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
@@ -98,6 +100,15 @@ object Shell {
                         // A FORM, not a screen: it answers a schema and a tree, and the kit compares
                         // this word against what the HTTP description says the same address sends.
                         kind = ScreenRouteKind.FORM,
+                    ),
+                    // TRAVEL PACKAGES, reached from the home screen where the cards themselves are.
+                    // Not a tab: the canvas has four, and a subscriber who never leaves the country
+                    // would carry a fifth for a feature they do not use.
+                    ScreenRoute(
+                        deeplink = ROAMING_DEEPLINK,
+                        endpoint = resourceAddress<RoamingScreenResource>(),
+                        title = "Travel packages",
+                        kind = ScreenRouteKind.SCREEN,
                     ),
                     // THE CUSTOM PACKAGE BUILDER, reached from the plans tab. A `form` and not a
                     // `screen`: it answers a schema and a tree, and the conformance kit compares this

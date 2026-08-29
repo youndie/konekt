@@ -138,6 +138,9 @@ include(":feature:tariff-shared-api")
 
 // Roaming: a package bought at home that does nothing until it is used abroad. A vertical rather than
 // a package, like every other feature — the domain cannot see Exposed, so it cannot depend on it.
+// Roaming on the wire, which it had none of until `B-88`: the vertical was server-only, so a client
+// could not name the screen that answers "what do I have for this trip".
+include(":feature:roaming-shared-api")
 include(":feature:roaming-server-domain")
 include(":feature:roaming-server-data")
 include(":feature:usage-shared-api")

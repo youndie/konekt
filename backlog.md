@@ -43,11 +43,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (7)
+## Open (6)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[ ]` | Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query | P1 | M | - |
 | [B-89](docs/backlog/B-89-the-usage-consumer-only-runs-with-the-simulator.md) `[ ]` | The only consumer of the usage topic is constructed inside the simulator's own starter, so reading real usage means also inventing some | P1 | S | - |
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 | [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
@@ -55,7 +54,7 @@ so re-prioritising must never move a file.
 | [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 | [B-93](docs/backlog/B-93-two-verticals-have-screens-and-no-documents.md) `[ ]` | The tariff change and the custom package builder have screens and no documents in any layer | P2 | S | B-86, B-87 |
 
-## Closed (86)
+## Closed (87)
 
 **The wire and the shell**
 
@@ -166,6 +165,7 @@ so re-prioritising must never move a file.
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it
+- [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[x]` - Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query
 
 <!-- END INDEX -->
 

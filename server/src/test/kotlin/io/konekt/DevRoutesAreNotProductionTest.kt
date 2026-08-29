@@ -17,9 +17,13 @@ import kotlin.test.assertTrue
 // one group, in a test named after a screen — and `devOtpRouteGroup` had no equivalent at all.
 //
 // The routes are worth a guard rather than a deletion. `/api/v1/dev/fail` answers 500 by
-// construction, which is a denial-of-service primitive if it ships; `/api/v1/dev/roaming/arrive` is
-// public and takes `subscriberId` from the QUERY rather than from the token, so wherever it is
-// enabled anyone can start a stranger's roaming package and spend their allowance.
+// construction, which is a denial-of-service primitive if it ships.
+//
+// There were three. `/api/v1/dev/roaming/arrive` was the sharpest — public, and taking `subscriberId`
+// from the QUERY rather than from a token, so wherever it was enabled anybody could start a
+// stranger's roaming package and spend their allowance. `B-88` deleted it rather than authenticating
+// it: the demonstration it existed for now runs through the traffic simulator, which is the same kind
+// of fiction and needs no route at all.
 //
 // WHY THE ROUTE TABLE AND NOT THE FLAGS. A test over `DEV_SCREENS` and `DEV_REVEAL_OTP` proves the
 // default is off, which is a fact about one configuration file. What matters is that no development
@@ -50,7 +54,6 @@ class DevRoutesAreNotProductionTest {
         assertEquals(
             setOf(
                 "GET /api/v1/dev/screens/forward-compat",
-                "POST /api/v1/dev/roaming/arrive",
                 "GET /api/v1/dev/fail",
                 "GET /api/v1/dev/otp",
             ),
@@ -74,13 +77,14 @@ class DevRoutesAreNotProductionTest {
                 .flatMap { file -> RESOURCE_PATH.findAll(file.readText()).map { file.fileName to it.groupValues[1] } }
 
         // Vacuity: a walk that found no files at all would satisfy every assertion below. The three
-        // are `FailingRouting`, `ForwardCompatScreen` and `ArriveRouting`; the number is here so that
-        // a file moving out of a `dev` package is noticed rather than silently dropping a subject.
+        // are `FailingRouting` and `ForwardCompatScreen`; the number is here so that a file moving out
+        // of a `dev` package is noticed rather than silently dropping a subject. It was three until
+        // `B-88` deleted the arrival route.
         //
         // `productionSources()` walks every module rather than this one, so a development route added
         // in a feature module is in scope — which is where the next one would most plausibly land.
         assertEquals(
-            3,
+            2,
             declarations.size,
             "the sources under a `dev` package declare a different number of resources: $declarations",
         )

@@ -12,6 +12,7 @@ import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
+import io.konekt.feature.roaming.shared.api.RoamingScreenResource
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
@@ -126,6 +127,11 @@ class TckCoverageTest {
                 // THE TARIFF CATALOGUE, reachable blind — a secured GET answering one document — and
                 // reached anyway through the graph, which names it since `B-86` put the vertical on
                 // a screen.
+                // TRAVEL PACKAGES, reachable blind — a secured GET answering one document — and
+                // reached through the graph besides, which names it since `B-88` gave roaming a
+                // screen. Reachable with NO packages, too: the empty state is a banner rather than a
+                // blank, so the walk gets a tree either way.
+                endpointKey<RoamingScreenResource>("GET"),
                 endpointKey<TariffsScreenResource>("GET"),
                 // ONE CHANGE, addressed by an id the walk creates for itself, the way it creates an
                 // order. Left waiting on purpose: the confirmation branch is the one that draws a

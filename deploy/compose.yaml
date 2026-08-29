@@ -126,6 +126,15 @@ services:
       # waiting for a subscriber to browse. Off by default everywhere else; on here because a stand
       # that cannot show the update cannot test it.
       SIMULATE_TRAFFIC: ${SIMULATE_TRAFFIC:-true}
+      # HOW LONG A ROAMING PACKAGE LIES DORMANT before the simulation starts it. Ten seconds here and
+      # ninety in the application's default, and the two numbers want opposite things: a person giving
+      # a demonstration needs long enough to show the dormant card and say what it means, and an
+      # end-to-end scenario needs short enough not to sleep for a minute and a half.
+      #
+      # It replaced `POST /api/v1/dev/roaming/arrive` (`B-88`) — a public route that took the
+      # subscriber from the query string and was the only way to start a package, so the whole
+      # feature was demonstrated through a route documented as never shippable.
+      SIMULATED_ARRIVAL_AFTER_SECONDS: ${SIMULATED_ARRIVAL_AFTER_SECONDS:-10}
       # THE THREE AGENTS. Each is `<NAME>_ENDPOINT` plus `<NAME>_KEY`, together or not at all — the
       # server refuses to start on one without the other, because a deployment that believes it is
       # observed and is not is the failure all three of these libraries make easy.

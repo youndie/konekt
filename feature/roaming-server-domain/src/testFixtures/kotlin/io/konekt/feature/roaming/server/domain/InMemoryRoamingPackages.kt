@@ -54,6 +54,12 @@ class InMemoryRoamingPackages(
             .map { Travelling(it.subscriberId, it.zone) }
             .distinct()
 
+    override suspend fun awaitingArrival(purchasedBefore: Instant): List<Travelling> =
+        packages
+            .filter { it.dormant && it.purchasedAt <= purchasedBefore && it.remainingMb > 0 }
+            .map { Travelling(it.subscriberId, it.zone) }
+            .distinct()
+
     override suspend fun consume(
         subscriberId: String,
         zone: String,

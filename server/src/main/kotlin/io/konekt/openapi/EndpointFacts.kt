@@ -18,6 +18,7 @@ import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
+import io.konekt.feature.roaming.shared.api.RoamingScreenResource
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
@@ -25,7 +26,6 @@ import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
-import io.konekt.roaming.dev.ArriveResource
 import io.konekt.screens.dev.FailingResource
 import io.konekt.screens.dev.ForwardCompatScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
@@ -349,6 +349,12 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 // is still in somebody's hands, and that is the ordinary case rather than an odd one.
                 refusals = setOf(404),
             ),
+        endpointKey<RoamingScreenResource>("GET") to
+            EndpointFacts(
+                summary = "Travel packages, grouped by zone, with the waiting ones marked as waiting",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
         endpointKey<TariffsScreenResource>("GET") to
             EndpointFacts(
                 summary = "The tariff catalogue, with the current one marked and unpressable",
@@ -466,14 +472,6 @@ val devScreensEndpointFacts: Map<String, EndpointFacts> =
                 summary = "A screen carrying a component no client can render (development only)",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
-            ),
-        endpointKey<ArriveResource>("POST") to
-            EndpointFacts(
-                summary = "Start a dormant roaming package, as a first attach abroad would (development only)",
-                // 202 rather than 200, and the document says so: the event goes to the broker and the
-                // consumer polls, so the package is not started by the time this answers.
-                successStatus = 202,
-                successContentType = null,
             ),
         endpointKey<FailingResource>("GET") to
             EndpointFacts(

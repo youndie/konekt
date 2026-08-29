@@ -41,6 +41,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -123,6 +124,13 @@ class TrafficChainTest {
                         producer,
                         subscribers = { listOf(subscriberId) },
                         travelling = { roaming.travelling() },
+                        // NO ARRIVALS IN THIS TEST, and the empty list is the honest way to say so:
+                        // the subject here is a home counter travelling the whole chain, and a
+                        // simulated arrival would put a second event on the topic that the assertions
+                        // below would have to subtract. The arrival case at the bottom of this file
+                        // covers it.
+                        awaitingArrival = { emptyList() },
+                        clock = clock,
                         megabytesPerTick = 25,
                     )
                 simulator.tick(handle)
@@ -259,6 +267,68 @@ class TrafficChainTest {
             consumer.apply(event(units = 25))
 
             assertEquals(null, counters.find(subscriberId, UsageCounter.Kind.DATA))
+        }
+
+    // ARRIVAL, WHICH IS NOW THE SIMULATION'S AND NOT A ROUTE'S.
+    //
+    // `B-88` deleted `/api/v1/dev/roaming/arrive` — public, taking `subscriberId` from the query, and
+    // the only way to start a roaming package, so the demonstration of the whole feature ran through
+    // a route documented as never shippable. What replaces it is a DELAY: a package lies dormant long
+    // enough to be looked at, and then the simulation flies its owner out.
+    //
+    // The delay is the whole design, so this asserts BOTH sides of it. A test that only checked the
+    // arrival would pass on a simulator that started every package on the first tick, which is
+    // precisely the behaviour the deleted route existed to avoid.
+    //
+    // Driven through the real broker like every other case here: what is being checked is what the
+    // simulator PUBLISHES, and a test that asked the repository instead would be checking the query
+    // this feature already had.
+    @Test
+    fun `a package dormant long enough departs, and a fresh one stays dormant`() =
+        runBlocking {
+            val connection = BrokerHarness.connect(scope)
+            try {
+                val now = clock.now()
+                roaming.grant("order-old", subscriberId, "tr", 10_240, 30, now - 120.seconds)
+                // Ten seconds old against a ninety-second delay: still dormant, and must stay so.
+                roaming.grant("order-fresh", "$subscriberId-fresh", "eu", 5_120, 14, now - 10.seconds)
+
+                val producer = Producer(connection, scope)
+                val handle = producer.topic(TopicName(EventTopics.USAGE))
+                val start =
+                    Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first()).let {
+                        it.poll()
+                        it.position
+                    }
+
+                TrafficSimulator(
+                    producer,
+                    // Nobody with a home counter and nobody travelling, so every event this tick
+                    // produces is an arrival and the assertion below needs no subtraction.
+                    subscribers = { emptyList() },
+                    travelling = { roaming.travelling() },
+                    awaitingArrival = { before -> roaming.awaitingArrival(before) },
+                    clock = clock,
+                    dormantFor = 90.seconds,
+                ).tick(handle)
+
+                val published =
+                    Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first(), start)
+                        .poll()
+                        .records
+                        .map { String(it) }
+
+                assertEquals(1, published.size, "the tick published something other than one arrival: $published")
+                val arrival = published.single()
+                assertTrue(subscriberId in arrival, "the arrival is not for the package that landed: $arrival")
+                assertTrue("\"zone\":\"tr\"" in arrival, "the arrival names a zone the package is not for: $arrival")
+                // ONE MEGABYTE. An arrival crosses the line from dormant to started; an amount large
+                // enough to move the number on the card would make the first thing a subscriber sees
+                // after landing a figure that had already dropped.
+                assertTrue("\"units\":1" in arrival, "an arrival spent more than the crossing costs: $arrival")
+            } finally {
+                connection.close()
+            }
         }
 
     private fun event(units: Long) = """{"subscriberId":"$subscriberId","kind":"data","units":$units}"""

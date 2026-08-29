@@ -130,6 +130,9 @@ dependencies {
     // The shell: the route graph and the account screen.
     implementation(project(":feature:shell-shared-api"))
     implementation(project(":feature:roaming-server-data"))
+    // Roaming's own wire module: one address and no action, added by `B-88` when the vertical got a
+    // screen. Before it, nothing about roaming was a contract the client could name.
+    implementation(project(":feature:roaming-shared-api"))
     testImplementation(testFixtures(project(":feature:roaming-server-domain")))
     implementation(project(":feature:usage-server-data"))
 

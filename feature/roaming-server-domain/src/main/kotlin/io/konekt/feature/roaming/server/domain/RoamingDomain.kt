@@ -82,6 +82,21 @@ interface RoamingPackages {
     // deliberate act; keeping a started one counting is the simulation.
     suspend fun travelling(): List<Travelling>
 
+    // WHO HAS LANDED, in the simulation's terms: a package bought before `purchasedBefore` and still
+    // dormant.
+    //
+    // A DELAY AND NOT AN EVENT, which is the whole of how `B-88` replaced the development route.
+    // Arrival used to be a public POST — `/api/v1/dev/roaming/arrive`, taking the subscriber from the
+    // QUERY rather than from a token, so wherever it was enabled anybody could start a stranger's
+    // package and spend their allowance. It existed because the simulator deliberately would not
+    // start a package: one that started itself five seconds after purchase makes the state this
+    // feature is about — bought, not counting — unobservable.
+    //
+    // A cutoff answers both. The package stays dormant long enough to be seen, and then the
+    // simulation flies the subscriber out; nothing outside the process decides it, and there is no
+    // route to delete because there is no route.
+    suspend fun awaitingArrival(purchasedBefore: Instant): List<Travelling>
+
     // Using data in a zone. THE ACTIVATION LIVES HERE rather than in a separate `activate` call, and
     // that is deliberate: "starts on first connection" means the start and the first consumption are
     // one event, and an API that lets them be two lets a caller do one without the other.

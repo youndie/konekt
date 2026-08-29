@@ -11,6 +11,8 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.isNotNull
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -99,6 +101,27 @@ class ExposedRoamingPackages(
                 .map { Travelling(it.subscriberId, it.zone) }
                 // One tick per subscriber and zone. Two live packages for the same zone are spent one
                 // after the other, so ticking twice would spend them twice as fast for no reason.
+                .distinct()
+        }
+
+    override suspend fun awaitingArrival(purchasedBefore: Instant): List<Travelling> =
+        dbQuery {
+            RoamingPackageTable
+                .selectAll()
+                // DORMANT AND OLD ENOUGH, both in SQL: this runs over every subscriber like
+                // `travelling` above, and both halves are columns.
+                .where {
+                    RoamingPackageTable.activatedAt.isNull() and
+                        (RoamingPackageTable.purchasedAt lessEq purchasedBefore.toEpochMilliseconds())
+                }.map { it.toDomain() }
+                // A package with nothing in it has nothing to start. It cannot be bought that way —
+                // the catalogue has no zero-megabyte plan — and the filter costs a comparison rather
+                // than a reader wondering.
+                .filter { it.remainingMb > 0 }
+                .map { Travelling(it.subscriberId, it.zone) }
+                // One arrival per subscriber and zone, the same reason `travelling` is distinct: two
+                // packages for one zone are spent one after the other, and two arrival events would
+                // start one and waste the other's first megabyte.
                 .distinct()
         }
 

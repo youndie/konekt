@@ -111,6 +111,32 @@ fun CounterExhausted() {
     }
 }
 
+// BOUGHT AND NOT COUNTING — the state the roaming feature exists to make visible, and the one that
+// had no frame and no renderer branch until `B-88`. It is worth a golden more than the other three:
+// the card is FULL and the bar means nothing, so everything that says "this has not started" is copy
+// and a colour role, which is precisely what regresses without failing to compile.
+@Composable
+@ViddikScreenshot(name = "Dormant", group = "Counter", width = FRAME_WIDTH, height = FRAME_HEIGHT)
+fun CounterDormant() {
+    BrandFrame(DEFAULT_BRAND) {
+        Tree(
+            listOf(
+                counter(
+                    state = CounterStates.DORMANT,
+                    title = "Turkey data",
+                    // "ready" and not "left", which is the server's own word for it: nothing has been
+                    // spent, so there is nothing to have left.
+                    valueText = "10 GB ready",
+                    captionText = "Starts when you first connect in Turkey, then runs for 30 days.",
+                    // FULL, and it stays full. A bar at 1.0 in the ordinary colour reads as "plenty
+                    // left and running"; the muted role is what makes it read as waiting.
+                    progress = 1f,
+                ),
+            ),
+        )
+    }
+}
+
 // THE SAME CARD AS `CounterNormal`, one word different on the wire. Nothing else may differ, or the
 // identity assertion in `GoldenContentTest` stops being about the degradation.
 @Composable

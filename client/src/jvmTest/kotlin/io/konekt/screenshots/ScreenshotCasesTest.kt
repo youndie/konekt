@@ -41,6 +41,7 @@ class ScreenshotCasesTest {
             "Counter - Low",
             "Counter - Exhausted",
             "Counter - Unknown state",
+            "Counter - Dormant",
             "Brand - A",
             "Brand - A Dark",
             "Brand - B",
@@ -168,7 +169,10 @@ class ScreenshotCasesTest {
         // this build has never heard of draws the ORDINARY card — and the day somebody adds
         // `grace_period` to `CounterStates`, the fixture keeps passing while testing the opposite of
         // what it says. A negative fixture needs something watching that it stays negative.
-        val known = setOf(CounterStates.NORMAL, CounterStates.LOW, CounterStates.EXHAUSTED)
+        // ASKED FOR RATHER THAN RETYPED. This line was three names written out, and `DORMANT` — added
+        // to the vocabulary by `B-19` — was not among them: the guard would have passed on a fixture
+        // naming a state this build knows, which is exactly the thing it exists to refuse.
+        val known = CounterStates.all.toSet()
 
         assertTrue(
             UNKNOWN_COUNTER_STATE !in known,

@@ -132,11 +132,30 @@ new word on the wire is `state: "dormant"`, added to `CounterStates`. `state` wa
 string with a documented fallback, so a client built before this word existed draws the ordinary card —
 wrong in its colour and right in its numbers.
 
+**The client now knows the word.** `B-88` gave `dormant` a branch in `UsageCounterCardRenderer`, drawn
+in the muted content role rather than the accent one: the bar is full and will still be full in a
+month, so drawing it like a running counter says the one thing a dormant package is not. It has its
+own screenshot case, `Counter - Dormant`, for the reason all four have one — the difference between
+these frames is copy and a colour role, which is what regresses without failing to compile.
+
+**There is a screen for them.** `GET /api/v1/screens/roaming`, grouped by zone, ordered by what is
+counting now, then what is waiting, then what has ended. Packages remain on the home screen as well: a
+package bought for a trip must be visible on the screen somebody opens, not only behind a link.
+
 ## 6. Out of scope
 
-* **Real network attachment.** Nothing observes a device landing anywhere. Starting a package is
-  `POST /api/v1/dev/roaming/arrive`, mounted only where `DEV_SCREENS` is set; in a real MVNO that event
-  is a first-attach notification from the network.
+* **Real network attachment.** Nothing observes a device landing anywhere; in a real MVNO that event
+  is a first-attach notification from the network. What starts a package here is the **traffic
+  simulator**, behind `SIMULATE_TRAFFIC`: a package lies dormant for `SIMULATED_ARRIVAL_AFTER_SECONDS`
+  and then the simulation publishes one megabyte of usage in its zone, through the same broker every
+  other event takes.
+
+  It used to be `POST /api/v1/dev/roaming/arrive`, and `B-88` deleted it. That route was public, took
+  `subscriberId` from the **query** rather than from a token — so wherever it was enabled anybody could
+  start a stranger's package and spend their allowance — and it meant the demonstration of this entire
+  feature ran through a route documented as never shippable. The delay is what replaced it: long
+  enough that the dormant state is still observable, which is why the simulator would not start a
+  package before.
 * Per-zone pricing, zone discovery, or a screen listing which countries a zone contains.
 * Anything at all for `minutes` or `messages` abroad. The only kind that exists in a zone is `data`.
 * Extending, pausing or refunding a started package.

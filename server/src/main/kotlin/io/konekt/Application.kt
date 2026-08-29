@@ -56,7 +56,8 @@ import io.konekt.packages.customPackageRoutes
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
-import io.konekt.roaming.dev.roamingArriveRoutes
+import io.konekt.roaming.RoamingScreen
+import io.konekt.roaming.roamingRoutes
 import io.konekt.screens.Shell
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
@@ -133,6 +134,7 @@ import ru.workinprogress.petich.postgres.ExposedOutboxRepository
 import ru.workinprogress.petich.postgres.ExposedPetichRepository
 import ru.workinprogress.petich.postgres.OutboxEventsTable
 import ru.workinprogress.petich.postgres.PetichTable
+import kotlin.time.Duration
 
 // The engine is CIO because the load-bearing endpoint of this server is SSE — many long-lived,
 // mostly idle streams, which is the profile a coroutine-per-connection engine is shaped for and a
@@ -243,6 +245,9 @@ val konektRoutes: List<RouteGroup> =
             // THE SCREENS OF THE SAME FEATURE. `B-21` built the saga and the routes and gave it no
             // way in: no component sent a `ChangeTariffRequest` and the only caller was an e2e test.
             tariffScreenRoutes()
+            // THE TRAVEL SCREEN. `B-19` built the vertical and left it server-only — no wire module,
+            // no address, and packages visible only as cards mixed into the home screen.
+            roamingRoutes()
             realtimeRoutes()
         },
     )
@@ -296,11 +301,13 @@ fun productionRouteGroups(catalogue: BrandThemeCatalogue): List<RouteGroup> =
 val devScreensRouteGroup: RouteGroup =
     RouteGroup(AuthTier.PUBLIC) {
         forwardCompatRoutes()
-        // The arrival route rides the same gate: it is a demonstration control, and a build that ships
-        // one that starts other people's packages has shipped a way to spend their data.
-        roamingArriveRoutes()
-        // And the route that throws, for the same reason and with a sharper one of its own: a route
-        // that reliably answers 500 is a denial-of-service primitive if it ever ships.
+        // THE ARRIVAL ROUTE IS GONE, and it used to be the second entry here. It was public, it took
+        // `subscriberId` from the QUERY rather than from a token, and it was the only way to start a
+        // roaming package — so the demonstration of the whole feature ran through a route documented
+        // as never shippable. `B-88` moved arrival into the traffic simulator, where it is the same
+        // kind of fiction as simulated traffic and decided by nothing outside this process.
+        // And the route that throws: a route that reliably answers 500 is a denial-of-service
+        // primitive if it ever ships.
         failingRoutes()
     }
 
@@ -367,7 +374,7 @@ fun Application.module(config: KonektConfig) {
             // beneath them.
             usageModule(database),
             roamingModule(database),
-            serverModule(KonektTrace(tracy)),
+            serverModule(KonektTrace(tracy), config.simulatedArrivalAfter),
             petichModule(database, config),
         ),
     )
@@ -418,7 +425,13 @@ fun Application.module(config: KonektConfig) {
 // A NAMED FUNCTION rather than an inline `module { }`, so a test can install exactly what the
 // application installs. An inline one is invisible from outside, and every binding in it is a binding
 // only a running process has ever resolved.
-fun serverModule(trace: KonektTrace) =
+fun serverModule(
+    trace: KonektTrace,
+    // How long a roaming package lies dormant before the simulation starts it. Defaulted so the
+    // graph test and every route test construct this module the way they always did, and passed
+    // explicitly by the composition root.
+    simulatedArrivalAfter: Duration = KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
+) =
     module {
         // THE SERVER COULD NOT START WITHOUT THIS LINE, and nothing said so until a stand tried.
         // `Application.kt` resolved a broadcaster on startup and `realtimeRoutes` injected one, and
@@ -433,7 +446,12 @@ fun serverModule(trace: KonektTrace) =
         single { KompotUpdateBroadcaster() }
         single { ComponentBroadcaster(get(), get()) }
         single { RoamingPackageCards(get()) }
-        single { TrafficChain(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+        single { RoamingScreen(get(), get()) }
+        // The last argument is how long a roaming package stays dormant before the simulation starts
+        // it. Explicit rather than `get()`: it is a `Duration`, and so is `paymentDelay` — two
+        // bindings of one type resolve to whichever Koin saw last, which is the failure the qualified
+        // engines above exist to avoid.
+        single { TrafficChain(get(), get(), get(), get(), get(), get(), get(), get(), get(), simulatedArrivalAfter) }
     }
 
 // The saga engine and its storage.

@@ -103,6 +103,23 @@ private fun String.accentToken(): ColorToken =
 
         CounterStates.LOW -> M3Colors.Secondary
 
+        // BOUGHT AND NOT COUNTING, drawn in the MUTED role rather than the accent one.
+        //
+        // The bar is full and will still be full in a month, so drawing it in the primary colour
+        // says "running, plenty left" — which is the one thing a dormant package is not. Quiet is
+        // exactly the claim: nothing is happening here yet.
+        //
+        // `onSurfaceVariant` AND NOT `outline`, though outline is quieter. Outline is the design
+        // system's role for BORDERS, and this colour draws a number somebody has to read — reaching
+        // for a token because its default value looks right is how `sold_out` ended up labelling a
+        // subscriber's own tariff (`B-86`). A muted-content role is what this is.
+        //
+        // This branch is the whole of `B-88`'s second criterion. Before it, the server had said
+        // `dormant` since `B-19` and this `when` had no arm for it, so the state the roaming feature
+        // exists to show fell through to the ordinary card — correct degradation, and the wrong
+        // answer for the one word that was not a stranger.
+        CounterStates.DORMANT -> M3Colors.OnSurfaceVariant
+
         // An unrecognised word draws the ORDINARY card. Not nothing, and not an error colour: a
         // state this build has never heard of is a state it must not editorialise about.
         else -> M3Colors.Primary

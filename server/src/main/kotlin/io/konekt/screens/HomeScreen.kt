@@ -18,6 +18,7 @@ import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.feature.purchase.shared.api.TOP_UP_DEEPLINK
 import io.konekt.feature.roaming.server.domain.RoamingPackage
+import io.konekt.feature.roaming.shared.api.ROAMING_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
@@ -108,6 +109,24 @@ object HomeScreen {
                         // the answer to the question they opened the screen with; a package for a trip
                         // in three weeks is context.
                         if (roamingCards != null) addAll(packages.map(roamingCards::of))
+
+                        // AND THE WAY TO THE TRAVEL SCREEN, drawn only when there is something to
+                        // look at there. `B-88` gave roaming a screen of its own — packages grouped
+                        // by zone, which is the question a subscriber going abroad actually has —
+                        // and a screen nothing leads to is what that item was about in the first
+                        // place. The cards stay here: a package bought for a trip must be visible on
+                        // the screen somebody opens, not only behind a link.
+                        if (packages.isNotEmpty()) {
+                            add(
+                                BannerComponent(
+                                    id = "home-roaming",
+                                    text = "See what you have for each trip.",
+                                    tone = MessageTones.INFO,
+                                    action = NavigateAction(ROAMING_DEEPLINK),
+                                    actionText = "Travel packages",
+                                ),
+                            )
+                        }
 
                         // SOMETHING BOUGHT AND NOT YET INSTALLED, offered here because this is the
                         // screen a subscriber opens.

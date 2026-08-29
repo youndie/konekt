@@ -3,6 +3,7 @@ package io.konekt.mocks.traffic
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.Travelling
 import io.konekt.feature.roaming.server.domain.Zones
+import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,6 +17,7 @@ import ru.workinprogress.booblik.TopicName
 import ru.workinprogress.booblik.net.client.Producer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 // Nothing in this build produces real traffic, and a counter that never moves cannot demonstrate a
 // live screen.
@@ -34,6 +36,14 @@ class TrafficSimulator(
     // package must stay dormant until somebody starts it, or the state this feature exists to show —
     // bought, not counting — is over five seconds after the purchase and nobody ever sees it.
     private val travelling: suspend () -> List<Travelling>,
+    // WHO HAS LANDED SINCE THE LAST TICK: dormant packages older than `dormantFor`.
+    //
+    // This is `B-88`'s replacement for `/api/v1/dev/roaming/arrive` — a public POST that took the
+    // subscriber from the query rather than from a token, so wherever it was enabled anybody could
+    // start a stranger's package and spend their allowance. The demonstration of the whole feature
+    // ran through the one route documented as never shippable.
+    private val awaitingArrival: suspend (Instant) -> List<Travelling>,
+    private val clock: KonektClock,
     private val json: Json = Json,
     private val interval: Duration = 5.seconds,
     private val megabytesPerTick: Long = 25,
@@ -46,6 +56,17 @@ class TrafficSimulator(
     // the slow one, which is also true of a real line.
     private val minutesPerTick: Long = 1,
     private val messagesPerTick: Long = 1,
+    // HOW LONG A PACKAGE LIES DORMANT BEFORE THE SIMULATION FLIES ITS OWNER OUT.
+    //
+    // The number is the whole design. The route this replaces existed because a package that started
+    // itself five seconds after purchase makes the state this feature is about — bought, and not
+    // counting — unobservable; a delay long enough to look at and short enough to wait through gives
+    // both. Ninety seconds is a demonstration a person can narrate: buy it, show the dormant card,
+    // talk for a minute, watch it start.
+    //
+    // Configuration rather than a constant, for the same reason the rates are: the end-to-end stand
+    // sets it to a few seconds so a scenario does not sleep for a minute and a half.
+    private val dormantFor: Duration = 90.seconds,
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.traffic")
 
@@ -98,14 +119,37 @@ class TrafficSimulator(
             )
         }
 
+        // ARRIVALS, after the trips already under way and before the flush. One megabyte per package,
+        // because this is an ARRIVAL and not a session: what it is for is crossing the line from
+        // dormant to started, and the amount it spends doing so should be small enough not to muddy
+        // the number on the card.
+        //
+        // PUBLISHED LIKE EVERYTHING ELSE HERE, not written to the table. The value of it is that it
+        // enters the same pipe real traffic would — broker, consumer, package, realtime, screen. A
+        // version that called `RoamingPackages.consume` directly would light the card up and prove
+        // nothing about the path.
+        val arrivals = awaitingArrival(clock.now() - dormantFor)
+        arrivals.forEach { arrival ->
+            topic.send(
+                usageEvent(arrival.subscriberId, arrival.zone, UsageKinds.DATA, ARRIVAL_MB).toByteArray(),
+                arrival.subscriberId.toByteArray(),
+            )
+        }
+
         producer.flush()
-        return ids.size * usageAmounts.size + trips.size
+        return ids.size * usageAmounts.size + trips.size + arrivals.size
     }
 
     // The wire names of the counter kinds, spelled where the events are built. They are the usage
     // feature's `UsageCounter.Kind.wireName`, and this module cannot see that enum — the consumer on
     // the other side matches against it, so a name that drifted would decrement nothing and report
     // nothing, which is the quietest failure this simulator has.
+    private companion object {
+        // An arrival is one megabyte. Named rather than written as `1` beside the event, because the
+        // number is a decision — see `dormantFor` above — and not an increment.
+        const val ARRIVAL_MB = 1L
+    }
+
     private object UsageKinds {
         const val DATA = "data"
         const val MINUTES = "minutes"

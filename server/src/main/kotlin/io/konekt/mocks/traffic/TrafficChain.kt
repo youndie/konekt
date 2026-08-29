@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import ru.workinprogress.booblik.TopicName
 import ru.workinprogress.booblik.net.client.Consumer
+import kotlin.time.Duration
 
 // Both ends of the simulated traffic, started together, because separately they are two halves of a
 // demonstration and neither is worth having alone.
@@ -33,6 +34,9 @@ class TrafficChain(
     private val roamingCards: RoamingPackageCards,
     private val clock: KonektClock,
     private val json: Json,
+    // How long a bought package lies dormant before the simulation starts it. Threaded from the
+    // configuration rather than defaulted here, so the stand and a deployment can differ.
+    private val dormantFor: Duration,
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.traffic.chain")
 
@@ -59,11 +63,17 @@ class TrafficChain(
                 // events the consumer correctly ignores, and a simulator producing only ignored
                 // events looks exactly like one that is not running.
                 subscribers = { counters.subscribersWithCounters() },
-                // Trips already under way, and nothing else. A dormant package is started by the
-                // arrival route, never by a tick — otherwise the state this feature exists to show is
-                // gone five seconds after the purchase.
+                // Trips already under way. Kept separate from the arrivals below, and the separation
+                // is the feature: a tick must not start a dormant package, or the state this exists
+                // to show — bought, not counting — is gone five seconds after the purchase.
                 travelling = { roaming.travelling() },
+                // AND THE ARRIVALS, which used to be a public development route (`B-88`). The
+                // simulation flies a subscriber out once their package has been dormant long enough
+                // to be looked at, so nothing outside this process decides it.
+                awaitingArrival = { before -> roaming.awaitingArrival(before) },
+                clock = clock,
                 json = json,
+                dormantFor = dormantFor,
             )
 
         val consumer = UsageConsumer(connection.connection, consume, push, cards, roaming, roamingCards, clock, json)

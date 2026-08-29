@@ -82,6 +82,7 @@ class KoinGraphTest {
                         paymentMode = io.konekt.feature.purchase.server.data.MockPaymentGateway.Mode.APPROVE,
                         paymentDelay = kotlin.time.Duration.ZERO,
                         simulateTraffic = false,
+                        simulatedArrivalAfter = io.konekt.KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
                         migrateOnly = false,
                     ),
                 )
@@ -112,6 +113,12 @@ class KoinGraphTest {
             // broker, the counters and the card builder, and each of those is another module's. This
             // is the list growing for the reason it was meant to — a feature genuinely reaching
             // across, which is worth noticing rather than waving through.
+            // How long a roaming package lies dormant before the simulation starts it. NOT a binding:
+            // the composition root passes it into `serverModule` as a value, deliberately, because a
+            // `single<Duration>` would be the second `Duration` in the graph — `paymentDelay` is the
+            // first — and two bindings of one type resolve to whichever Koin saw last. Koin's
+            // `verify` reflects on the constructor and cannot see that it is closed over.
+            kotlin.time.Duration::class,
             io.konekt.events.BrokerConnection::class,
             io.konekt.feature.usage.server.domain.UsageCounters::class,
             io.konekt.feature.usage.server.domain.ConsumeUsageUseCase::class,
