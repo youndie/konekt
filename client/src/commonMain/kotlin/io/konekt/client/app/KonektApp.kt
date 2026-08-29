@@ -150,6 +150,12 @@ fun KonektApp(
     // merged over this one, so a deployment that serves no graph keeps working with what it opened
     // with.
     routes: Map<String, String> = emptyMap(),
+    // WHETHER THIS FRAME KEEPS ITS CONTENT CLEAR OF THE SYSTEM BARS, or the host already has.
+    //
+    // True for Android, where nothing else does it, and for desktop, where the insets are zero and it
+    // costs nothing. FALSE FOR iOS, where `ComposeUIViewController` insets the content itself and
+    // this would apply the same padding twice — measured on a simulator rather than assumed.
+    applyWindowInsets: Boolean = true,
     // Everything that is not a transition, and it may ANSWER WITH AN ADDRESS.
     //
     // `routes` is the synchronous half — a deeplink the server chose in advance. This is the other:
@@ -410,11 +416,17 @@ fun KonektApp(
                         // the platform theme's window background — a grey strip above a white screen,
                         // in a product whose whole claim is that a served brand repaints everything.
                         //
-                        // HERE AND NOT PER PLATFORM because the ground colour is the design system's
-                        // and only this frame can ask for it, and because `safeDrawing` is the right
-                        // answer on all three: system bars and a cutout on Android, the safe area on
-                        // iOS, and zero on a desktop window.
-                        .windowInsetsPadding(WindowInsets.safeDrawing),
+                        // AND IT IS A PARAMETER, because "safeDrawing is the right answer everywhere"
+                        // was written here and MEASURED WRONG on the third platform. On iOS
+                        // `ComposeUIViewController` already lays its content inside the safe area, so
+                        // this padding applies the same inset a second time: the login title sat 55
+                        // device pixels lower with it than without, on the same simulator, in two
+                        // builds minutes apart. Android and desktop need it and iOS does not — and a
+                        // claim about three platforms verified on two is how this file came to carry
+                        // a wrong sentence in the first place.
+                        .then(
+                            if (applyWindowInsets) Modifier.windowInsetsPadding(WindowInsets.safeDrawing) else Modifier,
+                        ),
             ) {
                 // THE TOOLBAR, and it holds a back control and nothing else.
                 //

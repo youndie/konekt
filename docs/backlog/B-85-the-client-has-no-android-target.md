@@ -118,6 +118,12 @@ Android row as **not delivered** with the reason: a blank cell reads as "not tri
   login title read as a damaged font and the home title as a clipped logo, while everything below was
   perfect. Found by screenshot, fixed with `safeDrawing`, and confirmed by the same build on the same
   device.
+
+  **And the fix's comment claimed too much, which the simulator caught later.** It said `safeDrawing`
+  is "the right answer on all three" targets. On iOS `ComposeUIViewController` already insets its
+  content, so the frame doing it too applied the same padding twice — the login title sat 55 device
+  pixels lower with it than without, in two builds minutes apart. It is a parameter now, false on iOS
+  only. A claim about three platforms verified on two is exactly the shape this item exists to end.
 - **Android host tests.** AGP warns that `commonTest` exists and is not run, and a target that
   compiles without running its shared tests is the Apple gap arriving by a different door.
   `withHostTest {}` turns them on — `ClientDecodesEveryActionTest` now runs on Android, two cases, in

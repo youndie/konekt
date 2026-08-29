@@ -43,12 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 | [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
+| [B-94](docs/backlog/B-94-the-brands-ground-stops-at-the-safe-area-on-ios.md) `[ ]` | On iOS the brand's ground stops at the safe area, so the status bar and the home indicator are black whatever the served palette is | P2 | S | - |
 
 ## Closed (91)
 
