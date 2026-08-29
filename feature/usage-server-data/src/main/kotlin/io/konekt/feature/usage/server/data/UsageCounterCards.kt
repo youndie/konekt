@@ -5,7 +5,7 @@ import io.konekt.components.UsageCounterCardComponent
 import io.konekt.feature.usage.server.domain.UsageAddOns
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.money.MoneyFormat
-import io.konekt.time.KonektClock
+import kotlin.time.Instant
 
 // A counter as the component that draws it.
 //
@@ -17,11 +17,17 @@ import io.konekt.time.KonektClock
 // A class rather than an object since the copy became a projection: the caption needs the time and a
 // price list, and reaching for either through a global is how a screen becomes untestable without
 // waiting for tomorrow.
+// THE INSTANT IS AN ARGUMENT AND NOT A CLOCK OF ITS OWN (`B-96`). A screen draws several of these
+// and reads the time once for all of them; a factory holding a clock reads it per card, so one
+// response could caption two counters against two different `now`s. It costs a parameter and it makes
+// that impossible rather than unlikely.
 class UsageCounterCards(
     private val addOns: UsageAddOns,
-    private val clock: KonektClock,
 ) {
-    fun of(counter: UsageCounter): UsageCounterCardComponent =
+    fun of(
+        counter: UsageCounter,
+        at: Instant,
+    ): UsageCounterCardComponent =
         UsageCounterCardComponent(
             id = idOf(counter),
             title = counter.kind.title(),
@@ -29,7 +35,7 @@ class UsageCounterCards(
             // THE COPY CHANGES WITH THE STATE, not only the colour. That is the canvas's rule and the
             // reason `state` is on the wire at all: a subscriber who is nearly out is told when they
             // will run out and what it costs to fix, and one who has run out is told plainly.
-            captionText = captionFor(counter),
+            captionText = captionFor(counter, at),
             progress = counter.progress,
             state =
                 when {
@@ -39,7 +45,10 @@ class UsageCounterCards(
                 },
         )
 
-    private fun captionFor(counter: UsageCounter): String? {
+    private fun captionFor(
+        counter: UsageCounter,
+        at: Instant,
+    ): String? {
         // Nothing to say in the ordinary state, and saying something anyway is how a caption stops
         // being read by the time it matters.
         if (!counter.isLow && !counter.isExhausted) return null
@@ -56,7 +65,7 @@ class UsageCounterCards(
         // fact rather than inventing a date, because "runs out today" is what a naive zero would say.
         val running =
             counter
-                .daysRemaining(clock.now())
+                .daysRemaining(at)
                 ?.let { "${counter.kind.runsOut()} in ${UsageUnits.approximately(it)} at your current pace." }
                 ?: "Running low — under a tenth of your ${counter.kind.title().lowercase()} is left."
 

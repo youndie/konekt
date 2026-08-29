@@ -74,12 +74,13 @@ class TrafficChainTest {
     private val broadcaster = KompotUpdateBroadcaster().also { it.start(scope) }
     private val push = ComponentBroadcaster(broadcaster, json)
 
-    // The card builder the consumer pushes through. Its caption is a projection now, so it needs
-    // the same clock the counters were granted on — a card built on the real clock would read
-    // "runs out in about 19 000 days" against a counter stamped in 2023.
-    private val cards = UsageCounterCards(StaticUsageAddOns(), clock)
+    // The card builder the consumer pushes through. Its caption is a projection, so it is drawn
+    // against the same instant the counters were granted on — a card built on the real clock would
+    // read "runs out in about 19 000 days" against a counter stamped in 2023. The instant is an
+    // argument rather than a clock the factory holds (`B-96`).
+    private val cards = UsageCounterCards(StaticUsageAddOns())
     private val roaming = InMemoryRoamingPackages { clock.now() }
-    private val roamingCards = RoamingPackageCards(clock)
+    private val roamingCards = RoamingPackageCards()
 
     @AfterTest
     fun stop() {
@@ -243,7 +244,7 @@ class TrafficChainTest {
             val low = assertNotNull(counters.find(subscriberId, UsageCounter.Kind.DATA))
             assertTrue(low.isLow, "left ${low.remainingUnits} of ${low.limitUnits} and it is not being called low")
 
-            val card = cards.of(low)
+            val card = cards.of(low, clock.now())
             assertEquals(CounterStates.LOW, card.state)
             // The canvas's rule: a subscriber who is nearly out is told what that means, not shown a
             // different colour and left to work it out.

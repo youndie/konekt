@@ -25,7 +25,7 @@ fun usageModule(database: Database) =
         single<UsageGrants> { get<ExposedUsageCounters>() }
 
         single<UsageAddOns> { StaticUsageAddOns() }
-        single { UsageCounterCards(get(), get()) }
+        single { UsageCounterCards(get()) }
 
         factory { LoadCountersUseCase(get()) }
         factory { ConsumeUsageUseCase(get()) }

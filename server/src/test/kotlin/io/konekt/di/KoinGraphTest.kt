@@ -125,6 +125,18 @@ class KoinGraphTest {
             io.konekt.feature.usage.server.data.UsageCounterCards::class,
             io.konekt.feature.roaming.server.domain.RoamingPackages::class,
             io.konekt.roaming.RoamingPackageCards::class,
+            // THE SCREEN USE CASES REACH ACROSS TOO, and they are the composition root's own
+            // definitions now rather than a route's injections (`B-96`). A route is not verified —
+            // `by inject<T>()` is looked up at request time — so moving the assembly into a `factory`
+            // is what made these visible here at all, which is the reverse of a regression.
+            io.konekt.feature.usage.server.domain.LoadCountersUseCase::class,
+            io.konekt.feature.purchase.server.domain.AccountBalances::class,
+            io.konekt.feature.auth.server.domain.SubscriberRepository::class,
+            io.konekt.feature.esim.server.domain.EsimRepository::class,
+            // The served brand kit, which `brandModule` binds from a value the root is handed —
+            // the same shape as the Database entry below, and invisible to `verify` for the same
+            // reason.
+            io.konekt.theme.BrandThemeCatalogue::class,
             io.konekt.realtime.ComponentBroadcaster::class,
             io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster::class,
             // NOT provided by anything, and the entry is still honest. Every feature module CAPTURES

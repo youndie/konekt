@@ -22,6 +22,7 @@ import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
+import io.konekt.roaming.RoamingPackageCards
 import io.konekt.time.KonektClock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
@@ -41,7 +42,25 @@ class HomeScreenTest {
     private val start = Instant.fromEpochMilliseconds(1_700_000_000_000)
     private val now = start + 18.days
 
-    private val cards = UsageCounterCards(StaticUsageAddOns(), KonektClock { now })
+    // THE SCREEN IS A CLASS NOW and holds its two renderers (`B-96`); what varies per case is the
+    // view. The instant is on the view rather than on a clock inside the factories, which is what
+    // makes every card in one screen agree about the time.
+    private val home = HomeScreen(UsageCounterCards(StaticUsageAddOns()), RoamingPackageCards())
+
+    private fun homeView(
+        balance: Money? = null,
+        counters: List<UsageCounter> = emptyList(),
+        esims: EsimHoldings = EsimHoldings.none,
+        msisdn: String? = null,
+    ) = HomeView(
+        at = now,
+        brandName = null,
+        msisdn = msisdn,
+        balance = balance,
+        counters = counters,
+        packages = emptyList(),
+        esims = esims,
+    )
 
     private val json =
         Json {
@@ -81,12 +100,12 @@ class HomeScreenTest {
         cases.forEach { (named, expected) ->
             val (name, esims) = named
             val screen =
-                HomeScreen.build(
-                    msisdn = null,
-                    balance = Money.ofMajor(38, Currency.DEFAULT),
-                    counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
-                    cards = cards,
-                    esims = esims,
+                home.build(
+                    homeView(
+                        balance = Money.ofMajor(38, Currency.DEFAULT),
+                        counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
+                        esims = esims,
+                    ),
                 )
 
             val banner =
@@ -112,13 +131,13 @@ class HomeScreenTest {
     @Test
     fun `a line with nothing and a line with something uninstalled are not told the same thing`() {
         fun bannerFor(esims: EsimHoldings) =
-            HomeScreen
+            home
                 .build(
-                    msisdn = null,
-                    balance = Money.ofMajor(38, Currency.DEFAULT),
-                    counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
-                    cards = cards,
-                    esims = esims,
+                    homeView(
+                        balance = Money.ofMajor(38, Currency.DEFAULT),
+                        counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 4_000)),
+                        esims = esims,
+                    ),
                 ).konektWalk()
                 .filterIsInstance<BannerComponent>()
                 .single { it.id == "home-install-esim" }
@@ -137,38 +156,38 @@ class HomeScreenTest {
 
     @Test
     fun `the balance is stated and every counter gets a card`() {
-        val screen =
-            HomeScreen.build(
-                msisdn = null,
-                balance = Money.ofMajor(38, Currency.DEFAULT),
-                counters =
-                    listOf(
-                        counter(UsageCounter.Kind.DATA, 10_240, 4_000),
-                        counter(UsageCounter.Kind.MINUTES, 1_000, 100),
-                    ),
-                cards = cards,
+        val drawn =
+            home.build(
+                homeView(
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                    counters =
+                        listOf(
+                            counter(UsageCounter.Kind.DATA, 10_240, 4_000),
+                            counter(UsageCounter.Kind.MINUTES, 1_000, 100),
+                        ),
+                ),
             )
 
-        val texts = screen.all<TextComponent>().map { it.text }
+        val texts = drawn.all<TextComponent>().map { it.text }
         assertTrue("Balance" in texts, "no balance label: $texts")
         // Formatted on the server, in the product's currency, the American way.
         assertTrue("\$38" in texts, "no balance amount: $texts")
 
-        val counterCards = screen.all<UsageCounterCardComponent>()
+        val counterCards = drawn.all<UsageCounterCardComponent>()
         assertEquals(listOf("counter-data", "counter-minutes"), counterCards.map { it.id })
     }
 
     @Test
     fun `the low state changes the copy and not only the colour`() {
-        val screen =
-            HomeScreen.build(
-                msisdn = null,
-                balance = Money.ofMajor(38, Currency.DEFAULT),
-                counters = listOf(counter(UsageCounter.Kind.MINUTES, 1_000, 100)),
-                cards = cards,
+        val drawn =
+            home.build(
+                homeView(
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                    counters = listOf(counter(UsageCounter.Kind.MINUTES, 1_000, 100)),
+                ),
             )
 
-        val card = screen.all<UsageCounterCardComponent>().single()
+        val card = drawn.all<UsageCounterCardComponent>().single()
         assertEquals(CounterStates.LOW, card.state)
         // The canvas's sentence, whole: when it runs out, and what it costs to fix. Both halves are
         // things a later edit could quietly drop.
@@ -180,16 +199,11 @@ class HomeScreenTest {
 
     @Test
     fun `a subscriber with no plan is told so and given somewhere to go`() {
-        val screen =
-            HomeScreen.build(
-                msisdn = null,
-                Money.ofMajor(50, Currency.DEFAULT),
-                counters = emptyList(),
-                cards = cards,
-            )
+        val drawn =
+            home.build(homeView(balance = Money.ofMajor(50, Currency.DEFAULT)))
 
-        assertTrue(screen.all<UsageCounterCardComponent>().isEmpty())
-        val banner = assertNotNull(screen.all<BannerComponent>().singleOrNull(), "an empty home drew nothing")
+        assertTrue(drawn.all<UsageCounterCardComponent>().isEmpty())
+        val banner = assertNotNull(drawn.all<BannerComponent>().singleOrNull(), "an empty home drew nothing")
         assertEquals("No plan is active on this line yet.", banner.text)
         // A screen that draws nothing is indistinguishable from one that failed to load; a way out is
         // what makes it a state rather than a dead end.
@@ -198,9 +212,9 @@ class HomeScreenTest {
 
     @Test
     fun `a balance that could not be read is left out rather than drawn as zero`() {
-        val screen = HomeScreen.build(msisdn = null, balance = null, counters = emptyList(), cards = cards)
+        val drawn = home.build(homeView(balance = null))
 
-        val texts = screen.all<TextComponent>().map { it.text }
+        val texts = drawn.all<TextComponent>().map { it.text }
         assertTrue(texts.none { it == "Balance" }, "a balance block was drawn for a balance we do not have: $texts")
         // The failure this prevents: a subscriber reading "$0" tops up money they already have.
         assertTrue(texts.none { it.startsWith("$") }, texts.toString())
@@ -208,18 +222,18 @@ class HomeScreenTest {
 
     @Test
     fun `the whole screen survives the wire`() {
-        val screen =
-            HomeScreen.build(
-                msisdn = null,
-                balance = Money.ofMajor(38, Currency.DEFAULT),
-                counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 500)),
-                cards = cards,
+        val drawn =
+            home.build(
+                homeView(
+                    balance = Money.ofMajor(38, Currency.DEFAULT),
+                    counters = listOf(counter(UsageCounter.Kind.DATA, 10_240, 500)),
+                ),
             )
 
         // The root keeps its discriminator and every type in the tree is registered. This is the same
         // check the dictionary makes, applied to a real screen — and the reason the route answers
         // with respondKompotComponent rather than call.respond.
-        assertEquals(screen, json.decodeKompotComponent(json.encodeKompotComponent(screen)))
+        assertEquals(drawn, json.decodeKompotComponent(json.encodeKompotComponent(drawn)))
     }
 
     // THE WALK IS `konektWalk`, beside the dictionary. This file kept its own and it read one level

@@ -5,7 +5,7 @@ import io.konekt.components.UsageCounterCardComponent
 import io.konekt.feature.roaming.server.data.RoamingDates
 import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.usage.server.data.UsageUnits
-import io.konekt.time.KonektClock
+import kotlin.time.Instant
 
 // A roaming package as the component that draws it.
 //
@@ -14,16 +14,21 @@ import io.konekt.time.KonektClock
 // is exactly what that component is. A `RoamingPackageCardComponent` would be the same five fields
 // under a different discriminator, and every client would need a renderer for it to draw the same
 // card. What genuinely differs — a package that is full and not counting — is one word in `state`.
-class RoamingPackageCards(
-    private val clock: KonektClock,
-) {
-    fun of(pkg: RoamingPackage): UsageCounterCardComponent {
+// THE INSTANT IS AN ARGUMENT (`B-96`), for the reason `UsageCounterCards` gives: the travel screen
+// draws several of these and the ranking of its zones was decided against one reading of the clock,
+// while every caption read it again. A package could be ranked as running and captioned as ended in
+// one response.
+class RoamingPackageCards {
+    fun of(
+        pkg: RoamingPackage,
+        at: Instant,
+    ): UsageCounterCardComponent {
         val zone = RoamingZoneNames.of(pkg.zone)
         return UsageCounterCardComponent(
             id = idOf(pkg),
             title = "$zone data",
             valueText = UsageUnits.megabytes(pkg.remainingMb) + if (pkg.dormant) " ready" else " left",
-            captionText = captionFor(pkg, zone),
+            captionText = captionFor(pkg, zone, at),
             // A DORMANT PACKAGE DRAWS FULL, which is true: nothing has been spent. The bar is the one
             // part of this card that cannot express "has not started", which is what the state word
             // is for.
@@ -41,6 +46,7 @@ class RoamingPackageCards(
     private fun captionFor(
         pkg: RoamingPackage,
         zone: String,
+        at: Instant,
     ): String {
         // THE FIRST ACCEPTANCE CRITERION, in the only place a subscriber will ever read it. A dormant
         // package must not be silent: a card showing "10 GB ready" with no caption is one a subscriber
@@ -54,7 +60,7 @@ class RoamingPackageCards(
             // by one statement. Saying the true half rather than inventing a date is what to do if it
             // ever becomes one.
             "Started ${RoamingDates.on(activatedAt)}."
-        } else if (pkg.expiredAt(clock.now())) {
+        } else if (pkg.expiredAt(at)) {
             "Ended ${RoamingDates.on(expiresAt)}."
         } else {
             // Dated from ACTIVATION, which is the second acceptance criterion as the subscriber sees

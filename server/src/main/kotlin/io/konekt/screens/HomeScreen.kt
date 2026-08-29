@@ -32,30 +32,16 @@ import io.konekt.roaming.RoamingPackageCards
 // of it. The balance belongs to the purchase feature's ledger and the counters to the usage feature,
 // and a feature reaching for the other's repository to draw one screen is how two features become
 // one. The composition root composes; that is what it is for.
-object HomeScreen {
+// THE TWO CARD FACTORIES ARE HELD RATHER THAN PASSED IN (`B-96`). They are renderers — they turn a
+// counter into a component — so they belong to this side of the line and not in the signature of a
+// screen builder. What used to travel beside them, and does not any more, is the data they render
+// against: that arrives in the view, with one instant for all of it.
+class HomeScreen(
+    private val cards: UsageCounterCards,
+    private val roamingCards: RoamingPackageCards,
+) {
     fun build(
-        // WHOSE LINE THIS IS. The canvas puts it under the balance, and it is the one fact on this
-        // screen that answers a question a subscriber with two SIMs actually asks. Nullable because
-        // the screen is worth drawing without it: a number the server could not read is left out
-        // rather than drawn as a blank, for the same reason the balance is.
-        msisdn: String?,
-        balance: Money?,
-        counters: List<UsageCounter>,
-        cards: UsageCounterCards,
-        // Roaming packages sit on the SAME screen as the home counters rather than behind a tab,
-        // because from the subscriber's side they are one question — what have I got. A separate
-        // roaming screen would mean a package bought for a trip is invisible on the screen they
-        // actually open, which is the failure mode this feature exists to fix.
-        packages: List<RoamingPackage> = emptyList(),
-        roamingCards: RoamingPackageCards? = null,
-        // WHAT THIS DEPLOYMENT IS CALLED, from the served brand kit. `null` draws no header at all:
-        // a white-label product that guessed a name would print the wrong operator's name on the
-        // operator's own screen, which is worse than printing none.
-        brandName: String? = null,
-        // WHAT THIS LINE HOLDS, split by whether anything is on a device. It was one count — profiles
-        // held — and the profile screen read the same number under the word "installed"; two screens
-        // disagreeing about one question is exactly what that shape produced (`B-69`).
-        esims: EsimHoldings = EsimHoldings.none,
+        view: HomeView,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -74,7 +60,7 @@ object HomeScreen {
                     // The name itself stopped being missing when the brand kit gained a `displayName`:
                     // it is a deployment fact, it lives in the file an operator already edits, and it
                     // needed no wire type of its own because the server builds this screen.
-                    brandName?.let {
+                    view.brandName?.let {
                         add(
                             TextComponent(
                                 id = "home-brand",
@@ -84,9 +70,9 @@ object HomeScreen {
                             ),
                         )
                     }
-                    balanceCard(msisdn, balance)?.let(::add)
+                    balanceCard(view.msisdn, view.balance)?.let(::add)
 
-                    if (counters.isEmpty() && packages.isEmpty()) {
+                    if (view.counters.isEmpty() && view.packages.isEmpty()) {
                         // NOT AN EMPTY COLUMN. A subscriber who has bought nothing has no counters,
                         // and a screen that draws nothing for them is indistinguishable from one that
                         // failed to load. Saying so, with somewhere to go, is the difference.
@@ -103,12 +89,12 @@ object HomeScreen {
                         // Ordered by the repository, which sorts by the enum rather than by the
                         // database — two screens that disagree about which counter comes first read
                         // as two products.
-                        addAll(counters.map(cards::of))
+                        addAll(view.counters.map { cards.of(it, view.at) })
 
                         // AFTER the home counters, always. What a subscriber is spending right now is
                         // the answer to the question they opened the screen with; a package for a trip
                         // in three weeks is context.
-                        if (roamingCards != null) addAll(packages.map(roamingCards::of))
+                        addAll(view.packages.map { roamingCards.of(it, view.at) })
 
                         // AND THE WAY TO THE TRAVEL SCREEN, drawn ALWAYS — which is not what it was
                         // and is what the reachability guard caught.
@@ -155,7 +141,7 @@ object HomeScreen {
                         // something to install and a subscriber who has paid for it. The heading above
                         // this block already said "something bought and not yet installed"; the
                         // condition said something else (`B-69`).
-                        installBanner(esims)?.let(::add)
+                        installBanner(view.esims)?.let(::add)
 
                         // AFTER what the subscriber already has, because that is the order the
                         // question comes in: what have I got, then what else is there. The empty

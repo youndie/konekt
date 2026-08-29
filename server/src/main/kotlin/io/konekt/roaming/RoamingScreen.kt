@@ -69,7 +69,7 @@ class RoamingScreen(
                                     color = M3Colors.OnSurfaceVariant,
                                 ),
                             )
-                            addAll(zone.packages.map(cards::of))
+                            addAll(zone.packages.map { cards.of(it, view.at) })
                         }
                     }
 

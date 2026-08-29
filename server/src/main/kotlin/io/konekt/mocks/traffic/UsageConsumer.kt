@@ -102,7 +102,7 @@ class UsageConsumer(
 
         // Pushed by the component id the screen already has, so the client replaces a node rather
         // than reloading a screen. That is the whole difference a live update makes.
-        push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated))
+        push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated, clock.now()))
     }
 
     // FIRST USE ABROAD, which is where a dormant package stops being dormant. The activation is not a
@@ -116,7 +116,11 @@ class UsageConsumer(
     ) {
         val megabytes = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return
 
-        val result = roaming.consume(subscriberId, zone, megabytes, clock.now())
+        // ONE READING FOR BOTH the consumption and the card that announces it: an update captioned
+        // against a later instant than the one it was counted at would say a package expired between
+        // the two lines of this method.
+        val at = clock.now()
+        val result = roaming.consume(subscriberId, zone, megabytes, at)
         // Nothing bought for this zone. Not an error, and not silent either: it is what being abroad
         // without a package looks like, and the simulator has no way to know.
         if (result !is RoamingConsumption.Counted) return
@@ -130,6 +134,6 @@ class UsageConsumer(
             )
         }
 
-        push.push(subscriberId, RoamingPackageCards.idOf(result.pkg), roamingCards.of(result.pkg))
+        push.push(subscriberId, RoamingPackageCards.idOf(result.pkg), roamingCards.of(result.pkg, at))
     }
 }

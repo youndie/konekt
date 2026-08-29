@@ -12,6 +12,7 @@ import io.konekt.feature.purchase.server.data.HistoryScreen
 import io.konekt.feature.purchase.server.domain.HistoryPage
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
+import io.konekt.roaming.RoamingPackageCards
 import io.konekt.time.KonektClock
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +33,8 @@ import kotlin.time.Instant
 // So the assertion is over the SET. A fifth tab added without a heading fails here, and that is the
 // whole point of writing it this way rather than adding one line to the history screen's own test.
 class TabScreensNameThemselvesTest {
-    private val cards = UsageCounterCards(StaticUsageAddOns(), KonektClock { Instant.fromEpochMilliseconds(0) })
+    private val epoch = Instant.fromEpochMilliseconds(0)
+    private val home = HomeScreen(UsageCounterCards(StaticUsageAddOns()), RoamingPackageCards())
 
     // The four screens the bottom bar can reach, built with as little as each needs. The HOME entry
     // is given a brand name deliberately: its heading is the operator's display name and is drawn
@@ -42,12 +44,16 @@ class TabScreensNameThemselvesTest {
     private fun tabs(): Map<String, KompotComponent> =
         mapOf(
             "Home" to
-                HomeScreen.build(
-                    msisdn = null,
-                    balance = Money.ofMajor(10, Currency.DEFAULT),
-                    counters = emptyList(),
-                    cards = cards,
-                    brandName = "Konekt",
+                home.build(
+                    HomeView(
+                        at = epoch,
+                        brandName = "Konekt",
+                        msisdn = null,
+                        balance = Money.ofMajor(10, Currency.DEFAULT),
+                        counters = emptyList(),
+                        packages = emptyList(),
+                        esims = EsimHoldings.none,
+                    ),
                 ),
             "Plans" to PlansScreen.build(plans = emptyList()),
             "Orders" to

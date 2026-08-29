@@ -61,7 +61,9 @@ import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.RoamingScreen
 import io.konekt.roaming.ViewRoamingUseCase
 import io.konekt.roaming.roamingRoutes
+import io.konekt.screens.HomeScreen
 import io.konekt.screens.Shell
+import io.konekt.screens.ViewHomeUseCase
 import io.konekt.screens.ViewProfileUseCase
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
@@ -457,8 +459,11 @@ fun serverModule(
         single { trace }
         single { KompotUpdateBroadcaster() }
         single { ComponentBroadcaster(get(), get()) }
-        single { RoamingPackageCards(get()) }
+        single { RoamingPackageCards() }
         single { RoamingScreen(get()) }
+        single { HomeScreen(get(), get()) }
+        // The first screen's answers, out of four repositories and a brand kit (`B-96`).
+        factory { ViewHomeUseCase(get(), get(), get(), get(), get(), get(), get()) }
         // The grouping, the ordering and the one `now` they are both decided against (`B-96`).
         factory { ViewRoamingUseCase(get(), get()) }
         // THE PRODUCT'S OWN WORKER, started whenever the application starts. It reads whatever

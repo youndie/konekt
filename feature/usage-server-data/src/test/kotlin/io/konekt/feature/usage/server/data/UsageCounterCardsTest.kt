@@ -2,7 +2,6 @@ package io.konekt.feature.usage.server.data
 
 import io.konekt.components.CounterStates
 import io.konekt.feature.usage.server.domain.UsageCounter
-import io.konekt.time.KonektClock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -19,7 +18,9 @@ import kotlin.time.Instant
 class UsageCounterCardsTest {
     private val start = Instant.fromEpochMilliseconds(1_700_000_000_000)
 
-    private fun cardsAt(now: Instant) = UsageCounterCards(StaticUsageAddOns(), KonektClock { now })
+    // THE INSTANT IS AN ARGUMENT NOW (`B-96`), not a clock the factory holds: a screen draws
+    // several of these and reads the time once for all of them.
+    private val cards = UsageCounterCards(StaticUsageAddOns())
 
     private fun counter(
         kind: UsageCounter.Kind,
@@ -35,7 +36,7 @@ class UsageCounterCardsTest {
 
     @Test
     fun `an ordinary counter says nothing extra`() {
-        val card = cardsAt(start + 1.days).of(counter(UsageCounter.Kind.DATA, 10_240, 8_000))
+        val card = cards.of(counter(UsageCounter.Kind.DATA, 10_240, 8_000), start + 1.days)
 
         assertEquals(CounterStates.NORMAL, card.state)
         // A caption in the ordinary state is a caption nobody reads by the time it matters.
@@ -50,7 +51,7 @@ class UsageCounterCardsTest {
         // it: 900 minutes over 18 days is 50 a day, and 100 left is two days more. Two days out of a
         // thirty-day plan is exactly the situation the canvas draws — and a shorter window cannot
         // produce it, which is worth knowing before someone "simplifies" the fixture.
-        val card = cardsAt(start + 18.days).of(counter(UsageCounter.Kind.MINUTES, 1_000, 100))
+        val card = cards.of(counter(UsageCounter.Kind.MINUTES, 1_000, 100), start + 18.days)
 
         assertEquals(CounterStates.LOW, card.state)
         assertEquals(
@@ -61,7 +62,7 @@ class UsageCounterCardsTest {
 
     @Test
     fun `the verb follows the noun`() {
-        val data = cardsAt(start + 2.days).of(counter(UsageCounter.Kind.DATA, 10_240, 1_000))
+        val data = cards.of(counter(UsageCounter.Kind.DATA, 10_240, 1_000), start + 2.days)
 
         // "Data runs out", not "Data run out". A machine-written screen is what a backend-driven
         // product has to work hardest not to read like.
@@ -70,7 +71,7 @@ class UsageCounterCardsTest {
 
     @Test
     fun `a counter measured before any time has passed does not project`() {
-        val card = cardsAt(start).of(counter(UsageCounter.Kind.MINUTES, 1_000, 50))
+        val card = cards.of(counter(UsageCounter.Kind.MINUTES, 1_000, 50), start)
 
         // Same instant it started: no elapsed time, so no rate. The card falls back to the fact.
         assertEquals(
@@ -81,7 +82,7 @@ class UsageCounterCardsTest {
 
     @Test
     fun `an exhausted counter says so plainly and still offers the way out`() {
-        val card = cardsAt(start + 3.days).of(counter(UsageCounter.Kind.MESSAGES, 200, 0))
+        val card = cards.of(counter(UsageCounter.Kind.MESSAGES, 200, 0), start + 3.days)
 
         assertEquals(CounterStates.EXHAUSTED, card.state)
         assertEquals(
@@ -100,10 +101,10 @@ class UsageCounterCardsTest {
 
     @Test
     fun `data crosses into gigabytes and money-style grouping is used below it`() {
-        val small = cardsAt(start).of(counter(UsageCounter.Kind.DATA, 2_000, 512))
+        val small = cards.of(counter(UsageCounter.Kind.DATA, 2_000, 512), start)
         assertEquals("512 MB left", small.valueText)
 
-        val large = cardsAt(start).of(counter(UsageCounter.Kind.DATA, 20_480, 20_480))
+        val large = cards.of(counter(UsageCounter.Kind.DATA, 20_480, 20_480), start)
         // A whole number drops its zero fraction, the same rule MoneyFormat follows.
         assertEquals("20 GB left", large.valueText)
     }
