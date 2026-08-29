@@ -88,3 +88,21 @@ object TariffChangeTable : Table("tariff_change") {
     const val APPLIED = "applied"
     const val CANCELLED = "cancelled"
 }
+
+// WHO IS COMPENSATING AN ABANDONED SAGA. One row per saga, taken before the work starts, released by
+// time rather than by the winner (`B-92`).
+//
+// `B-64` made the OUTCOME correct under any number of sweepers — a unique index on
+// `ledger_entry (order_id, kind)` — and left the work: every replica walks the same sagas and reaches
+// the same violation. This removes the duplicate work; the index remains the invariant, which is what
+// makes a claim that fails open safe.
+object SagaSweepClaimTable : Table("saga_sweep_claim") {
+    // petich's saga id. Deliberately not a foreign key — that table belongs to the library.
+    val sagaId = varchar("saga_id", 64)
+
+    // WHEN, and it makes the claim a lease. A sweeper that wins and dies mid-compensation must not
+    // hold the saga for ever: re-claimable after the lease, so the failure is "late" and not "never".
+    val claimedAt = long("claimed_at")
+
+    override val primaryKey = PrimaryKey(sagaId, name = "pk_saga_sweep_claim")
+}

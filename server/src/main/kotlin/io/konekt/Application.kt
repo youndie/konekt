@@ -54,6 +54,7 @@ import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
 import io.konekt.packages.CustomPackagePlans
 import io.konekt.packages.customPackageRoutes
+import io.konekt.petich.ClaimedSweep
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
@@ -584,7 +585,11 @@ fun petichModule(
 
     single {
         SuspendedPetichSweeper(
-            repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
+            // WRAPPED, so that one replica compensates each abandoned saga rather than all of them
+            // (`B-92`). The claim lives in `findExpired`, which is the one call that decides what
+            // this replica is about to work on — and `SuspendedPetichSweeper` is petich's, so what
+            // konekt owns is which repository it is handed.
+            repository = ClaimedSweep(get<OutboxAwarePetichRepository>() as ExpiringPetichRepository, database, get()),
             // BY SAGA TYPE, and `{ get() }` stopped being correct the moment there were two engines.
             // The sweeper rolls back sagas that waited too long, and rolling one back with another
             // type's interceptor list runs the wrong compensations — or none, which is the quiet one:

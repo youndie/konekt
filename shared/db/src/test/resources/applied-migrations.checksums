@@ -24,3 +24,4 @@ V8__esim_wizard_session.sql 922638373
 V9__tariff_change.sql 60871863
 V10__roaming_package.sql -764021912
 V11__ledger_entry_one_movement_per_kind.sql 194226170
+V12__saga_sweep_claim.sql -797576260

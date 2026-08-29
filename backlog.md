@@ -43,16 +43,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 | [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
-| [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 | [B-93](docs/backlog/B-93-two-verticals-have-screens-and-no-documents.md) `[ ]` | The tariff change and the custom package builder have screens and no documents in any layer | P2 | S | B-86, B-87 |
 
-## Closed (89)
+## Closed (90)
 
 **The wire and the shell**
 
@@ -166,6 +165,7 @@ so re-prioritising must never move a file.
 - [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[x]` - Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query
 - [B-89](docs/backlog/B-89-the-usage-consumer-only-runs-with-the-simulator.md) `[x]` - The only consumer of the usage topic is constructed inside the simulator's own starter, so reading real usage means also inventing some
 - [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[x]` - A second replica silently loses live updates, and the only guard in the chart is about the simulator
+- [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[x]` - Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race
 
 <!-- END INDEX -->
 

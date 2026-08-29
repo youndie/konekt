@@ -51,16 +51,44 @@ object PostgresHarness {
 
     // Between tests, not between classes: the container is shared, so a test that leaves rows behind
     // is a test that breaks the next one in a way that depends on execution order.
+    // ASKED FOR, NOT RETYPED, and the list it replaces is why.
+    //
+    // This was thirteen table names written out by hand, and by the time `B-92` needed a fourteenth
+    // the list was already three short: `tariff_change` (B-21), `roaming_package` (B-19) and
+    // `esim_wizard_session` (B-51) were never added. Nothing failed — a test that leaves rows behind
+    // breaks the NEXT one, in a way that depends on execution order, which is the hardest failure in
+    // this repository to attribute and the easiest to blame on flakiness.
+    //
+    // `flyway_schema_history` is the one table that must survive: truncating it makes Flyway rerun
+    // every migration against a schema that already has them.
     fun truncateAll() {
         dataSource.connection.use { connection ->
+            val tables =
+                connection.createStatement().use { statement ->
+                    statement
+                        .executeQuery(
+                            """
+                            SELECT table_name FROM information_schema.tables
+                            WHERE table_schema = current_schema()
+                              AND table_type = 'BASE TABLE'
+                              AND table_name <> 'flyway_schema_history'
+                            """.trimIndent(),
+                        ).use { rows ->
+                            generateSequence { if (rows.next()) rows.getString(1) else null }.toList()
+                        }
+                }
+
+            // Vacuity: an empty list truncates nothing and every test after it starts dirty. It can
+            // only happen if the query is wrong, and it would look exactly like a flaky suite.
+            check(tables.isNotEmpty()) { "no tables found to truncate — has the schema query stopped matching?" }
+
             connection.createStatement().use { statement ->
                 statement.execute(
-                    """
-                    TRUNCATE TABLE petiches, outbox_events, idempotency_keys, scheduled_jobs,
-                                   usage_counter, ledger_entry, entitlement, refresh_token, session_family,
-                                   esim, account, subscriber, otp_challenge
-                    RESTART IDENTITY CASCADE
-                    """.trimIndent(),
+                    tables.joinToString(", ", prefix = "TRUNCATE TABLE ", postfix = " RESTART IDENTITY CASCADE") {
+                        // Quoted: a table named after a reserved word is a migration away, and the
+                        // failure would be a syntax error in a helper nobody is looking at.
+                        "\"$it\""
+                    },
                 )
             }
             connection.commit()
