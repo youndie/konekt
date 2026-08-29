@@ -468,6 +468,84 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "summary": "Order the package that was built, priced again on this side",
+                "x-kompot-endpoint-kind": "submit",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "dataGb",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "minutes",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "messages",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order the package that was built, priced again on this side",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "io.github.youndie.kompot.standard.NavigateAction"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No session, or one that no longer means anything.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The request is well-formed and its contents are wrong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/v1/forms/custom-package/patch": {

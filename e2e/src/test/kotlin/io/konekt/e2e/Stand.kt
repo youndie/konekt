@@ -4,6 +4,7 @@ import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.auth.kompotAuthSerializersModule
 import io.github.youndie.kompot.decodeKompotAction
 import io.github.youndie.kompot.form.standard.formStandardSerializersModule
+import io.github.youndie.kompot.forms.kompotFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedFormsSerializersModule
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
@@ -105,7 +106,13 @@ object Stand {
                 esimActionsSerializersModule +
                 purchaseActionsSerializersModule +
                 shellActionsSerializersModule +
-                tariffActionsSerializersModule
+                tariffActionsSerializersModule +
+                // `submit_form`, kompot's own, and the FOURTH time a hand-registered action has cost
+                // something here. The form COMPONENTS are generated into
+                // `generatedFormsSerializersModule` above and its ACTION is not, so this suite decoded
+                // every submit button's action as `UnknownAction` — which reads as a form with no way
+                // to submit it, and is indistinguishable from a server that drew none.
+                kompotFormsSerializersModule
         }
 
     fun client(baseUrl: String = serverUrl): HttpClient =

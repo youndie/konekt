@@ -57,12 +57,18 @@ fun purchaseInterceptors(
 // feature that built its own would be a feature deciding how many there are.
 fun purchaseModule(
     database: Database,
+    // THE CATALOGUE AS A PARAMETER, defaulted to the static one. `B-87` needed the composition root
+    // to wrap it — a custom package is a plan the catalogue did not write down, and resolving one
+    // needs a tariff function that lives in `:server` — and the alternative was a second
+    // `single<PlanCatalog>` in the root overriding this one. Two bindings for one type resolve to
+    // whichever Koin saw last, which is the failure the qualifier on the engines below exists for.
+    catalogue: PlanCatalog = StaticPlanCatalog(),
     paymentMode: MockPaymentGateway.Mode = MockPaymentGateway.Mode.APPROVE,
     paymentDelay: Duration = Duration.ZERO,
 ) = module {
     single<AccountBalances> { ExposedAccountBalances(database, get()) }
     single<Entitlements> { ExposedEntitlements(database, get()) }
-    single<PlanCatalog> { StaticPlanCatalog() }
+    single { catalogue }
     single<PaymentGateway> { MockPaymentGateway(mode = paymentMode, delay = paymentDelay) }
 
     // Explicit lambdas rather than singleOf/factoryOf: the reflective form resolves every

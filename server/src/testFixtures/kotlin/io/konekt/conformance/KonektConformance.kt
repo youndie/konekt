@@ -92,6 +92,11 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         // run. The behaviour behind it IS walked — `TopUps.ById` is reached because the walk creates
         // a top-up of its own before it buys anything.
         endpointKey<TopUpScreenResource>("POST"),
+        // THE BUILDER'S SUBMIT, and it is here for exactly the reason above rather than because it is
+        // new: a walk that pressed it would order a package on every run, spending the walking
+        // subscriber's balance. What it produces IS walked — it answers a `navigate` to the order
+        // screen, which the walk already reaches by creating an order of its own.
+        endpointKey<CustomPackageForm>("POST"),
         endpointKey<EsimWizardResource>("POST"),
         endpointKey<EsimWizardResource.Step>("POST"),
         // CustomPackagePatch is NO LONGER HERE, and the entry it used to have is worth remembering.

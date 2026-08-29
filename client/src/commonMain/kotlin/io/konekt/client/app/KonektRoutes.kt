@@ -7,6 +7,7 @@ import io.konekt.feature.auth.shared.api.LoginCodeSubmit
 import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
+import io.konekt.feature.packages.shared.api.CustomPackageFields
 import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.TopUpForms
@@ -14,6 +15,7 @@ import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.ktor.resources.serialization.ResourcesFormat
 import kotlinx.serialization.serializer
+import io.konekt.feature.packages.shared.api.CustomPackageForm as CustomPackageFormResource
 
 // WHAT THE RUNNERS NEED BEFORE THE SERVER CAN BE ASKED.
 //
@@ -67,6 +69,9 @@ object KonektRoutes {
             // The amount form posts to the screen's own address: the submit is a POST on the resource
             // that serves it, so nothing here spells a second path.
             TopUpForms.AMOUNT_FORM to addressOf<TopUpScreenResource>(),
+            // The builder posts to its own address too, for the same reason the amount form does: a
+            // sibling path named `submit` is one parameter away from colliding with something.
+            CustomPackageFields.FORM_ID to addressOf<CustomPackageFormResource>(),
         )
 
     // Where the application opens, and where signing out returns to.

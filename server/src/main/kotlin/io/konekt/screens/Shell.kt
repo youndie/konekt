@@ -12,6 +12,7 @@ import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.esim.shared.api.EsimInstallScreenResource
+import io.konekt.feature.packages.shared.api.CUSTOM_PACKAGE_DEEPLINK
 import io.konekt.feature.purchase.shared.api.HistoryScreenResource
 import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
 import io.konekt.feature.purchase.shared.api.OrderScreen
@@ -27,6 +28,7 @@ import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
 import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.resourceAddress
+import io.konekt.feature.packages.shared.api.CustomPackageForm as CustomPackageFormResource
 
 // THE APPLICATION'S SHELL: which destinations exist, and which of them are tabs.
 //
@@ -95,6 +97,15 @@ object Shell {
                         title = "Top up",
                         // A FORM, not a screen: it answers a schema and a tree, and the kit compares
                         // this word against what the HTTP description says the same address sends.
+                        kind = ScreenRouteKind.FORM,
+                    ),
+                    // THE CUSTOM PACKAGE BUILDER, reached from the plans tab. A `form` and not a
+                    // `screen`: it answers a schema and a tree, and the conformance kit compares this
+                    // word against what the HTTP description says the same address sends.
+                    ScreenRoute(
+                        deeplink = CUSTOM_PACKAGE_DEEPLINK,
+                        endpoint = resourceAddress<CustomPackageFormResource>(),
+                        title = "Build your own",
                         kind = ScreenRouteKind.FORM,
                     ),
                     // THE TARIFF CATALOGUE, reached from the profile. Not a tab: the canvas has four

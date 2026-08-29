@@ -295,6 +295,18 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 kind = EndpointKind.FORM,
                 successBodyType = "io.github.youndie.kompot.forms.KompotFormResponse",
             ),
+        endpointKey<CustomPackageForm>("POST") to
+            EndpointFacts(
+                summary = "Order the package that was built, priced again on this side",
+                // `submit`: it answers a KompotAction the client feeds back into its chain — the same
+                // shape the amount form's submit has.
+                kind = EndpointKind.SUBMIT,
+                successBodyType = "io.github.youndie.kompot.standard.NavigateAction",
+                // 422 for a quantity outside the steps and for a package of nothing. Neither is a
+                // rule the client can be the only one to hold: the steps are the server's list, and
+                // the empty package is the state the form legitimately OPENS on.
+                refusals = setOf(422),
+            ),
         endpointKey<TopUpScreenResource>("POST") to
             EndpointFacts(
                 summary = "Start the top-up and be told where its result is",

@@ -26,6 +26,7 @@ import io.konekt.feature.esim.server.data.esimModule
 import io.konekt.feature.esim.server.data.esimWizardRoutes
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
+import io.konekt.feature.purchase.server.data.StaticPlanCatalog
 import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
@@ -50,6 +51,7 @@ import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.observability.KonektTrace
 import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
+import io.konekt.packages.CustomPackagePlans
 import io.konekt.packages.customPackageRoutes
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
@@ -350,7 +352,15 @@ fun Application.module(config: KonektConfig) {
             module { single { kompotJson } },
             brandModule(brandKit),
             authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
-            purchaseModule(database, config.paymentMode, config.paymentDelay),
+            // THE CATALOGUE, WRAPPED. `CustomPackagePlans` answers for the ids the builder composes
+            // and delegates everything else, so the purchase saga sells a package nobody listed
+            // through exactly the interceptors it sells a listed plan through (`B-87`).
+            purchaseModule(
+                database,
+                CustomPackagePlans(StaticPlanCatalog()),
+                config.paymentMode,
+                config.paymentDelay,
+            ),
             esimModule(database),
             // Bound here for the first time in B-07. The counters existed, were tested, and were
             // reachable from nothing: five imports of this feature sat in this file with no use

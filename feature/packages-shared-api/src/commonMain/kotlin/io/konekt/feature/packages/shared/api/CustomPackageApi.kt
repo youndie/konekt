@@ -45,6 +45,10 @@ object CustomPackageFields {
     const val FORM_ID = "custom-package"
 }
 
+// `app://custom-package` — the builder. It was in no graph and in no route table until `B-87`, so no
+// destination resolved to it and the only callers were two tests.
+const val CUSTOM_PACKAGE_DEEPLINK: String = "app://custom-package"
+
 // WHERE A CHANGED QUANTITY GOES. POST rather than GET because the client sends the form's whole
 // current state in the body — `FormPatchRequest` from kompot-forms, which is the shape
 // `FormController.patchFetcher` produces — and because a body is not a query string a proxy logs.

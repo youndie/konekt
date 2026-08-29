@@ -11,11 +11,14 @@ import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.forms.ReadOnlyFieldComponent
 import io.github.youndie.kompot.forms.SelectInputComponent
 import io.github.youndie.kompot.forms.SelectOption
+import io.github.youndie.kompot.forms.SubmitFormAction
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.domain.Money
 import io.konekt.feature.packages.shared.api.CustomPackageFields
 import io.konekt.money.MoneyFormat
+import io.konekt.screens.FILLS_THE_ROW
 
 // THE ONE SCREEN WHERE form-core'S SPLIT EARNS ITS KEEP: the steps a subscriber may choose are
 // validated on the client, and the price is a patch from the server — because a price computed on the
@@ -129,6 +132,22 @@ object CustomPackageForm {
                         // TREE rather than of the patch, so it is what a freshly opened form says; a
                         // patch that finds the package unaffordable says it by focusing the field.
                         helperText = affordability(price, balance),
+                    ),
+                    // THE WAY TO SAY YES, and it was not here at all until `B-87`: the form could
+                    // answer a price and its terminal state was a number.
+                    //
+                    // ALWAYS OFFERED, INCLUDING WHEN THE PACKAGE CANNOT BE AFFORDED, and that is the
+                    // opposite of what the tariff cards do. A card is withheld because the server
+                    // would refuse the press; here the refusal is the POINT — it lands on the order
+                    // screen, which names the reason and offers `Top up`
+                    // (`B-68`). A button withheld on an affordability the client computed would also
+                    // be a rule the client owns, and the whole reason the price is a patch is that it
+                    // is not.
+                    ButtonComponent(
+                        id = "custom-package-submit",
+                        text = "Order this package",
+                        action = SubmitFormAction(CustomPackageFields.FORM_ID),
+                        modifiers = FILLS_THE_ROW,
                     ),
                 ),
         )

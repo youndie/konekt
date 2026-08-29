@@ -10,6 +10,7 @@ import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.PlanCardComponent
 import io.konekt.components.PlanStates
+import io.konekt.feature.packages.shared.api.CUSTOM_PACKAGE_DEEPLINK
 import io.konekt.feature.purchase.server.domain.Plan
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
 import io.konekt.money.MoneyFormat
@@ -56,6 +57,25 @@ object PlansScreen {
                     } else {
                         addAll(plans.map(::card))
                     }
+
+                    // THE WAY INTO THE BUILDER, and its absence is `B-87`: the form was in no graph
+                    // and nothing in the application led to it, so a subscriber could not have found
+                    // it however well it priced.
+                    //
+                    // AFTER the catalogue rather than before it. What is on sale is what most people
+                    // want; building your own is the answer for the ones the list does not fit, and a
+                    // page that opens with it puts a configuration exercise in front of a purchase.
+                    add(
+                        BannerComponent(
+                            id = "plans-custom",
+                            text =
+                                "None of these quite right? Build a package with the data, " +
+                                    "minutes and messages you want.",
+                            tone = MessageTones.INFO,
+                            action = NavigateAction(CUSTOM_PACKAGE_DEEPLINK),
+                            actionText = "Build your own",
+                        ),
+                    )
 
                     // THE SHELL, added last and hoisted by the client out of the tree it arrived in.
                     // In the tree rather than fetched separately so the SERVER decides which tab is
