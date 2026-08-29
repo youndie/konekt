@@ -4,9 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -395,7 +398,23 @@ fun KonektApp(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(designSystem.resolveColor(M3Colors.Surface)),
+                        .background(designSystem.resolveColor(M3Colors.Surface))
+                        // THE INSETS GO **UNDER** THE GROUND AND OVER THE CONTENT, and the order of
+                        // these two lines is the whole of it: `background` paints the node's full
+                        // size, `windowInsetsPadding` shrinks what is laid out inside it. So the
+                        // brand's surface reaches the top and bottom edges of the screen and the
+                        // content sits clear of the system bars.
+                        //
+                        // The first version put this padding OUTSIDE the frame, in the Android
+                        // activity. That inset the ground too, so the status and gesture bars showed
+                        // the platform theme's window background — a grey strip above a white screen,
+                        // in a product whose whole claim is that a served brand repaints everything.
+                        //
+                        // HERE AND NOT PER PLATFORM because the ground colour is the design system's
+                        // and only this frame can ask for it, and because `safeDrawing` is the right
+                        // answer on all three: system bars and a cutout on Android, the safe area on
+                        // iOS, and zero on a desktop window.
+                        .windowInsetsPadding(WindowInsets.safeDrawing),
             ) {
                 // THE TOOLBAR, and it holds a back control and nothing else.
                 //

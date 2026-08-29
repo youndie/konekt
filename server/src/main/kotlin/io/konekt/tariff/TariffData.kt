@@ -24,10 +24,22 @@ import kotlin.uuid.Uuid
 class StaticTariffCatalogue : TariffCatalogue {
     private val tariffs =
         listOf(
-            Tariff("tr-basic", "Basic", Money.ofMajor(5, Currency.DEFAULT), dataMb = 2_000),
-            Tariff("tr-standard", "Standard", Money.ofMajor(12, Currency.DEFAULT), dataMb = 10_000),
-            Tariff("tr-max", "Max", Money.ofMajor(25, Currency.DEFAULT), dataMb = 50_000),
+            Tariff("tr-basic", "Basic", Money.ofMajor(5, Currency.DEFAULT), dataMb = 2 * MB_PER_GB),
+            Tariff("tr-standard", "Standard", Money.ofMajor(12, Currency.DEFAULT), dataMb = 10 * MB_PER_GB),
+            Tariff("tr-max", "Max", Money.ofMajor(25, Currency.DEFAULT), dataMb = 50 * MB_PER_GB),
         )
+
+    private companion object {
+        // WRITTEN AS AN ALLOWANCE TIMES A BASE, and the three numbers here used to be 2_000, 10_000
+        // and 50_000 — a decimal thousand, which nothing else in this build uses.
+        //
+        // It cost nothing while no screen displayed them. `B-86` displayed them, and `UsageUnits`
+        // divides by 1024 like everywhere else, so the catalogue offered "9.8 GB" for the tariff
+        // called Standard and "48.8 GB" for Max. Neither is a rounding error a reader forgives on a
+        // price list. The same base `StaticPlanCatalog` uses, named for the same reason: two figures
+        // computed in two bases disagree with each other for a living.
+        const val MB_PER_GB = 1_024L
+    }
 
     override fun find(tariffId: String): Tariff? = tariffs.firstOrNull { it.id == tariffId }
 

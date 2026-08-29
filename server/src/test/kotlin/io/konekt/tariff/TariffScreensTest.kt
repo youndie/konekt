@@ -5,6 +5,7 @@ import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.PlanCardComponent
+import io.konekt.components.PlanStates
 import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
@@ -34,6 +35,20 @@ class TariffScreensTest {
         val current = cards.single { it.id == "tariff-tr-standard" }
         assertEquals("Your tariff", current.badgeText, "the current tariff is not marked as current")
         assertNull(current.action, "the current tariff offers a change to itself")
+
+        // AND IT IS NOT MARKED AS SOMETHING THAT CANNOT BE BOUGHT. This assertion exists because the
+        // first version of the screen used `sold_out` to make the card unpressable, and the client
+        // renders that state as the words **Sold out**, in red, in the slot the badge would have
+        // used — so the subscriber's own tariff was labelled unavailable and "Your tariff" never
+        // appeared. Every tree assertion above passed over it; a screenshot from a device is what
+        // found it.
+        //
+        // Asserted over EVERY card rather than the current one, because the next state added to the
+        // vocabulary will be borrowed the same way.
+        assertTrue(
+            cards.none { it.state == PlanStates.SOLD_OUT },
+            "a tariff is marked sold out, which the client draws as words over a tariff somebody is on",
+        )
 
         // And the others do. Without this the assertion above passes on a screen where nothing at all
         // is pressable, which is the state a pending change produces and a different case entirely.
@@ -141,6 +156,18 @@ class TariffScreensTest {
             assertTrue("Max" in texts, "the screen does not name the tariff they are changing to: $texts")
             assertTrue(texts.any { it.contains("Jan") }, "the screen does not say when it takes effect: $texts")
         }
+    }
+
+    // WHAT THE CATALOGUE SAYS EACH TARIFF INCLUDES, and it is here because the numbers were wrong in
+    // a way only a screen could show: the allowances were written as decimal thousands while
+    // `UsageUnits` divides by 1024, so Standard offered "9.8 GB" and Max "48.8 GB".
+    @Test
+    fun `each tariff offers a whole number of gigabytes`() {
+        val quotas =
+            cardsOf(TariffsScreen.build(StaticTariffCatalogue().all(), currentTariffId = "tr-basic", pending = null))
+                .flatMap { it.quotaTexts }
+
+        assertEquals(listOf("2 GB", "10 GB", "50 GB"), quotas, "a tariff's allowance is not the number it is sold as")
     }
 
     private fun cardsOf(screen: KompotComponent): List<PlanCardComponent> =

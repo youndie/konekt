@@ -110,6 +110,39 @@ refused is worse than one that does not accept it.
   offered rather than from an id typed into the test. 31 e2e tests, 0 failures.
 - `./gradlew check` green; `TckCoverageTest` reaches 21 endpoints where it reached 19.
 
+### Walked on a device, and it found two defects every tree assertion had passed over
+
+The flow was driven end to end on a Pixel 6a against the stand — profile, catalogue, change,
+confirmation. Two things were wrong on the screen and right in every test:
+
+- **The current tariff read "Sold out", in red, and the "Your tariff" badge never appeared.** The
+  screen used `PlanStates.SOLD_OUT` to make the card unpressable; the client renders that state as
+  those words, in the slot the badge would have used. The server test asserted the badge and the
+  absent action and both were correct. **The lesson is narrower than "test the render": a vocabulary
+  value carries the meaning the OTHER side draws, and `sold_out` means *not for sale*, which a tariff
+  somebody is on is not.** What actually makes a card unpressable is `action == null`, on its own.
+- **The allowances were written in a base nothing else uses.** `TariffData` said `2_000`, `10_000`,
+  `50_000` — decimal thousands — while `UsageUnits` divides by 1024 like the rest of the build, so the
+  catalogue offered *9.8 GB* for the tariff called Standard and *48.8 GB* for Max. It cost nothing
+  while no screen displayed them, and `B-86` is the item that displayed them.
+
+Both are guarded now: no card may carry `sold_out` (asserted over every card, because the next state
+added will be borrowed the same way), and the three allowances must read as whole gigabytes.
+
+### And it demonstrated the boundary, by accident
+
+The screens drew on an Android build compiled **before any of this existed** — they are a server
+response. Pressing a tariff on that same build did nothing, and the log said why:
+
+```
+konekt-android: no handler for UnknownAction(originalType=change_tariff)
+```
+
+A component is generated into the registry; an action is registered by hand on both sides. So a new
+action is a client release, and it degrades **silently** — a button that looks right and does nothing
+— where an unknown component degrades visibly. `operator-boundaries.md` now carries the row and the
+difference; the measurement is this walk.
+
 ## What is deliberately not in scope
 
 Downgrade rules — [B-21](B-21-tariff-change.md) recorded *any tariff can be chosen from any tariff* as

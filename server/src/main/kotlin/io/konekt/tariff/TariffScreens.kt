@@ -91,7 +91,19 @@ object TariffsScreen {
             // THE CURRENT ONE IS MARKED, which is the acceptance criterion and also the only way the
             // screen answers the question a subscriber opens it with.
             badgeText = if (current) "Your tariff" else null,
-            state = if (current) PlanStates.SOLD_OUT else PlanStates.AVAILABLE,
+            // AVAILABLE EVEN FOR THE CURRENT ONE, and the first version of this said `SOLD_OUT`
+            // because it makes a card unpressable. It also makes the client draw the words **Sold
+            // out**, in red, over the subscriber's own tariff — and it takes the badge's slot, so
+            // "Your tariff" never appeared at all. Two states share one line in the renderer.
+            //
+            // Nothing in a tree assertion could see that: the server said `state = sold_out` and the
+            // test asked whether the badge and the action were right, and both were. It took a
+            // screenshot from a device. The lesson is narrower than "test the render" — it is that a
+            // vocabulary value carries the MEANING the other side draws, and `sold_out` means *not
+            // for sale*, which a tariff somebody is on is not.
+            //
+            // What actually makes the card unpressable is `action == null`, on its own.
+            state = PlanStates.AVAILABLE,
             // NO ACTION ON THE CURRENT ONE, and none at all while a change is already waiting. The
             // second half is not tidiness: the saga refuses a second change with one pending, and a
             // card that accepts a press and is then refused is worse than one that does not accept it.
