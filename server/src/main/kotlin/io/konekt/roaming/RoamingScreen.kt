@@ -9,8 +9,6 @@ import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
-import io.konekt.feature.roaming.server.domain.RoamingPackage
-import io.konekt.time.KonektClock
 
 // WHAT YOU HAVE FOR THIS TRIP, which is the question `B-19` built the whole vertical for and gave
 // nobody a place to ask.
@@ -22,12 +20,16 @@ import io.konekt.time.KonektClock
 // GROUPED BY ZONE, and the grouping IS the screen. Everything else here — the cards, the dormant
 // state, the dates — already existed; what did not exist was a page that puts two Turkey packages
 // next to each other and a Europe one under its own heading.
+//
+// THE GROUPING AND THE ORDER MOVED OUT, to `ViewRoamingUseCase` (`B-96`). They are answers about
+// time, and this class had to hold a `KonektClock` to work them out — a renderer that can ask the
+// time can disagree with the answer it was given, and this one did: it ranked the zones against one
+// `now` while the cards captioned themselves against another.
 class RoamingScreen(
     private val cards: RoamingPackageCards,
-    private val clock: KonektClock,
 ) {
     fun build(
-        packages: List<RoamingPackage>,
+        view: RoamingView,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -44,7 +46,7 @@ class RoamingScreen(
                         ),
                     )
 
-                    if (packages.isEmpty()) {
+                    if (view.zones.isEmpty()) {
                         // A screen that draws nothing is indistinguishable from one that failed to
                         // load — the same rule the home screen and the catalogue follow — and this
                         // one can say something useful besides: where the packages are sold.
@@ -58,60 +60,20 @@ class RoamingScreen(
                             ),
                         )
                     } else {
-                        addAll(zones(packages))
+                        view.zones.forEach { zone ->
+                            add(
+                                TextComponent(
+                                    id = "roaming-zone-${zone.zone}",
+                                    text = zone.title,
+                                    style = M3Typography.LabelMedium,
+                                    color = M3Colors.OnSurfaceVariant,
+                                ),
+                            )
+                            addAll(zone.packages.map(cards::of))
+                        }
                     }
 
                     nav?.let(::add)
                 },
         )
-
-    // ONE HEADING PER ZONE, and the ORDER is a rule rather than a map's iteration.
-    //
-    // Trips under way first, then the ones waiting, then what has ended. That is the order of a
-    // subscriber's attention: what is counting right now matters most, and an ended package is
-    // history they are only checking.
-    private fun zones(packages: List<RoamingPackage>): List<KompotComponent> {
-        val now = clock.now()
-        return packages
-            .groupBy { it.zone }
-            .toList()
-            .sortedBy { (_, inZone) -> rankOf(inZone, now) }
-            .flatMap { (zone, inZone) ->
-                buildList {
-                    add(
-                        TextComponent(
-                            id = "roaming-zone-$zone",
-                            text = RoamingZoneNames.of(zone),
-                            style = M3Typography.LabelMedium,
-                            color = M3Colors.OnSurfaceVariant,
-                        ),
-                    )
-                    // Within a zone, the order they will be SPENT in — which is the order
-                    // `RoamingPackages.of` already returns and the order `consume` actually uses.
-                    // Sorting them any other way here would make the screen disagree with the meter.
-                    addAll(inZone.map(cards::of))
-                }
-            }
-    }
-
-    // A zone is as urgent as its most urgent package. Named as a function rather than inlined in the
-    // comparator, because "which of these three states is this zone in" is the whole ordering and a
-    // reader should be able to find it.
-    private fun rankOf(
-        inZone: List<RoamingPackage>,
-        now: kotlin.time.Instant,
-    ): Int =
-        inZone.minOf { pkg ->
-            when {
-                !pkg.dormant && !pkg.expiredAt(now) -> RUNNING
-                pkg.dormant -> WAITING
-                else -> ENDED
-            }
-        }
-
-    private companion object {
-        const val RUNNING = 0
-        const val WAITING = 1
-        const val ENDED = 2
-    }
 }

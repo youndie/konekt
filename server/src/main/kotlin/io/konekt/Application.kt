@@ -59,6 +59,7 @@ import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.RoamingScreen
+import io.konekt.roaming.ViewRoamingUseCase
 import io.konekt.roaming.roamingRoutes
 import io.konekt.screens.Shell
 import io.konekt.screens.ViewProfileUseCase
@@ -456,7 +457,9 @@ fun serverModule(
         single { KompotUpdateBroadcaster() }
         single { ComponentBroadcaster(get(), get()) }
         single { RoamingPackageCards(get()) }
-        single { RoamingScreen(get(), get()) }
+        single { RoamingScreen(get()) }
+        // The grouping, the ordering and the one `now` they are both decided against (`B-96`).
+        factory { ViewRoamingUseCase(get(), get()) }
         // THE PRODUCT'S OWN WORKER, started whenever the application starts. It reads whatever
         // arrives on a topic this deployment owns, and it used to exist only inside the simulator's
         // starter — so with the simulator off, nothing in this build read the topic at all (`B-89`).

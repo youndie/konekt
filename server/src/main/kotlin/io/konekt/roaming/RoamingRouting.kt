@@ -1,7 +1,6 @@
 package io.konekt.roaming
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
-import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.roaming.shared.api.RoamingScreenResource
 import io.konekt.http.subscriberId
 import io.konekt.screens.Shell
@@ -14,7 +13,7 @@ import org.koin.ktor.ext.inject
 // from the verified token rather than from anything they sent — which is the half the deleted
 // development route got wrong: it took `subscriberId` from the query string.
 fun Route.roamingRoutes() {
-    val packages by inject<RoamingPackages>()
+    val viewRoaming by inject<ViewRoamingUseCase>()
     val screen by inject<RoamingScreen>()
     val json by inject<Json>()
 
@@ -24,7 +23,7 @@ fun Route.roamingRoutes() {
         // the client then receives an unknown component for the whole screen.
         call.respondKompotComponent(
             json,
-            screen.build(packages.of(call.subscriberId()), Shell.bottomNav(Shell.Tab.HOME)),
+            screen.build(viewRoaming(call.subscriberId()).getOrThrow(), Shell.bottomNav(Shell.Tab.HOME)),
         )
     }
 }

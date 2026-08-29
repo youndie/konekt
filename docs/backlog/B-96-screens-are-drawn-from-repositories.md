@@ -84,8 +84,16 @@ had a green point in the middle.
 ## Acceptance criteria
 
 - AC: no product copy is composed in a routing file. `ProfileRouting` is the pilot and the proof.
-- AC: every screen's entry point takes one view plus an optional `nav`, and its file imports no
-  repository, catalogue or card-factory type. `TariffChangeScreen`'s `tariffs` parameter goes.
+- AC: no screen looks anything up while drawing. Its file imports no repository, no catalogue, no
+  card factory and no clock, and holds none as a field. `TariffChangeScreen`'s `tariffs` parameter
+  goes; `RoamingScreen` stops being a class that owns a `KonektClock`.
+
+  **This replaces "every screen takes exactly one view", which is what this item said first and what
+  the code refuted within the hour.** `PlansScreen.build(plans: List<Plan>)` looks nothing up and
+  decides nothing: wrapping that list in a `PlansView` is the anemic hop this item's own rejected
+  alternatives warn about, and a rule that demanded it would be ceremony charged to every future
+  screen. The rule is the lookup, not the arity — a view appears where there are decisions to carry,
+  and `ProfileView` earned its existence by carrying two resolved titles and a state.
 - AC: at least the home install door, the empty-home banner and the tariff-change title are asserted
   **on the view**, without a tree walk. The tree walk stays where the subject really is the tree.
 - AC: a guard refuses a screen file that imports a repository or a catalogue, and refuses a view type
@@ -94,6 +102,21 @@ had a green point in the middle.
   passing unchanged on the copy they assert, plus `make e2e` green against a stand.
 - AC: `docs/services/` records the rule, so the next screen is written this way rather than
   discovering it.
+
+## Where the work is, measured
+
+Read out of the sources rather than assumed, after the pilot:
+
+| Screen | What it looks up while drawing |
+|---|---|
+| `HomeScreen` | `UsageCounterCards` and `RoamingPackageCards`, both injected factories |
+| `RoamingScreen` | a `KonektClock` field — the live/waiting/ended split is decided at render time |
+| `TariffChangeScreen` | `tariffs: List<Tariff>`, to turn two ids into two names |
+| `ProfileScreen` | nothing, as of the pilot |
+| `PlansScreen`, `PlanDetailScreen` | nothing — they render domain values and decide nothing |
+| `PurchaseResultScreen`, `EsimWizardScreen`, `TopUpScreens` | nothing |
+
+So the item is three screens and a guard, not eleven.
 
 ## Deliberately not in scope
 
