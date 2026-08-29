@@ -49,9 +49,9 @@ so re-prioritising must never move a file.
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 | [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
-| [B-94](docs/backlog/B-94-the-brands-ground-stops-at-the-safe-area-on-ios.md) `[ ]` | On iOS the brand's ground stops at the safe area, so the status bar and the home indicator are black whatever the served palette is | P2 | S | - |
+| [B-95](docs/backlog/B-95-the-ios-bundle-draws-no-status-bar.md) `[ ]` | The iOS bundle draws no status bar at all — no clock, no indicators — and the cause is not established | P3 | S | - |
 
-## Closed (91)
+## Closed (92)
 
 **The wire and the shell**
 
@@ -167,6 +167,7 @@ so re-prioritising must never move a file.
 - [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[x]` - A second replica silently loses live updates, and the only guard in the chart is about the simulator
 - [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[x]` - Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race
 - [B-93](docs/backlog/B-93-two-verticals-have-screens-and-no-documents.md) `[x]` - The tariff change and the custom package builder have screens and no documents in any layer
+- [B-94](docs/backlog/B-94-the-brands-ground-stops-at-the-safe-area-on-ios.md) `[x]` - On iOS the brand's ground stops at the safe area, so the status bar and the home indicator are black whatever the served palette is
 
 <!-- END INDEX -->
 

@@ -39,9 +39,6 @@ fun homeViewController(): UIViewController {
                     defaultBaseUrl = "http://127.0.0.1:8080",
                     defaultRelease = "ios-dev",
                     topicKey = "konekt-ios",
-                    // THE HOST ALREADY DID IT. `ComposeUIViewController` lays its content inside the
-                    // safe area, so the frame must not inset it again — measured, not assumed.
-                    appliesWindowInsets = false,
                 ),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         )

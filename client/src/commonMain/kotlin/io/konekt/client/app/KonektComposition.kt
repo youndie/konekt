@@ -108,8 +108,6 @@ class KonektComposition(
             // THE BOOTSTRAP, and not a route table: the two destinations reachable before there is a
             // session. Everything else arrives from the graph the server publishes.
             routes = KonektRoutes.bootstrap,
-            // ALREADY DONE BY THE HOST, on the one platform where it is. See `KonektPlatform`.
-            applyWindowInsets = platform.appliesWindowInsets,
             onDegradation = observability.recorder(),
             onAction = ::handle,
         )
@@ -176,10 +174,4 @@ data class KonektPlatform(
     val defaultBaseUrl: String,
     val defaultRelease: String,
     val topicKey: String,
-    // WHETHER THE FRAME HAS TO KEEP CONTENT CLEAR OF THE SYSTEM BARS ITSELF.
-    //
-    // False on iOS and only there: `ComposeUIViewController` insets its content by the safe area
-    // before the frame sees it, so the frame doing it too applies the same padding twice. Measured on
-    // a simulator — the login title sat 55 device pixels lower with it than without.
-    val appliesWindowInsets: Boolean = true,
 )

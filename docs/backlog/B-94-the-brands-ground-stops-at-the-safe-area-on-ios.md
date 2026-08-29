@@ -1,7 +1,7 @@
 ---
 id: B-94
 title: "On iOS the brand's ground stops at the safe area, so the status bar and the home indicator are black whatever the served palette is"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -55,3 +55,65 @@ brand would darken them.
   `client/src/iosMain/kotlin/io/konekt/client/ios/HomeApp.kt`,
   `client/src/commonMain/kotlin/io/konekt/client/app/KonektApp.kt`,
   `docs/services/operator-boundaries.md`.
+
+## What was done
+
+One line in `scripts/ios-home-app.sh`:
+
+```xml
+<key>UILaunchScreen</key><dict/>
+```
+
+**The cause was not the safe area at all.** A bundle with no launch screen tells iOS it was built for
+a legacy display, so the system runs it **letterboxed** — a compatibility canvas smaller than the
+screen, with black bands the system draws *outside* the app's window. The brand's ground was reaching
+the edges of that canvas correctly the whole time.
+
+The same declaration went into `scripts/ios-crash-app.sh`, so the two hand-written bundles do not
+differ in a way somebody has to rediscover.
+
+## How it was found, and what the wrong turn was
+
+Three measurements, and the second one produced a wrong conclusion that the third corrected:
+
+1. **The strips survived turning the frame's inset padding on and off.** So they were not the padding.
+2. **Painting the `UIWindow` magenta did not tint them.** So they were not the window either — which
+   left "the compose view paints them", and that was the wrong inference. They were drawn by the
+   system, outside the app entirely.
+3. **`ComposeUIViewControllerConfiguration` has no safe-area knob** — `opaque`,
+   `enforceStrictPlistSanityCheck`, `delegate` and a gesture setting, read out of the klib's metadata.
+   That is what made "compose is padding its content" untenable and sent the search back to the
+   bundle.
+
+### And it invalidated an earlier "correction"
+
+Verifying `B-88` on the simulator appeared to show the frame's `windowInsetsPadding(safeDrawing)`
+applying the inset twice on iOS — the login title 55 device pixels lower with it than without. That
+measurement was real and the conclusion drawn from it was wrong: **the safe area of a letterboxed
+canvas is not the safe area of the screen.** With the launch screen declared, iOS needs the padding
+exactly as Android does — the title went straight back under the status bar without it.
+
+So the parameter added for that is gone and `KonektApp` carries the single rule again, with the story
+in the comment. *A measurement is only as true as the thing it was taken on* — and the thing it was
+taken on was a defect.
+
+## Verified
+
+On the simulator, in four builds: the served kit's surface reaches all four edges of the screen, and
+the login title is clear of the status bar. `./gradlew check` green, `ktlintCheck` green.
+
+## What is deliberately not in scope
+
+**The status bar's own content.** With the app now owning that strip, nothing draws a clock or the
+indicators in it — and `simctl status_bar override` does not make them appear, so the bar is hidden
+rather than mis-coloured. Two plist keys were tried, changed nothing observable, and were removed
+again. That is [B-95](B-95-the-ios-bundle-draws-no-status-bar.md), with the leading hypothesis written
+as a hypothesis.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The declaration | `scripts/ios-home-app.sh`, `scripts/ios-crash-app.sh` |
+| The single inset rule, restored | `client/src/commonMain/kotlin/io/konekt/client/app/KonektApp.kt` |
+| The host it applies to | `client/src/iosMain/kotlin/io/konekt/client/ios/HomeEntryPoint.kt` |

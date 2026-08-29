@@ -48,6 +48,25 @@ cat > "$APP/Info.plist" <<PLIST
        the springboard with nothing on screen. Xcode's templates carry it, so a hand-written bundle
        is the one place it goes missing. It disables the 60fps cap on high-refresh iPhones. -->
   <key>CADisableMinimumFrameDurationOnPhone</key><true/>
+  <!-- WITHOUT THIS THE APPLICATION IS LETTERBOXED, and that is not a cosmetic loss.
+       A bundle with no launch screen tells iOS it was built for a legacy screen, so the system runs
+       it in a compatibility canvas: black bands above and below, rounded corners, and a window
+       smaller than the display. The brand's ground then reaches the edges of that canvas and not the
+       edges of the screen — two strips of every screen a served kit cannot repaint, which is the one
+       thing this product's white-label claim is about (`B-94`).
+       It took three measurements to find. The bands survived turning the frame's inset padding on and
+       off, and painting the UIWindow magenta did not tint them — because they are drawn by the SYSTEM
+       outside the app's window, not by the app.
+       An EMPTY dictionary is the whole declaration: it says "this app supports whatever screen it is
+       given" and nothing about what to draw while launching. -->
+  <key>UILaunchScreen</key><dict/>
+  <!-- NO STATUS BAR KEYS HERE, and their absence is a measurement rather than an oversight.
+       With the launch screen declared, this bundle draws no status bar at all — no clock, no
+       indicators. `UIStatusBarStyleDarkContent` with
+       `UIViewControllerBasedStatusBarAppearance` false was tried and changed nothing, and forcing
+       `simctl status_bar override --time 9:41` produced nothing either, which says the bar is HIDDEN
+       and not mis-coloured. Two keys that change nothing observable are worse than none, so they are
+       not here. See `B-95`. -->
   <!-- A simulator talking to a stand over plain HTTP. A shipped application would not carry this,
        and a stand that made it unnecessary would be a stand with TLS nobody asked for. -->
   <key>NSAppTransportSecurity</key>

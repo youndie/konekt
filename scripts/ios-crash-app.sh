@@ -50,6 +50,11 @@ cat > "$APP/Info.plist" <<PLIST
   <key>LSRequiresIPhoneOS</key><true/>
   <key>UIDeviceFamily</key><array><integer>1</integer></array>
   <key>MinimumOSVersion</key><string>15.0</string>
+  <!-- The same declaration the home bundle carries, and for the same reason: without it iOS runs the
+       app letterboxed, in a compatibility canvas smaller than the screen. This one draws nothing and
+       crashes on purpose, so the canvas does not matter to what it proves — it is here so the two
+       hand-written bundles do not differ in a way somebody has to rediscover. -->
+  <key>UILaunchScreen</key><dict/>
 </dict>
 </plist>
 PLIST
