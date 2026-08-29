@@ -1,7 +1,7 @@
 ---
 id: B-91
 title: "A second replica silently loses live updates, and the only guard in the chart is about the simulator"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -51,3 +51,65 @@ lean on — a lost update is lost by design ([B-15](B-15-sse-realtime.md)).
   `server/src/main/kotlin/io/konekt/realtime/RealtimeRouting.kt`,
   `charts/konekt/values.yaml`, `charts/konekt/templates/server.yaml`,
   `docs/services/konekt-server.md`.
+
+## What was done
+
+`charts/konekt/templates/server.yaml` refuses to render above one replica, and the message names what
+would actually break rather than the count.
+
+**Two things, not one.** The item is about the realtime bus, and writing the guard turned up the
+second: booblik keeps no consumer offsets and there is no consumer group, so **every pod applies every
+usage event** — a 25 MB decrement becomes 50 MB with two of them. Both are silent, and neither is a
+count problem, so the message says what each would need: a shared bus (`kompot-realtime-redis`) for
+the first, a claimed partition or a stored offset for the second.
+
+**Refused outright rather than gated on a `sharedBus` setting, which is a deviation from the item's
+wording and the honest form of it.** This build reads no such setting, so a key that let the render
+through would be a switch that changes nothing while promising to — and a deployment that set it would
+get exactly the silent failure the guard exists to prevent. What it would take is named in the message
+instead.
+
+**AC2 was already done**, in `B-89`: `konekt-server.md` §5a is a table of all five workers and what
+each does with two pods, and the chart now refuses the combination that table describes.
+
+### The guards were never run by anything
+
+The chart refuses a render **five** ways — a missing database password, a missing image version, a
+missing hostname, the simulator above one replica, and now any replica count above one — and nothing
+in this repository ever rendered it. No CI job, no make target. Every one of those `fail` directives
+had only ever fired in front of whoever was deploying.
+
+So `scripts/chart-check.sh` renders the valid configuration and each refused one, and checks that each
+refusal names **its own reason**. That second half is the point: a template broken by an unrelated
+typo refuses everything, and would have satisfied every negative case. `make chart` runs it and CI
+runs `make chart`.
+
+## Verified
+
+```
+ok    the ordinary single-instance deployment renders
+ok    two replicas is refused, naming "single-instance deployment"
+ok    the simulator above one replica is refused, naming "simulateTraffic is on"
+ok    a missing database password is refused, naming "postgres.password is required"
+ok    a missing image version is refused, naming "server.version is required"
+ok    a missing hostname is refused, naming "hostname is required"
+```
+
+## What is deliberately not in scope
+
+Adopting redis. One instance is the honest configuration for a reference, `kompot-realtime-redis` is a
+dependency and an operational surface, and the toolkit's own reason for pub/sub without guarantees —
+an update is losable because the next screen fetch carries current state — applies here. Horizontal
+scale is a non-goal in [reference-scope](../services/reference-scope.md).
+
+The sweeper's duplicated work is [B-92](B-92-the-sweeper-still-does-not-claim-a-saga.md) and is
+unaffected: its outcome is already correct under any number of replicas.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The guard | `charts/konekt/templates/server.yaml`, `charts/konekt/values.yaml` |
+| What exercises it | `scripts/chart-check.sh`, `Makefile` (`make chart`), `.github/workflows/check.yaml` |
+| What runs per replica | `docs/services/konekt-server.md` §5a |
+| The bus it names | `server/src/main/kotlin/io/konekt/Application.kt` (`KompotUpdateBroadcaster`) |

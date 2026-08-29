@@ -9,6 +9,9 @@ spec:
   {{- if and .Values.simulateTraffic (gt (int .Values.server.replicas) 1) }}
   {{- fail "konekt: simulateTraffic is on and server.replicas is above 1 — each pod runs its own simulator, so every subscriber's allowance would drain at a multiple of the configured rate, with nothing in any log to say so" }}
   {{- end }}
+  {{- if gt (int .Values.server.replicas) 1 }}
+  {{- fail "konekt: server.replicas is above 1, and this build is a single-instance deployment. Two things break silently. Live updates: the realtime bus is kompot's in-memory KompotUpdateBroadcaster, so an SSE subscriber attached to one pod never receives a push produced on another — the screen does not refresh, nothing is logged, and the next ordinary fetch shows the right state. Usage: booblik keeps no consumer offsets and there is no consumer group, so every pod applies every event and a 25 MB decrement becomes 50 MB. Neither is a count problem, so raising the count does not fix either: the first needs a shared bus (kompot-realtime-redis) and the second needs a claimed partition or a stored offset. Both are non-goals — docs/services/reference-scope.md — and what runs per replica is docs/services/konekt-server.md section 5a" }}
+  {{- end }}
   strategy:
     type: Recreate
   selector:

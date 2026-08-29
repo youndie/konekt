@@ -26,6 +26,16 @@ server:
   # So this is 1 until `SIMULATE_TRAFFIC` is something a deployment can leave off, and raising it
   # without switching the simulator off is the mistake worth naming here rather than discovering as
   # allowances draining at twice the rate.
+  #
+  # AND IT IS 1 EVEN WITH THE SIMULATOR OFF (`B-91`). The template refuses to render above 1 at all,
+  # because two more things break and both break SILENTLY: an SSE subscriber attached to one pod
+  # never receives a push produced on another, and every pod applies every usage event because
+  # booblik keeps no consumer offsets. A default that is right and a failure mode that is quiet is
+  # exactly the combination this repository fails builds over.
+  #
+  # REFUSED OUTRIGHT rather than gated on a `sharedBus` setting, and the difference is honesty: this
+  # build does not read such a setting, so a key that let the render through would be a switch that
+  # changes nothing while promising to. What it would actually take is named in the failure message.
   replicas: 1
   resources:
     requests:

@@ -53,6 +53,18 @@ fix:
 # written on the Linux box is reverted on the next sync, so a recording there looks like it did
 # nothing at all. `LOCAL=1` is what gets the command past the hook that otherwise sends Gradle to WSL.
 
+# ── the chart ───────────────────────────────────────────────────────────────────────────────────
+#
+# The chart refuses a render five ways and nothing ran any of them until `B-91`: every one of those
+# guards fired for the first time in front of whoever was deploying. `scripts/chart-check.sh` renders
+# the valid configuration and every refused one, and checks each refusal names ITS OWN reason — a
+# template broken by a typo would otherwise satisfy every negative case.
+
+.PHONY: chart
+
+chart:
+	./scripts/chart-check.sh
+
 .PHONY: openapi
 
 openapi:

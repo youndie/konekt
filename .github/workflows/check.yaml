@@ -113,6 +113,13 @@ jobs:
       - name: The conformance gate asserts coverage, before any verdict
         run: ./gradlew :server:test --tests 'io.konekt.conformance.*' --no-daemon
 
+      # THE CHART'S OWN GUARDS, which nothing ran until `B-91`. They are `fail` directives in the
+      # template — a missing password, a missing image version, a missing hostname, the simulator
+      # above one replica, any replica count above one — and each of them used to fire for the first
+      # time in front of whoever was deploying. helm is preinstalled on this runner.
+      - name: The chart refuses what it says it refuses
+        run: make chart
+
       # THE ANDROID PLATFORM IS NAMED RATHER THAN INHERITED. A runner image carries whatever platforms
       # it carries, and a build that compiles against "whatever was there" changes behaviour when the
       # image is bumped — silently, because a newer platform compiles the same sources. The two numbers
