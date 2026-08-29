@@ -2,6 +2,7 @@ package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
 import io.github.youndie.kompot.standard.KompotPageResponse
+import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
 import io.konekt.feature.purchase.server.domain.HistoryFilter
@@ -61,6 +62,7 @@ fun Route.purchaseRoutes() {
     val startPurchase by inject<StartPurchaseUseCase>()
     val confirmPurchase by inject<ConfirmPurchaseUseCase>()
     val findOrder by inject<FindOrderUseCase>()
+    val esims by inject<EsimRepository>()
     val loadOrderScreen by inject<LoadOrderScreenUseCase>()
     val loadHistory by inject<LoadHistoryUseCase>()
     val json by inject<Json>()
@@ -160,7 +162,15 @@ fun Route.purchaseRoutes() {
         // receives an unknown component for the whole screen and, by design, draws nothing.
         call.respondKompotComponent(
             json,
-            PurchaseResultScreen.build(screen.order, screen.reversal, screen.balance),
+            PurchaseResultScreen.build(
+                screen.order,
+                screen.reversal,
+                screen.balance,
+                // Read here rather than folded into the order's view: it is a fact about the LINE and
+                // not about this order, and an order view that carried it would answer a question
+                // nobody asked of the other five states.
+                esims.holdingsOf(call.subscriberId()),
+            ),
         )
     }
 

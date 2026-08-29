@@ -16,6 +16,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.domain.Money
+import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
@@ -50,6 +51,11 @@ object PurchaseResultScreen {
         order: OrderView,
         reversal: Reversal?,
         balance: Money?,
+        // WHAT THE LINE HOLDS, for the completed branch alone. Defaulted to a line with nothing so
+        // the many tests about refusals and rollbacks say nothing about eSIMs — and so that a caller
+        // that forgets it offers the install rather than hiding it, which is the safer way round for
+        // a subscriber who has none.
+        esims: EsimHoldings = EsimHoldings.none,
     ): KompotComponent =
         ColumnComponent(
             id = "purchase-result",
@@ -58,7 +64,7 @@ object PurchaseResultScreen {
                 when (order.status) {
                     OrderStatus.COMPENSATED -> reversed(order, reversal, balance)
 
-                    OrderStatus.COMPLETED -> completed(order)
+                    OrderStatus.COMPLETED -> completed(order, esims)
 
                     OrderStatus.REJECTED -> rejected(order, balance)
 
@@ -177,7 +183,10 @@ object PurchaseResultScreen {
             )
     }
 
-    private fun completed(order: OrderView): List<KompotComponent> =
+    private fun completed(
+        order: OrderView,
+        esims: EsimHoldings,
+    ): List<KompotComponent> =
         listOf(
             BannerComponent(
                 id = "purchase-completed",
@@ -205,12 +214,20 @@ object PurchaseResultScreen {
                 // The canvas's second control is "Later, show receipt" — and the receipt is the
                 // screen this already is, so the honest version of it is the way out.
                 "Done",
-                ButtonComponent(
-                    id = "purchase-install",
-                    text = "Install eSIM",
-                    action = NavigateAction(ESIM_INSTALL_DEEPLINK),
-                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-                ),
+                // ONLY WHILE THE LINE STILL NEEDS ONE. This was unconditional, so a subscriber who
+                // had already installed their eSIM was invited to do it again by every package they
+                // bought — and the wizard obliged, minting another profile each time (`B-78`). One
+                // account, one device, one eSIM: a second package spends the same line.
+                //
+                // The same property the home screen's banner asks, so the two cannot drift.
+                esims.needsInstalling.takeIf { it }?.let {
+                    ButtonComponent(
+                        id = "purchase-install",
+                        text = "Install eSIM",
+                        action = NavigateAction(ESIM_INSTALL_DEEPLINK),
+                        modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                    )
+                },
             ).toTypedArray(),
         )
 

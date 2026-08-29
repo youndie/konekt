@@ -44,6 +44,10 @@ class FakeEsims(
 
     override suspend fun findById(esimId: String): EsimProfile? = created.firstOrNull { it.id == esimId }
 
+    // Newest first and terminated ones skipped, the same rule the real query follows.
+    override suspend fun heldBy(subscriberId: String): EsimProfile? =
+        created.lastOrNull { it.subscriberId == subscriberId && it.status != "terminated" }
+
     override suspend fun markInstalled(esimId: String) {
         installed += esimId
     }

@@ -65,15 +65,28 @@ class AdvanceEsimWizardUseCase(
 
             var session = esimWizardEngine().transition(record.session, params.transition, record.session.draft)
 
-            // ISSUING HAPPENS ON THE WAY IN, and exactly once.
+            // ISSUING HAPPENS ON THE WAY IN, exactly once per run — AND AT MOST ONCE PER LINE.
             //
-            // It is the only step of this flow that costs anything outside the process, and a client
-            // can arrive here more than once — Back then Next, a retried request, a double tap. The
-            // draft is what remembers, because it is the thing that is written in the same row as the
+            // The first half is about arriving here twice inside one run: Back then Next, a retried
+            // request, a double tap. The draft remembers, because it is written in the same row as the
             // step; a flag anywhere else could be true while the session said otherwise.
+            //
+            // THE SECOND HALF IS THE LINE, and it was missing. `Finish` ends a run and the next `GET`
+            // correctly starts a fresh one — with a fresh draft — so every completed install minted
+            // another profile, bounded only by the mock's device limit of eight. Two walks left a
+            // subscriber holding three (`B-78`). This product is one account, one device, one eSIM:
+            // packages hang off the subscriber and name no profile, so a second one means nothing and
+            // is drawn as a duplicate of the first.
+            //
+            // A subscriber who already holds one is SHOWN IT rather than refused. They pressed
+            // `Install eSIM` to get at their code, and the code they need is the one already issued —
+            // refusing would be correct about the rule and useless about the errand.
             if (session.currentStepId == EsimWizardSteps.ACTIVATE && session.draft.issuedEsimId == null) {
-                val issued = smDpPlus.issue(record.subscriberId)
-                val esim = esims.create(record.subscriberId, issued.iccid, issued.activationCode)
+                val held = esims.heldBy(record.subscriberId)
+                val esim =
+                    held ?: smDpPlus.issue(record.subscriberId).let { issued ->
+                        esims.create(record.subscriberId, issued.iccid, issued.activationCode)
+                    }
                 session = session.copy(draft = session.draft.copy(issuedEsimId = esim.id))
             }
 

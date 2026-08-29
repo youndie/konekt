@@ -28,6 +28,11 @@ dependencies {
     // may depend on, so the purchase feature names a destination without depending on the feature
     // that serves it.
     implementation(project(":feature:esim-shared-api"))
+    // AND ITS DOMAIN, for one question: does this line still need an eSIM. The screen used to offer
+    // the install flow on every completed purchase, which read as "a package comes with a profile"
+    // and made it true (`B-78`). The sibling-domain dependency is the shape `purchase-server-domain`
+    // already uses for usage and roaming.
+    implementation(project(":feature:esim-server-domain"))
     implementation(libs.kompot.ktor)
 
     implementation(libs.ktor.server.core)

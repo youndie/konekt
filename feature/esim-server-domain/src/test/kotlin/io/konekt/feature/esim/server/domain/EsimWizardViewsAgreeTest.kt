@@ -106,6 +106,41 @@ class EsimWizardViewsAgreeTest {
             assertEquals(activate.esim?.activationCode, code)
         }
 
+    // ONE LINE, ONE eSIM — and running the flow again shows the profile that exists rather than
+    // making another.
+    //
+    // Issuing was idempotent per RUN and not per LINE: `Finish` ends a run, the next `GET` correctly
+    // starts a fresh one with a fresh draft, and the way in mints. Two walks left a subscriber with
+    // three profiles on the stand (`B-78`). Packages hang off the subscriber and name no profile, so
+    // a second one means nothing at all.
+    @Test
+    fun `installing twice does not give the line a second eSIM`() =
+        runTest {
+            val stand = Stand()
+
+            repeat(2) {
+                var screen = stand.open()
+                while (true) {
+                    val step = screen.record.session.currentStepId
+                    if (step == EsimWizardSteps.DONE) {
+                        stand.step(screen.record.id, WizardTransition.Finish)
+                        break
+                    }
+                    screen = stand.step(screen.record.id)
+                }
+            }
+
+            assertEquals(
+                1,
+                stand.esims.created.size,
+                "a second walk through the install flow minted a second profile: ${stand.esims.created.map {
+                    it.iccid
+                }}",
+            )
+            // Vacuity: a flow that issued NOTHING would also satisfy the count above.
+            assertEquals(1, stand.smDpPlus.issued, "the manager was asked for a profile a different number of times")
+        }
+
     private companion object {
         const val SUBSCRIBER = "sub-1"
     }

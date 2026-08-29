@@ -9,6 +9,7 @@ import io.konekt.time.KonektClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.neq
@@ -69,6 +70,25 @@ class ExposedEsimRepository(
                 awaitingInstall = awaiting,
                 installed = installed,
             )
+        }
+
+    // NEWEST FIRST, so a line that somehow holds two answers with the one a subscriber last saw.
+    //
+    // It should never hold two — `AdvanceEsimWizardUseCase` asks this before issuing — but the rows
+    // that exist from before that rule are real, and a query that picked arbitrarily would show a
+    // different code on different days. `singleOrNull` would have been the honest shape for the rule
+    // and the wrong one for the data: it answers "none" when there are two, which is the state this
+    // was written to survive.
+    override suspend fun heldBy(subscriberId: String): EsimProfile? =
+        dbQuery {
+            EsimTable
+                .selectAll()
+                .where {
+                    (EsimTable.subscriberId eq subscriberId) and (EsimTable.status neq EsimStatuses.TERMINATED)
+                }.orderBy(EsimTable.createdAt to SortOrder.DESC)
+                .limit(1)
+                .map { row -> row.toDomain() }
+                .firstOrNull()
         }
 
     override suspend fun create(

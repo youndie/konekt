@@ -19,6 +19,7 @@ import io.konekt.components.OrderStatuses
 import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
+import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.OrderView
 import io.konekt.feature.purchase.server.domain.PurchasePayload
@@ -93,6 +94,41 @@ class PurchaseResultScreenTest {
     // THE BRANCH NOBODY ASSERTED ON, and it is the one the confirmation button was built for. Its
     // copy could be rewritten wholesale and this file stayed green — which is how it was found: a
     // rewrite passed, and a rewrite passing is the same evidence as a mutation surviving.
+    // THE INSTALL DOOR IS ON THE LINE, NOT ON THE PURCHASE.
+    //
+    // It was unconditional, so every package a subscriber bought invited them to install an eSIM
+    // again — and the wizard obliged, minting another profile each time. Two walks left one line
+    // holding three (`B-78`). One account, one device, one eSIM: a second package spends the same
+    // line, and nothing in the schema ever said otherwise.
+    @Test
+    fun `a completed purchase offers the install only while the line still needs one`() {
+        fun controlsFor(esims: EsimHoldings) =
+            PurchaseResultScreen
+                .build(
+                    order = compensated(null).copy(status = OrderStatus.COMPLETED),
+                    reversal = null,
+                    balance = Money.ofMajor(30, Currency.DEFAULT),
+                    esims = esims,
+                ).konektWalk()
+                .filterIsInstance<ButtonComponent>()
+                .map { it.id }
+
+        // Nothing on the line, and something bought but not on a device: both are errands the wizard
+        // does, and both get the door.
+        assertTrue("purchase-install" in controlsFor(EsimHoldings.none))
+        assertTrue("purchase-install" in controlsFor(EsimHoldings(held = 1, awaitingInstall = 1, installed = 0)))
+
+        // Already installed: the package is simply active, and a door here leads to a profile nobody
+        // asked for.
+        assertTrue(
+            "purchase-install" !in controlsFor(EsimHoldings(held = 1, awaitingInstall = 0, installed = 1)),
+            "a line that already has an eSIM was invited to install another",
+        )
+
+        // And the screen is still a screen without it: the way out survives.
+        assertTrue("purchase-done" in controlsFor(EsimHoldings(held = 1, awaitingInstall = 0, installed = 1)))
+    }
+
     // THE WAY OUT IS THE ANSWER OR THE OTHER OPTION, never both — over every state, because the one
     // that got it wrong is not the one that will get it wrong next.
     //

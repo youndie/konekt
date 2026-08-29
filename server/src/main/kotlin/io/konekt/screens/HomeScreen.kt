@@ -246,6 +246,14 @@ object HomeScreen {
     // think the purchase failed.
     private fun installBanner(esims: EsimHoldings): KompotComponent? =
         when {
+            // `needsInstalling` decides WHETHER, and the branches below decide what to say. The
+            // purchase result asks the same property, which is the whole point of it being one:
+            // that screen used to offer the wizard on every completed purchase and mint a profile
+            // each time (`B-78`).
+            !esims.needsInstalling -> {
+                null
+            }
+
             esims.held == 0 -> {
                 BannerComponent(
                     id = "home-install-esim",
@@ -268,8 +276,9 @@ object HomeScreen {
                 )
             }
 
-            // Everything this line holds is on a device. Nothing to offer, and a banner here would be
-            // a door to a wizard that would issue a profile nobody asked for.
+            // Unreachable given the guard above, and kept because the `when` is over a state rather
+            // than over two cases: a bucket added to `EsimHoldings` lands here rather than in one of
+            // the sentences above, which is the right place for something nobody has written copy for.
             else -> {
                 null
             }

@@ -62,6 +62,18 @@ data class EsimHoldings(
     // On a device, whatever it is doing there.
     val installed: Int,
 ) {
+    // IS THERE ANYTHING TO INSTALL — asked in one place because two screens ask it and one of them
+    // used to get it wrong in each direction.
+    //
+    // The home screen offers the wizard on this; the purchase result used to offer it on nothing at
+    // all, so every package a subscriber bought invited them to install an eSIM again — and doing so
+    // minted another one (`B-78`). A boolean living in two `if`s is how that happens.
+    //
+    // True for a line with NOTHING as well as for one holding something not yet on a device: the
+    // first needs a profile issued, the second needs its code shown, and both are errands the wizard
+    // does. The two screens differ in what they SAY about it, not in whether they offer it.
+    val needsInstalling: Boolean get() = held == 0 || awaitingInstall > 0
+
     companion object {
         val none = EsimHoldings(held = 0, awaitingInstall = 0, installed = 0)
     }
@@ -71,6 +83,14 @@ interface EsimRepository {
     // ONE QUESTION AND ONE ANSWER. Two shapes of "how many profiles" is how two screens come to
     // disagree about it, which is precisely what happened.
     suspend fun holdingsOf(subscriberId: String): EsimHoldings
+
+    // THE PROFILE THIS LINE HOLDS, or none. One account, one device, one eSIM — so this returns a
+    // profile and not a list, and the type is where that rule is stated rather than in a comment
+    // beside a `first()`.
+    //
+    // A TERMINATED one does not count, the same way it does not occupy a slot: a subscriber whose
+    // profile was terminated has no eSIM and may be issued another.
+    suspend fun heldBy(subscriberId: String): EsimProfile?
 
     suspend fun create(
         subscriberId: String,
