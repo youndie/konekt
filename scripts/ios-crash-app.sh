@@ -55,6 +55,11 @@ cat > "$APP/Info.plist" <<PLIST
        crashes on purpose, so the canvas does not matter to what it proves — it is here so the two
        hand-written bundles do not differ in a way somebody has to rediscover. -->
   <key>UILaunchScreen</key><dict/>
+  <!-- The scene manifest, for the same reason the home bundle carries it: without it the system
+       composites no status bar. This one crashes on purpose and nobody looks at its screen, and it is
+       here so the two hand-written bundles do not differ in a way somebody has to rediscover. -->
+  <key>UIApplicationSceneManifest</key>
+  <dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
 </dict>
 </plist>
 PLIST

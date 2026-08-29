@@ -60,13 +60,24 @@ cat > "$APP/Info.plist" <<PLIST
        An EMPTY dictionary is the whole declaration: it says "this app supports whatever screen it is
        given" and nothing about what to draw while launching. -->
   <key>UILaunchScreen</key><dict/>
-  <!-- NO STATUS BAR KEYS HERE, and their absence is a measurement rather than an oversight.
-       With the launch screen declared, this bundle draws no status bar at all — no clock, no
-       indicators. `UIStatusBarStyleDarkContent` with
-       `UIViewControllerBasedStatusBarAppearance` false was tried and changed nothing, and forcing
-       `simctl status_bar override --time 9:41` produced nothing either, which says the bar is HIDDEN
-       and not mis-coloured. Two keys that change nothing observable are worse than none, so they are
-       not here. See `B-95`. -->
+  <!-- THE SCENE MANIFEST, and it is why this bundle has a status bar at all.
+       Without it the app runs on the legacy app-delegate lifecycle, and SpringBoard composites no
+       status bar for it: no clock, no signal, no battery, on every screen. Nothing about the app says
+       so — instrumenting the delegate answered `windowScene=true`, `connectedScenes=1`,
+       `appStatusBarHidden=false`, `vcPrefersHidden=false`. The app believed it had a visible bar and
+       the system drew none, which is why four other fixes were tried first and none of them was it
+       (`B-95`): the plist's `UIStatusBarStyle` is read through a property modern iOS ignores, and a
+       container view controller answering `preferredStatusBarStyle` changed nothing either.
+       NO SCENE DELEGATE AND NO CONFIGURATIONS. Declaring the manifest is the whole of it: UIKit
+       creates a default scene, the delegate's own window is adopted, and the entry point is
+       unchanged. A delegate class would have to be named here as a string, which means pinning
+       Kotlin/Native's Objective-C name for it in a plist — a coupling worth avoiding for nothing.
+       THE BAR'S CONTENT FOLLOWS THE SYSTEM APPEARANCE, not the served kit: `default` resolves to dark
+       content in light mode and light in dark. This build's palette is a client setting
+       (`KONEKT_DARK`) and the two can therefore disagree — a real limitation, and not one worth a
+       static override, which is what was already tried and removed. -->
+  <key>UIApplicationSceneManifest</key>
+  <dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
   <!-- A simulator talking to a stand over plain HTTP. A shipped application would not carry this,
        and a stand that made it unnecessary would be a stand with TLS nobody asked for. -->
   <key>NSAppTransportSecurity</key>

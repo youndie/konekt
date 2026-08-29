@@ -1,7 +1,7 @@
 ---
 id: B-95
 title: "The iOS bundle draws no status bar at all — no clock, no indicators — and the cause is not established"
-status: open
+status: done
 priority: P3
 size: S
 stage: stage-m7-completeness
@@ -78,3 +78,49 @@ instrumentation that refuted it.
 - AC: either the status bar is drawn, or the reason it cannot be is a line in
   `docs/services/operator-boundaries.md` alongside the other things a hand-assembled bundle gives up.
 - Anchors: `scripts/ios-home-app.sh`, `client/src/iosMain/kotlin/io/konekt/client/ios/HomeEntryPoint.kt`.
+
+## What it was
+
+The bundle declared no `UIApplicationSceneManifest`. Adding it — **two lines, and no scene delegate**
+— brings the status bar back: clock, signal and battery, in dark content over the light ground, on the
+same simulator that had shown none through five other attempts.
+
+```xml
+<key>UIApplicationSceneManifest</key>
+<dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
+```
+
+Without it the app runs on the legacy app-delegate lifecycle and SpringBoard composites no status bar
+for it. Declaring the manifest is the whole of the change: UIKit creates a default scene, the
+delegate's own window is adopted, and the entry point is untouched. A delegate class would have had to
+be named here as a string — pinning Kotlin/Native's Objective-C name for a class in a plist — and it
+turned out to buy nothing.
+
+## Why it took six attempts, and what the instrumentation got wrong
+
+The original hypothesis was right in substance — *the status bar belongs to the scene* — and the
+measurement that appeared to refute it did not. `windowScene=true` says the window has a scene;
+it says nothing about whether the app declared the scene lifecycle, and those are different facts. So
+the reading "the window has a scene, therefore this is not about scenes" was the wrong inference from
+a correct number, for the second time in one evening.
+
+The other four attempts stay in the record above because each one eliminates a real candidate, and
+because the shape is worth keeping: the app's own API answered consistently and cheerfully throughout
+— it believed it had a visible status bar the entire time — while the system drew none. **Nothing on
+the app side of the boundary could have told anybody.**
+
+## What is deliberately not in scope
+
+**The bar's content follows the SYSTEM appearance, not the served kit.** `default` resolves to dark
+content in light mode and light in dark; this build's palette is a client setting (`KONEKT_DARK`), so
+the two can disagree. A static override was tried during the search and removed — it is the same
+"one surface a brand cannot repaint" trade `B-94` refused, and it is written into the plist's comment
+rather than fixed.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The declaration, with why | `scripts/ios-home-app.sh`, `scripts/ios-crash-app.sh` |
+| What it draws over | `client/src/commonMain/kotlin/io/konekt/client/app/KonektApp.kt` |
+| The entry point it did NOT need to change | `client/src/iosMain/kotlin/io/konekt/client/ios/HomeEntryPoint.kt` |
