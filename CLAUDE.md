@@ -348,6 +348,26 @@ circular dependency inside `:server` naming neither module.
   the CARD branch is unreachable in production and no arrangement of components demonstrates both.
   `B-25` carries the finding and the open question of who should choose. The wire name goes to the degradation sink, where
   an operator can count it; on the screen it is a word nobody can act on.
+- **A screenful is what a press produces; an update is the same screen, newer.** The scroll state had
+  no key, so a wizard step replaced the content under a position half a screen down and the banner a
+  subscriber had waited for arrived above the fold (`B-75`). The address does not change between
+  steps, so keying on it is not enough — `reloads` is the signal, bumped in exactly one place, the
+  action path. Resetting on every fetch instead would throw a reader to the top each time a counter
+  ticked, which is why the guard asserts both directions.
+- **A stand left up for hours fails two scenarios; a fresh one does not** (`B-77`, open). The first
+  move on a red stand run is `make stand-down && make stand-up` on the same commit: green means the
+  working tree is innocent and the stand is the subject. Ruled out by measurement — the simulator does
+  not queue subscribers, and the lag from a new subscriber to their counter moving is flat from 3 to
+  83 of them (`probes/lag.sh`). Still suspected: something accumulating over many hours,
+  `usage_counter`'s dead row versions first.
+- **A negative soak says nothing beyond its own length.** `B-77` was closed on an hour of a loaded
+  stand and reproduced at twelve hours. An experiment shorter than the condition it is reproducing is
+  not evidence of absence, and writing it up as though it were cost a day.
+- **A reproduction that lives ten seconds must carry its own measurement.** Both times `B-77`
+  appeared, the stand was torn down within minutes to ask whether a fresh one was fine — the right
+  question, and it destroys the evidence for every other one. `Stand.standDiagnosis` therefore reports
+  the containers' uptime, how many subscribers the simulator feeds, and `usage_counter`'s live rows,
+  dead rows and size. Put the number in the failure, not in a note about what to look at next time.
 - **A destination has three arrivals, not two.** `Destination` carried one boolean meaning both "clear
   the stack" and "the session changed", and a finished flow fits neither: `next` replaces only the top
   and leaves the flow's screens underneath — a back control on the home screen, the first defect this
