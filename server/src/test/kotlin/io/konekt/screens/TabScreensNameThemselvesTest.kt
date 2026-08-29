@@ -55,7 +55,10 @@ class TabScreensNameThemselvesTest {
                     page = HistoryPage(entries = emptyList(), next = null),
                     titles = { it },
                 ),
-            "Profile" to ProfileScreen.build(msisdn = "+15551234567", esims = EsimHoldings.none, tariffTitle = "Basic"),
+            "Profile" to
+                ProfileScreen.build(
+                    ProfileView(msisdn = "+15551234567", esims = EsimHoldings.none, tariffTitle = "Basic"),
+                ),
         )
 
     @Test

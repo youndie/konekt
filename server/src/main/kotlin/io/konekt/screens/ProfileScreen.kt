@@ -12,6 +12,7 @@ import io.konekt.components.MessageTones
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
 import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
+import io.konekt.money.DayFormat
 
 // THE ACCOUNT, as its owner sees it — and deliberately shorter than the canvas draws it.
 //
@@ -26,18 +27,12 @@ import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
 // setting: which palette to draw is decided where the drawing happens, and a server-driven row for
 // it would be this product's one piece of state that the server holds and cannot act on.
 object ProfileScreen {
+    // ONE VIEW AND A BAR, and that is the whole signature — `B-96`'s rule, and this is the vertical
+    // it was written against. What it used to take was four values out of three repositories, and
+    // one of them was a finished English sentence that `ProfileRouting` composed: a routing file,
+    // whose job is to know who is calling, deciding what a subscriber reads.
     fun build(
-        msisdn: String,
-        esims: EsimHoldings,
-        // WHAT THEY ARE ON, and the answer to it was nowhere in the product until `B-86`. Three
-        // tariffs sat in a catalogue, a saga could change between them, and no screen said which one
-        // a subscriber had — so the feature was reachable only by a test.
-        tariffTitle: String,
-        // The change already asked for, as a sentence, or null — which is the ordinary case and why
-        // this one has a default while `tariffTitle` does not. It belongs on this screen rather than
-        // only on the catalogue: a subscriber who confirmed nothing and closed the application is
-        // looking for the thing they started, and the profile is where they look for what they are on.
-        pendingTariffText: String? = null,
+        view: ProfileView,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -75,7 +70,7 @@ object ProfileScreen {
                             // exactly the subscribers a white-label product is sold to. Formatting
                             // belongs on this side (D15); this one needs a fact the domain does not
                             // carry yet.
-                            text = "+$msisdn",
+                            text = "+${view.msisdn}",
                             style = M3Typography.TitleMedium,
                             color = M3Colors.OnSurface,
                         ),
@@ -83,7 +78,7 @@ object ProfileScreen {
                     add(
                         TextComponent(
                             id = "profile-esims",
-                            text = esimLine(esims),
+                            text = esimLine(view.esims),
                             style = M3Typography.BodyMedium,
                             color = M3Colors.OnSurfaceVariant,
                         ),
@@ -99,16 +94,22 @@ object ProfileScreen {
                     add(
                         TextComponent(
                             id = "profile-tariff",
-                            text = tariffTitle,
+                            text = view.tariffTitle,
                             style = M3Typography.TitleMedium,
                             color = M3Colors.OnSurface,
                         ),
                     )
-                    pendingTariffText?.let {
+                    // THE SENTENCE IS COMPOSED HERE NOW, out of a resolved title and an instant.
+                    // The day is formatted on this side like every other date on the wire (D15), and
+                    // the view stays two comparable fields rather than one string a test would have
+                    // to agree with a date format about.
+                    view.pendingChange?.let {
                         add(
                             BannerComponent(
                                 id = "profile-tariff-pending",
-                                text = it,
+                                text =
+                                    "A change to ${it.toTariffTitle} is waiting for your confirmation, " +
+                                        "and takes effect on ${DayFormat.dayAndMonth(it.effectiveAt)}.",
                                 tone = MessageTones.INFO,
                             ),
                         )

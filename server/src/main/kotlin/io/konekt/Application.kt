@@ -61,6 +61,7 @@ import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.RoamingScreen
 import io.konekt.roaming.roamingRoutes
 import io.konekt.screens.Shell
+import io.konekt.screens.ViewProfileUseCase
 import io.konekt.screens.dev.EsimTransferWidgetComponent
 import io.konekt.screens.dev.failingRoutes
 import io.konekt.screens.dev.forwardCompatRoutes
@@ -570,6 +571,11 @@ fun petichModule(
     // READING one change, which is what the screen does. No engine: it decides nothing and runs no
     // saga, and a use case that took one would be able to.
     factory { ViewTariffChangeUseCase(get(), get(), get()) }
+
+    // THE PROFILE SCREEN'S ANSWERS, assembled off the route (`B-96`). Four repositories and a
+    // catalogue lookup used to live in `ProfileRouting`, which is the layer that should know only who
+    // is calling.
+    factory { ViewProfileUseCase(get(), get(), get(), get()) }
 
     single(named(TOP_UP_SAGA_TYPE)) {
         PetichEngine(

@@ -20,7 +20,7 @@ import kotlin.test.assertTrue
 class ProfileScreenTest {
     private fun line(esims: EsimHoldings): String =
         ProfileScreen
-            .build(msisdn = "+15551234567", esims = esims, tariffTitle = "Basic")
+            .build(ProfileView(msisdn = "+15551234567", esims = esims, tariffTitle = "Basic"))
             .konektWalk()
             .filterIsInstance<TextComponent>()
             .single { it.id == "profile-esims" }
