@@ -103,7 +103,7 @@ it commits konekt to.
 - [x] [reference-scope](services/reference-scope.md) — what is deliberately absent, with the reason
   and the shape of the change that would end it; the list of what is *not* for sale
 
-### Features (5)
+### Features (7)
 
 Identity:
 - [x] [feature-authentication](features/feature-authentication.md) — number and one-time code, and
@@ -121,7 +121,13 @@ Line and allowance:
 - [x] [feature-roaming](features/feature-roaming.md) — a package bought at home that does nothing until
   it is used abroad, and is dated from that moment rather than from the purchase
 
-### Screens / flows (4)
+Subscription and assembly:
+- [x] [feature-tariff-change](features/feature-tariff-change.md) — the second saga, and the one that is
+  not about money arriving: a subscription changing under a subscriber who has to agree to it
+- [x] [feature-custom-package](features/feature-custom-package.md) — three quantities, a price the
+  server computes on every change, and a plan the catalogue did not write down
+
+### Screens / flows (6)
 
 - [x] [screen-home](screens/screen-home.md) — balance and counter cards; the screen a live update
   changes one node of
@@ -131,6 +137,10 @@ Line and allowance:
   including the compensated one
 - [x] [screen-order-history](screens/screen-order-history.md) — everything that moved money, keyset
   paged, with reversals visible
+- [x] [screen-tariffs](screens/screen-tariffs.md) — the catalogue with the current tariff marked, and
+  one change with both tariffs true until the boundary
+- [x] [screen-custom-package](screens/screen-custom-package.md) — the one form where a patch does real
+  work: the server prices a combination and nothing is redrawn
 
 ### API (6)
 
