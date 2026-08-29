@@ -41,11 +41,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (1)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 
-## Closed (78)
+## Closed (77)
 
 **The wire and the shell**
 
@@ -133,7 +135,6 @@ No open tasks.
 - [B-74](docs/backlog/B-74-the-qr-fills-the-screen-and-buries-what-to-do-with-it.md) `[x]` - The activation code has no maximum size, so it grows with the window until the controls leave the screen
 - [B-75](docs/backlog/B-75-the-scroll-survives-a-wizard-step.md) `[x]` - A wizard step keeps the previous step's scroll, so the new screen opens part-way down
 - [B-76](docs/backlog/B-76-done-returns-to-the-first-step-instead-of-leaving.md) `[x]` - Done finishes the install and lands the subscriber back on step one of a new one
-- [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[x]` - Two stand scenarios failed once and could not be reproduced; the host was on its way down
 - [B-78](docs/backlog/B-78-one-line-one-esim.md) `[x]` - Every completed install mints another eSIM, and every purchase offers to do it again
 
 **Upstream and the box**

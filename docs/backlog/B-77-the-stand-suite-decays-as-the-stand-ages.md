@@ -1,7 +1,7 @@
 ---
 id: B-77
-title: "Two stand scenarios failed once and could not be reproduced; the host was on its way down"
-status: done
+title: "Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short"
+status: open
 priority: P2
 size: S
 stage: stage-m4-proof
@@ -74,45 +74,77 @@ That is more traffic than the stand which failed could have accumulated in its f
 "something builds up" story has now failed in both dimensions this machine can produce: load, and an
 hour of time under load.
 
-## What it most likely was, and the evidence is not about konekt
+## Reproduced — and closing this was premature
 
-Within about two hours of those two failures the build machine **stopped answering** — no ping, every
-mutagen session stuck — and came back having **rebooted**. It rebooted a second time during the first
-lag measurement, which is why that measurement was repeated with the machine's uptime on every line.
+It happened again, on a stand whose broker and database had been up **twelve hours** with **94
+subscribers**. The failure message said so itself, because the load line added while chasing it was
+already in place:
 
-A host that is on its way down is a much better explanation of two timeouts than anything measured
-here, and it is the only explanation with independent evidence behind it. The stand was five hours
-old; so was the machine's problem.
+```
+  the stand right now:
+    broker running Up 12 hours (healthy)
+    postgres running Up 12 hours (healthy)
+    server running Up 3 minutes (healthy)
+    the traffic simulator is publishing for 94 subscribers
+```
 
-## What this item was wrong about, in order
+Tearing that stand down and putting it back up, **same commit**, made both pass. So it is not the code
+and it is not the working tree; it is the stand, and the variable is TIME with load beside it.
 
-1. **"The simulator walks subscribers in order."** It does not — `tick` publishes for every subscriber
-   with a counter, every interval. Read.
-2. **"Production outruns consumption."** Measured: the lag is flat from 3 to 83 subscribers.
-3. **"Something accumulates with time."** Measured: an hour of a loaded stand changes nothing.
+**The hour-long soak was simply too short.** 83 subscribers for one hour: fine. 94 for twelve hours:
+red. Both earlier failures were on stands that had been up five hours and twelve. This item was closed
+on a soak an order of magnitude shorter than the condition it was trying to reproduce, which is the
+mistake worth naming: a negative result at one hour says nothing about twelve, and I wrote it up as
+though it did.
 
-The offset the simulator logs on startup was quoted as evidence for the first, and supports none of
-the three. It says events were published, which is true of every stand that has ever run.
+**The host-reboot story is downgraded, not deleted.** The machine did reboot twice that evening, and
+that remains a possible contributor to the FIRST occurrence. It cannot explain this one: the box has
+been up throughout and everything else on it works.
 
-## Closed as not reproduced, and two things stay
+## What is ruled out, and what is not
 
-- `probes/lag.sh`, so the next person asking this question starts from a measurement rather than from
-  a story. It carries the uptime because of what happened to the first run.
-- `Stand.standDiagnosis` now reports how many subscribers the simulator is publishing for. A count and
-  no verdict — it was invisible, and a number nobody can see is a number every theory can lean on.
+**Ruled out by measurement:**
 
-Reopen if it happens again on a machine that stays up. One observation and three refuted mechanisms
-is not a defect in this repository; it is a morning that was spent looking for one.
+* *The simulator queues subscribers.* It does not — `tick` publishes for every subscriber with a
+  counter, every interval. Read in the source.
+* *Production outruns consumption, as a function of load.* The lag from a new subscriber to their
+  counter moving is flat from 3 to 83 subscribers — 11 to 18 seconds, three readings a point, two
+  runs. `probes/lag.sh`.
+* *One hour of a loaded stand is enough to cause it.* It is not.
 
-## Why it was worth the day anyway
+**Not ruled out, and now the whole of the suspicion:** something that accumulates over many hours.
+The first candidate is `usage_counter` — the simulator UPDATEs three rows per subscriber every five
+seconds and never stops, so a stand left overnight holds an enormous number of dead row versions on
+the one table all three failing waits read. Twelve hours at 94 subscribers is on the order of two
+million updates. The broker's log is the second.
 
-Not for the fix — there is none. For what the chase produced: a measurement where there had been a
-story, a probe that can be re-run, a failure message that now names the stand's load, and three
-mechanisms ruled out in writing so nobody proposes them again.
+**Neither has been measured on a stand in the failing state**, and that is the thing to fix next
+rather than another theory. Both times it reproduced, the stand was torn down within minutes — once
+to check whether a fresh one was fine, which was the right question and destroyed the evidence
+answering it.
 
-And the rule it leaves behind, which is in `CLAUDE.md`: before chasing a stand failure, tear the stand
-down and put it back up. If it survives that, it is a finding; if it does not, look at the machine
-before looking at the code.
+So `standDiagnosis` now reports `usage_counter`'s live rows, dead rows and size on disk beside the
+subscriber count. The next reproduction carries its own measurement, and nobody has to have thought
+to look.
+
+## What to do next
+
+1. **Wait for it to reproduce and read the message.** It now carries the subscriber count and the
+   table's dead-tuple count. Two reproductions with those numbers settle the bloat question without
+   another soak.
+2. If it is bloat: the simulator should not UPDATE a row every five seconds forever — or `usage_counter`
+   wants an autovacuum setting a demonstration stand can live with. Both are decisions, not fixes to
+   guess at now.
+3. If it is not: the broker's log is next, and the same rule applies — measure it in the failure.
+
+**Do not close this on a soak again** unless the soak is at least as long as the condition. An hour
+against twelve is not evidence of absence.
+
+## What the chase has produced so far
+
+No fix, and three mechanisms ruled out in writing so nobody proposes them again. Plus the two things
+that made the second reproduction legible in ten seconds instead of a morning: `probes/lag.sh`, and a
+failure message that now names the stand's age, its load and the state of the table underneath it.
 
 ## Anchors
 

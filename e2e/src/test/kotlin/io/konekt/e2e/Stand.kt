@@ -292,6 +292,7 @@ object Stand {
             appendLine("  the stand right now:")
             lines.forEach { appendLine("    $it") }
             simulatedSubscribers()?.let { appendLine("    the traffic simulator is publishing for $it subscribers") }
+            counterTableBloat()?.let { appendLine("    $it") }
             if (down.isNotEmpty()) {
                 appendLine()
                 appendLine("  NOT RUNNING: ${down.joinToString("; ") { it.substringBefore(' ') }}")
@@ -307,6 +308,38 @@ object Stand {
             }
         }
     }
+
+    // WHAT THE SIMULATOR HAS DONE TO THE TABLE EVERY ONE OF THESE SCENARIOS READS.
+    //
+    // It UPDATEs three rows per subscriber every five seconds and never stops, so a stand left up
+    // overnight accumulates dead row versions on `usage_counter` without bound. Whether that is what
+    // makes these waits expire is `B-77`'s open question — and the question could not be answered the
+    // first two times it reproduced, because by the time anyone thought to look the stand had been
+    // torn down to check whether a fresh one was fine.
+    //
+    // So the number travels WITH the failure. That is the only way a reproduction that happens twice
+    // a day and lives for ten seconds after it is noticed gets measured at all.
+    private fun counterTableBloat(): String? =
+        try {
+            connection().use { connection ->
+                connection
+                    .prepareStatement(
+                        "SELECT n_live_tup, n_dead_tup, pg_size_pretty(pg_total_relation_size(relid)) " +
+                            "FROM pg_stat_user_tables WHERE relname = 'usage_counter'",
+                    ).use { statement ->
+                        statement.executeQuery().use { rows ->
+                            if (rows.next()) {
+                                "usage_counter: ${rows.getLong(1)} live rows, ${rows.getLong(2)} dead, " +
+                                    "${rows.getString(3)} on disk"
+                            } else {
+                                null
+                            }
+                        }
+                    }
+            }
+        } catch (unavailable: Exception) {
+            null
+        }
 
     // Null rather than a guess when the database cannot be asked: this line is context beside a
     // failure, and a failure message that invents a number is worse than one that omits it.
