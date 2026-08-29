@@ -91,10 +91,13 @@ not where it is usually assumed to be:
 
 | Axis | Ships as |
 |---|---|
-| colours, typography, every string | a server response — **no client rebuild**; a new kit is a server deploy |
+| colours and every string | a server response — **no client rebuild**; a new kit is a server deploy |
+| the type scale — sizes, weights, letter spacing | the same way, and no kit here carries one yet |
+| the font family | **not available** — the wire's text style has no family, so a face a server named would not arrive |
 | screens, layouts, flows | a server response — no rebuild |
 | the shape scale (corner radii) | **a client release** — the wire has no vocabulary for shape, deliberately |
 | a new kind of component | **a client release** — the dictionary is the API |
+| icons in the interface | **not available** — kompot has no icon vocabulary, so the bottom bar is text labels |
 | a new event topic | a broker restart — booblik fixes its topics at startup |
 
 The reasoning behind each row is in the research, §1.2, §1.5 and §1.8. The full version — what is a

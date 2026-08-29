@@ -41,7 +41,9 @@ today, and one axis is enough to need the column.
 
 | Axis | Cost | Why | Established in |
 |---|---|---|---|
-| Colours and typography | server deploy | The kit is served over HTTP and the client applies it without a rebuild — but the kits themselves are resources inside the server image (`server/src/main/resources/themes/`), so a NEW palette is a deploy. | [§1.2](../research/research-architecture.md), [§1.3](../research/research-architecture.md) |
+| Colours | server deploy | The kit is served over HTTP and the client applies it without a rebuild — but the kits themselves are resources inside the server image (`server/src/main/resources/themes/`), so a NEW palette is a deploy. This is the axis the rebrand is demonstrated on. | [§1.2](../research/research-architecture.md), [§1.3](../research/research-architecture.md) |
+| The type **scale** — sizes, weights, letter spacing | server deploy, **never yet done** | `KompotTheme` carries a `typography` block, so a scale could travel exactly as a palette does. Neither kit in this build contains one, so nothing here has ever exercised it. | `server/src/main/resources/themes/` |
+| The **font family** | **not available** | `KompotTextStyle` carries size, line height, weight, letter spacing and colour, and no family. A face named by a server would not arrive. | [§1.2](../research/research-architecture.md), [design-brand-kit](../design/design-brand-kit.md) |
 | Which of the shipped brands is served | **configuration** | `BRAND` picks among the kits the image already carries. This is the only row that is a variable and a restart. | `KonektConfig.brand` |
 | Copy, screens, layouts, flows | server deploy | Every string and every tree is composed on the server; the client renders what it is given and formats nothing (D15). | [§1.2](../research/research-architecture.md) |
 | A new value in an open vocabulary — a counter state, an order status, a plan state | server deploy | These are open strings on the wire on purpose. A client one release behind draws the ordinary card rather than nothing. | [§1.5](../research/research-architecture.md) |
@@ -74,11 +76,15 @@ brand A's radii silently, because refusing to draw a screen over a corner radius
 it with the wrong one. What makes that safe is not the fallback: it is the test that fails when the
 server ships a kit no scale answers for.
 
-**One row has no price, and that is the point of listing it.** Icons are the only axis where the
-answer is not "how fast" but "not through this wire". Fourteen rows that each name a cost imply that
-everything has one, which is exactly the impression a reader carries away from a table with no such
-column. It is also not a defect of konekt: the gap is in the toolkit, and closing it is an upstream
-proposal rather than a deploy.
+**Two rows have no price, and that is the point of listing them.** Interface icons and the font family
+are the axes where the answer is not "how fast" but "not through this wire". A table of rows that each
+name a cost implies that everything has one, which is exactly the impression a reader carries away
+from a table with no such column. Neither is a defect of konekt: both gaps are in the toolkit, and
+closing either is an upstream proposal rather than a deploy.
+
+**"Typography" was one row and is three.** A reader pricing a rebrand reads the word and thinks *the
+operator's face* — which is the one of the three that cannot be bought, and it used to sit in the same
+cell as the one that can.
 
 **The slowest row of the four is the one an operator does not control.** A client release lands on the
 subscriber's schedule, not the operator's — which is why the two rows that need one are the two the

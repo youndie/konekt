@@ -43,7 +43,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (11)
+## Open (10)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -54,12 +54,11 @@ so re-prioritising must never move a file.
 | [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[ ]` | Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query | P1 | M | - |
 | [B-89](docs/backlog/B-89-the-usage-consumer-only-runs-with-the-simulator.md) `[ ]` | The only consumer of the usage topic is constructed inside the simulator's own starter, so reading real usage means also inventing some | P1 | S | - |
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
-| [B-83](docs/backlog/B-83-typography-does-not-ship-from-the-server.md) `[ ]` | Two documents promise typography from the server; no kit carries any and a font family cannot cross the wire | P2 | XS | - |
 | [B-90](docs/backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) `[ ]` | The iOS build runs only in a simulator: iosArm64 declares no binary and the .app is assembled by a shell script | P2 | M | - |
 | [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[ ]` | A second replica silently loses live updates, and the only guard in the chart is about the simulator | P2 | S | - |
 | [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 
-## Closed (81)
+## Closed (82)
 
 **The wire and the shell**
 
@@ -162,6 +161,7 @@ so re-prioritising must never move a file.
 - [B-80](docs/backlog/B-80-the-non-goals-are-nowhere.md) `[x]` - Nothing states what this build is deliberately not, so every absence reads as unfinished work
 - [B-81](docs/backlog/B-81-the-boundaries-table-has-no-row-for-language.md) `[x]` - The boundaries table has no row for language, currency, date format, time zone or the app's own name
 - [B-82](docs/backlog/B-82-the-brand-kit-document-says-the-theme-is-unwired.md) `[x]` - The brand-kit document says no theme is served over HTTP, and the server has been serving one since B-22
+- [B-83](docs/backlog/B-83-typography-does-not-ship-from-the-server.md) `[x]` - Two documents promise typography from the server; no kit carries any and a font family cannot cross the wire
 
 <!-- END INDEX -->
 

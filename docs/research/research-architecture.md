@@ -434,6 +434,13 @@ Why:
   configuration change; two that differ in shape are a release. The canvas already proves the layout
   survives the shape swap, which is what makes the client-side constant cheap rather than dangerous.
 
+**Amended by `B-83`: "typography" here means the type SCALE and not the face.** §1.2's own table
+records it — `KompotTextStyle` is size, line height, weight, letter spacing and colour, and no family
+— so a font family is not a server-side axis at any price, and this decision never made it one. The
+scale itself could travel, in a kit's `typography` block; neither kit in this build carries one, so
+the half of D2 that has actually been exercised is colour. `operator-boundaries.md` prices the three
+separately.
+
 ### D3. konekt ships its own renderer for `UnknownComponent`
 
 Brief: unstated. Decision: replace the toolkit's entry for `UnknownComponent::class` with a renderer
