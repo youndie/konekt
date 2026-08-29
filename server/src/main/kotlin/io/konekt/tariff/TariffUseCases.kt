@@ -30,9 +30,75 @@ data class TariffChangeView(
     val status: OrderStatus,
     val currentTariffId: String,
     val requestedTariffId: String,
+    // BOTH NAMES, RESOLVED HERE (`B-96`). `TariffChangeScreen` used to take the whole catalogue
+    // beside this view so it could turn two ids into two names — a renderer that can look things up
+    // is a renderer that can answer a different question than the one the use case answered. The ids
+    // stay because the DTO response carries them; the titles are what a person reads.
+    val currentTariffTitle: String,
+    val requestedTariffTitle: String,
     val effectiveAt: Instant,
     val requiredAction: String?,
 )
+
+// A CHANGE ASKED FOR AND NOT YET CONFIRMED, with everything a screen needs to say so already
+// resolved. TWO screens draw this — the profile and the tariff catalogue — and they used to compose
+// the same sentence from the same record in two places, one of them a routing file.
+//
+// The `changeId` is here because the catalogue's banner carries the way back to the confirmation.
+// The profile's banner does not, today; carrying the id costs nothing and is what a second control
+// would need.
+data class PendingTariffChange(
+    val changeId: String,
+    val toTariffTitle: String,
+    val effectiveAt: Instant,
+)
+
+// The one place a pending change becomes a screen's answer. Two callers, so that a subscriber cannot
+// be told one thing on the profile and another in the catalogue.
+internal suspend fun pendingTariffChangeOf(
+    subscriberId: String,
+    changes: TariffChanges,
+    catalogue: TariffCatalogue,
+): PendingTariffChange? =
+    changes.pendingOf(subscriberId)?.let {
+        PendingTariffChange(
+            changeId = it.changeId,
+            toTariffTitle = catalogue.titleOf(it.toTariffId),
+            effectiveAt = it.effectiveAt,
+        )
+    }
+
+// THE CATALOGUE SCREEN'S ANSWERS. The list of tariffs travels whole and undecorated — a catalogue
+// screen rendering a catalogue looks nothing up, the same as `PlansScreen` — and what it could NOT
+// answer for itself is the other two: which one this subscriber is on, and whether a change is
+// already waiting.
+data class TariffsView(
+    val tariffs: List<Tariff>,
+    val currentTariffId: String,
+    val pending: PendingTariffChange? = null,
+)
+
+class ViewTariffsUseCase(
+    private val catalogue: TariffCatalogue,
+    private val changes: TariffChanges,
+) {
+    suspend operator fun invoke(subscriberId: String): Result<TariffsView> =
+        suspendRunCatching {
+            TariffsView(
+                tariffs = catalogue.all(),
+                // The catalogue's default when the log has no rows: a subscriber who never changed
+                // has nothing recorded, and what "the beginning" is called belongs to the catalogue
+                // rather than to the log.
+                currentTariffId = changes.currentTariffId(subscriberId) ?: catalogue.default.id,
+                pending = pendingTariffChangeOf(subscriberId, changes, catalogue),
+            )
+        }
+}
+
+// A TARIFF'S TITLE, falling back to its id. An id on a screen is a value that leaked out of a table
+// and `tr-standard` is not what a subscriber calls anything — but a tariff the catalogue has
+// forgotten is still what they are on, so printing the key beats printing a blank.
+fun TariffCatalogue.titleOf(tariffId: String): String = find(tariffId)?.title ?: tariffId
 
 @OptIn(ExperimentalUuidApi::class)
 class StartTariffChangeUseCase(
@@ -113,13 +179,17 @@ internal suspend fun tariffChangeViewOf(
             ?: throw KonektException.NotFound("tariff change")
     if (payload.subscriberId != subscriberId) throw KonektException.NotFound("tariff change")
 
+    // The CURRENT tariff, read after the saga ran: the old one while the change is pending, and the
+    // new one only once the boundary row says applied.
+    val currentTariffId = changes.currentTariffId(subscriberId) ?: catalogue.default.id
+
     return TariffChangeView(
         changeId = changeId,
         status = OrderStatus.of(saga.status),
-        // The CURRENT tariff, read after the saga ran: the old one while the change is pending, and
-        // the new one only once the boundary row says applied.
-        currentTariffId = changes.currentTariffId(subscriberId) ?: catalogue.default.id,
+        currentTariffId = currentTariffId,
         requestedTariffId = payload.toTariffId,
+        currentTariffTitle = catalogue.titleOf(currentTariffId),
+        requestedTariffTitle = catalogue.titleOf(payload.toTariffId),
         effectiveAt = Instant.fromEpochMilliseconds(payload.effectiveAt),
         requiredAction = if (saga.status == PetichStatus.PENDING_SIGNATURE) ACTION_CONFIRM_TARIFF else null,
     )

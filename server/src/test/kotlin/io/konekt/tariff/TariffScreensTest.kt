@@ -26,7 +26,7 @@ import kotlin.time.Instant
 class TariffScreensTest {
     @Test
     fun `the current tariff is marked and cannot be pressed`() {
-        val cards = cardsOf(TariffsScreen.build(TARIFFS, currentTariffId = "tr-standard", pending = null))
+        val cards = cardsOf(TariffsScreen.build(TariffsView(TARIFFS, currentTariffId = "tr-standard")))
 
         // Every tariff is drawn, including the one they are on. A catalogue that hid the current one
         // would answer "what am I on" with silence.
@@ -69,17 +69,13 @@ class TariffScreensTest {
     fun `a pending change withdraws every offer and says where to go`() {
         val screen =
             TariffsScreen.build(
-                TARIFFS,
-                currentTariffId = "tr-basic",
-                pending =
-                    TariffChangeRecord(
-                        changeId = "chg-1",
-                        subscriberId = "sub-1",
-                        fromTariffId = "tr-basic",
-                        toTariffId = "tr-max",
-                        status = TariffChangeStatuses.PENDING,
-                        effectiveAt = FIRST_OF_A_MONTH,
-                    ),
+                TariffsView(
+                    TARIFFS,
+                    currentTariffId = "tr-basic",
+                    // ALREADY RESOLVED, which is what `B-96` moved: the screen used to be handed the
+                    // record and the catalogue and to look the name up itself.
+                    pending = PendingTariffChange("chg-1", toTariffTitle = "Max", effectiveAt = FIRST_OF_A_MONTH),
+                ),
             )
 
         assertTrue(
@@ -102,7 +98,7 @@ class TariffScreensTest {
     // vertical was in before `B-86`, reachable only from a test.
     @Test
     fun `the confirmation appears exactly when the saga is waiting for it`() {
-        val waiting = TariffChangeScreen.build(view(OrderStatus.AWAITING_CONFIRMATION, ACTION_CONFIRM_TARIFF), TARIFFS)
+        val waiting = TariffChangeScreen.build(view(OrderStatus.AWAITING_CONFIRMATION, ACTION_CONFIRM_TARIFF))
         val confirm = waiting.konektWalk().filterIsInstance<ButtonComponent>().single()
         assertEquals("chg-1", (confirm.action as ConfirmTariffChangeAction).changeId)
 
@@ -110,7 +106,7 @@ class TariffScreensTest {
             .forEach { status ->
                 assertTrue(
                     TariffChangeScreen
-                        .build(view(status, null), TARIFFS)
+                        .build(view(status, null))
                         .konektWalk()
                         .filterIsInstance<ButtonComponent>()
                         .isEmpty(),
@@ -132,7 +128,7 @@ class TariffScreensTest {
                 null to OrderStatus.COMPENSATED,
             )
 
-        val screens = states.map { (action, status) -> TariffChangeScreen.build(view(status, action), TARIFFS) }
+        val screens = states.map { (action, status) -> TariffChangeScreen.build(view(status, action)) }
 
         val sentences =
             screens.map { screen ->
@@ -164,7 +160,7 @@ class TariffScreensTest {
     @Test
     fun `each tariff offers a whole number of gigabytes`() {
         val quotas =
-            cardsOf(TariffsScreen.build(StaticTariffCatalogue().all(), currentTariffId = "tr-basic", pending = null))
+            cardsOf(TariffsScreen.build(TariffsView(StaticTariffCatalogue().all(), currentTariffId = "tr-basic")))
                 .flatMap { it.quotaTexts }
 
         assertEquals(listOf("2 GB", "10 GB", "50 GB"), quotas, "a tariff's allowance is not the number it is sold as")
@@ -181,6 +177,8 @@ class TariffScreensTest {
         status = status,
         currentTariffId = "tr-basic",
         requestedTariffId = "tr-max",
+        currentTariffTitle = "Basic",
+        requestedTariffTitle = "Max",
         effectiveAt = FIRST_OF_A_MONTH,
         requiredAction = requiredAction,
     )

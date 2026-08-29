@@ -5,9 +5,11 @@ import io.konekt.domain.suspendRunCatching
 import io.konekt.feature.auth.server.domain.SubscriberRepository
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.server.domain.EsimRepository
+import io.konekt.tariff.PendingTariffChange
 import io.konekt.tariff.TariffCatalogue
 import io.konekt.tariff.TariffChanges
-import kotlin.time.Instant
+import io.konekt.tariff.pendingTariffChangeOf
+import io.konekt.tariff.titleOf
 
 // THE ACCOUNT SCREEN AS A SET OF ANSWERS, before anything decides how to draw them — the first
 // vertical done the way `B-96` says every screen should be.
@@ -26,13 +28,6 @@ data class ProfileView(
     // absent. It belongs on this screen rather than only on the catalogue: a subscriber who started
     // something and closed the application looks for it where they look for what they are on.
     val pendingChange: PendingTariffChange? = null,
-)
-
-// RESOLVED, both halves. The record carries a tariff id and an instant; a screen given those would
-// have to reach for the catalogue to say a name, which is the lookup this whole shape removes.
-data class PendingTariffChange(
-    val toTariffTitle: String,
-    val effectiveAt: Instant,
 )
 
 // ASSEMBLED IN `:server` and not in a feature, for the reason the screen itself was: it reads the
@@ -54,22 +49,17 @@ class ViewProfileUseCase(
                 subscribers.findById(subscriberId)
                     ?: throw KonektException.NotFound("subscriber")
 
-            val currentTariffId = changes.currentTariffId(subscriberId) ?: tariffs.default.id
-
             ProfileView(
                 msisdn = subscriber.msisdn.value,
                 esims = esims.holdingsOf(subscriberId),
-                // The catalogue's TITLE and not its id. An id on a screen is a value that leaked out
-                // of a table; `tr-standard` is not what a subscriber calls anything. Falling back to
-                // the id is deliberate: a tariff the catalogue has forgotten is still what they are
-                // on, and printing nothing there would be worse than printing a key.
-                tariffTitle = titleOf(currentTariffId),
-                pendingChange =
-                    changes.pendingOf(subscriberId)?.let {
-                        PendingTariffChange(titleOf(it.toTariffId), it.effectiveAt)
-                    },
+                // The catalogue's TITLE and not its id, through the same `titleOf` the tariff
+                // screens use. An id on a screen is a value that leaked out of a table, and
+                // `tr-standard` is not what a subscriber calls anything.
+                tariffTitle = tariffs.titleOf(changes.currentTariffId(subscriberId) ?: tariffs.default.id),
+                // THROUGH THE SHARED RESOLVER, so the profile and the tariff catalogue cannot come to
+                // describe one waiting change differently — which is what they were doing, in two
+                // places, one of them a routing file.
+                pendingChange = pendingTariffChangeOf(subscriberId, changes, tariffs),
             )
         }
-
-    private fun titleOf(tariffId: String): String = tariffs.find(tariffId)?.title ?: tariffId
 }

@@ -9,6 +9,7 @@ import io.konekt.feature.auth.server.domain.SubscriberRepository
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.server.domain.EsimProfile
 import io.konekt.feature.esim.server.domain.EsimRepository
+import io.konekt.tariff.PendingTariffChange
 import io.konekt.tariff.Tariff
 import io.konekt.tariff.TariffCatalogue
 import io.konekt.tariff.TariffChangeRecord
@@ -147,7 +148,7 @@ class ViewProfileUseCaseTest {
             val view = useCase(current = standard.id, pending = pending(large.id, at)).invoke("sub-1").getOrThrow()
 
             assertEquals("Standard", view.tariffTitle, "the current tariff stops being true too early")
-            assertEquals(PendingTariffChange("Large", at), view.pendingChange)
+            assertEquals(PendingTariffChange("chg-1", "Large", at), view.pendingChange)
         }
 
     // A TARIFF THE CATALOGUE HAS FORGOTTEN is still what the subscriber is on. Printing the id is

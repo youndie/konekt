@@ -12,7 +12,7 @@ import io.konekt.components.MessageTones
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
 import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
-import io.konekt.money.DayFormat
+import io.konekt.tariff.waitingSentence
 
 // THE ACCOUNT, as its owner sees it — and deliberately shorter than the canvas draws it.
 //
@@ -99,17 +99,18 @@ object ProfileScreen {
                             color = M3Colors.OnSurface,
                         ),
                     )
-                    // THE SENTENCE IS COMPOSED HERE NOW, out of a resolved title and an instant.
-                    // The day is formatted on this side like every other date on the wire (D15), and
-                    // the view stays two comparable fields rather than one string a test would have
-                    // to agree with a date format about.
+                    // THE SENTENCE IS THE TARIFF CATALOGUE'S, not a second copy of it. Both screens
+                    // tell a subscriber about the same waiting change, and this one used to spell it
+                    // out again — in the routing file, which is where `B-96` found it.
+                    //
+                    // No control here, unlike the catalogue's banner: the way back to a confirmation
+                    // is what the catalogue is for, and a second door to it on the profile is a
+                    // second thing to keep in step for no gain.
                     view.pendingChange?.let {
                         add(
                             BannerComponent(
                                 id = "profile-tariff-pending",
-                                text =
-                                    "A change to ${it.toTariffTitle} is waiting for your confirmation, " +
-                                        "and takes effect on ${DayFormat.dayAndMonth(it.effectiveAt)}.",
+                                text = it.waitingSentence(),
                                 tone = MessageTones.INFO,
                             ),
                         )

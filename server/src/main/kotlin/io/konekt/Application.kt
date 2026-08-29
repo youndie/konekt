@@ -80,6 +80,7 @@ import io.konekt.tariff.TariffChangePayload
 import io.konekt.tariff.TariffChanges
 import io.konekt.tariff.TariffConfirmation
 import io.konekt.tariff.ViewTariffChangeUseCase
+import io.konekt.tariff.ViewTariffsUseCase
 import io.konekt.tariff.tariffInterceptors
 import io.konekt.tariff.tariffRoutes
 import io.konekt.tariff.tariffScreenRoutes
@@ -574,6 +575,8 @@ fun petichModule(
     // READING one change, which is what the screen does. No engine: it decides nothing and runs no
     // saga, and a use case that took one would be able to.
     factory { ViewTariffChangeUseCase(get(), get(), get()) }
+    // The catalogue screen's two answers that are not the catalogue (`B-96`).
+    factory { ViewTariffsUseCase(get(), get()) }
 
     // THE PROFILE SCREEN'S ANSWERS, assembled off the route (`B-96`). Four repositories and a
     // catalogue lookup used to live in `ProfileRouting`, which is the layer that should know only who

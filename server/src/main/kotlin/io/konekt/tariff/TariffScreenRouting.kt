@@ -19,22 +19,15 @@ import org.koin.ktor.ext.inject
 // other is a screen, and folding a screen into the DTO routes is how a route ends up choosing its
 // representation from an `Accept` header.
 fun Route.tariffScreenRoutes() {
-    val catalogue by inject<TariffCatalogue>()
-    val changes by inject<TariffChanges>()
+    val viewTariffs by inject<ViewTariffsUseCase>()
     val viewChange by inject<ViewTariffChangeUseCase>()
     val json by inject<Json>()
 
     get<TariffsScreenResource> {
-        val subscriber = call.subscriberId()
         call.respondKompotComponent(
             json,
             TariffsScreen.build(
-                tariffs = catalogue.all(),
-                // The catalogue's default when the log has no rows: a subscriber who never changed
-                // has nothing recorded, and what "the beginning" is called belongs to the catalogue
-                // rather than to the log.
-                currentTariffId = changes.currentTariffId(subscriber) ?: catalogue.default.id,
-                pending = changes.pendingOf(subscriber),
+                view = viewTariffs(call.subscriberId()).getOrThrow(),
                 nav = Shell.bottomNav(Shell.Tab.PROFILE),
             ),
         )
@@ -50,7 +43,7 @@ fun Route.tariffScreenRoutes() {
             ).getOrThrow()
         call.respondKompotComponent(
             json,
-            TariffChangeScreen.build(view, catalogue.all(), Shell.bottomNav(Shell.Tab.PROFILE)),
+            TariffChangeScreen.build(view, Shell.bottomNav(Shell.Tab.PROFILE)),
         )
     }
 }

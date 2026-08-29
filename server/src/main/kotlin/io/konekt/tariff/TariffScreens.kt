@@ -27,9 +27,7 @@ import io.konekt.screens.FILLS_THE_ROW
 // type already fits is how a dictionary stops being a vocabulary and becomes a list of screens.
 object TariffsScreen {
     fun build(
-        tariffs: List<Tariff>,
-        currentTariffId: String,
-        pending: TariffChangeRecord?,
+        view: TariffsView,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -50,23 +48,18 @@ object TariffsScreen {
                     // way back to it. Without this a subscriber who asked for a change and left the
                     // application has no route to the confirmation they were asked for — the change
                     // exists, waits, and is unreachable, which is the shape `B-86` exists to end.
-                    pending?.let { add(pendingBanner(it, tariffs)) }
+                    view.pending?.let { add(pendingBanner(it)) }
 
-                    addAll(tariffs.map { card(it, currentTariffId, pending != null) })
+                    addAll(view.tariffs.map { card(it, view.currentTariffId, view.pending != null) })
 
                     nav?.let(::add)
                 },
         )
 
-    private fun pendingBanner(
-        pending: TariffChangeRecord,
-        tariffs: List<Tariff>,
-    ): KompotComponent =
+    private fun pendingBanner(pending: PendingTariffChange): KompotComponent =
         BannerComponent(
             id = "tariffs-pending",
-            text =
-                "A change to ${nameOf(pending.toTariffId, tariffs)} is waiting for your confirmation, " +
-                    "and takes effect on ${DayFormat.dayAndMonth(pending.effectiveAt)}.",
+            text = pending.waitingSentence(),
             tone = MessageTones.INFO,
             // The way back to it, as an ACTION rather than a `navigate`: the address of a change is
             // built from its id, and the one place that knows how to spell it is the client's handler
@@ -112,12 +105,21 @@ object TariffsScreen {
             action = if (current || changePending) null else ChangeTariffAction(tariff.id),
         )
     }
-
-    private fun nameOf(
-        tariffId: String,
-        tariffs: List<Tariff>,
-    ): String = tariffs.firstOrNull { it.id == tariffId }?.title ?: tariffId
 }
+
+// ONE SENTENCE FOR A WAITING CHANGE, and it is shared because TWO screens say it: the tariff
+// catalogue, on a banner that leads back to the confirmation, and the profile, on one that does not.
+//
+// It was written out twice, word for word, and that is the shape this repository already knows the
+// cost of — one fact with two spellings diverges on the edit that touches only one of them, and here
+// the edit is a copy change nobody would think to make in two files. `PendingChangeReadsTheSameTest`
+// is what refuses that.
+//
+// IN THE RENDER LAYER and not on the view: it is English and a formatted day, both of which are
+// drawing. The view carries a resolved title and an instant, which is what a test can compare.
+internal fun PendingTariffChange.waitingSentence(): String =
+    "A change to $toTariffTitle is waiting for your confirmation, " +
+        "and takes effect on ${DayFormat.dayAndMonth(effectiveAt)}."
 
 // ONE TARIFF CHANGE, AS A SCREEN — the confirmation this build could previously only demonstrate in a
 // harness where confirming was a function call.
@@ -129,7 +131,6 @@ object TariffsScreen {
 object TariffChangeScreen {
     fun build(
         view: TariffChangeView,
-        tariffs: List<Tariff>,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -149,8 +150,8 @@ object TariffChangeScreen {
                     // WHAT CHANGES AND WHEN, as two rows and not one sentence. Both tariffs are named
                     // because both are TRUE until the boundary — which is the whole of `B-21`'s first
                     // acceptance criterion and the thing a date alone does not say.
-                    add(row("from", "Now on", nameOf(view.currentTariffId, tariffs)))
-                    add(row("to", "Changing to", nameOf(view.requestedTariffId, tariffs)))
+                    add(row("from", "Now on", view.currentTariffTitle))
+                    add(row("to", "Changing to", view.requestedTariffTitle))
                     add(row("when", "Takes effect", DayFormat.dayAndMonth(view.effectiveAt)))
 
                     add(explanation(view))
@@ -264,9 +265,4 @@ object TariffChangeScreen {
                     ),
                 ),
         )
-
-    private fun nameOf(
-        tariffId: String,
-        tariffs: List<Tariff>,
-    ): String = tariffs.firstOrNull { it.id == tariffId }?.title ?: tariffId
 }
