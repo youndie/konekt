@@ -8,6 +8,7 @@ import io.konekt.feature.purchase.shared.api.PlansScreenResource
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
+import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
 import io.konekt.openapi.EndpointKind
 import io.konekt.openapi.resourceAddress
 import kotlinx.serialization.json.JsonArray
@@ -177,6 +178,12 @@ val KONEKT_WALK_PLAN =
                 // created by the walk: a plan id is a CATALOGUE fact, stable and known in advance,
                 // so the walk can reach this screen without buying anything first.
                 resourceAddress<PlansScreenResource.ById>() to setOf("planId"),
+                // THE TARIFF CHANGE SCREEN, whose value the walk creates the way it creates an order:
+                // a change has to exist before there is one to look at. Declared here rather than
+                // left out — an endpoint the walk cannot reach is one the kit checks nothing about,
+                // and `B-86` added this screen precisely because a vertical nothing walks is a
+                // vertical nothing sees.
+                resourceAddress<TariffChangeScreenResource>() to setOf("changeId"),
             ),
         recordedUpdateStreams = emptySet(),
         // The custom package patch, whose body the walk supplies: a quantity the form declares as a

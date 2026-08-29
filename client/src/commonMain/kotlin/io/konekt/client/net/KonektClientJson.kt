@@ -12,6 +12,7 @@ import io.konekt.feature.auth.shared.api.authActionsSerializersModule
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
+import io.konekt.feature.tariff.shared.api.tariffActionsSerializersModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 
@@ -48,6 +49,8 @@ val konektClientJson: Json =
             esimActionsSerializersModule +
             purchaseActionsSerializersModule +
             shellActionsSerializersModule +
+            // The tariff change's two halves, registered by hand like every other action here.
+            tariffActionsSerializersModule +
             // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
             // something: the components of a form are generated into
             // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a

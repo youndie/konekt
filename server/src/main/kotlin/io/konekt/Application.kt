@@ -41,6 +41,7 @@ import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.shell.shared.api.ScreenChrome
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
+import io.konekt.feature.tariff.shared.api.tariffActionsSerializersModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
@@ -71,8 +72,10 @@ import io.konekt.tariff.TariffCatalogue
 import io.konekt.tariff.TariffChangePayload
 import io.konekt.tariff.TariffChanges
 import io.konekt.tariff.TariffConfirmation
+import io.konekt.tariff.ViewTariffChangeUseCase
 import io.konekt.tariff.tariffInterceptors
 import io.konekt.tariff.tariffRoutes
+import io.konekt.tariff.tariffScreenRoutes
 import io.konekt.theme.BrandThemeCatalogue
 import io.konekt.theme.themeRoutes
 import io.konekt.time.KonektClock
@@ -235,6 +238,9 @@ val konektRoutes: List<RouteGroup> =
             navigationRoutes()
             customPackageRoutes()
             tariffRoutes()
+            // THE SCREENS OF THE SAME FEATURE. `B-21` built the saga and the routes and gave it no
+            // way in: no component sent a `ChangeTariffRequest` and the only caller was an e2e test.
+            tariffScreenRoutes()
             realtimeRoutes()
         },
     )
@@ -519,6 +525,9 @@ fun petichModule(
 
     factory { StartTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get(), get()) }
     factory { ConfirmTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get()) }
+    // READING one change, which is what the screen does. No engine: it decides nothing and runs no
+    // saga, and a use case that took one would be able to.
+    factory { ViewTariffChangeUseCase(get(), get(), get()) }
 
     single(named(TOP_UP_SAGA_TYPE)) {
         PetichEngine(
@@ -628,6 +637,10 @@ internal val kompotJson: Json =
             // every action this build puts on the wire, and a test on each side asks its own Json
             // whether all of them resolve.
             shellActionsSerializersModule +
+            // Changing tariff, konekt's fourth and fifth. Registered by hand like the rest, and named
+            // in `konektActionWireNames` so a missing registration on either side is a failing test
+            // rather than a press that cannot be decoded.
+            tariffActionsSerializersModule +
             // `submit_form`, kompot's own. THE THIRD TIME a hand-registered action has cost
             // something: the components of a form are generated into
             // `generatedFormsSerializersModule` and its ACTION is not, so a login screen carrying a

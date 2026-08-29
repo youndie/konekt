@@ -5,11 +5,13 @@ import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
+import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
 
 // THE ACCOUNT, as its owner sees it — and deliberately shorter than the canvas draws it.
 //
@@ -27,6 +29,15 @@ object ProfileScreen {
     fun build(
         msisdn: String,
         esims: EsimHoldings,
+        // WHAT THEY ARE ON, and the answer to it was nowhere in the product until `B-86`. Three
+        // tariffs sat in a catalogue, a saga could change between them, and no screen said which one
+        // a subscriber had — so the feature was reachable only by a test.
+        tariffTitle: String,
+        // The change already asked for, as a sentence, or null — which is the ordinary case and why
+        // this one has a default while `tariffTitle` does not. It belongs on this screen rather than
+        // only on the catalogue: a subscriber who confirmed nothing and closed the application is
+        // looking for the thing they started, and the profile is where they look for what they are on.
+        pendingTariffText: String? = null,
         nav: KompotComponent? = null,
     ): KompotComponent =
         ColumnComponent(
@@ -75,6 +86,42 @@ object ProfileScreen {
                             text = esimLine(esims),
                             style = M3Typography.BodyMedium,
                             color = M3Colors.OnSurfaceVariant,
+                        ),
+                    )
+                    add(
+                        TextComponent(
+                            id = "profile-tariff-label",
+                            text = "Tariff",
+                            style = M3Typography.LabelMedium,
+                            color = M3Colors.OnSurfaceVariant,
+                        ),
+                    )
+                    add(
+                        TextComponent(
+                            id = "profile-tariff",
+                            text = tariffTitle,
+                            style = M3Typography.TitleMedium,
+                            color = M3Colors.OnSurface,
+                        ),
+                    )
+                    pendingTariffText?.let {
+                        add(
+                            BannerComponent(
+                                id = "profile-tariff-pending",
+                                text = it,
+                                tone = MessageTones.INFO,
+                            ),
+                        )
+                    }
+                    add(
+                        ButtonComponent(
+                            id = "profile-tariff-change",
+                            text = "Change tariff",
+                            // A `navigate` and not an action: the catalogue is an address known in
+                            // advance, and what a press here does is move. Buying is the other shape
+                            // — there the destination does not exist until the press.
+                            action = NavigateAction(TARIFFS_DEEPLINK),
+                            modifiers = FILLS_THE_ROW,
                         ),
                     )
                     add(

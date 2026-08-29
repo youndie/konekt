@@ -14,6 +14,8 @@ import io.konekt.feature.purchase.shared.api.TopUpScreenResource
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
+import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
+import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.OpenApiFiles
@@ -121,6 +123,14 @@ class TckCoverageTest {
                 // The result, addressed by a top-up the walk already creates for itself.
                 endpointKey<TopUpScreenResource.ById>("GET"),
                 endpointKey<ProfileScreenResource>("GET"),
+                // THE TARIFF CATALOGUE, reachable blind — a secured GET answering one document — and
+                // reached anyway through the graph, which names it since `B-86` put the vertical on
+                // a screen.
+                endpointKey<TariffsScreenResource>("GET"),
+                // ONE CHANGE, addressed by an id the walk creates for itself, the way it creates an
+                // order. Left waiting on purpose: the confirmation branch is the one that draws a
+                // control, so it is the shape with more for the kit to check.
+                endpointKey<TariffChangeScreenResource>("GET"),
                 // THE ROUTE GRAPH, and it is the reason the `navigation` check left the
                 // nothing-to-visit list. The walk fetches it, then follows every route in it to the
                 // screen behind — which is also how `GET /api/v1/screens/orders` stops being

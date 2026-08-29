@@ -25,6 +25,8 @@ import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.purchase.shared.api.TopUpResponse
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
+import io.konekt.feature.tariff.shared.api.tariffActionsSerializersModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -95,11 +97,15 @@ object Stand {
                 // The suite's own walk stood on step one for eight iterations and reported that the
                 // activation code was never drawn, while the server was serving it.
                 //
-                // The three the CLIENT registers, not the five the server does: `petich` and the dev
-                // screens are the server talking to itself.
+                // WHAT THE CLIENT REGISTERS, not what the server does: `petich` and the dev screens
+                // are the server talking to itself. It said "the three" and there are five — the
+                // count went stale the moment a fourth action was added, which is the argument for
+                // not writing counts beside lists.
                 authActionsSerializersModule +
                 esimActionsSerializersModule +
-                purchaseActionsSerializersModule
+                purchaseActionsSerializersModule +
+                shellActionsSerializersModule +
+                tariffActionsSerializersModule
         }
 
     fun client(baseUrl: String = serverUrl): HttpClient =

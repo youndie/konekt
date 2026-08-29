@@ -69,6 +69,9 @@ class KonektComposition(
         )
 
     private val buy = BuyPlan(http)
+
+    // The second saga's handler, added with its screens in `B-86`.
+    private val tariff = ChangeTariff(http)
     private val install = EsimInstall(http, konektClientJson)
     private val resend = ResendCode(http, konektClientJson)
 
@@ -145,6 +148,7 @@ class KonektComposition(
                 // within it (`B-76`).
                 (
                     buy.addressFor(action)?.let(Destination::next)
+                        ?: tariff.addressFor(action)?.let(Destination::next)
                         ?: install.destinationFor(action)
                         ?: resend.addressFor(action)?.let(Destination::next)
                 )

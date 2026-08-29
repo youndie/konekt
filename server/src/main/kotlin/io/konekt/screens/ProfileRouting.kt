@@ -6,6 +6,9 @@ import io.konekt.feature.auth.server.domain.SubscriberRepository
 import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
 import io.konekt.http.subscriberId
+import io.konekt.money.DayFormat
+import io.konekt.tariff.TariffCatalogue
+import io.konekt.tariff.TariffChanges
 import io.ktor.server.resources.get
 import io.ktor.server.routing.Route
 import kotlinx.serialization.json.Json
@@ -20,6 +23,11 @@ import org.koin.ktor.ext.inject
 fun Route.profileRoutes() {
     val subscribers by inject<SubscriberRepository>()
     val esims by inject<EsimRepository>()
+    // THE TARIFF HALVES, read here rather than inside `ProfileScreen`. The screen composes text and
+    // knows no repository — the composition root composes, which is the same rule that puts the eSIM
+    // holdings on this line.
+    val tariffs by inject<TariffCatalogue>()
+    val tariffChanges by inject<TariffChanges>()
     val json by inject<Json>()
 
     get<ProfileScreenResource> {
@@ -31,11 +39,23 @@ fun Route.profileRoutes() {
             subscribers.findById(subscriberId)
                 ?: throw KonektException.NotFound("subscriber")
 
+        val currentTariffId = tariffChanges.currentTariffId(subscriberId) ?: tariffs.default.id
+        val pending = tariffChanges.pendingOf(subscriberId)
+
         call.respondKompotComponent(
             json,
             ProfileScreen.build(
                 msisdn = subscriber.msisdn.value,
                 esims = esims.holdingsOf(subscriberId),
+                // The catalogue's TITLE and not its id. An id on a screen is a value that leaked out
+                // of a table; `tr-standard` is not what a subscriber calls anything.
+                tariffTitle = tariffs.find(currentTariffId)?.title ?: currentTariffId,
+                pendingTariffText =
+                    pending?.let {
+                        val to = tariffs.find(it.toTariffId)?.title ?: it.toTariffId
+                        "A change to $to is waiting for your confirmation, and takes effect on " +
+                            "${DayFormat.dayAndMonth(it.effectiveAt)}."
+                    },
                 nav = Shell.bottomNav(Shell.Tab.PROFILE),
             ),
         )

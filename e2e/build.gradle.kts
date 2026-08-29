@@ -15,6 +15,9 @@ dependencies {
     testImplementation(project(":feature:esim-shared-api"))
     testImplementation(project(":feature:packages-shared-api"))
     testImplementation(project(":feature:tariff-shared-api"))
+    // The shell's own contract: the route graph and `sign_out`. The suite decoded screens carrying
+    // that action as `UnknownAction` until `B-86` — which reads exactly like a screen with no control.
+    testImplementation(project(":feature:shell-shared-api"))
     testImplementation(project(":shared:domain"))
     testImplementation(project(":shared:components"))
 

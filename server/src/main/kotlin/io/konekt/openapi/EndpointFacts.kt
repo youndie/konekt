@@ -20,7 +20,9 @@ import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
+import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
 import io.konekt.feature.tariff.shared.api.TariffChanges
+import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.roaming.dev.ArriveResource
@@ -333,6 +335,22 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
                 // 404 for an id nobody sells. A plan can leave the catalogue while a deeplink to it
                 // is still in somebody's hands, and that is the ordinary case rather than an odd one.
+                refusals = setOf(404),
+            ),
+        endpointKey<TariffsScreenResource>("GET") to
+            EndpointFacts(
+                summary = "The tariff catalogue, with the current one marked and unpressable",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+            ),
+        endpointKey<TariffChangeScreenResource>("GET") to
+            EndpointFacts(
+                summary = "One tariff change: what changes, when it takes effect, and the confirmation",
+                kind = EndpointKind.SCREEN,
+                successBodyRef = WireSchema.PROFILE_COMPONENT,
+                // 404 for a change that does not exist AND for one belonging to somebody else. The
+                // same code for both on purpose: asking for a stranger's change must not confirm that
+                // it exists.
                 refusals = setOf(404),
             ),
         endpointKey<ProfileScreenResource>("GET") to

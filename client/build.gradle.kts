@@ -149,6 +149,10 @@ kotlin {
             // CONTRACT of the purchase feature and none of its server halves — which is the whole
             // reason a  module exists per feature.
             api(project(":feature:purchase-shared-api"))
+            // CHANGING TARIFF, and its absence is what `B-86` found: the server had the saga, the
+            // routes and three tariffs, and this module did not depend on the contract at all — so
+            // the client could not have decoded the request even if a screen had posted one.
+            api(project(":feature:tariff-shared-api"))
             // The shell: the route graph the client resolves deeplinks through, and the
             // action that ends a session.
             api(project(":feature:shell-shared-api"))

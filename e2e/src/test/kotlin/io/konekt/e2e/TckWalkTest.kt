@@ -20,6 +20,9 @@ import io.konekt.feature.packages.shared.api.CustomPackageFields
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
+import io.konekt.feature.tariff.shared.api.ChangeTariffRequest
+import io.konekt.feature.tariff.shared.api.TariffChangeResponse
+import io.konekt.feature.tariff.shared.api.TariffChanges
 import io.konekt.openapi.OpenApiFiles
 import io.konekt.spec.KonektSpec
 import io.ktor.client.HttpClient
@@ -68,6 +71,11 @@ class TckWalkTest {
                 // the stand's database, so there was no top-up to name either.
                 val topUpId = Stand.topUp(client, session, majorUnits = 50).topUpId
                 val orderId = completeOnePurchase(client, session)
+                // A TARIFF CHANGE, LEFT WAITING. The screen `B-86` added shows a change and its
+                // confirmation, so the walk needs one that exists — and a PENDING one is the state
+                // worth walking: it is the branch that draws a control, and a confirmed change draws
+                // the same screen with one fewer component on it.
+                val changeId = startOneTariffChange(client, session)
 
                 // A SECOND code for the kit's own login. The one `Stand.signIn` used is spent, and the
                 // kit authenticates itself: handing it a token is not on offer, so the session it
@@ -79,7 +87,7 @@ class TckWalkTest {
 
                 val report =
                     RemoteTckTransport(Stand.serverUrl, client).let { transport ->
-                        TckRunner(transport, konektTckConfig(document, orderId, topUpId, loginValues)).run()
+                        TckRunner(transport, konektTckConfig(document, orderId, topUpId, changeId, loginValues)).run()
                     }
 
                 // Coverage first, per check and per endpoint. Never as a sum: a sum is satisfied by the
@@ -109,6 +117,22 @@ class TckWalkTest {
         return started.orderId
     }
 
+    // STARTED AND NOT CONFIRMED. The change screen has two shapes — waiting, with a control, and
+    // decided, without one — and the waiting one carries strictly more for the kit to check.
+    private suspend fun startOneTariffChange(
+        client: HttpClient,
+        session: Stand.Session,
+    ): String =
+        client
+            .post(TariffChanges()) {
+                bearerAuth(session.accessToken)
+                // Any tariff that is not the default, or the server refuses a change to the one the
+                // subscriber is already on. `tr-max` is the catalogue's last and differs from the
+                // default in both price and allowance, which is what makes the screen say something.
+                setBody(ChangeTariffRequest("tr-max"))
+            }.body<TariffChangeResponse>()
+            .changeId
+
     private suspend fun freshLoginValues(
         client: HttpClient,
         msisdn: String,
@@ -128,6 +152,7 @@ class TckWalkTest {
         document: JsonObject,
         orderId: String,
         topUpId: String,
+        changeId: String,
         loginValues: Map<String, JsonPrimitive>,
     ): TckConfig =
         TckConfig(
@@ -168,6 +193,8 @@ class TckWalkTest {
                             // makes the catalogue work at all, and `StaticPlanCatalog` would be
                             // broken without it.
                             "planId" -> "home-20gb-30d"
+
+                            "changeId" -> changeId
 
                             // A placeholder added to the plan and not given a value here would
                             // otherwise be substituted with the word "orderId" and produce a 404 that

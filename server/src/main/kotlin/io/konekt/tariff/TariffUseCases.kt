@@ -76,28 +76,69 @@ class StartTariffChangeUseCase(
     private suspend fun viewOf(
         changeId: String,
         subscriberId: String,
-    ): TariffChangeView {
-        // Read back rather than inferred from the engine's answer: that answer says what happened on
-        // this pass, and what the client needs is where the change now stands. After a Suspend those
-        // differ.
-        val saga = sagas.findById(changeId) ?: throw KonektException.NotFound("tariff change")
-        val payload = saga.payload as TariffChangePayload
-
-        return TariffChangeView(
-            changeId = changeId,
-            status = OrderStatus.of(saga.status),
-            // The CURRENT tariff, read after the saga ran: applied while it is still pending, and the
-            // new one only once the boundary row says applied.
-            currentTariffId = changes.currentTariffId(subscriberId) ?: catalogue.default.id,
-            requestedTariffId = payload.toTariffId,
-            effectiveAt = Instant.fromEpochMilliseconds(payload.effectiveAt),
-            requiredAction = if (saga.status == PetichStatus.PENDING_SIGNATURE) ACTION_CONFIRM_TARIFF else null,
-        )
-    }
+    ): TariffChangeView = tariffChangeViewOf(changeId, subscriberId, sagas, catalogue, changes)
 
     class Params(
         val subscriberId: String,
         val tariffId: String,
+    )
+}
+
+// ONE VIEW BUILDER FOR THREE CALLERS, and it is here rather than copied because the third caller is
+// what `B-86` added: a screen has to be able to READ a change, not only to start or confirm one.
+//
+// There were two copies before that — `StartTariffChangeUseCase.viewOf` and the tail of
+// `ConfirmTariffChangeUseCase` — and they had already begun to differ in the field that matters: one
+// derived `requiredAction` from the saga's status and the other hard-coded `null`. A third copy is
+// how a screen ends up disagreeing with the route about whether a change is still waiting. The eSIM
+// wizard learned exactly this (`B-66`), where one of two paths carried the issued profile and the
+// other did not.
+//
+// THE OWNER CHECK IS IN HERE for the same reason it is in the confirm use case: `authenticate` proves
+// the caller is somebody and says nothing about whose change this is. NotFound and not Forbidden —
+// asking for a stranger's change must not confirm that it exists.
+internal suspend fun tariffChangeViewOf(
+    changeId: String,
+    subscriberId: String,
+    sagas: PetichRepository,
+    catalogue: TariffCatalogue,
+    changes: TariffChanges,
+): TariffChangeView {
+    // Read back rather than inferred from an engine's answer: that answer says what happened on this
+    // pass, and what a screen needs is where the change now stands. After a Suspend those differ.
+    val saga = sagas.findById(changeId) ?: throw KonektException.NotFound("tariff change")
+    val payload =
+        saga.payload as? TariffChangePayload
+            // A saga id that exists and is not a tariff change.
+            ?: throw KonektException.NotFound("tariff change")
+    if (payload.subscriberId != subscriberId) throw KonektException.NotFound("tariff change")
+
+    return TariffChangeView(
+        changeId = changeId,
+        status = OrderStatus.of(saga.status),
+        // The CURRENT tariff, read after the saga ran: the old one while the change is pending, and
+        // the new one only once the boundary row says applied.
+        currentTariffId = changes.currentTariffId(subscriberId) ?: catalogue.default.id,
+        requestedTariffId = payload.toTariffId,
+        effectiveAt = Instant.fromEpochMilliseconds(payload.effectiveAt),
+        requiredAction = if (saga.status == PetichStatus.PENDING_SIGNATURE) ACTION_CONFIRM_TARIFF else null,
+    )
+}
+
+// READING ONE CHANGE, which is what a screen does and what nothing could do before `B-86`. The routes
+// could START and CONFIRM a change and there was no way to look at one — so a subscriber who left the
+// application between the two had no way back to the confirmation they were asked for.
+class ViewTariffChangeUseCase(
+    private val sagas: PetichRepository,
+    private val catalogue: TariffCatalogue,
+    private val changes: TariffChanges,
+) {
+    suspend operator fun invoke(params: Params): Result<TariffChangeView> =
+        suspendRunCatching { tariffChangeViewOf(params.changeId, params.subscriberId, sagas, catalogue, changes) }
+
+    class Params(
+        val changeId: String,
+        val subscriberId: String,
     )
 }
 
@@ -129,15 +170,10 @@ class ConfirmTariffChangeUseCase(
             // doing it differently here would be two ways to say one thing.
             engine.process(saga.copy(resumePayload = TariffConfirmation()))
 
-            val settled = sagas.findById(params.changeId) ?: throw KonektException.NotFound("tariff change")
-            TariffChangeView(
-                changeId = params.changeId,
-                status = OrderStatus.of(settled.status),
-                currentTariffId = changes.currentTariffId(payload.subscriberId) ?: catalogue.default.id,
-                requestedTariffId = payload.toTariffId,
-                effectiveAt = Instant.fromEpochMilliseconds(payload.effectiveAt),
-                requiredAction = null,
-            )
+            // The same builder the other two use. It used to be a third construction here with
+            // `requiredAction = null` written in — true today, and a value rather than a reading:
+            // a confirmation that failed to resume would report itself as needing nothing.
+            tariffChangeViewOf(params.changeId, params.subscriberId, sagas, catalogue, changes)
         }
 
     class Params(

@@ -27,4 +27,8 @@ val konektActionWireNames: List<String> =
         // intercepts a `submit_form` only for the form its screen holds, so a button sending another
         // form's id posted nothing at all.
         "resend_code",
+        // The second saga's two halves. A `navigate` cannot express either: the change does not exist
+        // until the press, and confirming resumes a saga rather than moving anywhere.
+        "change_tariff",
+        "confirm_tariff_change",
     )
