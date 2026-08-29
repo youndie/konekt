@@ -63,7 +63,26 @@ kotlin {
         withHostTest {}
     }
 
-    iosArm64()
+    // THE DEVICE TARGET, AND IT NOW PRODUCES SOMETHING. It was declared with no `binaries` block at
+    // all, so nothing was ever linked for a phone: every Apple claim in this repository was true of a
+    // simulator and of nothing else (`B-90`).
+    //
+    // THE SAME TWO EXECUTABLES the simulator gets, for the same reasons — one draws and one crashes,
+    // and the crash binary must link the reporter and as little else as possible. Linking is the half
+    // of `B-90` that needs no hardware, and having it done means the device run is a question of
+    // signing and installing rather than of whether the code builds for arm64 at all.
+    iosArm64 {
+        binaries {
+            executable("crash") {
+                entryPoint = "io.konekt.client.ios.crashMain"
+                baseName = "KonektCrash"
+            }
+            executable("home") {
+                entryPoint = "io.konekt.client.ios.homeMain"
+                baseName = "KonektHome"
+            }
+        }
+    }
     iosSimulatorArm64 {
         // AN EXECUTABLE, AND THEREFORE NO XCODE PROJECT. B-27 asks for a deliberate crash in the iOS
         // build to produce a report in katcher, which needs something that runs on a device. The

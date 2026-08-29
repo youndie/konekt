@@ -44,8 +44,8 @@ Three specific claims are affected, and only the third is severe:
   runner here has a device, and `AppleTestsAreNotClaimedTest` exists precisely so no job pretends
   otherwise.
 
-- AC: `linkHomeReleaseExecutableIosArm64` produces a binary, and the script assembles a bundle that
-  installs on a physical device with a development identity.
+- AC: `linkHomeReleaseExecutableIosArm64` produces a binary — **done**, see below — and the script
+  assembles a bundle that installs on a physical device with a development identity.
 - AC: the home screen draws against a stand from that device, and the fact is recorded with the
   build it was done on — a claim about a device is worth nothing without one.
 - AC: a deliberate crash from the device build appears in katcher, and the difference from `B-27`'s
@@ -53,3 +53,27 @@ Three specific claims are affected, and only the third is severe:
 - Anchors: `client/build.gradle.kts`, `scripts/ios-home-app.sh`, `scripts/ios-crash-app.sh`,
   `client/src/iosMain/kotlin/io/konekt/client/ios/HomeEntryPoint.kt`,
   `client/src/iosMain/kotlin/io/konekt/client/observability/KonektCrashReporter.kt`.
+
+## Partly done: the half that needs no hardware
+
+`iosArm64` had **no `binaries` block at all**, so nothing was ever linked for a phone — the target was
+declared, compiled as a klib, and produced no executable. It now declares the same two the simulator
+gets, and both link:
+
+```
+client/build/bin/iosArm64/homeDebugExecutable/KonektHome.kexe    62 MB   Mach-O 64-bit executable arm64
+client/build/bin/iosArm64/crashDebugExecutable/KonektCrash.kexe  41 MB   Mach-O 64-bit executable arm64
+```
+
+That is the first acceptance criterion and it needed no device. What it buys is that the remaining
+three are questions of **signing and installing** rather than of whether this code builds for a phone
+at all — and the answer to that was not known before: `AppleTestsAreNotClaimedTest` guards what is
+claimed about Apple TESTS, and nothing guarded what was claimed about an Apple BINARY.
+
+**The rest of the item stays open and needs the hardware.** `xcrun devicectl list devices` shows the
+one paired iPhone as `unavailable`; a development identity, an install through `devicectl`, the home
+screen drawn against a stand from that device, and a crash reaching katcher from it are all still to
+do — and the whole point of this item is that none of them may be inferred from the simulator.
+
+The two bundle fixes the simulator run turned up on the way (`B-94`'s launch screen and `B-95`'s scene
+manifest) apply to the device bundle too: both are in the same `Info.plist` the script writes.
