@@ -1,7 +1,7 @@
 ---
 id: B-85
 title: "The client claims Compose Multiplatform on two platforms and declares no Android target at all"
-status: open
+status: done
 priority: P0
 size: L
 stage: stage-m7-completeness
@@ -57,3 +57,93 @@ What makes it more than a build-file line, and why this is `L` rather than `S`:
   `build-logic/src/main/kotlin/konekt.multiplatform.gradle.kts`, `gradle/libs.versions.toml`,
   `client/src/commonMain/kotlin/io/konekt/client/app/KonektApp.kt`,
   `.github/workflows/check.yaml`.
+
+## What was done
+
+Three of the four acceptance criteria are met and **the fourth is refused by an upstream gap**, which
+is recorded rather than worked around. Taking them in order.
+
+**AC1 — an APK, built by CI on Linux.** `androidApp-debug.apk`, 17 MB, `io.konekt.android`, minSdk 26,
+targetSdk 36. `./gradlew build` now includes `:androidApp:assemble`, and the workflow installs the
+platform by NUMBER rather than inheriting whatever the runner image carries.
+
+**AC2 — it signs in against a stand and draws the home screen, with the same registry.** Done on a
+**physical Pixel 6a**, not an emulator: sign-in through the server's own login screens, the code from
+the stand, and the home screen with the balance card, the msisdn, the two controls, the empty-plan
+card and the four-tab bar. Screens, palette and bar are the server's.
+
+**AC3 — `kompot-client-android` is what resolves, verified from the dependency report.**
+
+```
+Variant androidApiElements-published:
+  org.gradle.libraryelements                | aar
+  org.gradle.jvm.environment                | android
+  org.jetbrains.kotlin.platform.type        | androidJvm
+```
+
+kompot's README records an Android consumer silently resolving the DESKTOP variant. konekt is the
+second implementation able to check, and the `.aar` arrives — a gap closed and *confirmed* rather than
+assumed. Written into `research-architecture` §1.9.
+
+**AC4 — a crash in katcher naming its release: NOT MET, and it cannot be from this side.** The
+measurement is on a device, in the log, and in `CrashActivity`:
+
+```
+E System     : Ignoring attempt to set property "user.dir" to value "/data/user/0/…/cache".
+I System.out : 📡 Katcher initialized. Storage ready.
+E AndroidRuntime: FATAL EXCEPTION: main … deliberate crash from the konekt Android build
+I System.out : 📡 Failed to save crash report: /.katcher_cache/crash_….json: ENOENT
+```
+
+katcher's multiplatform `client` publishes no android variant, so this build resolves `client-jvm`,
+whose report cache is fixed at `System.getProperty("user.dir")` — `/` on Android, unwritable, and a
+property Android **refuses** to let an application change. The other artefact, `client-android`,
+declares the same `object Katcher` in the same package and fails `checkDebugDuplicateClasses` against
+the one the shared code compiles against. One cannot be used and the other cannot be repaired from
+outside. [katcher#27](https://github.com/youndie/katcher/issues/27), with the device log.
+
+The hook itself works — `Thread.setDefaultUncaughtExceptionHandler`, which Android honours. Everything
+works except the last step, and `start` says *"Storage ready"* having checked nothing, which is why
+this took a device to find. The harness is **kept**, and `README.md`'s observability table carries the
+Android row as **not delivered** with the reason: a blank cell reads as "not tried".
+
+## What the item did not ask for and the work required
+
+- **The composition root existed twice and had drifted.** The desktop runner handled `SignOutAction`;
+  the iOS one did not, so signing out worked on a laptop and printed "no handler" on a phone. Android
+  would have been the third copy, so the root moved to `KonektComposition` in `commonMain` — engine,
+  settings source and platform name are the parameters, and everything else is shared.
+  `KonektCrashReporter` moved with it; nothing in it was ever Apple-specific.
+- **Window insets.** Without them the first element of every screen draws under the status bar: the
+  login title read as a damaged font and the home title as a clipped logo, while everything below was
+  perfect. Found by screenshot, fixed with `safeDrawing`, and confirmed by the same build on the same
+  device.
+- **Android host tests.** AGP warns that `commonTest` exists and is not run, and a target that
+  compiles without running its shared tests is the Apple gap arriving by a different door.
+  `withHostTest {}` turns them on — `ClientDecodesEveryActionTest` now runs on Android, two cases, in
+  `testAndroidHostTest`. It needed two task-dependency edges declared, because AGP's lint model and
+  lint analysis both read KSP's output without saying so and Gradle refuses the race.
+- **Two build findings worth the comment they carry**: AGP on `build-logic`'s classpath alone splits
+  it from KSP's, and configuring any task dies with `ClassNotFoundException` naming an AGP class; and
+  AGP 9 refuses `org.jetbrains.kotlin.android` outright.
+- **`ANDROID_HOME` is now needed for any Gradle task on the Mac, the formatter included.** In
+  `CLAUDE.md`, with why it is an environment variable and not `local.properties`: that file would
+  replicate to the Linux box and override the SDK path already exported there.
+
+## What is deliberately not in scope
+
+The stores, signing, an icon and a launch screen — non-goals in
+[reference-scope](../services/reference-scope.md). `B-90`'s iOS device build is a separate item and
+untouched. katcher's Gradle plugin and its R8 mapping upload are pointless while no report arrives at
+all; they belong with whatever closes `katcher#27`.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The application | `androidApp/` |
+| The shared composition root | `client/src/commonMain/kotlin/io/konekt/client/app/KonektComposition.kt` |
+| The target and its two lint edges | `client/build.gradle.kts` |
+| Every shared module's target | `build-logic/src/main/kotlin/konekt.multiplatform.gradle.kts` |
+| The classpath finding | `build.gradle.kts` (root `plugins` block) |
+| The katcher measurement | `androidApp/src/main/kotlin/io/konekt/android/CrashActivity.kt`, `docs/research/research-architecture.md` §1.9 |

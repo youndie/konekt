@@ -43,11 +43,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (9)
+## Open (8)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[ ]` | The client claims Compose Multiplatform on two platforms and declares no Android target at all | P0 | L | - |
 | [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[ ]` | Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it | P0 | M | - |
 | [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[ ]` | The custom package form prices a package and cannot sell one, and nothing in the app leads to it | P0 | M | - |
 | [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[ ]` | Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query | P1 | M | - |
@@ -57,7 +56,7 @@ so re-prioritising must never move a file.
 | [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[ ]` | A second replica silently loses live updates, and the only guard in the chart is about the simulator | P2 | S | - |
 | [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 
-## Closed (83)
+## Closed (84)
 
 **The wire and the shell**
 
@@ -162,6 +161,10 @@ so re-prioritising must never move a file.
 - [B-82](docs/backlog/B-82-the-brand-kit-document-says-the-theme-is-unwired.md) `[x]` - The brand-kit document says no theme is served over HTTP, and the server has been serving one since B-22
 - [B-83](docs/backlog/B-83-typography-does-not-ship-from-the-server.md) `[x]` - Two documents promise typography from the server; no kit carries any and a font family cannot cross the wire
 - [B-84](docs/backlog/B-84-a-guard-four-comments-cite-does-not-exist.md) `[x]` - Four files name DevRoutesAreNotProductionTest as what keeps the dev routes out of a real build, and there is no such test
+
+**The reference, complete**
+
+- [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 
 <!-- END INDEX -->
 

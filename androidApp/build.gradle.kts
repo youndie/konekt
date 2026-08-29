@@ -62,4 +62,6 @@ dependencies {
     implementation(libs.androidx.activityCompose)
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
+    // For the window insets: `safeDrawing` and `windowInsetsPadding` live in foundation's layout half.
+    implementation(libs.compose.foundation)
 }

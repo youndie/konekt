@@ -3,6 +3,11 @@ package io.konekt.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.Modifier
 import io.konekt.client.app.KonektComposition
 import io.konekt.client.app.KonektPlatform
 import io.ktor.client.engine.okhttp.OkHttp
@@ -44,6 +49,20 @@ class KonektActivity : ComponentActivity() {
             )
         composition.start()
 
-        setContent { composition.Screen() }
+        setContent {
+            // THE INSETS, AND THEY ARE THE ONE THING THIS PLATFORM NEEDS THAT THE OTHERS DO NOT.
+            //
+            // Measured on a Pixel 6a rather than reasoned about: without this the first element of
+            // every screen draws UNDER the status bar. The failure is not a blank screen and not an
+            // error — it is the top few pixels of one line of text, so the login title read as a
+            // damaged font and the home title as a clipped logo, while everything below them was
+            // perfect. A screenshot is the only way that is visible at all.
+            //
+            // `safeDrawing` rather than `statusBars`: it also covers the gesture bar at the bottom
+            // and a display cutout, and this application draws a bottom bar.
+            Box(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+                composition.Screen()
+            }
+        }
     }
 }

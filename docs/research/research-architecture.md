@@ -232,7 +232,7 @@ architectural decision rather than a runtime one.
 **Consequence 2.** No TLS means the broker never leaves the compose network. That is fine for a
 reference build and is stated rather than assumed.
 
-### 1.9 The observability trio covers the server and Android; iOS is not covered at all
+### 1.9 The observability trio covers the server; iOS is covered now, and Android is not
 
 > **Amended, and the finding is now the opposite.** Both gaps were upstream and both are closed:
 > katcher publishes every Apple target since `client:0.6.2` ([katcher#25](https://github.com/youndie/katcher/issues/25))
@@ -266,6 +266,28 @@ the repository's own version, so the three katcher entries in the version catalo
 
 Kept as a fact rather than deleted, because it is the reason `B-27` exists at all and because "the
 published targets are whichever host built them" is a shape worth recognising again.
+
+**Amended again by `B-85`: the Android half is a third gap, and it is the largest of the three.** The
+row above says "Android is a separate coordinate" as if that settled it. It does not, and building an
+Android client is what showed why — three facts, all measured on this build and on a Pixel 6a:
+
+| Fact | Where verified |
+|---|---|
+| `kompot-client` resolves its ANDROID variant, `androidApiElements-published` with `libraryelements = aar` and `platform.type = androidJvm` | `./gradlew :client:dependencyInsight --configuration androidCompileClasspath --dependency kompot-client` |
+| katcher's multiplatform `client` still declares no android target, so an Android consumer resolves `client-jvm` — silently, since nothing fails to resolve or compile | `katcher/client/build.gradle.kts`, and the resolved artefact |
+| `client-android:0.4.92` declares `object Katcher` in the SAME package as `client`, so the two fail `checkDebugDuplicateClasses` on one classpath | the AGP failure, quoted in `androidApp/.../CrashActivity.kt` |
+| `JvmKatcherFileSystem` caches at `File(System.getProperty("user.dir"), ".katcher_cache")`; on Android that is `/`, and Android **refuses** an application's attempt to change the property | device log: `Ignoring attempt to set property "user.dir"`, then `Failed to save crash report: /.katcher_cache/…: ENOENT` |
+
+**Consequence, and it is the first row of the observability table this repository cannot turn green
+from inside.** The Android build's crash hook fires and reaches katcher's own handler; the report is
+never stored and therefore never uploaded, and `start` prints *"Storage ready"* having checked
+nothing. There is no workaround available to a consumer: one artefact cannot be used and the other
+cannot be fixed from outside. Filed as
+[katcher#27](https://github.com/youndie/katcher/issues/27), with the device measurement.
+
+**The kompot row is the opposite result and worth the same weight.** kompot's README records an
+Android consumer silently resolving the DESKTOP variant; konekt is the second implementation able to
+check, and the `.aar` arrives. That is a gap closed and confirmed rather than assumed.
 
 ### 1.10 Conformance needs an OpenAPI document, and a clean report can mean nothing was checked
 

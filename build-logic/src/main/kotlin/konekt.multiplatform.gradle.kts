@@ -31,6 +31,13 @@ kotlin {
         namespace = "io.konekt" + project.path.replace(":", ".").replace("-", "_")
         compileSdk = libs.findVersion("androidCompileSdk").get().requiredVersion.toInt()
         minSdk = libs.findVersion("androidMinSdk").get().requiredVersion.toInt()
+
+        // HOST TESTS, so `commonTest` actually RUNS on this target rather than merely compiling for
+        // it. Without this AGP says so in a warning nobody reads — "the 'commonTest' source directory
+        // exists, but android host tests are not enabled" — and the target joins the build with every
+        // shared test silently not running on it, which is the Apple gap `AppleTestsAreNotClaimedTest`
+        // exists for, arriving by a different door.
+        withHostTest {}
     }
 
     iosX64()

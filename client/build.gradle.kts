@@ -54,6 +54,13 @@ kotlin {
             libs.versions.androidMinSdk
                 .get()
                 .toInt()
+
+        // HOST TESTS, so `commonTest` actually RUNS on this target rather than merely compiling for
+        // it. Without this AGP says so in a warning nobody reads — "the 'commonTest' source directory
+        // exists, but android host tests are not enabled" — and the target joins the build with every
+        // shared test silently not running on it, which is the Apple gap `AppleTestsAreNotClaimedTest`
+        // exists for, arriving by a different door.
+        withHostTest {}
     }
 
     iosArm64()
@@ -216,8 +223,11 @@ kotlin {
             // kompot's README records the quiet version of.
             //
             // So this build uses the multiplatform client on Android as everywhere else: one API and
-            // one call site, which is what the multiplatform claim is about. What that costs, and the
-            // workaround, is in `CrashActivity` — filed as youndie/katcher#26.
+            // one call site, which is what the multiplatform claim is about. What it COSTS is that
+            // Android reports no crashes at all — the jvm variant's cache path is `/` there and
+            // Android refuses to let an application move it — and there is no workaround from this
+            // side. Measured on a device and written into `CrashActivity`; filed as
+            // youndie/katcher#27. Breadcrumbs, which are in memory, are unaffected.
         }
 
         // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop
@@ -268,6 +278,27 @@ kotlin {
         }
     }
 }
+
+// AGP'S LINT MODEL READS KSP'S OUTPUT AND DOES NOT SAY IT DEPENDS ON IT.
+//
+// With Android host tests on, `:client:check` fails validation rather than a test:
+// `generateAndroidHostTestLintModel` uses `build/generated/ksp/android/androidHostTest/java` "without
+// declaring an explicit or implicit dependency". It is a real ordering hazard and Gradle is right to
+// refuse — the two tasks would otherwise race, and the losing order produces a lint model built over
+// sources that are not there yet.
+//
+// Declared here rather than turning host tests off, because the alternative is an Android target whose
+// shared tests silently do not run, which is the failure the `withHostTest {}` above exists to avoid.
+// `matching { }` and not `named(...)`: the task exists only when the Android variant does, and naming
+// it directly makes every other module's configuration fail.
+// TWO TASKS AND NOT ONE: lint builds a model and then ANALYSES with it, and both read the generated
+// directory. The first was the only failure until the first was fixed, which is the ordinary shape of
+// this — a missing edge hides the next missing edge.
+tasks
+    .matching { it.name == "generateAndroidHostTestLintModel" || it.name == "lintAnalyzeAndroidHostTest" }
+    .configureEach {
+        dependsOn(tasks.matching { it.name == "kspAndroidHostTest" })
+    }
 
 // WHERE `-Werror` ACTUALLY APPLIES IN THIS MODULE, WHICH IS NOT WHERE THE BLOCK ABOVE SUGGESTS.
 //

@@ -62,11 +62,11 @@ Stated as a table because "we have crash reporting" is the sentence that hides w
 product is silent — and this one was silent in three different places for three different reasons, none
 of which a local test could have found.
 
-| | Server (JVM) | Compose client (iOS) | Compose client (desktop) |
-|---|---|---|---|
-| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | breadcrumbs only |
-| logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS |
-| latency and errors (metrik) | **delivered** — latency per route | — | — |
+| | Server (JVM) | client (iOS) | client (Android) | client (desktop) |
+|---|---|---|---|---|
+| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | **not delivered**, and the reason is upstream — see below | breadcrumbs only |
+| logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS | same as iOS |
+| latency and errors (metrik) | **delivered** — latency per route | — | — | — |
 
 "Delivered" is a stronger word than "wired" on purpose: every row above was measured at the COLLECTOR
 after driving the product, not at the agent's configuration. That distinction is the whole reason for
@@ -82,6 +82,15 @@ exception before an uncaught-exception handler could run.
 
 The remaining blank is metrik on the client, which measures route latency and has no routes to
 measure there.
+
+**Android's row says "not delivered" rather than nothing, because it was tried and measured.** A
+deliberate crash on a Pixel 6a fires the hook, reaches katcher's own handler, and fails at the last
+step: katcher's multiplatform client publishes no android variant, so the build resolves the JVM one,
+whose report cache is fixed at `System.getProperty("user.dir")` — `/` on Android, unwritable, and a
+property Android refuses to let an application change. The other artefact, `client-android`, declares
+the same type in the same package and cannot share a classpath with the one the shared code compiles
+against. Filed as [katcher#27](https://github.com/youndie/katcher/issues/27); the crash harness is
+kept so the day it is fixed is a run rather than a rewrite.
 
 ### 🎨 The rebrand, as a demonstrated property
 

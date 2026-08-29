@@ -95,6 +95,30 @@ runtime installed and no device created, the task fails with "Check that request
 which blames the SDK that is installed. `xcrun simctl list devices available` is what tells the two
 apart. CI still has no Mac runner with a runtime; that is `B-37`.
 
+**ANY Gradle task on the Mac now needs `ANDROID_HOME`**, including the formatter, because `B-85` gave
+every shared module an Android target and AGP refuses to configure without an SDK:
+
+```bash
+ANDROID_HOME=$HOME/Library/Android/sdk LOCAL=1 ./gradlew ktlintFormat
+```
+
+An environment variable and **not** `local.properties`: that file would be replicated to the Linux
+box, where a Mac path does not exist and `sdk.dir` overrides the `ANDROID_HOME` already exported
+there. The failure it produces — "SDK location not found" — names the file rather than the
+replication, which is why it is written down here.
+
+The Android application runs on a device attached to the Mac, not on the Linux box:
+
+```bash
+ssh -f -N -L 8080:127.0.0.1:8080 -L 8192:127.0.0.1:8192 youndie@<linux-box>   # the stand
+adb reverse tcp:8080 tcp:8080 && adb reverse tcp:8192 tcp:8192
+adb install -r androidApp/build/outputs/apk/debug/androidApp-debug.apk
+adb shell am start -n io.konekt.android/.KonektActivity --es KONEKT_URL http://127.0.0.1:8080
+```
+
+Settings arrive as intent extras rather than as environment variables — a phone has no environment —
+and the two hops exist because the stand runs in Docker on the Linux box while `adb` runs here.
+
 **Everything Apple stays on the Mac** — `iosSimulatorArm64Test`, `xcodebuild`, the simulator, the
 screenshot tasks (`LOCAL=1 ./gradlew …` gets past the WSL hook). So does **`generateMigrations`**, and so does every other task that writes files:
 one-way replication reverts anything a tool writes on the replica, so a run there looks like it did

@@ -113,6 +113,16 @@ jobs:
       - name: The conformance gate asserts coverage, before any verdict
         run: ./gradlew :server:test --tests 'io.konekt.conformance.*' --no-daemon
 
+      # THE ANDROID PLATFORM IS NAMED RATHER THAN INHERITED. A runner image carries whatever platforms
+      # it carries, and a build that compiles against "whatever was there" changes behaviour when the
+      # image is bumped — silently, because a newer platform compiles the same sources. The two numbers
+      # here are the two in `gradle/libs.versions.toml`, and `sdkmanager` is a no-op when they are
+      # already installed.
+      - name: The Android platform this build compiles against
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+
       # NO iOS TESTS ARE CLAIMED HERE, and saying so is one of B-37's acceptance criteria.
       #
       # On Linux, Kotlin/Native cross-compiles the Apple klibs and the simulator test tasks are
@@ -120,7 +130,10 @@ jobs:
       # warning is a setting that silences it. So a green run of this job means the Apple code
       # COMPILES and nothing more; running the tests needs a Mac with a simulator runtime installed,
       # and no runner here has one.
-      - name: Build and test (Apple targets are compiled, not tested)
+      # `build` NOW PRODUCES AN APK TOO. `:androidApp:assemble` is part of it, so a green run of this
+      # job means the Android application links — and `testAndroidHostTest` means every `commonTest`
+      # ran on that target rather than merely compiling for it. Unlike Apple, nothing here is skipped.
+      - name: Build and test (Apple targets are compiled, not tested; Android is both)
         run: ./gradlew build --no-daemon
 
   # THE STAND, and it is a job of its own because it fails for reasons the other two cannot see: a
