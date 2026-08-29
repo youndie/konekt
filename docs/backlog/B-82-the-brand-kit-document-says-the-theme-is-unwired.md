@@ -1,7 +1,7 @@
 ---
 id: B-82
 title: "The brand-kit document says no theme is served over HTTP, and the server has been serving one since B-22"
-status: open
+status: done
 priority: P2
 size: XS
 stage: stage-m6-reframe
@@ -43,3 +43,35 @@ and the one thing this repository does prove about white-labelling is exactly th
 - Anchors: `docs/design/design-brand-kit.md`,
   `feature/theme-shared-api/src/commonMain/kotlin/io/konekt/feature/theme/shared/api/BrandTheme.kt`,
   `server/src/main/kotlin/io/konekt/theme/ThemeRoutes.kt`, `server/src/main/kotlin/io/konekt/Application.kt`.
+
+## What was done
+
+The paragraph is replaced rather than edited, so the file has one tense. What stands in its place is
+read out of the route table: `BrandTheme.PATH` is the constant, `brandThemeRouteGroup(catalogue)`
+mounts it at `AuthTier.PUBLIC` in `Application.kt`, and `KonektScreenSource` fetches it — with a
+missing kit decoding to `null` rather than failing, which is the behaviour a reader needs beside the
+endpoint.
+
+The old sentence is kept **as a parenthetical note** with why it happened: it was written mid-item and
+was true for the length of one commit. That is the general shape, not this document's accident — a
+handoff sentence inside a design document has no owner after the item closes, and `code_anchors.py`
+cannot catch the class at all, because every path in the paragraph was valid and only the claim about
+them was false.
+
+Checked: no sentence left in the file describes a future state — a grep for *will*, *not yet*, *to be
+created*, *until that* returns nothing but the note's own quotation.
+
+## What is deliberately not in scope
+
+The typography sentence at the top of the file, which is correct and is the *other* documents' problem:
+[B-83](B-83-typography-does-not-ship-from-the-server.md) makes `README.md` and
+`operator-boundaries.md` agree with it.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The paragraph | `docs/design/design-brand-kit.md` (*Serving it*) |
+| The path constant | `feature/theme-shared-api/.../BrandTheme.kt` |
+| Where it is mounted | `server/src/main/kotlin/io/konekt/Application.kt` (`brandThemeRouteGroup`) |
+| Who fetches it | `client/src/commonMain/kotlin/io/konekt/client/app/KonektScreenSource.kt` |

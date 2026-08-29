@@ -183,11 +183,19 @@ design system by hand has to pass it too — `BrandSwitchTest` was changed for t
 kit as `application/json`, outside `authenticate` — the sign-in screen is the first thing every
 subscriber sees and it has to be branded before a token exists. A kit carries no subscriber data.
 
-**As of B-22 the composition root does not call it yet**, and the endpoint's path constant does not
-exist: this repository writes no endpoint path outside a `*-shared-api` module, and the module for
-this one is still to be created. Until that lands, the two kits are real files with real guards over
-them and the client half is complete and tested, but nothing is served over HTTP. The item's handoff
-says precisely what is missing.
+The path constant is `BrandTheme.PATH` in
+`feature/theme-shared-api/src/commonMain/kotlin/io/konekt/feature/theme/shared/api/BrandTheme.kt`,
+because this repository writes no endpoint path outside a `*-shared-api` module. `Application.kt`
+mounts it as `brandThemeRouteGroup(catalogue)` at `AuthTier.PUBLIC`, and the client fetches it in
+`KonektScreenSource` — a missing kit decodes to `null` rather than failing, so a deployment that
+serves no theme still draws.
+
+*(This section used to say the opposite: **as of B-22 the composition root does not call it yet**, and
+that no path constant existed. It was written mid-item and was true for the length of one commit —
+`B-22`'s own handoff records the HTTP half as the last thing it did. Kept as a note because a handoff
+sentence inside a design document has no owner once the item closes, and `code_anchors.py` cannot
+catch this class at all: every path in that paragraph was valid, and only the claim about them was
+false.)*
 
 ## What is checked, and by what
 
