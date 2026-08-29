@@ -43,14 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (13)
+## Open (12)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[ ]` | The client claims Compose Multiplatform on two platforms and declares no Android target at all | P0 | L | - |
 | [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[ ]` | Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it | P0 | M | - |
 | [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[ ]` | The custom package form prices a package and cannot sell one, and nothing in the app leads to it | P0 | M | - |
-| [B-81](docs/backlog/B-81-the-boundaries-table-has-no-row-for-language.md) `[ ]` | The boundaries table has no row for language, currency, date format, time zone or the app's own name | P1 | S | - |
 | [B-84](docs/backlog/B-84-a-guard-four-comments-cite-does-not-exist.md) `[ ]` | Four files name DevRoutesAreNotProductionTest as what keeps the dev routes out of a real build, and there is no such test | P1 | S | - |
 | [B-88](docs/backlog/B-88-roaming-starts-through-a-dev-route.md) `[ ]` | Roaming has no screen of its own, and the only way to start a package is a public dev route that names the subscriber in a query | P1 | M | - |
 | [B-89](docs/backlog/B-89-the-usage-consumer-only-runs-with-the-simulator.md) `[ ]` | The only consumer of the usage topic is constructed inside the simulator's own starter, so reading real usage means also inventing some | P1 | S | - |
@@ -61,7 +60,7 @@ so re-prioritising must never move a file.
 | [B-91](docs/backlog/B-91-a-second-replica-loses-live-updates.md) `[ ]` | A second replica silently loses live updates, and the only guard in the chart is about the simulator | P2 | S | - |
 | [B-92](docs/backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) `[ ]` | Two sweepers still compensate the same abandoned saga; B-64 closed the money and left the race | P2 | S | - |
 
-## Closed (79)
+## Closed (80)
 
 **The wire and the shell**
 
@@ -162,6 +161,7 @@ so re-prioritising must never move a file.
 
 - [B-79](docs/backlog/B-79-the-repository-calls-itself-a-box.md) `[x]` - The repository calls itself a box an operator buys, and it is a reference implementation on a telecom domain
 - [B-80](docs/backlog/B-80-the-non-goals-are-nowhere.md) `[x]` - Nothing states what this build is deliberately not, so every absence reads as unfinished work
+- [B-81](docs/backlog/B-81-the-boundaries-table-has-no-row-for-language.md) `[x]` - The boundaries table has no row for language, currency, date format, time zone or the app's own name
 
 <!-- END INDEX -->
 

@@ -14,14 +14,15 @@ tags: [white-label, operations, boundaries]
 
 # What an operator can change, and what it costs
 
-The product's claim is that an operator rebrands the box without development. That is true, with
-boundaries — and **a boxed product whose boundaries are discovered by the buyer is a support contract
-rather than a box.** So they are written down here, per axis, with the research section that
-establishes each one.
+The claim this build demonstrates is that a brand ships from the server and the client applies it
+without a rebuild. That is true, with boundaries — and **a claim whose boundaries are discovered by
+the reader is worth less than a narrower claim with its edges drawn.** So they are written down here,
+per axis, with the research section that establishes each one.
 
-Written as a table because a paragraph lets the awkward rows hide.
+Written as a table because a paragraph lets the awkward rows hide. What is not on any axis at all —
+the things this build deliberately does not do — is [reference-scope](reference-scope.md).
 
-## The four costs
+## The five costs
 
 | Cost | What it means |
 |---|---|
@@ -29,9 +30,12 @@ Written as a table because a paragraph lets the awkward rows hide.
 | **server deploy** | a new server image; clients are untouched |
 | **client release** | a new build in the stores, on the subscriber's update schedule |
 | **broker restart** | booblik's topics are fixed at startup, so the broker itself must be restarted |
+| **not available** | the wire has no vocabulary for it, so there is no price. Not slow — impossible without a change to a toolkit |
 
-The order matters: each row down is slower than the one above it, and the last one a subscriber
-controls rather than the operator.
+The order matters: the first four get slower going down, and the fourth is on a subscriber's schedule
+rather than an operator's. The fifth is not on that scale at all, and it is here because **a price
+list that silently omits what is not for sale is read as a complete price list.** One axis carries it
+today, and one axis is enough to need the column.
 
 ## The table
 
@@ -45,6 +49,12 @@ controls rather than the operator.
 | A brand the client has never heard of | **client release** to get its shapes | It is served and rendered immediately — with brand A's radii, silently. `BrandKitsTest` fails when the server ships a kit no scale answers for, so the gap is caught in CI rather than by a subscriber. | [§1.2](../research/research-architecture.md) |
 | A new kind of component | **client release** | The dictionary is the API. An unknown type draws the degradation block — never a blank gap — and is reported with its wire name, so an operator can see which build is behind and how often. | [§1.5](../research/research-architecture.md), [§1.4](../research/research-architecture.md) |
 | A new event topic | **broker restart** | booblik fixes its topics at startup and has no replication. | [§1.8](../research/research-architecture.md) |
+| The language | server deploy, **and one at a time** | There is no `stringResource`, no `Accept-Language` and no bundle anywhere: every string is an English literal in the server's Kotlin — `HomeScreen.kt`, `PlansScreen.kt`, `RoamingZoneNames.kt`. So a second language is a second deployment, not a second header. | [reference-scope](reference-scope.md) |
+| The currency | server deploy | `MoneyFormat` carries its own layout table for five currencies and states the assumption: *the product has one audience per deployment*. | `shared/server-common/.../MoneyFormat.kt` |
+| The date format | server deploy | `DayFormat` pins `"d MMM"` and `Locale.ENGLISH`. The client formats nothing, so this is the only place it can change. | `shared/server-common/.../DayFormat.kt` |
+| The time zone | server deploy | `DayFormat` pins `ZoneId.of("UTC")`, and `B-33` records the billing boundary being computed in one fixed zone. Everything stored is an instant, so this is a formatting decision and not a data migration. | `B-33` |
+| The application's name and icon | **client release**, once there is one to release | There is no application to name yet — `scripts/ios-home-app.sh` writes `CFBundleName` by hand for a simulator bundle. See `B-85` and `B-90`. | `scripts/ios-home-app.sh` |
+| Icons in the interface | **not available** | kompot has no icon vocabulary — no wire type, no token. `BottomNavRenderer` draws text labels and says why: an icon set shipped with the client is a second dictionary kept in step by hand. The canvas draws icons; closing it is a change to the toolkit. | `client/.../render/BottomNavRenderer.kt` |
 | The plan catalogue and its prices | server deploy | `StaticPlanCatalog` is in the server's code. A real MVNO reads a BSS; this build does not, and says so. | `feature/purchase-server-data` |
 | The tariff behind a custom package | server deploy | One function, no campaign layer. The client is never given a price table — a price computed on the client is a price a client can argue with. | [feature-plan-purchase](../features/feature-plan-purchase.md) |
 | A database schema change | server deploy, **twice** | Expand and contract are separate releases. A differ emits the shortest SQL that makes two schemas equal, which is `DROP COLUMN` and `RENAME` — exactly what breaks a rolling deploy. | `B-36` |
@@ -64,7 +74,13 @@ brand A's radii silently, because refusing to draw a screen over a corner radius
 it with the wrong one. What makes that safe is not the fallback: it is the test that fails when the
 server ships a kit no scale answers for.
 
-**The slowest row is the one an operator does not control.** A client release lands on the
+**One row has no price, and that is the point of listing it.** Icons are the only axis where the
+answer is not "how fast" but "not through this wire". Fourteen rows that each name a cost imply that
+everything has one, which is exactly the impression a reader carries away from a table with no such
+column. It is also not a defect of konekt: the gap is in the toolkit, and closing it is an upstream
+proposal rather than a deploy.
+
+**The slowest row of the four is the one an operator does not control.** A client release lands on the
 subscriber's schedule, not the operator's — which is why the two rows that need one are the two the
 architecture works hardest to avoid needing.
 
@@ -72,4 +88,5 @@ architecture works hardest to avoid needing.
 
 Pricing, packaging and anything commercial. Also anything about a real BSS, OCS, SM-DP+ or payment
 provider: every external system in this build is a mock, and what it would cost to change a real one
-is a fact about that vendor rather than about this box.
+is a fact about that vendor rather than about this build. Which of them are mocked on purpose, and
+what would end each mock, is [reference-scope](reference-scope.md).
