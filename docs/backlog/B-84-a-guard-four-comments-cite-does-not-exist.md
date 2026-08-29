@@ -1,7 +1,7 @@
 ---
 id: B-84
 title: "Four files name DevRoutesAreNotProductionTest as what keeps the dev routes out of a real build, and there is no such test"
-status: open
+status: done
 priority: P1
 size: S
 stage: stage-m6-reframe
@@ -52,3 +52,74 @@ a stranger's roaming package and spend their allowance.
   `server/src/main/kotlin/io/konekt/screens/dev/FailingRouting.kt`,
   `server/src/main/kotlin/io/konekt/roaming/dev/ArriveRouting.kt`,
   `server/src/test/kotlin/io/konekt/screens/ForwardCompatScreenTest.kt`.
+
+## What was done
+
+`server/src/test/kotlin/io/konekt/DevRoutesAreNotProductionTest.kt`, three assertions:
+
+1. **No development route is in the production route table.** It mounts `productionRouteGroups()`
+   into an application, walks the routing tree Ktor actually built, and refuses any path under
+   `/api/v1/dev/`. Not the flags: a flag test proves one configuration file's default, and what
+   matters is that no dev route is reachable in the composition every deployment mounts, however the
+   flags are read.
+2. **The positive control**, which is what keeps the first from being a test of a detector that finds
+   nothing: mounting production **plus** both dev groups produces exactly four routes, named
+   individually — `forward-compat`, `roaming/arrive`, `fail` and `otp`. Asserting the development
+   table is merely larger would pass with either group missing.
+3. **Every `@Resource` under a `dev` package spells a `/api/v1/dev/` path.** The first check reads a
+   path, so a dev route whose path did not say `dev` would be mounted into production and greeted
+   with silence. This one reads the source, over every module — `productionSources()` walks the
+   repository — with a count so a file leaving a `dev` package is noticed rather than silently
+   dropping a subject.
+
+**Proved by mutation.** `productionRouteGroups() + devScreensRouteGroup` turns it red, naming the
+three routes it now serves: `GET /api/v1/dev/fail`, `GET /api/v1/dev/screens/forward-compat`,
+`POST /api/v1/dev/roaming/arrive`.
+
+### Two more of the same shape, found by the third AC
+
+The AC asked that a grep for the citations resolve. It did not, for three more names:
+
+- **`Shell.kt` cited a navigation test twice, in the present tense**, after `B-49` deleted it along
+  with the client's copy of the graph. Now `EveryScreenIsReachableTest`, which is what replaced it.
+- **Two files named a topic test that has always been called `BrokerTopicsTest`** — `EventTopics.kt`
+  and `BrokerHarness.kt`.
+- **`KonektClientJson.kt` and `EveryScreenIsReachableTest.kt` each quoted a name deliberately**, one
+  for a test that never existed and one for a test `B-49` deleted. Both now describe the test instead
+  of spelling its name.
+
+That last decision is the reason there is a **fourth deliverable**: `CitedTestsExistTest`, which fails
+on any backticked `…Test` in the tree that is not a file. It found the second historical citation
+while being written, which is the argument for it. It carries **no exemption list** — the two
+deliberate references were reworded rather than exempted, because an exemption in a completeness guard
+is one line away from covering the case the guard exists for, and its own regex is built from two
+pieces so this file contains no citation of itself.
+
+### What moved
+
+- `routingTreeOf`, `inventoryOf` and `servedBy` came out of `OpenApiDocumentTest` into
+  `openapi/RoutingTreeHarness.kt`. Two guards now ask the same question of the route table and a
+  second copy of that harness would be a second opinion about what a deployment mounts.
+- `ForwardCompatScreenTest`'s `devScreensRouteGroup !in konektRoutes` is **deleted**, with a comment
+  saying where it went and why the new one is stronger: object identity over one group satisfied any
+  dev route mounted by other means.
+- `productionSources()` is now a filter over a new `everyKotlinSource()`, because a comment citing a
+  test lives in a test as often as in production code.
+
+Verified: `:server:test` and `:client:jvmTest` green, `ktlintCheck` green.
+
+## What is deliberately not in scope
+
+What the dev routes do and how they are gated. `arrive`'s `subscriberId` query parameter is still
+there — [B-88](B-88-roaming-starts-through-a-dev-route.md) removes the reason it exists rather than
+authenticating a route that must never ship.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The guard | `server/src/test/kotlin/io/konekt/DevRoutesAreNotProductionTest.kt` |
+| The one that keeps the citations honest | `server/src/test/kotlin/io/konekt/ci/CitedTestsExistTest.kt` |
+| The shared route-table harness | `server/src/test/kotlin/io/konekt/openapi/RoutingTreeHarness.kt` |
+| What it asserts about | `server/src/main/kotlin/io/konekt/Application.kt` (`productionRouteGroups`) |
+| The routes it keeps out | `server/src/main/kotlin/io/konekt/screens/dev/`, `server/src/main/kotlin/io/konekt/roaming/dev/` |

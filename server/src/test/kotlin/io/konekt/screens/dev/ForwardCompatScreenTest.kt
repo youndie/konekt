@@ -12,8 +12,6 @@ import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.components.konektWalk
-import io.konekt.devScreensRouteGroup
-import io.konekt.konektRoutes
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -88,18 +86,11 @@ class ForwardCompatScreenTest {
         assertEquals("9.7 GB left", counters.first().valueText)
     }
 
-    @Test
-    fun `the development screen is not in the production route table`() {
-        // The second acceptance criterion, and it is about the TABLE rather than about a flag. A
-        // development route reaches a deployment by being in the list every deployment mounts, so
-        // that is what is asserted: `konektRoutes` is what `module` mounts unconditionally, and the
-        // dev group is added beside it only under `DEV_SCREENS`.
-        assertTrue(
-            devScreensRouteGroup !in konektRoutes,
-            "the development screen group is in the production route table",
-        )
-        assertEquals(2, konektRoutes.size, "the production table changed size — is a development group in it?")
-    }
+    // THE TABLE ASSERTION MOVED, and it grew a subject while moving. It used to live here as
+    // `devScreensRouteGroup !in konektRoutes` — object identity, one group, in a test named after a
+    // screen — which is a weaker claim than it reads as: a dev route mounted by any other means
+    // satisfied it. `DevRoutesAreNotProductionTest` asks the composition every deployment mounts what
+    // it actually serves, over both dev groups and over anything declared in a `dev` package.
 }
 
 // THE WALK IS `konektWalk`, beside the dictionary. The copy that was here recorded its own near-miss

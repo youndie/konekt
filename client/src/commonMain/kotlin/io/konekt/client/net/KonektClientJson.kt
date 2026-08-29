@@ -22,8 +22,11 @@ import kotlinx.serialization.modules.plus
 // this one must not see. Two lists that have to match and cannot share a definition is exactly the
 // kind of seam that drifts.
 //
-// This comment used to end "which is why `ClientAndServerSpeakOneWireTest` compares them by what they
-// can decode rather than by reading both". THAT TEST DOES NOT EXIST AND NEVER DID. The seam it named
+// This comment used to end by naming a test that compared the two sides "by what they can decode
+// rather than by reading both". THAT TEST NEVER EXISTED, and the name is not spelled here any more:
+// `CitedTestsExistTest` fails on a comment naming a test that is not in the tree, and a citation kept
+// as an example would need an exemption — which is how a guard stops seeing the thing it is for. The
+// seam the missing test named
 // went on to cost three incidents — the third was `submit_form`, registered on neither side, which
 // answered 500 on the login screen. What guards it now is a pair: `konektActionWireNames` lists every
 // action this build puts on the wire, and each side has a test asking its OWN Json whether all of them

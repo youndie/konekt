@@ -4,7 +4,6 @@ import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
 import kotlin.io.path.extension
-import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 import kotlin.io.path.walk
 
@@ -14,8 +13,26 @@ import kotlin.io.path.walk
 // nobody adds, and the guard that scans it then passes by finding nothing. Walking finds whatever is
 // there — and the guards using this each assert a floor on the file count, so an empty walk is a
 // failure rather than a pass.
+fun productionSources(): List<Path> =
+    everyKotlinSource().filter { path ->
+        val parts = path.map { it.name }
+        // Production sources of any module and any Kotlin target: src/main/kotlin,
+        // src/commonMain/kotlin, src/jvmMain/kotlin and whatever a platform adds later.
+        val src = parts.indexOf("src")
+        // Parenthesised deliberately: `a && b || c` binds as `(a && b) || c`, and without the
+        // guard on `src` the `|| c` branch reads index 0 of every path — which is how a filter
+        // ends up matching things it was never meant to and a guard ends up scanning the wrong
+        // set.
+        val sourceSet = if (src >= 0) parts.getOrNull(src + 1) else null
+        sourceSet != null && (sourceSet.endsWith("Main") || sourceSet == "main")
+    }
+
+// EVERY Kotlin file of every module, tests included. The wider walk exists for the guards whose
+// subject is the text of the source rather than the product: a comment citing a test lives in a test
+// as often as in production code, and a guard reading only `Main` source sets would pass by looking
+// at less.
 @OptIn(ExperimentalPathApi::class)
-fun productionSources(): List<Path> {
+fun everyKotlinSource(): List<Path> {
     // The tests run with the module directory as the working directory; the repository root is its
     // parent.
     val root = Path("..")
@@ -34,16 +51,5 @@ fun productionSources(): List<Path> {
         // correct only when a previous command tidied up is a guard with a precondition nobody states.
         .filter { path ->
             path.none { it.name == "build" || it.name == ".git" || it.name == "build-logic" || it.name == ".rolling" }
-        }.filter { path ->
-            val parts = path.map { it.name }
-            // Production sources of any module and any Kotlin target: src/main/kotlin,
-            // src/commonMain/kotlin, src/jvmMain/kotlin and whatever a platform adds later.
-            val src = parts.indexOf("src")
-            // Parenthesised deliberately: `a && b || c` binds as `(a && b) || c`, and without the
-            // guard on `src` the `|| c` branch reads index 0 of every path — which is how a filter
-            // ends up matching things it was never meant to and a guard ends up scanning the wrong
-            // set.
-            val sourceSet = if (src >= 0) parts.getOrNull(src + 1) else null
-            sourceSet != null && (sourceSet.endsWith("Main") || sourceSet == "main")
         }.toList()
 }

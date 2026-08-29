@@ -1,20 +1,12 @@
 package io.konekt.openapi
 
 import io.konekt.RouteGroup
-import io.konekt.baseModule
 import io.konekt.devOtpRouteGroup
 import io.konekt.devScreensRouteGroup
-import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.auth.server.data.RevealedCodes
-import io.konekt.feature.auth.server.data.configureAuthentication
 import io.konekt.konektRoutes
-import io.konekt.mountKonektRoutes
 import io.konekt.productionRouteGroups
 import io.konekt.theme.BrandThemeCatalogue
-import io.ktor.server.routing.RoutingNode
-import io.ktor.server.routing.routing
-import io.ktor.server.routing.routingRoot
-import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -156,40 +148,7 @@ class OpenApiDocumentTest {
         return document ?: error("the application never assembled")
     }
 
-    private fun inventoryOf(groups: List<RouteGroup>): List<RouteEntry> {
-        var inventory: List<RouteEntry>? = null
-        testApplication { inventory = routeInventory(routingTreeOf(groups)) }
-        return inventory ?: error("the application never assembled")
-    }
-
-    private fun servedBy(groups: List<RouteGroup>): Set<String> = inventoryOf(groups).map { it.key }.toSet()
-
-    // The application the document is written from: the composition root MINUS the database, the
-    // feature bindings and the workers.
-    //
-    // That subtraction is what makes a Gradle task possible at all — `Application.module` opens a
-    // connection pool in its first line — and it is safe for this purpose because `by inject<T>()` is
-    // lazy: a route registers its handler without resolving anything, and nothing here ever serves a
-    // request. What it is NOT safe for is anything else, which is why it lives in a test rather than
-    // beside the production module.
-    private suspend fun ApplicationTestBuilder.routingTreeOf(groups: List<RouteGroup>): RoutingNode {
-        var captured: RoutingNode? = null
-        application {
-            baseModule()
-            // The provider has to exist before `authenticate(AUTH_JWT)` is mounted: the route-scoped
-            // plugin looks its providers up on install and fails naming the configuration. The secret
-            // signs nothing here — no token is ever minted or read.
-            configureAuthentication(DESCRIBING_JWT)
-            routing { mountKonektRoutes(groups) }
-            captured = routingRoot
-        }
-        startApplication()
-        return captured ?: error("the application module never ran")
-    }
-
     private companion object {
-        val DESCRIBING_JWT = JwtConfig(secret = "openapi-generator", issuer = "konekt", audience = "konekt-app")
-
         // The whole product surface plus /health, and without the development routes. The comment
         // above this line said "fifteen" long after the number said 27, which is what a count kept in
         // prose beside a constant does — so it says neither now. What it is for is the change nobody

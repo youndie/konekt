@@ -84,8 +84,9 @@ object Shell {
                     // needed one. `B-49` exists to delete the client's copy in favour of this graph,
                     // and doing that today would have taken three screens out of the product.
                     //
-                    // `NavigationGraphMatchesTheClientTest` compares the two against a running
-                    // deployment now, so the next omission fails instead of waiting for `B-49`.
+                    // `EveryScreenIsReachableTest` walks this graph against a running deployment
+                    // now, so the next omission fails rather than waiting to be noticed. (It used to
+                    // name the test `B-49` deleted along with the client's copy.)
                     ScreenRoute(
                         deeplink = TOP_UP_DEEPLINK,
                         endpoint = resourceAddress<TopUpScreenResource>(),
@@ -111,8 +112,8 @@ object Shell {
                     //
                     // So this graph is what it can be checked as: destinations that ANSWER as written.
                     // The client resolves one more than that, and
-                    // `NavigationGraphMatchesTheClientTest` declares which one and why rather than
-                    // filtering by shape — a filter would silently absorb the next omission.
+                    // `EveryScreenIsReachableTest` declares which one and why rather than filtering
+                    // by shape — a filter would silently absorb the next omission.
                     //
                     // It is worth an upstream ask (a graph route with a placeholder is not an exotic
                     // thing) and it is not worth a route that 404s in the meantime.

@@ -4,8 +4,8 @@ package io.konekt.events
 //
 // booblik fixes its topic set at startup and will not create one on demand, so this map and the
 // broker's `BOOBLIK_TOPICS` are two halves of one decision — and a type routed to a topic the broker
-// does not have is a publish that fails forever rather than a topic that appears. `EventTopicsTest`
-// is what holds the two halves together.
+// does not have is a publish that fails forever rather than a topic that appears. `BrokerTopicsTest`
+// is what holds the two halves together: it writes to each declared topic and reads back what it wrote.
 object EventTopics {
     const val ORDERS = "orders"
     const val USAGE = "usage"

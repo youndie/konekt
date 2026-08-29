@@ -176,9 +176,11 @@ class EveryScreenIsReachableTest {
 
     // THE OTHER DIRECTION, and it replaces a test that no longer has a subject.
     //
-    // `NavigationGraphMatchesTheClientTest` held the served graph against the client's copy of it, and
-    // `B-49` deleted the copy: a deeplink resolves through the graph now, so there is nothing to
-    // disagree with. What that test was actually worth is this — a `navigate` the server EMITS that
+    // The deleted test held the served graph against the client's copy of it, and `B-49` deleted the
+    // copy: a deeplink resolves through the graph now, so there is nothing to disagree with. (Its
+    // name is not spelled here — `CitedTestsExistTest` fails on a comment naming a test that is not
+    // in the tree, and a citation kept for history would need an exemption.) What it was actually
+    // worth is this — a `navigate` the server EMITS that
     // the client cannot resolve is a button that does nothing, and it is now the only way that
     // failure can happen.
     //

@@ -22,7 +22,7 @@ object BrokerHarness {
 
     const val PORT = 9092
 
-    // Exactly what deploy/compose.yaml declares. EventTopicsTest holds the two together, because
+    // Exactly what deploy/compose.yaml declares. `BrokerTopicsTest` holds the two together, because
     // routing an event to a topic the broker does not have is a publish that fails forever rather
     // than a topic that appears.
     const val TOPICS = "orders:1,usage:1,notifications:1"
