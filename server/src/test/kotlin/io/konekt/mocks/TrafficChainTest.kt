@@ -7,6 +7,7 @@ import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.db.tables.SubscriberTable
+import io.konekt.events.BrokerConnection
 import io.konekt.events.BrokerHarness
 import io.konekt.events.EventTopics
 import io.konekt.feature.realtime.shared.api.RealtimeStream
@@ -17,6 +18,7 @@ import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
 import io.konekt.feature.usage.server.domain.UsageCounter
 import io.konekt.mocks.traffic.TrafficSimulator
+import io.konekt.mocks.traffic.UsageChain
 import io.konekt.mocks.traffic.UsageConsumer
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.roaming.RoamingPackageCards
@@ -28,6 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -326,6 +329,74 @@ class TrafficChainTest {
                 // enough to move the number on the card would make the first thing a subscriber sees
                 // after landing a figure that had already dropped.
                 assertTrue("\"units\":1" in arrival, "an arrival spent more than the crossing costs: $arrival")
+            } finally {
+                connection.close()
+            }
+        }
+
+    // THE PRODUCT'S OWN WORKER, WITHOUT THE MOCK — which is what `B-89` separated and what nothing
+    // could do before it.
+    //
+    // `TrafficChain.start()` built the simulator and the consumer and started them together, and
+    // nothing else constructed a `UsageConsumer`. So with `SIMULATE_TRAFFIC` off — the default, and
+    // what the chart requires above one replica — no process in this build read the `usage` topic at
+    // all: the broker accepted events and nobody applied them.
+    //
+    // This is the claim in one test: an event published BY HAND moves the counter and reaches an open
+    // stream, with no simulator anywhere near it.
+    @Test
+    fun `an event published by hand is applied and pushed, with no simulator running`() =
+        runBlocking {
+            val connection = BrokerHarness.connect(scope)
+            try {
+                val listener = Channel<String>(Channel.UNLIMITED)
+                broadcaster.subscribe(RealtimeStream.topicOf(subscriberId), listener)
+
+                counters.grant(subscriberId, UsageCounter.Kind.DATA, 10_000)
+
+                // THE PRODUCTION WRAPPER, pointed at the harness's broker — not a stand-in. `UsageChain`
+                // takes what the composition root gives it, so a test that handed it something else
+                // would be exercising a different assembly than the one that ships.
+                val brokerConnection = BrokerConnection(BrokerHarness.host, BrokerHarness.port)
+                val chain =
+                    UsageChain(
+                        brokerConnection,
+                        ConsumeUsageUseCase(counters),
+                        push,
+                        cards,
+                        roaming,
+                        roamingCards,
+                        clock,
+                        json,
+                    )
+                val job = chain.start(scope)
+                try {
+                    // BY HAND, which is the point: nothing in this test produces traffic on a timer.
+                    // A real integration publishes to this topic and expects the product to apply it.
+                    val producer = Producer(connection, scope)
+                    producer
+                        .topic(TopicName(EventTopics.USAGE))
+                        .send(event(units = 40).toByteArray(), subscriberId.toByteArray())
+                    producer.flush()
+
+                    val pushed =
+                        withTimeoutOrNull(10_000) {
+                            // The FIRST frame about this counter. The consumer pushes the card it has
+                            // just recomputed, so the update carries the new number rather than a
+                            // signal to refetch.
+                            listener.receive()
+                        }
+                    assertNotNull(pushed, "nothing reached the open stream, so the consumer applied nothing")
+
+                    assertEquals(
+                        10_000L - 40,
+                        counters.find(subscriberId, UsageCounter.Kind.DATA)?.remainingUnits,
+                        "the counter did not move, so the event was accepted by the broker and applied by nobody",
+                    )
+                } finally {
+                    job.cancel()
+                    brokerConnection.close()
+                }
             } finally {
                 connection.close()
             }

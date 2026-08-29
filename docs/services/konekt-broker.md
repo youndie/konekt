@@ -46,6 +46,8 @@ There is no HTTP surface. The wire is booblik's own plaintext protocol, spoken t
 | `server/src/main/kotlin/io/konekt/events/BrokerConnection.kt` | the one connection and the one producer for the process |
 | `server/src/main/kotlin/io/konekt/events/BooblikOutboxPublisher.kt` | petich's outbox transport |
 | `server/src/main/kotlin/io/konekt/mocks/traffic/UsageConsumer.kt` | the only consumer |
+| `server/src/main/kotlin/io/konekt/mocks/traffic/UsageChain.kt` | what starts it, always |
+| `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficChain.kt` | what starts the simulator, behind `SIMULATE_TRAFFIC` |
 
 ## 3. How it is built
 
@@ -110,10 +112,27 @@ The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default
 - **Adding a fourth topic is a broker restart**, which makes topic naming an architectural decision
   rather than a runtime one.
 - **There are no consumer offsets.** That absence is what removes the group coordinator and the
-  cluster consensus behind it, and it moves the problem into konekt: `TrafficChain` resumes from
+  cluster consensus behind it, and it moves the problem into konekt: `UsageChain` resumes from
   wherever the broker is **now** rather than from zero, because replaying a day of simulated usage on
-  every restart would empty every counter in the product. Right for simulated traffic; wrong for
-  anything real, and stated here so the next consumer does not inherit the choice by copying it.
+  every restart would empty every counter in the product.
+
+  Which means **usage published while the server is down is not applied when it comes back.** For a
+  simulated feed that is the right answer; for a real one it is the first thing that would have to
+  change, and what it would take is a position this application stores itself — a table, updated per
+  batch, with the redelivery questions that opens. Stated so the next consumer does not inherit the
+  choice by copying it.
+- **The consumer runs on every replica, and that is not the same problem the simulator has.** Each pod
+  polls the same partition from wherever the broker is when it starts, so N pods apply each event N
+  times: a 25 MB decrement becomes 50 MB with two of them. There is no guard in the chart for it, and
+  the honest statement is that **this build is a single-instance deployment** — `konekt-server.md`
+  carries what is per-replica, `reference-scope.md` carries horizontal scale as a non-goal, and the
+  chart refuses only the simulator above one replica because that one drains allowances on a timer
+  rather than on traffic.
+- **`UsageChain` and `TrafficChain` are separate starters, and the split is load-bearing.** The
+  consumer is the product's own worker and starts whenever the application does; the simulator is a
+  mock and starts behind `SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with
+  the flag off — the default, and what the chart requires above one replica — **no process in this
+  build read the `usage` topic at all**: the broker accepted events and nobody applied them.
 - **The producer is an accumulator with a coroutine of its own**, held per process rather than per
   call: it batches for a few milliseconds before sending. Creating one per event would give up the
   largest factor in the broker and leave a coroutine behind on every publish. The figure booblik

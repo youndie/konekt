@@ -48,6 +48,7 @@ import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.http.configureStatusPages
 import io.konekt.login.loginRoutes
 import io.konekt.mocks.traffic.TrafficChain
+import io.konekt.mocks.traffic.UsageChain
 import io.konekt.observability.KonektTrace
 import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
@@ -390,8 +391,15 @@ fun Application.module(config: KonektConfig) {
         koin.get<OutboxRelayWorker>().start(workers)
         koin.get<KompotUpdateBroadcaster>().start(workers)
 
-        // OFF unless asked for. It publishes fictional usage against real counters, so a deployment
-        // that forgot the switch must not be one that quietly spends its subscribers' allowances.
+        // THE USAGE CONSUMER, ALWAYS. It is the product's own worker — it applies whatever arrives on
+        // a topic this deployment owns — and it started only alongside the simulator until `B-89`,
+        // which meant reading real usage required also inventing some. A deployment with the
+        // simulator off is the ordinary one, and it must still apply what it is sent.
+        workers.launch { koin.get<UsageChain>().start(workers) }
+
+        // AND THE SIMULATOR, off unless asked for. It publishes fictional usage against real
+        // counters, so a deployment that forgot the switch must not be one that quietly spends its
+        // subscribers' allowances.
         //
         // Started HERE and nowhere else, which is the point: both halves of this chain existed and
         // were covered end to end for a week while nothing constructed either of them.
@@ -447,11 +455,16 @@ fun serverModule(
         single { ComponentBroadcaster(get(), get()) }
         single { RoamingPackageCards(get()) }
         single { RoamingScreen(get(), get()) }
-        // The last argument is how long a roaming package stays dormant before the simulation starts
-        // it. Explicit rather than `get()`: it is a `Duration`, and so is `paymentDelay` — two
-        // bindings of one type resolve to whichever Koin saw last, which is the failure the qualified
-        // engines above exist to avoid.
-        single { TrafficChain(get(), get(), get(), get(), get(), get(), get(), get(), get(), simulatedArrivalAfter) }
+        // THE PRODUCT'S OWN WORKER, started whenever the application starts. It reads whatever
+        // arrives on a topic this deployment owns, and it used to exist only inside the simulator's
+        // starter — so with the simulator off, nothing in this build read the topic at all (`B-89`).
+        single { UsageChain(get(), get(), get(), get(), get(), get(), get(), get()) }
+        // AND THE MOCK, which is a different thing and now starts separately. The last argument is
+        // how long a roaming package stays dormant before the simulation starts it: explicit rather
+        // than `get()`, because it is a `Duration` and so is `paymentDelay` — two bindings of one
+        // type resolve to whichever Koin saw last, which is the failure the qualified engines above
+        // exist to avoid.
+        single { TrafficChain(get(), get(), get(), get(), get(), simulatedArrivalAfter) }
     }
 
 // The saga engine and its storage.

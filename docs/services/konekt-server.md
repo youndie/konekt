@@ -148,6 +148,25 @@ is the profile a coroutine-per-connection engine is shaped for. See
   nor authentication, both deliberately absent — and a namespace gives nothing for free: a ClusterIP
   Service is reachable by every pod in the cluster until something says otherwise.
 
+## 5a. What runs per replica
+
+**This build is a single-instance deployment**, and the honest way to say so is a table of what a
+second pod would do rather than a sentence saying not to. `charts/konekt/values.yaml` defaults
+`server.replicas: 1`; horizontal scale is a non-goal in
+[reference-scope](reference-scope.md).
+
+| Worker | Started by | With two pods |
+|---|---|---|
+| `UsageChain` — applies whatever arrives on `usage` | always, on `ApplicationStarted` | **each applies every event**: booblik keeps no consumer offsets and there is no group, so a 25 MB decrement becomes 50 MB. Nothing in any log says so |
+| `TrafficChain` — the traffic simulator | `SIMULATE_TRAFFIC` | each publishes its own fictional usage, so allowances drain at a multiple of the configured rate. **The chart refuses this combination outright** |
+| `SuspendedPetichSweeper` — compensates abandoned sagas | always | both walk the same sagas and both compensate; the money is correct because of a unique index on `ledger_entry (order_id, kind)` (`B-64`) and the second one now does nothing. The wasted work is [B-92](../backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) |
+| `OutboxRelayWorker` — publishes outbox rows | always | both read the same pending rows; delivery is at-least-once by design and the event id is stable across redeliveries, so a consumer keyed on it copes |
+| `KompotUpdateBroadcaster` — the realtime bus | always | **in memory**, so a push produced on one pod never reaches a subscriber attached to the other. The screen does not refresh, nothing is logged, and the next ordinary fetch shows the right state — which is the hardest symptom to attribute. [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md) |
+
+Only one of the five is refused by the chart, and only because it drains allowances on a timer rather
+than on traffic. The rest are stated here because a default that is right and a failure mode that is
+silent is exactly the combination this repository fails builds over.
+
 ## 6. Local setup
 
 ```bash
