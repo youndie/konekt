@@ -43,11 +43,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
+| [B-96](docs/backlog/B-96-screens-are-drawn-from-repositories.md) `[ ]` | Screens are drawn from repositories, so every presentation decision is testable only through a tree | P2 | L | - |
 
 ## Closed (94)
 
