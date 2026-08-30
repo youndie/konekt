@@ -1,0 +1,65 @@
+# THE SOAK'S OWN WORKLOAD. Apply into the namespace holding a throwaway konekt release:
+#
+#   kubectl create configmap soak-script -n <ns> --from-file=soak.py=probes/soak/in-cluster-soak.py
+#   kubectl apply -f probes/soak/in-cluster-soak.yaml
+#
+# Set SEED to any number before applying. The readings live on a volume so a restarted pod
+# appends to the history rather than starting a new one.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: soak-readings
+  namespace: konekt-soak
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soak
+  namespace: konekt-soak
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: soak } }
+  template:
+    metadata: { labels: { app: soak } }
+    spec:
+      # A DEPLOYMENT AND NOT A JOB. A twelve-hour measurement that dies on a node hiccup and does not
+      # come back has measured nothing; restartPolicy Always brings it up and the readings file is on
+      # a volume, so a restart appends rather than starting a new history. The elapsed column resets
+      # on a restart and that is visible in the file, which is better than pretending it did not.
+      containers:
+        - name: soak
+          image: postgres:18-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - apk add --no-cache python3 >/dev/null && exec python3 /script/soak.py
+          env:
+            # The Service listens on 80, not 8080: the container port is 8080 and the Service maps it.
+            - { name: HOST, value: "http://konekt-soak" }
+            # A fixed base for the generated msisdns, so a restart does not sign in as
+            # subscribers the previous run created and measure their counters.
+            - { name: SEED, value: "REPLACE-ME" }   # any base; see the comment in soak.py
+            - { name: PGHOST, value: "konekt-soak-postgres" }
+            - { name: PGUSER, value: "konekt" }
+            - { name: PGDATABASE, value: "konekt" }
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: konekt-soak-secrets, key: postgres-password } }
+            - { name: SUBSCRIBERS, value: "90" }
+            - { name: SAMPLE, value: "600" }
+            - { name: OUT, value: "/data/soak.tsv" }
+          envFrom: []
+          volumeMounts:
+            - { name: script, mountPath: /script }
+            - { name: data, mountPath: /data }
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+      volumes:
+        - { name: script, configMap: { name: soak-script } }
+        - { name: data, persistentVolumeClaim: { claimName: soak-readings } }
