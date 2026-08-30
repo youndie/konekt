@@ -12,3 +12,7 @@ local.properties
 # and run against the new schema. Inside the repository rather than in /tmp because it has to be
 # visible on the build machine, which sees this directory and nothing else.
 .rolling/
+
+# A soak's readings are a measurement of one machine over one night, not a fact about the product.
+# The probe that produces them is committed; its output is not.
+probes/soak/*.tsv
