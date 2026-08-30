@@ -99,6 +99,26 @@ broker:
   # purpose, so adding a fourth is a broker restart — which makes topic naming an architectural
   # decision rather than a runtime one. This list must agree with `EventTopics` in the server.
   topics: "orders:1,usage:1,notifications:1"
+  # WHAT IS KEPT, AND THE SEGMENT SIZE THAT MAKES KEEPING MEAN ANYTHING.
+  #
+  # booblik deletes nothing unless one of these is set — the retention worker returns on its first
+  # line when both are absent, and the broker says so at startup: `retention: bytes=null millis=null`.
+  # Left that way this deployment keeps every event it has ever published (`B-100`).
+  #
+  # THE SEGMENT SIZE IS THE LOAD-BEARING NUMBER. Retention drops whole SEGMENTS and never the active
+  # one, so a bound smaller than one segment is a no-op: with booblik's 512 MiB default, this
+  # deployment's ~17 MiB an hour would close its first segment after about thirty, and nothing would
+  # be deleted before that. At 32 MiB the busy partition rolls about every two hours and retention
+  # has something to work on. It also drops the preallocated footprint from 3 × 512 MiB to 3 × 32 MiB.
+  #
+  # THE BOUND IS PER PARTITION and there are three. 128 MiB each is four closed segments plus the
+  # active one — 160 MiB — and 480 MiB across the three, against the 2 GiB claim below.
+  #
+  # RETENTION COSTS THIS PRODUCT NOTHING. The usage consumer starts from the END of the log, because
+  # booblik keeps no consumer offsets, so no record here is ever read a second time.
+  segmentBytes: 33554432
+  retentionBytes: 134217728
+  retentionMillis: 21600000
   size: 2Gi
   class: local-path
   resources:

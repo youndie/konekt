@@ -1,7 +1,7 @@
 ---
 id: B-100
 title: "The broker is deployed with retention off, so its volume fills and the failure is silent"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -97,10 +97,21 @@ nobody, including whoever writes the next item, reaches for it again as the read
   answer — and the limitation is already written down: usage published while the process is down is
   not applied when it returns. Nothing in this build ever reads an old record, so deleting one
   changes no behaviour.
+- **THE SEGMENT SIZE IS THE SETTING THAT MATTERS, and the retention bound alone would have done
+  nothing.** Both of booblik's retention functions drop whole segments and neither touches the active
+  one — `while (live.size > 1 && …)`. Each partition here holds exactly one segment, so a bound of
+  any size is a no-op until a segment closes, and a 512 MiB segment at 17 MiB an hour closes after
+  about thirty. Read in `PartitionLog.retainAtMost`, not assumed.
+
+  So `booblik.segment.capacity.bytes` comes down to **32 MiB** — `usage` then rolls about every two
+  hours and retention has something to delete; the other two roll almost never, which is right,
+  because they hold almost nothing. It also drops the preallocated footprint from 3 × 512 MiB to
+  3 × 32 MiB.
+
 - **A number with its arithmetic.** `retention.bytes` is per partition and this deployment has three
-  partitions (`orders:1,usage:1,notifications:1`). At `256Mi` each the worst case is `768Mi` against
-  a `2Gi` claim — room for the index files and a partially-written segment, and far more history
-  than anything here reads.
+  (`orders:1,usage:1,notifications:1`). At `128Mi` each, the worst case is four closed segments plus
+  the active one — 160 MiB — and 480 MiB across the three, against a `2Gi` claim. `retention.millis`
+  at six hours is the second bound, so an idle stand does not hold days of nothing.
 - **Paired across the two files by a test**, the way the topics already are. `ComposeStandTest`
   compares `BOOBLIK_TOPICS` in the compose file against `EventTopics`; retention set in the chart and
   forgotten in the stand is the same defect one file later.
@@ -137,3 +148,60 @@ nobody, including whoever writes the next item, reaches for it again as the read
 | The test that already pairs them on topics | `server/src/test/kotlin/io/konekt/events/ComposeStandTest.kt` |
 | Why retention is free here | `server/src/main/kotlin/io/konekt/mocks/traffic/UsageChain.kt` (the consumer starts at the end) |
 | What full looks like | [youndie/booblik#15](https://github.com/youndie/booblik/issues/15) |
+
+## What was done
+
+Three settings, in both files that configure the broker, with the arithmetic in comments rather than
+the numbers alone:
+
+| | |
+|---|---|
+| `BOOBLIK_SEGMENT_CAPACITY_BYTES` | 32 MiB |
+| `BOOBLIK_RETENTION_BYTES` | 128 MiB per partition |
+| `BOOBLIK_RETENTION_MILLIS` | six hours |
+
+**The segment size is the one that mattered, and the item's first numbers would have done nothing.**
+It proposed a 256 MiB bound and said nothing about segments. Reading `PartitionLog` rather than
+assuming: `retainAtMost` and `retainNewerThan` both loop `while (live.size > 1 && …)` — they drop
+whole segments and never the active one. Each partition here holds exactly one, so any bound is a
+no-op until a segment closes, and booblik's 512 MiB default closes one after about thirty hours at
+this product's rate. At 32 MiB the busy partition rolls about every two hours and retention has
+something to delete. The preallocated footprint drops from 3 × 512 MiB to 3 × 96 MiB with it.
+
+`ComposeStandTest` pairs the two files, the way it already pairs the topics — **and asserts the bound
+exceeds one segment**, which is the assertion the pairing alone does not make: two numbers that are
+individually plausible and jointly useless is exactly the shape this item nearly shipped.
+
+## Verified
+
+- **Proved by mutation, three ways**: the files disagreeing on a value; the stand missing one
+  entirely; and a segment size raised back to booblik's default, which is caught with *"the retention
+  bound (134217728) is not larger than one segment (536870912), so retention can never drop
+  anything"*.
+- **The mutations needed `--rerun-tasks` to be believed.** This guard reads files outside its module,
+  which are not Gradle inputs, so the first run of all three was UP-TO-DATE and silently green —
+  the trap `CLAUDE.md` already records, met in the field.
+- **The setting is applied, read from the broker's own startup line** rather than from the file that
+  was supposed to produce it: `segment: mode=MAPPED capacity=33554432` and
+  `retention: bytes=134217728 millis=21600000 check=30000`.
+- `make e2e` green on the stand; `make chart` — all six guards; `make check` green.
+- **The chart's version guard caught this change**, which is what it is for: `0.2.0` → `0.2.1`, a
+  patch because a values file that never mentions these renders exactly as before.
+
+## What is NOT verified, and will not be by this item
+
+**That the volume stops growing.** A fresh stand cannot show it in minutes, and the one long-running
+stand that could — the `B-77` soak — was installed before this change and is deliberately left alone:
+upgrading it would change the thing it is measuring. So this is a setting proved APPLIED rather than
+proved EFFECTIVE, and the difference is stated rather than glossed. The first stand that lives past
+six hours with these values settles it.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The settings and the arithmetic | `charts/konekt/values.yaml`, `deploy/compose.yaml` |
+| Passed to the container | `charts/konekt/templates/broker.yaml` |
+| The guard | `server/src/test/kotlin/io/konekt/events/ComposeStandTest.kt` |
+| Why a bound below a segment does nothing | booblik `PartitionLog.retainAtMost` |
+| What is kept, written down | `docs/services/konekt-broker.md` §7 |

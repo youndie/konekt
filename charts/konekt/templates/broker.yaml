@@ -46,6 +46,14 @@ spec:
           env:
             - name: BOOBLIK_TOPICS
               value: {{ .Values.broker.topics | quote }}
+            # Retention, and the segment size that lets it act. See values.yaml for the arithmetic;
+            # `ComposeStandTest` refuses a chart and a stand that disagree about them.
+            - name: BOOBLIK_SEGMENT_CAPACITY_BYTES
+              value: {{ .Values.broker.segmentBytes | quote }}
+            - name: BOOBLIK_RETENTION_BYTES
+              value: {{ .Values.broker.retentionBytes | quote }}
+            - name: BOOBLIK_RETENTION_MILLIS
+              value: {{ .Values.broker.retentionMillis | quote }}
           ports:
             - name: broker
               containerPort: 9092

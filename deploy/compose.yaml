@@ -46,6 +46,17 @@ services:
       # nobody has measured a need for: every event about one order must arrive in the order it
       # happened, and an order exists only inside a partition.
       BOOBLIK_TOPICS: orders:1,usage:1,notifications:1
+      # WHAT IS KEPT. booblik deletes nothing unless one of these is set, and the stand is where a
+      # volume grows unwatched for days — the chart at least has a claim to hit. The arithmetic is in
+      # `charts/konekt/values.yaml`, and the numbers must be the same in both files: retention set in
+      # one and forgotten in the other is the defect `B-100` is, one file later. `ComposeStandTest`
+      # is what pairs them, the way it already pairs the topics.
+      #
+      # The segment size is the load-bearing one: retention drops whole segments and never the active
+      # one, so a bound below one segment deletes nothing at all.
+      BOOBLIK_SEGMENT_CAPACITY_BYTES: 33554432
+      BOOBLIK_RETENTION_BYTES: 134217728
+      BOOBLIK_RETENTION_MILLIS: 21600000
     volumes:
       - broker-data:/var/lib/booblik
     # NO PORTS. The broker speaks a plaintext protocol with neither TLS nor authentication — both

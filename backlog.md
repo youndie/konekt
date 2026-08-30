@@ -43,14 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-100](docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md) `[ ]` | The broker is deployed with retention off, so its volume fills and the failure is silent | P2 | S | - |
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 
-## Closed (98)
+## Closed (99)
 
 **The wire and the shell**
 
@@ -159,6 +158,7 @@ so re-prioritising must never move a file.
 
 **The reference, complete**
 
+- [B-100](docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md) `[x]` - The broker is deployed with retention off, so its volume fills and the failure is silent
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

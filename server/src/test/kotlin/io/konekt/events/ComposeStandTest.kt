@@ -41,6 +41,65 @@ class ComposeStandTest {
         )
     }
 
+    // WHAT THE BROKER KEEPS, IN THE TWO FILES THAT CONFIGURE IT — the chart for a cluster, the compose
+    // file for the stand. Set in one and forgotten in the other is `B-100` one file later: booblik
+    // deletes nothing unless one of these is set, and says so at startup in a line nobody reads twice.
+    //
+    // THE SEGMENT SIZE IS IN HERE and is not decoration. Retention drops whole segments and never the
+    // active one, so a bound smaller than one segment deletes nothing at all — a pair of retention
+    // values that look right beside booblik's 512 MiB default is a setting that does nothing.
+    @Test
+    fun `the chart and the stand agree about what the broker keeps`() {
+        val values = Path("../charts/konekt/values.yaml").readText()
+
+        val settings =
+            mapOf(
+                "BOOBLIK_SEGMENT_CAPACITY_BYTES" to "segmentBytes",
+                "BOOBLIK_RETENTION_BYTES" to "retentionBytes",
+                "BOOBLIK_RETENTION_MILLIS" to "retentionMillis",
+            )
+
+        val disagreed =
+            settings.mapNotNull { (env, value) ->
+                val inStand = numberAfter(compose, "$env:")
+                val inChart = numberAfter(values, "$value:")
+                when {
+                    inStand == null -> "$env is not set in deploy/compose.yaml"
+                    inChart == null -> "$value is not set in charts/konekt/values.yaml"
+                    inStand != inChart -> "$env is $inStand in the stand and $inChart in the chart"
+                    else -> null
+                }
+            }
+
+        assertTrue(
+            disagreed.isEmpty(),
+            "the broker's retention differs between the files that configure it:\n" + disagreed.joinToString("\n"),
+        )
+
+        // AND THE BOUND MUST EXCEED THE SEGMENT, or retention has nothing it is allowed to delete.
+        // Two settings that are individually plausible and jointly useless is the shape this asserts
+        // against; without it the pair above passes on numbers that do nothing.
+        val segment = numberAfter(compose, "BOOBLIK_SEGMENT_CAPACITY_BYTES:")
+        val retained = numberAfter(compose, "BOOBLIK_RETENTION_BYTES:")
+        assertTrue(
+            segment != null && retained != null && retained > segment,
+            "the retention bound ($retained) is not larger than one segment ($segment), so retention " +
+                "can never drop anything: it drops whole segments and never the active one",
+        )
+    }
+
+    private fun numberAfter(
+        text: String,
+        key: String,
+    ): Long? =
+        text
+            .lineSequence()
+            .firstOrNull { it.trimStart().startsWith(key) }
+            ?.substringAfter(key)
+            ?.trim()
+            ?.removeSurrounding("\"")
+            ?.toLongOrNull()
+
     @Test
     fun `the topics the compose file declares are the ones this server routes to`() {
         // The same pairing BrokerTopicsTest makes against a running broker, made here against the

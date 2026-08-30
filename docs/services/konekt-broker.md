@@ -96,7 +96,23 @@ make stand-up
 | Key | Description | Required |
 |---|---|---|
 | `BOOBLIK_TOPICS` | the whole topic set, `name:partitions` comma-separated, fixed at startup | yes |
+| `BOOBLIK_SEGMENT_CAPACITY_BYTES` | 32 MiB — the unit retention deletes in, see below | set here |
+| `BOOBLIK_RETENTION_BYTES` | 128 MiB **per partition** of closed segments | set here |
+| `BOOBLIK_RETENTION_MILLIS` | six hours | set here |
 | `BROKER_PLATFORM` | overrides the pinned image platform | no |
+
+**What is kept, and why the segment size is in that table.** booblik deletes nothing unless a
+retention bound is set — the worker returns on its first line when both are absent — so this
+deployment kept every event it had ever published until `B-100`. Retention drops **whole segments and
+never the active one**, which makes the segment size the load-bearing number rather than the bound:
+against booblik's 512 MiB default, this product's traffic closes a segment about every thirty hours,
+and a bound of any size deletes nothing until one closes. At 32 MiB the busy partition rolls about
+every two hours. The two numbers must be set in both `charts/konekt/values.yaml` and
+`deploy/compose.yaml`, and `ComposeStandTest` refuses files that disagree — or a bound that is
+smaller than a segment, which is a pair of plausible numbers that does nothing.
+
+**Retention costs this product nothing**, and that is what makes six hours safe: the usage consumer
+starts from the END of the log, so no record here is ever read a second time. See §8.
 
 The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default `9092`) in
 `server/src/main/kotlin/io/konekt/KonektConfig.kt`.

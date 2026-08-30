@@ -16,7 +16,11 @@ type: application
 # meaning anything.
 #
 # `scripts/chart_version.py` refuses a shape that moved while this did not.
-version: 0.2.0
+# 0.2.0 -> 0.2.1: `B-100` added three broker settings to `values.yaml` and passed them from the
+# template. A values file that does not mention them renders exactly as before and gets the
+# defaults, so nothing an existing consumer wrote stops working — additive, and by the rule above
+# that moves the PATCH.
+version: 0.2.1
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this
