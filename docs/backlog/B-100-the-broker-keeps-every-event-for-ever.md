@@ -51,8 +51,24 @@ fills any volume eventually. It is not on course to fill this one inside a soak.
 
 ## What full costs, measured rather than assumed
 
-[youndie/booblik#15](https://github.com/youndie/booblik/issues/15), reproduced on a tmpfs of a fixed
-size:
+[youndie/booblik#15](https://github.com/youndie/booblik/issues/15) — **fixed upstream in `b9135bc`
+and not in any release**. The newest is `0.3.0`, from before the fix, and both the chart and the
+compose stand pin `ghcr.io/youndie/booblik:0.3.0`, so what follows is what THIS build runs today and
+will keep running until the pin moves.
+
+Two halves of the upstream answer are worth carrying here rather than behind a link. The producer
+now gets a refusal — a new wire code, `PARTITION_UNAVAILABLE` (6) — instead of a request held for
+ever, which is the half that ends the silence. **The health check still cannot fail on it**, and that
+is tracked upstream rather than done: METADATA answers from a registry a dead writer never touched,
+so an orchestrator still sees a healthy broker and still does not restart it. Exiting the process was
+rejected on a measurement rather than a preference — reads from the same partition keep working after
+the failure.
+
+When the pin does move, the question this repository has to answer is what its outbox relay does with
+a publish that now FAILS rather than hangs. That relay is petich's `OutboxRelayWorker`, not ours, and
+it is a question for the bump rather than for this item.
+
+Reproduced on a tmpfs of a fixed size, on `0.3.0`:
 
 * the partition writer dies on `java.lang.InternalError: a fault occurred in an unsafe memory access
   operation` — `MAPPED` is the default segment mode, and a write into an `mmap`ped region whose
