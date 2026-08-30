@@ -19,6 +19,15 @@ dependencies {
     // configuration failed with `ClassNotFoundException: AndroidComponentsExtension`, which reads
     // like a corrupt cache rather than a missing dependency.
     implementation(libs.androidGradlePlugin)
+    // THE SHARED CONVENTIONS, named the same way. What used to be `konekt.base` — the coordinate,
+    // the style, the JUnit platform and the guard that every declared @Test ran — lives in
+    // `ru.workinprogress.sborka` now, and the three plugins below are what the conventions in this
+    // build are written on top of.
+    implementation(libs.plugins.sborkaBase.marker())
+    implementation(libs.plugins.sborkaJvm.marker())
+    implementation(libs.plugins.sborkaKmp.marker())
+    implementation(libs.plugins.sborkaLint.marker())
+    implementation(libs.plugins.sborkaTest.marker())
 }
 
 // `id:id.gradle.plugin:version` is the artefact the Plugin Portal publishes for every plugin id, and

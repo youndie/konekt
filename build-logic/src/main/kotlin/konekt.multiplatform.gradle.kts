@@ -13,13 +13,17 @@ plugins {
     id("konekt.base")
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.kotlin.multiplatform.library")
+    id("ru.workinprogress.sborka.kmp")
 }
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
+// THE TARGETS STAY HERE, and that is the one thing the shared conventions deliberately do not do.
+// `sborka.kmp` gives the mechanics — the toolchain, `-Werror`, the test framework in `commonTest` —
+// and leaves the target list where it is argued, because a target set is an argument: this one says
+// jvm, Android and all THREE iOS targets, while `:client` next door names two, Compose having
+// stopped publishing iosX64.
 kotlin {
-    jvmToolchain(libs.findVersion("jvmToolchain").get().requiredVersion.toInt())
-
     jvm()
 
     // THE NAMESPACE IS DERIVED FROM THE PATH, not written per module. Android requires one per
@@ -29,8 +33,18 @@ kotlin {
     // configuration time, and `-Werror` is on in this build.
     android {
         namespace = "io.konekt" + project.path.replace(":", ".").replace("-", "_")
-        compileSdk = libs.findVersion("androidCompileSdk").get().requiredVersion.toInt()
-        minSdk = libs.findVersion("androidMinSdk").get().requiredVersion.toInt()
+        compileSdk =
+            libs
+                .findVersion("androidCompileSdk")
+                .get()
+                .requiredVersion
+                .toInt()
+        minSdk =
+            libs
+                .findVersion("androidMinSdk")
+                .get()
+                .requiredVersion
+                .toInt()
 
         // HOST TESTS, so `commonTest` actually RUNS on this target rather than merely compiling for
         // it. Without this AGP says so in a warning nobody reads — "the 'commonTest' source directory
@@ -43,18 +57,4 @@ kotlin {
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-
-    compilerOptions {
-        allWarningsAsErrors.set(true)
-    }
-
-    sourceSets {
-        commonTest.dependencies {
-            implementation(kotlin("test"))
-        }
-    }
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
 }
