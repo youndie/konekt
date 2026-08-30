@@ -2,7 +2,7 @@
 id: B-100
 title: "The broker is deployed with retention off, so its volume fills and the failure is silent"
 status: open
-priority: P1
+priority: P2
 size: S
 stage: stage-m7-completeness
 ---
@@ -27,10 +27,27 @@ decision on our side that was never made.
 ## Measured
 
 On a soak stand (90 subscribers, the simulator publishing three events each every five seconds), the
-broker's volume held **1.61 GB in 3 files after seven hours**, against a claim of `2Gi`. Read from a
-read-only pod mounting the same claim rather than by `exec` into the broker.
+broker's volume held **148 MiB of real blocks after eight and a half hours**, essentially all of it in
+the `usage` partition — about 17 MiB an hour. Read from a read-only pod mounting the same claim
+rather than by `exec` into the broker.
 
-At that rate the claim is full in about ten hours — inside the window where `B-77` reproduces.
+### The first reading of this was wrong, twice over, and the correction is the useful part
+
+It was first reported as **1.61 GB after seven hours, full by hour ten**. Both halves were wrong:
+
+* **`du -sb` reports apparent size**, and booblik's segments are `MAPPED` and pre-allocated to
+  `LogSegment.DEFAULT_CAPACITY` — 512 MiB each, three partitions, exactly the 1536 MiB that was read.
+  The files are sparse: `ls -ls` gives 4 KB, 24 KB and 148 MiB of actual blocks against 512 MiB
+  apparent, each. The metric could not have shown growth for this kind of file whatever the volume
+  did;
+* **and a rate was inferred from one point** plus an assumption that the volume started empty. It did
+  not start empty in the sense that mattered — it started at its full apparent size, within seconds.
+
+Three consecutive readings an hour apart, all identical to the byte, are what exposed it. A number
+that does not move is worth as much as one that does.
+
+So the danger is real and slow rather than imminent: nothing deletes anything, and 17 MiB an hour
+fills any volume eventually. It is not on course to fill this one inside a soak.
 
 ## What full costs, measured rather than assumed
 
@@ -45,10 +62,13 @@ size:
 * the broker's metrics report **`errors 0 dropped 0`**;
 * `backlog 1` — the produce is held, unacknowledged, for ever. The publisher waits rather than fails.
 
-A broker that is up, green, and silently accepting nothing. That is the same shape as `B-77`'s
-failures — the event does not arrive, the counter does not move, the wait expires — and it is worth
-saying plainly that this is **a candidate for `B-77`, not its established cause**: this stand has not
-reproduced `B-77`, and the volume filling is one road to that symptom rather than the road.
+A broker that is up, green, and silently accepting nothing.
+
+**And with the corrected rate, this is no longer a plausible explanation of `B-77`.** At 17 MiB an
+hour a stand would need weeks to fill a volume, and `B-77` reproduces in five to twelve hours. The
+shape of the two failures is the same — the event does not arrive, the counter does not move, the
+wait expires — and the shape was the whole of the resemblance. It is written down here so that
+nobody, including whoever writes the next item, reaches for it again as the ready explanation.
 
 ## The decision
 
@@ -87,8 +107,8 @@ reproduced `B-77`, and the volume filling is one road to that symptom rather tha
 
 ## Deliberately not in scope
 
-- **`B-77`.** This may be one of its roads and is not established as its cause. The soak that found
-  this is still running and will say more.
+- **`B-77`.** Once a candidate, now ruled out by the corrected rate — see above. The soak that found
+  this is still running and is measuring something else.
 - **booblik's behaviour when full.** That is
   [youndie/booblik#15](https://github.com/youndie/booblik/issues/15), and konekt should not reach it
   either way.
