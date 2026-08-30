@@ -63,8 +63,41 @@ git archive "$PREVIOUS_SHA" | tar -x -C .rolling/previous
 # extracted tree had to go inside the repository rather than into /tmp.
 WSL=~/.claude/bin/wsl-run
 
+# THE BUILD STATE OF THE PREVIOUS TREE IS CLEARED ON THE BUILD MACHINE, and the `rm -rf` above
+# cannot do it. mutagen's ignore list is `build`, `.gradle`, `.kotlin` — matched ANYWHERE in the tree,
+# `.rolling/previous` included — so those directories exist only on the far side and no deletion here
+# reaches them. A tree replaced from this end therefore meets a `build/` belonging to whatever commit
+# was checked last.
+#
+# That is the precondition behind `B-97`, where this check packaged a distribution four days older
+# than the tree it had just extracted, built an image from it, and drove a server missing a route the
+# tree contains — every step reporting success. The mechanism was never reproduced; this removes the
+# state it needed rather than the explanation nobody has.
+echo "rolling-check: clearing the previous tree's build state on the build machine"
+"$WSL" 'rm -rf .rolling/previous/build .rolling/previous/.gradle .rolling/previous/*/build .rolling/previous/*/*/build'
+
 echo "rolling-check: building the $PREVIOUS_SHA server"
+EXTRACTED_AT=$(date +%s)
 (cd .rolling/previous && "$WSL" ./gradlew :server:installDist -q)
+
+# AN ARTEFACT MUST POSTDATE ITS SOURCE, and this is the one line that would have failed loudly in
+# `B-97` instead of leaving a puzzle. It is deliberately about TIME rather than about content: the
+# failure class is "something older than its input was packaged", and a content check would have to
+# know what the tree is supposed to contain.
+DIST=.rolling/previous/server/build/install/server/lib/server-0.1.0-SNAPSHOT.jar
+BUILT_AT=$("$WSL" "stat -c %Y $DIST 2>/dev/null || echo 0" | tr -d '\r')
+if [ "${BUILT_AT:-0}" -lt "$EXTRACTED_AT" ]; then
+  cat >&2 <<MSG
+rolling-check: the distribution predates the tree it was built from.
+
+    extracted: $(date -r "$EXTRACTED_AT" 2>/dev/null || echo "$EXTRACTED_AT")
+    packaged:  $(date -r "${BUILT_AT:-0}" 2>/dev/null || echo "${BUILT_AT:-0}")
+
+Nothing below this point would notice: the image builds, the container reports healthy, and the
+suite drives a server from some earlier commit. See B-97.
+MSG
+  exit 1
+fi
 
 # FROM AN EMPTY DATABASE, ALWAYS. A schema is cumulative and a stand is not torn down between runs,
 # so a previous run's migrations are still applied — including one somebody added to see this check
@@ -78,7 +111,38 @@ echo "rolling-check: bringing the stand up on the CURRENT schema"
 "$WSL" 'make stand-up' >/dev/null
 
 echo "rolling-check: starting the $PREVIOUS_SHA server against it"
-"$WSL" 'docker compose -f deploy/compose.yaml -f deploy/compose.rolling.yaml up -d --build --wait server-previous'
+# `--force-recreate` beside `--build`: a rebuilt image is not a restarted container, and compose will
+# happily leave the running one alone. In `B-97` the container was recreated and still carried the
+# image from four days earlier.
+"$WSL" 'docker compose -f deploy/compose.yaml -f deploy/compose.rolling.yaml up -d --build --force-recreate --wait server-previous'
+
+# AND THE IMAGE MUST CARRY THE DISTRIBUTION WE JUST BUILT, compared by content.
+#
+# NOT BY THE IMAGE'S TIMESTAMP, which was the first thing written here and is wrong. Under BuildKit
+# an image assembled entirely from cached layers keeps the `Created` of the build those layers came
+# from, so the field is not a build time at all: on this machine `konekt-server:latest` reports
+# 26 August while demonstrably running code built four days later. A guard on that date fails runs
+# that are correct and would be switched off within a week.
+#
+# The jar's digest inside the image against the jar on disk says the one thing that matters, and says
+# it whatever Docker did with its cache. A THROWAWAY CONTAINER rather than `exec` into the running
+# one: an exec inside a memory-capped container is charged to that container, and this repository has
+# already watched one kill the application it was inspecting.
+JAR=lib/server-0.1.0-SNAPSHOT.jar
+ON_DISK=$("$WSL" "sha256sum .rolling/previous/server/build/install/server/$JAR | cut -d' ' -f1" | tr -d '\r')
+IN_IMAGE=$("$WSL" "docker run --rm --entrypoint sha256sum konekt-server-previous /opt/konekt/$JAR | cut -d' ' -f1" | tr -d '\r')
+if [ -z "$ON_DISK" ] || [ "$ON_DISK" != "$IN_IMAGE" ]; then
+  cat >&2 <<MSG
+rolling-check: the image does not carry the distribution that was just built.
+
+    on disk:  ${ON_DISK:-<none>}
+    in image: ${IN_IMAGE:-<none>}
+
+The container would report healthy and the suite would drive some other commit's server. See B-97.
+MSG
+  exit 1
+fi
+echo "rolling-check: the image carries the $PREVIOUS_SHA distribution (${ON_DISK:0:12})"
 
 echo "rolling-check: driving the previous server"
 "$WSL" './gradlew :e2e:rollingCheck'

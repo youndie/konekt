@@ -1,7 +1,7 @@
 ---
 id: B-97
 title: "The rolling check builds the previous release and can run a binary from a week ago, reporting success either way"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -74,3 +74,78 @@ appears to be doing exactly its job.
 | What it drives | `e2e/src/test/kotlin/io/konekt/e2e/RollingDeployTest.kt` |
 | Where the stale distribution sat | `.rolling/previous/server/build/install/` |
 | The probe that found it | `probes/view-refactor/compare.sh` |
+
+## What was done
+
+Three changes to `scripts/rolling-check.sh`: one removes the state the failure needed, two refuse to
+proceed when the artefact is not the one the tree produced.
+
+**The build state of the previous tree is cleared ON THE BUILD MACHINE.** The `rm -rf` at the top of
+the script cannot do it, and that is the fact this item turns on: mutagen's ignore list is `build`,
+`.gradle`, `.kotlin`, matched **anywhere** in the tree, so those directories exist only on the far
+side and no deletion from the Mac reaches them. A tree replaced from this end meets a `build/`
+belonging to whatever commit was checked last.
+
+**An artefact must postdate its source.** The distribution is compared against the moment the tree was
+extracted, and a jar older than the extraction stops the run with both timestamps printed.
+
+**The image must carry the distribution that was just built**, compared by `sha256` — the jar on disk
+against the same path inside the image, read from a throwaway container rather than by `exec` into
+the running one, because an exec inside a memory-capped container is charged to that container and
+this repository has already watched one kill the application it was inspecting.
+
+`--force-recreate` was added beside `--build`: a rebuilt image is not a restarted container, and in
+the original incident the container was recreated and still carried the older image.
+
+## What was established, and what was refuted
+
+The item filed a leading hypothesis. **It is refuted**, and so is the one that replaced it.
+
+| Hypothesis | Experiment | Result |
+|---|---|---|
+| `git archive` mtimes make Gradle think stale outputs are current | replaced the tree with `074010b` (no `RoamingScreen`) over a `build/` from a tree that has it, then built | **refuted** — the marker class count in the jar went to 0, so it rebuilt correctly |
+| a replication race: the flush settles before the watcher sees a wholesale replacement | replaced the tree and built in ONE command, no gap | **refuted** — marker 3, the correct tree |
+
+So the trigger is still unknown, and the fix does not depend on knowing it: what is established is the
+**precondition** — build state that no deletion from this side can reach — and both guards are about
+the artefact rather than about the cause.
+
+## A second defect, found while fixing the first
+
+The first version of the image check compared the image's `Created` timestamp. **It was wrong, and
+the disproof was on the same machine**: `konekt-server:latest` reports 26 August while demonstrably
+running code built four days later, because under BuildKit an image assembled from cached layers
+keeps the `Created` of the build those layers came from. A guard on that field fails correct runs and
+would be switched off within a week. It was replaced by the content comparison before it ever landed.
+
+The run that caught it also showed `docker compose up -d --build` leaving a four-day-old image in
+place, which is why `--force-recreate` is there.
+
+## Verified
+
+**Both guards proved by their own positive control**, each with the script's own code path rather
+than a copy of the logic:
+
+- the build neutered so the previous run's artefact survives — *"the distribution predates the tree
+  it was built from"*, both timestamps named, exit 1;
+- the image left in place while the distribution is rebuilt for another commit — *"the image does not
+  carry the distribution that was just built"*, both digests named, and the run stops before
+  *driving the previous server* is ever printed.
+
+**And the check itself, run end to end for the first time since `V12__saga_sweep_claim.sql` landed:**
+`scripts/rolling-check.sh bebf4b3` — the last commit before that migration — green, `RollingDeployTest`
+2 tests 0 failures. V12 leaves the running version working, which is what expand-and-contract claims
+and what nothing had yet measured.
+
+**Cost, measured rather than estimated:** 55 seconds end to end including the cleared build state,
+because the Gradle build cache carries most of it. Clearing is cheap enough that detecting the
+failure was never the interesting half.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The script | `scripts/rolling-check.sh` |
+| The overlay | `deploy/compose.rolling.yaml` |
+| What it drives | `e2e/src/test/kotlin/io/konekt/e2e/RollingDeployTest.kt` |
+| The ignore list that makes the precondition | `mutagen sync list --long konekt` |
