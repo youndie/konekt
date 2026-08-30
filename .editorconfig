@@ -1,4 +1,12 @@
-# ktlint reads this file, so it is the style, not a suggestion to an editor.
+# The style of the portfolio, in one file.
+#
+# It lives here rather than in the ktlint plugin's defaults for the same reason the tool version is
+# pinned: left to the default, the style shifts when the plugin is bumped instead of when someone
+# decides to change it. `sborka.lint` writes this file out (`./gradlew updateEditorconfig`) and
+# refuses a repository whose copy has drifted, unless that repository says `sborka.editorconfig=custom`.
+#
+# Merged from what the repositories already agreed on: 120 columns, ktlint_official, no star imports,
+# two spaces for data formats, and markdown left alone because it uses trailing spaces for line breaks.
 root = true
 
 [*]
@@ -11,13 +19,42 @@ indent_size = 4
 
 [*.{kt,kts}]
 max_line_length = 120
-ktlint_standard_function-naming = disabled
-# Composables and Kompot component builders read as nouns; the rule is written for functions that
-# are verbs.
+ktlint_code_style = ktlint_official
 
-[*.{yml,yaml,json,toml}]
+# No star imports. A wildcard hides which module a name came from, and several repositories here
+# deliberately carry names that shadow a library's.
+ij_kotlin_packages_to_use_import_on_demand = false
+ij_kotlin_name_count_to_use_star_import = 2147483647
+ij_kotlin_name_count_to_use_star_import_for_members = 2147483647
+
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# A composable is named like a type, not like a function, and Compose reads that way everywhere. The
+# exemption targets the annotation, not the file: an ordinary function in the same source is still
+# held to camel case. Harmless in a repository with no Compose in it.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+[*.{json,yml,yaml,toml}]
 indent_size = 2
 
-[*.md]
+[*.{md,txt}]
+# Markdown uses trailing spaces for hard line breaks; trimming them silently reflows documents.
 trim_trailing_whitespace = false
-max_line_length = 100
+max_line_length = off
+
+# Generated sources are rewritten on every build and must not be edited, so a formatter running on
+# them would fail a build nobody can fix. The plugin's own source filter does not reach here: it
+# fixes the file list before this setting would apply.
+[**/build/**.kt]
+ktlint = disabled
+
+# WHAT THIS REPOSITORY ADDS, below the shared rules so `updateEditorconfig` can rewrite the head
+# without touching it.
+
+[*.{kt,kts}]
+# Composables and Kompot component builders read as nouns; the rule is written for functions that
+# are verbs. Broader than the shared file's `ktlint_function_naming_ignore_when_annotated_with =
+# Composable`, and deliberately so: a component builder like `PackageCard(...)` is not a Composable —
+# it builds a wire node — and the two read the same way at the call site.
+ktlint_standard_function-naming = disabled

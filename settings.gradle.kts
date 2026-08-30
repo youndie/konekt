@@ -25,29 +25,16 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    // A module that declares its own repository resolves against something the rest of the build
-    // cannot see, and the difference shows up as a version nobody can explain.
-    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
-
-    repositories {
-        mavenCentral()
-        google()
-
-        // The six toolkits. Filtered by group, and that is not decoration: an unfiltered repository
-        // takes part in resolving EVERY dependency, and when it is unreachable Gradle disables it
-        // and fails everything that had not already resolved — including artefacts that are
-        // perfectly fine and come from somewhere else entirely.
-        maven("https://reposilite.kotlin.website/snapshots") {
-            name = "wip-snapshots"
-            mavenContent {
-                includeGroup("io.github.youndie")
-                includeGroup("io.github.youndie.booblik")
-                includeGroup("ru.workinprogress")
-                includeGroupByRegex("ru\\.workinprogress\\..*")
-            }
-        }
-    }
+plugins {
+    // Where dependencies are looked for — mavenCentral() and google() with their group filters, and
+    // the snapshot repository the six toolkits are published to, filtered the same way this file
+    // filtered it. A module that declares its own repository resolves against something the rest of
+    // the build cannot see, and the difference shows up as a version nobody can explain, so the
+    // refusal stays on: `FAIL_ON_PROJECT_REPOS` is the plugin's default.
+    //
+    // It also checks that this repository's `.editorconfig` is the one the rest of the portfolio
+    // uses, which is the other half of pinning the formatter's version.
+    id("ru.workinprogress.sborka.settings") version "0.1.0.18"
 }
 
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,

@@ -85,15 +85,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          # Java 25 is mandatory rather than chosen: kompot and petich publish variants tagged
-          # `org.gradle.jvm.version = 25`, and Gradle refuses to build a module on anything lower
-          # against them — with a message that names the dependency, not the rule.
-          java-version: "25"
-          distribution: temurin
-
-      - uses: gradle/actions/setup-gradle@v4
+      # Java and Gradle in one step and at one version for the portfolio. Java 25 is mandatory
+      # rather than chosen: kompot and petich publish variants tagged `org.gradle.jvm.version = 25`,
+      # and Gradle refuses to build a module on anything lower against them — with a message that
+      # names the dependency, not the rule. The shared action installs 21 and 25 and leaves 25 the
+      # default.
+      - uses: youndie/sborka/.github/actions/setup-kotlin@main
 
       # DECLARED RATHER THAN DISCOVERED. Half the test suite runs against a real Postgres 18 in a
       # Testcontainer — not H2, because the defects those tests exist for live in the SQL — and a
@@ -162,12 +159,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "25"
-          distribution: temurin
-
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: youndie/sborka/.github/actions/setup-kotlin@main
 
       # Declared rather than discovered, like the build job: this one runs five containers.
       - name: Docker is required by the stand
