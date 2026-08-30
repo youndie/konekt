@@ -43,10 +43,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
+| [B-100](docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md) `[ ]` | The broker is deployed with retention off, so its volume fills and the failure is silent | P1 | S | - |
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 
 ## Closed (98)
