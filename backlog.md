@@ -43,14 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
-| [B-96](docs/backlog/B-96-screens-are-drawn-from-repositories.md) `[ ]` | Screens are drawn from repositories, so every presentation decision is testable only through a tree | P2 | L | - |
 
-## Closed (94)
+## Closed (95)
 
 **The wire and the shell**
 
@@ -169,6 +168,7 @@ so re-prioritising must never move a file.
 - [B-93](docs/backlog/B-93-two-verticals-have-screens-and-no-documents.md) `[x]` - The tariff change and the custom package builder have screens and no documents in any layer
 - [B-94](docs/backlog/B-94-the-brands-ground-stops-at-the-safe-area-on-ios.md) `[x]` - On iOS the brand's ground stops at the safe area, so the status bar and the home indicator are black whatever the served palette is
 - [B-95](docs/backlog/B-95-the-ios-bundle-draws-no-status-bar.md) `[x]` - The iOS bundle draws no status bar at all — no clock, no indicators — and the cause is not established
+- [B-96](docs/backlog/B-96-screens-are-drawn-from-repositories.md) `[x]` - Screens are drawn from repositories, so every presentation decision is testable only through a tree
 
 <!-- END INDEX -->
 

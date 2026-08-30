@@ -1,7 +1,7 @@
 ---
 id: B-96
 title: "Screens are drawn from repositories, so every presentation decision is testable only through a tree"
-status: open
+status: done
 priority: P2
 size: L
 stage: stage-m7-completeness
@@ -136,3 +136,70 @@ So the item is three screens and a guard, not eleven.
 | Copy composed in a route | `server/src/main/kotlin/io/konekt/screens/ProfileRouting.kt` |
 | A view that still needs a lookup | `server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt` (`build(view, tariffs)`) |
 | Decisions asserted through a tree | `server/src/test/kotlin/io/konekt/screens/HomeScreenTest.kt` |
+
+## What was done
+
+Four screens moved and one rule got a guard.
+
+| Screen | Before | After |
+|---|---|---|
+| Profile | four repositories, and a sentence composed in `ProfileRouting` | `ViewProfileUseCase` -> `ProfileView` |
+| Roaming | a class holding a `KonektClock`, ranking zones while drawing | `ViewRoamingUseCase` -> `RoamingView`, one instant |
+| Tariff catalogue | a change record plus the catalogue, resolved in the renderer | `ViewTariffsUseCase` -> `TariffsView` |
+| Tariff change | `build(view, tariffs)` | `build(view)`, both titles resolved |
+| Home | six injections in the route, eight parameters, two of them renderers | `ViewHomeUseCase` -> `HomeView` |
+
+**The clock came out of the card factories, and that is the defect the item did not know it had.**
+`UsageCounterCards` and `RoamingPackageCards` each held a `KonektClock` and read it per card, and
+`RoamingScreen` read a third one to rank its zones — so a home screen with three counters and two
+travel packages could caption five cards against five instants, and a package could be ranked as
+running and captioned as ended in one response. The repository already refuses to work this way:
+`ExposedRoamingPackages.travelling()` filters every row against a single instant and says so in a
+comment. The instant is an argument now, taken once per response and carried on the view.
+
+**`PendingTariffChange` became one type.** The profile and the tariff catalogue both tell a subscriber
+about a waiting change, and they were composing the same sentence in two places — one of them a
+routing file. `PendingChangeReadsTheSameTest` asserts on the RENDERED text of both screens rather than
+on the shared function, so a screen that goes back to writing its own is caught.
+
+**`KoinGraphTest` gained five entries, and that is the reverse of a regression.** A route is not
+verified — `by inject<T>()` is resolved at request time — so moving an assembly out of a route and
+into a `factory` is what made those cross-module reaches visible to the graph check at all.
+
+## Verified
+
+`ScreensLookNothingUpTest`, three assertions, **each proved by its own mutation**: a screen importing
+a catalogue, a screen calling `.now()`, and a `*View` declared in a `-shared-api` module. It also
+asserts a floor on the number of screen files it found, because a source guard that finds nothing
+passes.
+
+`ViewProfileUseCaseTest` and `ViewRoamingUseCaseTest` assert the decisions on the view rather than
+through a tree — including the travel screen's zone ordering, which had **no test at all**: it lived
+in a private comparator and was reachable only by reading heading ids out of a component tree.
+
+`:server:test` green; `build` green; against a rebuilt stand, 34 e2e and 16 `standTest` green, with no
+response changed.
+
+### The single-instant test was vacuous when first written
+
+It gave the use case ONE zone, and `sortedBy` over a one-element list never calls its selector — so a
+`rankOf(inZone, clock.now())` reading the clock per comparison passed it. Two zones, and the same
+mutation fails with three instants instead of one. A test whose subject is *how many times is this
+called* has to give it something to call it for.
+
+### The item's own first acceptance criterion was wrong
+
+It said every screen takes exactly one view. The code refuted that within the hour: `PlansScreen`
+looks nothing up and decides nothing, and wrapping its list would be the anemic hop the item's
+rejected alternatives warn against. The rule is the lookup, not the arity — amended above rather than
+quietly satisfied.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The rule, and the only place it is enforced | `server/src/test/kotlin/io/konekt/screens/ScreensLookNothingUpTest.kt` |
+| The pilot | `server/src/main/kotlin/io/konekt/screens/ProfileUseCases.kt` |
+| One instant per response | `server/src/main/kotlin/io/konekt/roaming/RoamingUseCases.kt`, `server/src/main/kotlin/io/konekt/screens/HomeUseCases.kt` |
+| The shared waiting-change sentence | `server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt`, `server/src/test/kotlin/io/konekt/tariff/PendingChangeReadsTheSameTest.kt` |
+| The rule, written down | `docs/services/konekt-server.md` §3 |

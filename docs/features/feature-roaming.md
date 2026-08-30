@@ -60,7 +60,8 @@ compensation. Exactly one step differs.
 | The table | `shared/db/src/main/resources/db/migration/V10__roaming_package.sql` |
 | The one step that differs | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseInterceptors.kt` (`grantAllowance` / `revokeAllowance`) |
 | The card and the zone names | `server/src/main/kotlin/io/konekt/roaming/` |
-| The arrival control | `server/src/main/kotlin/io/konekt/roaming/dev/ArriveRouting.kt` |
+| Arriving in the zone | `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficSimulator.kt` (`awaitingArrival`) |
+| The travel screen and its ordering | `server/src/main/kotlin/io/konekt/roaming/RoamingUseCases.kt`, `RoamingScreen.kt` |
 | Routing a zoned usage event | `server/src/main/kotlin/io/konekt/mocks/traffic/UsageConsumer.kt` |
 | The in-memory repository for tests | `feature/roaming-server-domain/src/testFixtures/kotlin/io/konekt/feature/roaming/server/domain/InMemoryRoamingPackages.kt` |
 

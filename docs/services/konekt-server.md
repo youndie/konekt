@@ -89,6 +89,25 @@ petich sweeper, the outbox relay, kompot's broadcaster, and the traffic chain wh
 `SIMULATE_TRAFFIC` is on. A binding is data and can be verified; a `start(scope)` call is control
 flow and cannot, which is why `WorkersAreStartedTest` reads this file as text.
 
+**A screen is drawn from a view, and the render step looks nothing up.** `data → use case → view →
+render`: the route reads the principal and calls one use case, the use case answers with everything
+the screen needs already resolved — a tariff's title rather than its id, one instant rather than a
+clock — and the screen turns that into components. Half the server was already built this way
+(`TopUpView`, `OrderView`, `EsimWizardView`); `B-96` named the rule and finished the other half.
+
+Three things follow, and `ScreensLookNothingUpTest` enforces all three:
+
+- **a screen file imports no repository, catalogue or use case**, so it cannot answer a different
+  question than the one the use case answered;
+- **a screen never reads the clock.** The instant is on the view, taken once per response. Both card
+  factories used to hold a `KonektClock` and read it per card, so one screen could caption five cards
+  against five instants;
+- **a view type never appears in a `*-shared-api` module.** The wire is the component tree; a view on
+  the wire would make the client depend on how the server split its presentation.
+
+The rule is the LOOKUP, not the arity. `PlansScreen.build(plans: List<Plan>)` decides nothing and
+needs no view of its own, and a card factory is a renderer a screen may hold.
+
 **The engine is CIO.** The load-bearing endpoint is SSE — many long-lived, mostly idle streams — which
 is the profile a coroutine-per-connection engine is shaped for. See
 [research-stack](../research/research-stack.md) D19.

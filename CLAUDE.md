@@ -156,6 +156,15 @@ circular dependency inside `:server` naming neither module.
 
 ## Rules that are cheap to follow and expensive to discover
 
+- **A screen is drawn from a view and looks nothing up.** `data → use case → view → render`: the
+  route calls one use case, the use case resolves everything — a tariff's TITLE and not its id, one
+  `Instant` and not a clock — and the screen turns that into components. A renderer that can look
+  something up can answer a different question than the use case answered, and a decision made inside
+  a renderer is testable only by walking a tree and filtering on a string id. `ScreensLookNothingUpTest`
+  refuses a screen that imports a repository, a catalogue or a use case, one that reads the clock, and
+  a `*View` declared in a `*-shared-api` module. The rule is the LOOKUP and not the arity:
+  `PlansScreen.build(plans: List<Plan>)` decides nothing and needs no view, and a card factory is a
+  renderer a screen may hold.
 - **Never `call.respond` a `KompotComponent`.** It drops the `"type"` discriminator on the root of the
   tree; nested children serialise perfectly, which is what makes it easy to miss, and the client then
   receives an unknown component for the whole screen and draws nothing. Use
