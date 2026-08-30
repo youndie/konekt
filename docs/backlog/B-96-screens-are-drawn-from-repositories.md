@@ -177,8 +177,23 @@ passes.
 through a tree — including the travel screen's zone ordering, which had **no test at all**: it lived
 in a private comparator and was reachable only by reading heading ids out of a component tree.
 
-`:server:test` green; `build` green; against a rebuilt stand, 34 e2e and 16 `standTest` green, with no
-response changed.
+`:server:test` green; `build` green; against a rebuilt stand, 34 e2e and 16 `standTest` green.
+
+**And the central claim was measured rather than asserted.** "No response changed" is the whole
+safety property of a refactor, and passing behavioural tests do not establish it: they assert what a
+screen says, not that it says the same bytes. `probes/view-refactor/compare.sh` runs the tree at
+`4f22ff9` — the commit before this item — beside `HEAD` on the SAME database, arranges one
+subscriber's state once through the product's own paths, and asks both servers to draw it. **Nine
+screens, byte-identical**, home included, at 5595 bytes.
+
+The positive control came free and was not planned: the first run compared against a stale image and
+reported `DIFFERS /api/v1/screens/home` with a real diff, which is how [B-97](B-97-the-rolling-check-can-run-a-stale-binary.md)
+was found. A probe that has been seen to fail is worth more than one that has only ever passed.
+
+The committed recordings in `client/src/jvmTest/resources/recorded/` therefore need no re-recording:
+they photograph responses that did not move. That is a conclusion from the comparison above, not from
+the fact that the suite stayed green — `CLAUDE.md` is explicit that a recording goes stale silently,
+and five of these screens were rewritten.
 
 ### The single-instant test was vacuous when first written
 
@@ -203,3 +218,4 @@ quietly satisfied.
 | One instant per response | `server/src/main/kotlin/io/konekt/roaming/RoamingUseCases.kt`, `server/src/main/kotlin/io/konekt/screens/HomeUseCases.kt` |
 | The shared waiting-change sentence | `server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt`, `server/src/test/kotlin/io/konekt/tariff/PendingChangeReadsTheSameTest.kt` |
 | The rule, written down | `docs/services/konekt-server.md` §3 |
+| The proof that nothing changed | `probes/view-refactor/compare.sh` |

@@ -43,11 +43,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
+| [B-97](docs/backlog/B-97-the-rolling-check-can-run-a-stale-binary.md) `[ ]` | The rolling check builds the previous release and can run a binary from a week ago, reporting success either way | P2 | S | - |
 
 ## Closed (95)
 
