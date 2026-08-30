@@ -20,7 +20,13 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      # FULL HISTORY, because `scripts/chart_version.py` asks when the chart's version last moved
+      # and walks the commits that touched `Chart.yaml` to find out. The default shallow clone has
+      # none of them, and the script refuses to answer rather than passing — a check that cannot see
+      # its input must say so. Everything else in this job reads the tree and is indifferent.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:

@@ -43,14 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
-| [B-99](docs/backlog/B-99-the-chart-version-never-moves.md) `[ ]` | The chart states a versioning rule in its own comment and has never followed it, so nothing downstream can pin a render | P2 | S | - |
 
-## Closed (97)
+## Closed (98)
 
 **The wire and the shell**
 
@@ -172,6 +171,7 @@ so re-prioritising must never move a file.
 - [B-95](docs/backlog/B-95-the-ios-bundle-draws-no-status-bar.md) `[x]` - The iOS bundle draws no status bar at all — no clock, no indicators — and the cause is not established
 - [B-96](docs/backlog/B-96-screens-are-drawn-from-repositories.md) `[x]` - Screens are drawn from repositories, so every presentation decision is testable only through a tree
 - [B-97](docs/backlog/B-97-the-rolling-check-can-run-a-stale-binary.md) `[x]` - The rolling check builds the previous release and can run a binary from a week ago, reporting success either way
+- [B-99](docs/backlog/B-99-the-chart-version-never-moves.md) `[x]` - The chart states a versioning rule in its own comment and has never followed it, so nothing downstream can pin a render
 
 <!-- END INDEX -->
 

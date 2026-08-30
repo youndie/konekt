@@ -148,6 +148,16 @@ is the profile a coroutine-per-connection engine is shaped for. See
   a Makefile target because the right to write to the registry is what CI has and a laptop does not
   — `B-47`. The same workflow then PULLS the tag back and drives the whole e2e suite through it,
   which is the only check here whose subject is an artefact rather than a working tree.
+- **The chart's version moves when the chart's shape moves**, and `scripts/chart_version.py` in the
+  gate refuses a change under `templates/` or in `values.yaml` that leaves `version:` where it was.
+  The number is what a deployment would pin, and while it stands still there is nothing to pin: a
+  release tag fixes the BINARY, the templates that turn it into pods come from wherever the chart is
+  read, a rollback to an older image renders under today's templates, and `helm --atomic` rolls back
+  to a previous render that is not pinned either. It stood at `0.1.0` through `B-91`, which added a
+  refusal to `templates/server.yaml` — a change that turns a render somebody could previously produce
+  into a failure. Below `1.0.0` that moves the minor, so the chart is `0.2.0` (`B-99`). Prose in
+  `Chart.yaml` moves nothing: a version bumped for a description teaches people to bump it without
+  reading.
 - **Chart:** `charts/konekt/`. It renders the server, a single-instance Postgres, the broker, the
   ingress, and the migration as the server pod's init container — a helm `pre-install` hook would run
   before the release's own objects, which on a first install means before the database exists. Four

@@ -2,7 +2,21 @@ apiVersion: v2
 name: konekt
 description: konekt — a reference implementation of six Kotlin toolkits on an eSIM MVNO domain, server side, with the broker and the database it cannot run without
 type: application
-version: 0.1.0
+# 0.1.0 -> 0.2.0, and the reason is written down rather than felt.
+#
+# THE ONE SHAPE CHANGE SINCE THIS CHART WAS CREATED is `B-91`: `templates/server.yaml` gained a
+# refusal of any `replicas > 1`, and `values.yaml` gained three values beside it. That turns a render
+# somebody could previously produce — two replicas — into a failure, which is a BREAKING change for
+# anyone consuming this chart. Below 1.0.0 a breaking change moves the minor, so 0.2.0.
+#
+# The rule from here: a change under `templates/` or in `values.yaml` that could break an existing
+# render — a value removed, renamed or newly required, a refusal added — moves the MINOR while this
+# is 0.x. An additive, compatible change moves the PATCH. Prose in this file moves nothing: a version
+# bumped for a description teaches people to bump it without reading, which is how the number stops
+# meaning anything.
+#
+# `scripts/chart_version.py` refuses a shape that moved while this did not.
+version: 0.2.0
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

@@ -31,6 +31,10 @@ gate:
 	# than among the reports: unlike a rotten anchor, this cannot be caused by a rename in
 	# somebody else's repository — every instance is a claim made in this tree about this tree.
 	$(PY) scripts/stale_citations.py --docs $(DOCS)
+	# THE CHART'S SHAPE AGAINST THE CHART'S VERSION. Blocking, and it reads git rather than the
+	# tree: the question is whether the shape moved since the number did, which no snapshot of
+	# the files can answer.
+	$(PY) scripts/chart_version.py
 
 # Non-blocking, on purpose.
 #
