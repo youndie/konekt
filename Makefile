@@ -27,6 +27,10 @@ gate:
 	$(PY) scripts/backlog_index.py --check --docs $(DOCS) --backlog $(BACKLOG)
 	$(PY) scripts/docs_check.py --docs $(DOCS) --backlog $(BACKLOG)
 	$(PY) scripts/coverage_map.py --check --docs $(DOCS)
+	# A DOCUMENT DESCRIBING FINISHED WORK AS STILL TO DO. Blocking, and it belongs here rather
+	# than among the reports: unlike a rotten anchor, this cannot be caused by a rename in
+	# somebody else's repository — every instance is a claim made in this tree about this tree.
+	$(PY) scripts/stale_citations.py --docs $(DOCS)
 
 # Non-blocking, on purpose.
 #

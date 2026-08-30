@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: client
-tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.11.1, kompot client, Ktor client CIO on JVM and Darwin on iOS, JVM + iosArm64 + iosSimulatorArm64]
+tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.11.1, kompot client, Ktor client CIO on JVM and Darwin on iOS, JVM + Android + iosArm64 + iosSimulatorArm64]
 owner: unassigned
 depends_on:
   - konekt-server
@@ -60,13 +60,15 @@ The same `@Resource` classes the server uses, through `ktor-client-resources`: t
 
 ## 3. How it is built
 
-**JVM and two iOS targets, and the module names its own rather than using the `konekt.multiplatform`
-convention plugin.** It was JVM only, and that was upstream rather than a choice: kompot's Compose half
+**JVM, Android and two iOS targets, and the module names its own rather than using the
+`konekt.multiplatform` convention plugin.** Android arrived with
+[B-85](../backlog/B-85-the-client-has-no-android-target.md), which put a build on a physical Pixel.
+Before that it was JVM only, and that was upstream rather than a choice: kompot's Compose half
 published `-android`, `-desktop` and `-wasm-js` and no iOS artefact while the protocol half published
 the three iOS targets. [kompot#84](https://github.com/youndie/kompot/issues/84) closed it in
 `0.31.0.76`.
 
-Two targets and not three, and the reason changed completely while the conclusion did not: Compose
+Two APPLE targets and not three, and the reason changed completely while the conclusion did not: Compose
 stopped publishing `iosX64` after `1.11.0-alpha01`, so `iosArm64` and `iosSimulatorArm64` are what
 exist. Verified in the module metadata of `kompot-client`, `kompot-theme-client` and
 `kompot-ds-material-compose` rather than read off the issue.

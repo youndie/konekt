@@ -1,6 +1,6 @@
 apiVersion: v2
 name: konekt
-description: konekt — a white-label eSIM subscriber account, server side, with the broker and the database it cannot run without
+description: konekt — a reference implementation of six Kotlin toolkits on an eSIM MVNO domain, server side, with the broker and the database it cannot run without
 type: application
 version: 0.1.0
 # Deliberately empty, and the render fails when `server.version` is empty too.

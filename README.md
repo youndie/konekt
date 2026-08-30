@@ -41,10 +41,10 @@ conformance kit passing vacuously, an Apple target nobody published.
 ### 🚧 Status
 
 **Building.** The server, the saga, the broker bridge, the realtime channel and the eSIM wizard are
-in and driven end to end by a docker-compose stand; the Compose client is a library with no
-application around it yet. What is done and what is not is [backlog.md](backlog.md), item by item,
-with the reason attached to each — including the three that are stopped on a stated cause rather than
-merely unfinished.
+in and driven end to end by a docker-compose stand; the Compose client runs on the desktop, on an
+Android device and in the iOS simulator. What is done and what is not is [backlog.md](backlog.md),
+item by item, with the reason attached to each — and the ones stopped on a stated cause say what the
+cause is rather than sitting in a list of the unfinished.
 
 - [docs/research/research-architecture.md](docs/research/research-architecture.md) — what was read in
   the six toolkits, each fact with the artefact it was read in, and the decisions and deviations that

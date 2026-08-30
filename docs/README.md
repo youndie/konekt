@@ -28,8 +28,9 @@ The documentation is layered; links run top to bottom.
 **All six directories now hold documents.** They were empty while there was no code, because a
 feature document written ahead of an implementation documents intent as fact — the one thing this
 format exists to prevent. That reason expired with the fourth feature vertical, and `B-39` filled
-them in from the code that exists: four features, four screens, five endpoint documents and three
-services.
+them in from the code that exists, and the map below is generated from the files rather than
+restated in a sentence — a count written out in prose is a second copy of something the headings
+already carry, and it is the copy that goes stale.
 
 Two rules govern what is in them, and they are worth stating here rather than once per file. **`main`
 describes what exists** — anything not built yet stays in its backlog item. And **what was verified is
@@ -95,7 +96,7 @@ it commits konekt to.
 - [x] [konekt-server](services/konekt-server.md) — the Ktor process: every table, every screen, every
   route, the saga engine and the workers
 - [x] [konekt-client](services/konekt-client.md) — the Compose Multiplatform renderer: the registry,
-  the session, the transport and shape. JVM only, and that is upstream
+  the session, the transport and shape. JVM, Android and two Apple targets
 - [x] [konekt-broker](services/konekt-broker.md) — the booblik instance the stand runs: three topics
   fixed at startup, no published port, no consumer offsets
 - [x] [operator-boundaries](services/operator-boundaries.md) — per axis, whether a change is a

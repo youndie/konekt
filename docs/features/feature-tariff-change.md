@@ -146,8 +146,8 @@ release for a card differing from an existing one in nothing but the word.
   the owner check lives inside it.
 - **The allowances were written in a base nothing else uses.** `2_000`, `10_000`, `50_000` — decimal
   thousands, while `UsageUnits` divides by 1024 — so the catalogue offered *9.8 GB* for the tariff
-  called Standard. It cost nothing while no screen displayed them, and `B-86` is the item that
-  displayed them.
+  called Standard. It cost nothing while no screen displayed them, and `B-86` is what
+  put them on one.
 - **The current tariff is drawn `available`, not `sold_out`.** Using `sold_out` to make the card
   unpressable was the first attempt; the client renders that state as the words **Sold out**, in red,
   in the slot the badge would have used. What makes a card unpressable is `action == null`.

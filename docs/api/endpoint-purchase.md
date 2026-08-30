@@ -14,7 +14,8 @@ parent_feature: feature-plan-purchase
 
 > The **complete** route reference for this feature. URL shapes and bodies live in
 > `feature/purchase-shared-api/src/commonMain/kotlin/io/konekt/feature/purchase/shared/api/PurchaseApi.kt`.
-> There is no generated schema yet (`B-23`).
+> The generated schema is [`openapi.json`](openapi.json), built from the routes and compared by the
+> build (`B-23`).
 >
 > Read out of the source on 2026-08-25. Two of the six routes answer a **component tree** rather than
 > a DTO, and that is stated per route below rather than left to be discovered.

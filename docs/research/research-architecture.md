@@ -8,15 +8,20 @@ date: 2026-08-25
 
 # Research: the architecture of konekt
 
-`konekt` is a white-label subscriber account for an eSIM MVNO: the operator takes the box, rebrands
-it, and gets a phone application and a server without writing a client. It is a reference build
-rather than a product — every system outside its boundary (BSS/OCS, SM-DP+, the payment gateway, the
+`konekt` is a reference implementation of six toolkits — kompot, petich, booblik, katcher, metrik
+and tracy — on the domain of an eSIM MVNO subscriber account. The telecom is the fixture that loads
+the stack, not a product an operator buys: what is deliberately absent, and why, is
+[reference-scope](../services/reference-scope.md). It is a reference build rather than a product — every system outside its boundary (BSS/OCS, SM-DP+, the payment gateway, the
 SMSC) is mocked on purpose, and what is real is the wiring: six toolkits, each carrying the load it
 was written for, on a domain that loads them without contrivance.
 
 This document records **verified facts** (read in source, in a published artefact, or in a registry
 listing), **decisions taken**, and **risks**. Anything unverified is called a hypothesis and says
 where it will be checked.
+
+**This document was written before the first commit, and the sentence that follows is preserved as
+it was written rather than corrected in place** — amending research at the point of divergence is
+this format's rule, and rewriting the premise would hide what the facts below were checked against.
 
 There is no code yet. "Verified" therefore means *read in the dependency at the version konekt will
 pin*, not *read in konekt* — and that distinction is the whole reason this document exists before

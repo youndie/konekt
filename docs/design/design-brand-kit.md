@@ -18,7 +18,8 @@ negotiable — it is a property of the wire konekt speaks.
 |---|---|---|
 | every colour, light and dark | `server/src/main/resources/themes/<brand>.json` | a server deploy |
 | corner radii; pills versus rounded rectangles | `client/src/commonMain/kotlin/io/konekt/client/theme/KonektShapeScale.kt` | an application release |
-| the type scale, the two font faces | the client | an application release |
+| the type scale — sizes, weights, letter spacing | `KompotTheme`'s `typography` block, so a kit could carry one | a server deploy — **never yet done**, because neither kit here carries one |
+| the font family | nowhere | **not available**: `KompotTextStyle` has no family, so a face a server named would not arrive |
 
 ## Why the split is not a design choice
 
@@ -32,10 +33,13 @@ That is deliberate rather than an omission: a server that could name a radius is
 round a control away until it is unreachable. The verified reading is in
 [research-architecture](../research/research-architecture.md) §1.2, and the decision is D2.
 
-Typography sits on the colour side of the wire and on the client side in practice. `KompotTextStyle`
-carries size, line height, weight, letter spacing and colour — **and no font family** — so a face
-named by the server would not arrive anyway. The two brands in this build share one type scale, which
-is why neither kit carries a `typography` block at all.
+Typography splits, and the two halves land on opposite sides. The SCALE sits with the colours:
+`KompotTheme` carries a `typography` block, so a kit could serve one exactly as it serves a palette —
+and neither kit here does, which is why that row says never yet done rather than server deploy and
+leaves it at that. The FAMILY is not on the wire at all: `KompotTextStyle` carries size, line height,
+weight, letter spacing and colour and **no font family**, so a face a server named would not arrive.
+
+The two brands in this build share one scale, which is why neither kit carries a `typography` block.
 
 ## Writing a colour kit
 

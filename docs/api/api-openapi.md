@@ -22,8 +22,8 @@ contract_source:
 endpoint kinds out of the deployment's OpenAPI document; it assumes no addresses, which is what lets
 the same checks run against an implementation on any stack
 ([research-architecture](../research/research-architecture.md) §1.10). Without the document there is
-no walk. `B-24` is the item that turns the walk into a gate, and what that gate asserts is
-**coverage, before any verdict** — see below.
+no walk. `B-24` turned the walk into a gate, and what that gate asserts is **coverage, before any
+verdict** — see below.
 
 ## Where each part of it comes from
 
@@ -79,7 +79,7 @@ at all, and a `check(report.isClean)` over an empty walk is green — which is t
 | `assertEveryCheckHasSomethingToVisit` | a route leaving this document takes a check's last target with it — removing `/api/v1/screens/history/page` fails naming `pagination` |
 | the same function, other direction | a check declared to have nothing to visit acquires a target and the declaration is not deleted |
 | `assertNothingIsSkippedSilently` | an endpoint stops being reached, or a new one arrives that nothing reaches |
-| `assertTheWalkVisitedEveryTarget` | a run visits fewer targets than the document offers — **no caller yet**, see `B-24` |
+| `assertTheWalkVisitedEveryTarget` | a run visits fewer targets than the document offers — called from `e2e TckWalkTest`, which is what `B-24` added |
 
 Two things this makes visible that no verdict would. **Five of the kit's eleven checks find nothing to
 visit here** — `form-fields` and `navigation` because this server serves no `form` or `graph`

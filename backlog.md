@@ -49,7 +49,7 @@ so re-prioritising must never move a file.
 |---|---|---|---|---|
 | [B-77](docs/backlog/B-77-the-stand-suite-decays-as-the-stand-ages.md) `[ ]` | Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short | P2 | S | - |
 
-## Closed (96)
+## Closed (97)
 
 **The wire and the shell**
 
@@ -154,6 +154,7 @@ so re-prioritising must never move a file.
 - [B-82](docs/backlog/B-82-the-brand-kit-document-says-the-theme-is-unwired.md) `[x]` - The brand-kit document says no theme is served over HTTP, and the server has been serving one since B-22
 - [B-83](docs/backlog/B-83-typography-does-not-ship-from-the-server.md) `[x]` - Two documents promise typography from the server; no kit carries any and a font family cannot cross the wire
 - [B-84](docs/backlog/B-84-a-guard-four-comments-cite-does-not-exist.md) `[x]` - Four files name DevRoutesAreNotProductionTest as what keeps the dev routes out of a real build, and there is no such test
+- [B-98](docs/backlog/B-98-documents-cite-closed-items-as-unfinished.md) `[x]` - Twelve places describe work that is finished as still to do, and the class has no guard
 
 **The reference, complete**
 
