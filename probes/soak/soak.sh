@@ -26,11 +26,16 @@ COMPOSE=${COMPOSE:-deploy/compose.yaml}
 SUBSCRIBERS=${SUBSCRIBERS:-90}
 SAMPLE=${SAMPLE:-600}          # seconds between readings
 PROBE=${PROBE:-1800}           # seconds between scenario runs; 0 disables them
-OUT=${OUT:-probes/soak/soak-$(date +%Y%m%d-%H%M%S).tsv}
+# OUTSIDE THE REPLICA BY DEFAULT, and this is not a preference. mutagen syncs this repository one way
+# and DELETES on the far side whatever the near side does not have; its ignore list is
+# build/.gradle/.kotlin/.idea/.DS_Store and does NOT read .gitignore. A readings file written under
+# `probes/` is erased within seconds — the first launch of this soak wrote into exactly such a file
+# and would have produced twelve hours of nothing.
+OUT=${OUT:-$HOME/soak-b77/soak.tsv}
+mkdir -p "$(dirname "$OUT")"
 
 # APPEND-ONLY, and written from the first line. A soak that is killed at hour nine must leave nine
 # hours of readings behind; a file assembled at the end leaves nothing.
-mkdir -p "$(dirname "$OUT")"
 psql() { docker compose -f "$COMPOSE" exec -T postgres psql -U konekt -d konekt -tAc "$1" 2>/dev/null | tr -d ' \r'; }
 
 subscriber() {
@@ -49,7 +54,21 @@ echo "soak: loading to $SUBSCRIBERS subscribers (now $(loaded))"
 while [ "$(loaded)" -lt "$SUBSCRIBERS" ]; do subscriber || sleep 2; done
 echo "soak: loaded, $(loaded) subscribers. Writing to $OUT"
 
-printf 'elapsed_s\thost_uptime_s\tpg_up\tbroker_up\tsubscribers\tlive\tdead\tsize\tautovac_count\tlast_autovac\tscenarios\n' >> "$OUT"
+# A RESTART IS MARKED, NOT SMOOTHED OVER. `elapsed` counts from THIS process, so a soak that is
+# interrupted and started again writes a second run into the same file with its own clock — and a
+# reader adding the two would report a twelve-hour soak that was two sixes. This item has already had
+# one measurement invalidated by a host that restarted underneath it; the marker is so the next
+# reader sees the seam.
+#
+# `wall` and `host_uptime_s` are what make a gap visible without any marker at all: wall jumps by the
+# length of the outage, and host uptime goes BACKWARDS if the machine rebooted rather than merely
+# slept. Those two columns distinguish "the box was asleep" from "the box came back new", which is
+# the difference between a soak that can be continued and one that has to start over.
+if [ -s "$OUT" ]; then
+  printf '# restart\t%s\thost_uptime=%s\n' "$(date -Iseconds)" "$(cut -d. -f1 /proc/uptime 2>/dev/null || echo -1)" >> "$OUT"
+else
+  printf 'elapsed_s\twall\thost_uptime_s\tpg_up\tbroker_up\tsubscribers\tlive\tdead\tsize\tautovac_count\tlast_autovac\tscenarios\n' >> "$OUT"
+fi
 
 START=$(date +%s)
 LAST_PROBE=0
@@ -95,8 +114,8 @@ while true; do
     fi
   fi
 
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$ELAPSED" "$HOST_UP" "$PG_UP" "$BR_UP" "$SUBS" "${LIVE:--}" "${DEAD:--}" "${SIZE:--}" "${AV_N:--}" "${AV_AT:--}" "$SCEN" >> "$OUT"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$ELAPSED" "$(date -Iseconds)" "$HOST_UP" "$PG_UP" "$BR_UP" "$SUBS" "${LIVE:--}" "${DEAD:--}" "${SIZE:--}" "${AV_N:--}" "${AV_AT:--}" "$SCEN" >> "$OUT"
   tail -1 "$OUT"
 
   sleep "$SAMPLE"
