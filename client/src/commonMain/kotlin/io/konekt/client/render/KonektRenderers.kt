@@ -16,6 +16,7 @@ import io.konekt.components.EsimQrComponent
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.PlanCardComponent
 import io.konekt.components.SkeletonComponent
+import io.konekt.components.SliderInputComponent
 import io.konekt.components.SnackbarComponent
 import io.konekt.components.StepMeterComponent
 import io.konekt.components.SurfaceComponent
@@ -69,6 +70,9 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         SkeletonComponent::class to SkeletonRenderer(),
         // The one container, and the one meant to be deleted when U14 lands upstream.
         SurfaceComponent::class to SurfaceRenderer(),
+        // The slider, which is a FORM FIELD and therefore the first renderer here that writes back
+        // into the `FormController` it is handed rather than only reading the component.
+        SliderInputComponent::class to SliderInputRenderer(),
         // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.

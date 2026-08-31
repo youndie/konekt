@@ -1,7 +1,7 @@
 ---
 id: B-104
 title: "A slider, as konekt's own dictionary extension — the builder's quantities are a range, not a list"
-status: open
+status: done
 priority: P2
 size: M
 stage: stage-m7-completeness
@@ -77,3 +77,64 @@ schema is served per request.
 | The form as served today | `server/src/main/kotlin/io/konekt/packages/CustomPackageForm.kt` |
 | What a new component costs | `docs/services/operator-boundaries.md` |
 | The claim to correct | `docs/backlog/B-20-custom-package-builder.md` |
+
+## What was done
+
+`slider_input` is the twelfth name in konekt's dictionary. Component in `:shared:components`,
+registered in `konektWireNames` and `konektDictionary`, renderer in the client, and the server sends
+it where it sent three `select_input`s.
+
+**The steps travel, not a range.** `SliderInputComponent.steps: List<String>` is the tariff's own step
+list — `0, 1, 5, 10, 20, 50` for data — so the control cannot express a quantity the price function
+refuses. A range with an increment would have made every intermediate position a refusal the
+subscriber meets at submit rather than at the control.
+
+**It is the first renderer here that WRITES into the form.** Every renderer already receives the
+`FormController`; this one reads the field through `getFieldFlow` and writes through
+`onValueChanged` + `requestPatchIfNeeded`. Both calls, in that order: a field that `triggersPatch`
+still has to say when it has settled, and the toolkit does not infer the second from the first.
+
+**The value comes from the controller, never from local state.** A slider holding its own position
+drifts from the form the moment a patch, a reset or a validation moves the field — and it is the
+controller the submit reads.
+
+**Compose counts the stops BETWEEN the ends**, so a six-value list is `steps = 4`. Off by one there
+puts a stop where no price exists, which is why the assertion that the component's steps equal the
+tariff's is now worth more than it was: a select offered a list and could only offer what it was
+given; a slider offers positions.
+
+## Verified
+
+- Round-trips through `generatedKonektSerializersModule` like the other eleven —
+  `KonektRegistrationTest` green with the dictionary at twelve.
+- Driven end to end against a running stand: the served form carries three sliders with the tariff's
+  steps, and `CustomPackageFormStandTest` moves the first one to position 3 through the semantics
+  action a drag ends up calling, then asserts the server's `$15` arrives **and** that the slider still
+  reads `10 GB` — the half a refetch would fail.
+- `:server:test` green; the desktop application restarted on it.
+
+## Two tests had to learn the new word, and one of them says why that matters
+
+`CustomPackageFormTest` asserted that every declared field is rendered by a component naming it, by
+matching on `SelectInputComponent`. The day the selects became sliders that assertion did not
+complain about a slider — it reported the three quantities as **declared and never rendered**, which
+is the same message it would print if the inputs had been deleted. A guard that enumerates the shapes
+a thing may take fails the same way whether the shape changed or the thing vanished.
+
+## What was NOT done
+
+**The canvas still does not draw the builder.** The word "slider" entered this repository through
+`B-20`'s acceptance criteria and never through a design, and that is unchanged: what exists now is a
+component chosen for a reason, not a drawing implemented. `B-20`'s "AC MET: moving a slider updates
+the price" is corrected in that item — it was false twice over, and it is worth leaving the correction
+rather than the claim.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The component | `shared/components/src/commonMain/kotlin/io/konekt/components/SliderInputComponent.kt` |
+| The dictionary | `KonektWireNames.kt`, `commonTest/.../KonektDictionary.kt` |
+| The renderer | `client/src/commonMain/kotlin/io/konekt/client/render/SliderInputRenderer.kt` |
+| What the server sends | `server/src/main/kotlin/io/konekt/packages/CustomPackageForm.kt` |
+| Driven through the real control | `client/src/jvmTest/kotlin/io/konekt/client/stand/CustomPackageFormStandTest.kt` |

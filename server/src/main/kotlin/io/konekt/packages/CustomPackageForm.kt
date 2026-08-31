@@ -9,12 +9,11 @@ import io.github.youndie.kompot.form.standard.TextFieldDefinition
 import io.github.youndie.kompot.form.standard.TextValue
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.forms.ReadOnlyFieldComponent
-import io.github.youndie.kompot.forms.SelectInputComponent
-import io.github.youndie.kompot.forms.SelectOption
 import io.github.youndie.kompot.forms.SubmitFormAction
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.TextComponent
+import io.konekt.components.SliderInputComponent
 import io.konekt.domain.Money
 import io.konekt.feature.packages.shared.api.CustomPackageFields
 import io.konekt.money.MoneyFormat
@@ -114,9 +113,9 @@ object CustomPackageForm {
             children =
                 listOf(
                     TextComponent(id = "custom-package-title", text = "Build your own package"),
-                    quantityInput(CustomPackageFields.DATA_GB, "Data, GB", CustomPackageTariff.DATA_GB_STEPS),
-                    quantityInput(CustomPackageFields.MINUTES, "Minutes", CustomPackageTariff.MINUTES_STEPS),
-                    quantityInput(CustomPackageFields.MESSAGES, "Messages", CustomPackageTariff.MESSAGES_STEPS),
+                    quantityInput(CustomPackageFields.DATA_GB, "Data", "GB", CustomPackageTariff.DATA_GB_STEPS),
+                    quantityInput(CustomPackageFields.MINUTES, "Minutes", null, CustomPackageTariff.MINUTES_STEPS),
+                    quantityInput(CustomPackageFields.MESSAGES, "Messages", null, CustomPackageTariff.MESSAGES_STEPS),
                     ReadOnlyFieldComponent(
                         id = "custom-package-price",
                         fieldId = CustomPackageFields.PRICE,
@@ -178,15 +177,26 @@ object CustomPackageForm {
             focusOn = if (affordability(price, balance) != null) CustomPackageFields.BALANCE else null,
         )
 
+    // A SLIDER, WHICH IS KONEKT'S OWN WORD AND NOT THE TOOLKIT'S (`B-104`). It was three
+    // `select_input`s, because kompot's field set has no slider — and this dictionary already carries
+    // eleven names added for exactly that reason, so a twelfth for a quantity along a range is the
+    // arrangement working rather than a workaround.
+    //
+    // THE STEPS ARE THE SAME LIST THE SERVER PRICES. Handing the client the tariff's own step list is
+    // what makes it impossible for a slider to propose a size the price function will refuse — the
+    // rule the selects already followed, and the reason the component carries steps rather than a
+    // range with an increment.
     private fun quantityInput(
         fieldId: String,
         label: String,
+        unit: String?,
         steps: List<Long>,
-    ) = SelectInputComponent(
+    ) = SliderInputComponent(
         id = "custom-package-$fieldId",
         fieldId = fieldId,
         label = label,
-        options = steps.map { SelectOption(id = it.toString(), label = it.toString()) },
+        steps = steps.map(Long::toString),
+        unit = unit,
     )
 
     // WHETHER THIS PACKAGE CAN BE AFFORDED, decided by the server on every render.

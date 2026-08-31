@@ -3,8 +3,8 @@ package io.konekt.packages
 import io.github.youndie.kompot.form.standard.EntityValue
 import io.github.youndie.kompot.form.standard.TextValue
 import io.github.youndie.kompot.forms.ReadOnlyFieldComponent
-import io.github.youndie.kompot.forms.SelectInputComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.konekt.components.SliderInputComponent
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.packages.shared.api.CustomPackageFields
@@ -87,8 +87,14 @@ class CustomPackageFormTest {
             screen.children
                 .mapNotNull {
                     when (it) {
-                        is SelectInputComponent -> it.fieldId
+                        // konekt's own slider since `B-104`, the toolkit's read-only field for the two
+                        // computed values. The list is the shapes a field can be rendered BY, and a
+                        // field rendered by something absent from it reads as never rendered at all —
+                        // which is how this assertion failed the day the selects became sliders.
+                        is SliderInputComponent -> it.fieldId
+
                         is ReadOnlyFieldComponent -> it.fieldId
+
                         else -> null
                     }
                 }.toSet()
@@ -176,16 +182,20 @@ class CustomPackageFormTest {
         )
     }
 
+    // THE SAME ASSERTION AFTER THE SELECTS BECAME SLIDERS (`B-104`), and it matters more now rather
+    // than less: a select offered a list and a slider offers POSITIONS, so a steps list that drifted
+    // from the tariff would put a stop where no price exists — a subscriber would land on it and be
+    // refused at submit rather than be unable to choose it.
     @Test
     fun `every quantity input offers exactly the steps the server prices`() {
         val screen = CustomPackageForm.screen(balance, zero) as ColumnComponent
-        val inputs = screen.children.filterIsInstance<SelectInputComponent>().associateBy { it.fieldId }
+        val inputs = screen.children.filterIsInstance<SliderInputComponent>().associateBy { it.fieldId }
 
         // The list a subscriber picks from and the list the server accepts are the same list. Two
         // copies would let a client offer a size the server refuses, which reads as a broken form.
         assertEquals(
             CustomPackageTariff.DATA_GB_STEPS.map { it.toString() },
-            assertNotNull(inputs[CustomPackageFields.DATA_GB]).options.map { it.id },
+            assertNotNull(inputs[CustomPackageFields.DATA_GB]).steps,
         )
         assertEquals(3, inputs.size, "expected one input per quantity, got ${inputs.keys}")
     }

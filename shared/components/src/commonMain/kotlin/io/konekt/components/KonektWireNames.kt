@@ -1,6 +1,6 @@
 package io.konekt.components
 
-// The eleven names konekt adds to the kompot wire, in one list because more than one thing has to walk
+// The twelve names konekt adds to the kompot wire, in one list because more than one thing has to walk
 // them: the registration tests, the schema profile check, and — when it exists — the server's own
 // completeness gate over the screens it can build.
 //
@@ -23,4 +23,7 @@ val konektWireNames: List<String> =
         // The one container among them, and the one that is meant to be deleted — see
         // `SurfaceComponent` and U14.
         "surface",
+        // A quantity along a range. The toolkit has no slider and this build wanted one — see
+        // `SliderInputComponent` for why that is a dictionary entry rather than a workaround.
+        "slider_input",
     )

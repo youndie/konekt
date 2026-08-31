@@ -75,7 +75,7 @@ So the shape is now the one the item asked for. Both computed values are declare
 the GET is the first paint; every change after it is `POST /api/v1/forms/custom-package/patch`
 answering a `FormPatch` with two values and no tree. The refetch is gone.
 
-- AC MET: "moving a slider updates the price without the fields losing focus or resetting."
+- AC **NOT** MET, and it was recorded as met: *"moving a slider updates the price without the fields losing focus or resetting."* There was no slider — `B-87` records why, and the field set had none — and the price did not update at all, because the client drew every form with no patch fetcher (`B-101`). Both halves were false when this line was written. There is a slider now (`B-104`) and the price does move (`B-101`), which is what makes the correction worth keeping rather than deleting: the claim was made before either was true.
   `CustomPackageFormStandTest` renders the real form through the real registry against the running
   stand, chooses 10 GB, and waits for `$15` — then asserts the chosen quantity is **still 10**. That
   second assertion is the discriminating one: a refetch would also show the new price, and would not

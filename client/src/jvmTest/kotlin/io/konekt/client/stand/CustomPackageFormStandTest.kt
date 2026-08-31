@@ -1,10 +1,13 @@
 package io.konekt.client.stand
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
@@ -138,13 +141,18 @@ class CustomPackageFormStandTest {
             onNodeWithText("Price").assertIsDisplayed()
             onNodeWithText("Your balance").assertIsDisplayed()
 
-            // Choose 10 GB. The select opens, the option is picked, and the field that moved has
-            // triggersPatch — so the controller asks the server what the package now costs.
-            onNodeWithText("Data, GB").performClick()
-            waitUntil(timeoutMillis = 5_000) {
-                onAllNodesWithText("10").fetchSemanticsNodes().isNotEmpty()
-            }
-            onAllNodesWithText("10")[0].performClick()
+            // Choose 10 GB. The quantity is a SLIDER since `B-104`, so the interaction is a position
+            // rather than a click on an option — driven through the semantics action Compose gives
+            // every slider, which is what a person's drag ends up calling.
+            //
+            // Position 3 of `0, 1, 5, 10, 20, 50`, and the index is the point: a slider addresses
+            // STEPS and a mistake here lands on a neighbouring price rather than failing, so the
+            // assertion below names the money the server must answer with.
+            // THE FIRST OF THREE, which is `data_gb` — the order the server sends them in. Indexing
+            // rather than matching on the label because a slider's label is a sibling text node, not
+            // its own semantics, and matching it would find the row instead of the control.
+            onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))[0]
+                .performSemanticsAction(SemanticsActions.SetProgress) { it(3f) }
 
             // 10 GB at 150 minor units each is $15 — computed by the SERVER and formatted by it, and
             // the client owns no formatter for money at all (D15). A `$15` on this screen can only
@@ -154,11 +162,14 @@ class CustomPackageFormStandTest {
             }
             onNodeWithText("$15").assertIsDisplayed()
 
-            // THE HALF A REFETCH WOULD FAIL. The quantity is still 10: the controller survived, the
+            // THE HALF A REFETCH WOULD FAIL. The slider is still on 10: the controller survived, the
             // tree was not replaced, and nothing reset to the first step. That is what "without the
             // fields losing focus or resetting" means, and it is the difference between a patch and
             // the refetch this form used to do.
-            onNodeWithText("10").assertIsDisplayed()
+            // `10 GB` and not `10`: the slider draws the value with its unit, in one node, which is
+            // what a subscriber reads. Asserting the bare number would pass on a screen that shows
+            // the quantity without saying what it is a quantity of.
+            onNodeWithText("10 GB").assertIsDisplayed()
         }
     }
 }

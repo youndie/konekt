@@ -118,6 +118,14 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                         TextComponent(id = "balance-amount", text = "$54"),
                     ),
             ),
+        "slider_input" to
+            SliderInputComponent(
+                id = "custom-package-data_gb",
+                fieldId = "data_gb",
+                label = "Data",
+                steps = listOf("0", "1", "5", "10", "20", "50"),
+                unit = "GB",
+            ),
     )
 
 // The application's own Json: the toolkit's core and standard sets plus this dictionary. Assembled
