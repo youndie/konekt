@@ -8,8 +8,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
-import io.konekt.client.app.KonektFormScreen
+import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
+import io.konekt.client.app.Screen
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
 import io.konekt.client.realtime.SseRealtimeSource
@@ -79,7 +80,6 @@ class CustomPackageFormStandTest {
     }
 
     private val formAddress = "/api/v1/forms/custom-package"
-    private val patchAddress = "/api/v1/forms/custom-package/patch"
 
     private fun signedInClient(): HttpClient {
         val session = KonektSession()
@@ -107,6 +107,12 @@ class CustomPackageFormStandTest {
                 realtime = SseRealtimeSource(http, konektClientJson),
                 registry = konektRegistry(),
                 json = konektClientJson,
+                // THE APPLICATION'S OWN TABLE, and this line is the point of `B-101` rather than a
+                // detail of the fixture. This test used to build the patch fetcher itself and hand it
+                // to `KonektFormScreen` — so it proved the fetcher works when somebody supplies one,
+                // while the application supplied `null` and the price never moved. A test that
+                // constructs the collaborator the product forgets is a test of the collaborator.
+                patches = KonektRoutes.patches,
             )
 
         // FETCHED ONCE, outside the composition, and that is load-bearing rather than tidy: a form
@@ -120,11 +126,9 @@ class CustomPackageFormStandTest {
                 // `KonektApp` wraps `screens.render(...)` in `KonektTheme`, and a form is a leaf
                 // inside that, not a second place the design system is decided.
                 KonektTheme(theme = null, darkMode = false) {
-                    KonektFormScreen(
-                        response = response,
-                        registry = konektRegistry(),
-                        patchFetcher = source.patchFetcher(patchAddress, response.schema.formId),
-                    )
+                    // THROUGH THE SOURCE'S OWN `render`, which is the path the application takes.
+                    // Calling `KonektFormScreen` directly is what let the wiring rot unnoticed.
+                    source.render(Screen.Form(response)) {}
                 }
             }
 

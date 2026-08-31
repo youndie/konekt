@@ -50,6 +50,9 @@ class KonektScreenSource(
     // routing to the application — so this is the client's half of that contract, and a map for the
     // same reason `routes` is: the deployment decides, not the library.
     private val submits: Map<String, String> = emptyMap(),
+    // WHERE A FORM ASKS FOR A RECOMPUTE. Empty by default like `submits`, and a form that is not in
+    // it is drawn without a fetcher — see `KonektRoutes.patches`.
+    private val patches: Map<String, String> = emptyMap(),
 ) : ScreenSource {
     // ONE REQUEST, AND THE BODY DECIDES THE SHAPE. A form response is an object with `schema` and
     // `screen`; a screen is a component with a `type`. Choosing on the presence of `schema` rather
@@ -186,7 +189,17 @@ class KonektScreenSource(
                 KonektFormScreen(
                     response = screen.response,
                     registry = registry,
-                    patchFetcher = null,
+                    // THE FETCHER THE APPLICATION FORGOT. This read `null` while the implementation
+                    // below was written, commented and called from nowhere, so the custom package's
+                    // price sat at `$0` whatever anybody chose — the server recomputed correctly and
+                    // the answer had no way back to the screen (`B-101`).
+                    //
+                    // Null when the form has no patch address, which is the login form and is correct
+                    // for it: a fetcher there would be a round trip nothing asks for.
+                    patchFetcher =
+                        patches[screen.response.schema.formId]?.let {
+                            patchFetcher(it, screen.response.schema.formId)
+                        },
                     onAction = onAction,
                     // SUBMITTING GOES BACK OUT THROUGH THE SAME HANDLER. The endpoint answers a
                     // `KompotAction` — a `navigate` for the first login step, an `update_session` for

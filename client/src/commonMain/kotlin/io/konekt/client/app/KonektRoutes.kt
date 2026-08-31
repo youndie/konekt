@@ -8,6 +8,7 @@ import io.konekt.feature.auth.shared.api.LoginForms
 import io.konekt.feature.auth.shared.api.LoginScreenResource
 import io.konekt.feature.auth.shared.api.LoginSubmit
 import io.konekt.feature.packages.shared.api.CustomPackageFields
+import io.konekt.feature.packages.shared.api.CustomPackagePatch
 import io.konekt.feature.purchase.shared.api.ORDER_DEEPLINK
 import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.TopUpForms
@@ -72,6 +73,21 @@ object KonektRoutes {
             // The builder posts to its own address too, for the same reason the amount form does: a
             // sibling path named `submit` is one parameter away from colliding with something.
             CustomPackageFields.FORM_ID to addressOf<CustomPackageFormResource>(),
+        )
+
+    // WHERE EACH FORM ASKS FOR A RECOMPUTE, and it is a map for the same reason `submits` is: the
+    // toolkit's `PatchFetcher` is `(fieldId, values) -> FormPatch` and carries no address at all.
+    //
+    // A form ABSENT from this map has no patch, and that is a state rather than an omission — the
+    // login form validates locally and asks the server nothing until it is submitted. So the lookup
+    // answers null and the screen is drawn without a fetcher, which is exactly right for it.
+    //
+    // `addressOf<CustomPackagePatch>()` rather than the form's address plus `/patch`: the resource
+    // already declares the path once, and a convention spelled out here would be the second copy the
+    // whole `@Resource` arrangement exists to prevent.
+    val patches: Map<String, String> =
+        mapOf(
+            CustomPackageFields.FORM_ID to addressOf<CustomPackagePatch>(),
         )
 
     // Where the application opens, and where signing out returns to.

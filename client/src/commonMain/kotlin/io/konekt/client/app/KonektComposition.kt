@@ -84,6 +84,7 @@ class KonektComposition(
             registry = konektRegistry(),
             json = konektClientJson,
             submits = KonektRoutes.submits,
+            patches = KonektRoutes.patches,
         )
 
     fun start() {

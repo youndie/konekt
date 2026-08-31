@@ -43,17 +43,16 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (5)
+## Open (4)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-101](docs/backlog/B-101-the-form-never-asks-the-server-to-recompute.md) `[ ]` | Every form is drawn with no patch fetcher, so the custom package's price never changes | P1 | S | - |
 | [B-102](docs/backlog/B-102-the-profile-states-a-tariff-nothing-bills.md) `[ ]` | The profile states a tariff the subscriber never chose and nothing ever charges for | P2 | M | - |
 | [B-103](docs/backlog/B-103-a-travel-package-cannot-be-bought-from-the-travel-screen.md) `[ ]` | The travel screen shows what you own and offers no way to buy, so travel packages read as unavailable | P2 | S | - |
 | [B-104](docs/backlog/B-104-a-slider-of-our-own.md) `[ ]` | A slider, as konekt's own dictionary extension — the builder's quantities are a range, not a list | P2 | M | - |
 | [B-105](docs/backlog/B-105-the-home-screen-diverges-from-the-canvas.md) `[ ]` | The home screen draws three cards where the canvas draws one, and the balance block is laid out differently | P2 | M | - |
 
-## Closed (100)
+## Closed (101)
 
 **The wire and the shell**
 
@@ -164,6 +163,7 @@ so re-prioritising must never move a file.
 **The reference, complete**
 
 - [B-100](docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md) `[x]` - The broker is deployed with retention off, so its volume fills and the failure is silent
+- [B-101](docs/backlog/B-101-the-form-never-asks-the-server-to-recompute.md) `[x]` - Every form is drawn with no patch fetcher, so the custom package's price never changes
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

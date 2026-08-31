@@ -1,7 +1,7 @@
 ---
 id: B-101
 title: "Every form is drawn with no patch fetcher, so the custom package's price never changes"
-status: open
+status: done
 priority: P1
 size: S
 stage: stage-m7-completeness
@@ -75,3 +75,57 @@ A test that builds the collaborator the product forgets is a test of the collabo
 | The implementation nobody calls | the same file, `patchFetcher(address, formId)` |
 | The test that supplies it for the app | `client/src/jvmTest/kotlin/io/konekt/client/stand/CustomPackageFormStandTest.kt` |
 | The server half, which works | `server/src/main/kotlin/io/konekt/packages/CustomPackageRouting.kt` |
+
+## What was done
+
+`KonektRoutes` gains a `patches` map beside `submits`, built the same way — from the `@Resource` the
+server already routes with:
+
+```kotlin
+val patches: Map<String, String> =
+    mapOf(CustomPackageFields.FORM_ID to addressOf<CustomPackagePatch>())
+```
+
+**A map rather than the form's address plus `/patch`.** The convention would have been shorter and it
+would have been the second copy of a path that the whole `@Resource` arrangement exists to prevent —
+and it would have been a copy nothing checks, since the client would spell what the server declares.
+
+**A form absent from the map is drawn without a fetcher, and that is a state rather than an
+omission.** The login form validates locally and asks the server nothing until it is submitted; a
+fetcher there would be a round trip nobody wants. The lookup answers null and the screen is right.
+
+## The test stopped repairing the application
+
+The change that matters more than the three lines: `CustomPackageFormStandTest` used to call
+`KonektFormScreen` directly and pass `source.patchFetcher(patchAddress, formId)` **itself**. It proved
+the fetcher works when somebody supplies one, while the application supplied `null` — so it was green
+for eight commits over a screen whose price never moved.
+
+It now renders through `source.render(Screen.Form(response))`, the path the application takes, and
+takes the addresses from `KonektRoutes` rather than spelling them. A test that constructs the
+collaborator the product forgets is a test of the collaborator.
+
+## Verified
+
+- **Proved by mutation**: `patchFetcher = null` restored, and
+  *"choosing a quantity reprices the form without redrawing it"* fails. Before this item that same
+  mutation was the production code and the test was green.
+- The server half was measured first and needed nothing: 0/1/10/50 GB price at
+  `$0` / `$1.50` / `$21` / `$104`.
+- `:client:standTest` green against a running stand; the desktop application restarted on the fix.
+
+## What was NOT done
+
+**No guard that a form is never rendered without a fetcher.** The honest shape would be a check that
+every served form id appears in `patches` — but that is false by design for login, so the guard would
+need an exemption list, and an exemption in a completeness guard is how the gap comes back. The stand
+test going through `render` is what stands in its place, and it is weaker: it covers the one form that
+patches. Said here rather than left as an impression that something watches this.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The map | `client/src/commonMain/kotlin/io/konekt/client/app/KonektRoutes.kt` (`patches`) |
+| Where it is used | `client/src/commonMain/kotlin/io/konekt/client/app/KonektScreenSource.kt` (`render`) |
+| The test that goes through the application's path now | `client/src/jvmTest/kotlin/io/konekt/client/stand/CustomPackageFormStandTest.kt` |
