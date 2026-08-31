@@ -43,9 +43,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (2)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-106](docs/backlog/B-106-reuse-values-drops-what-the-chart-added.md) `[ ]` | A deploy with --reuse-values runs a shape the chart guard has never rendered | P1 | S | - |
+| [B-107](docs/backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) `[ ]` | Lowering the segment size truncated the log, and the consumer polled a vanished offset for ever | P1 | M | - |
 
 ## Closed (105)
 
