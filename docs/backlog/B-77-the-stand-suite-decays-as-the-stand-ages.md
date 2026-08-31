@@ -1,7 +1,7 @@
 ---
 id: B-77
 title: "Two stand scenarios fail on a stand left up for hours, and the hour-long soak was too short"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m4-proof
@@ -153,3 +153,77 @@ failure message that now names the stand's age, its load and the state of the ta
 | The scenarios | `e2e/src/test/kotlin/io/konekt/e2e/LiveUpdateScenarioTest.kt`, `RoamingScenarioTest.kt` |
 | The simulator | `server/src/main/kotlin/io/konekt/mocks/traffic/` |
 | The stand | `Makefile` (`stand-up`, `stand-down`, `e2e`) |
+
+## Closed without a fix, and that phrase is the finding
+
+Nothing was repaired here, because nothing could be made to break. Two soaks, each **longer than both
+known reproductions**, on two different hosts, neither reproduced it.
+
+| | the host where it failed | the control |
+|---|---|---|
+| | WSL, docker compose | fornex, k0s |
+| length | **14 h 14 min** | **24 h 02 min** |
+| samples | 68 | 142 |
+| subscribers | 91 → 103 | 91 → 228 |
+| what was watched | **the two failing scenarios**, 12 runs | the lag a new subscriber waits, per sample |
+| result | **12 of 12 `pass`** | lag 11–16 s throughout, never past 18 |
+| `usage_counter` | dead 9–173, 112 autovacuums, table +8 kB in fourteen hours | dead 0–151, 8 autovacuums, 152 → 304 kB in a day |
+| restarts | none | none |
+
+The WSL run matters more than its length suggests: it ran on the machine where **both** reproductions
+happened, and it drove the actual failing scenarios rather than a proxy for them.
+
+## The fourth mechanism, ruled out by measurement like the other three
+
+The suspicion this item ended on was `usage_counter` bloating without bound — three rows per
+subscriber updated every five seconds, "on the order of two million updates" in twelve hours. It does
+not happen, and the two soaks refute it from opposite directions:
+
+* on WSL autovacuum ran **112 times in fourteen hours** and on fornex **8 times in twenty-four** — two
+  very different vacuum regimes;
+* and on both the dead tuples stayed a sawtooth in the low hundreds while the table grew by **8 kB**
+  and **152 kB** respectively.
+
+A table that gains a hundred and fifty kilobytes a day is not what makes a 90-second wait expire.
+
+**The broker's log, named as the next candidate, is ruled out too** — and separately, because it does
+grow: 708 MiB of real blocks in a day on the control, one segment roll, no retention configured.
+Twenty-four hours of that growth moved the lag by nothing. It is a real problem and it is
+[B-100](B-100-the-broker-keeps-every-event-for-ever.md)'s, not this one's.
+
+## What is therefore still unexplained
+
+Two observed failures, five and twelve hours into stands that had been **worked on by hand all day** —
+manual sessions, repeated e2e runs, and in the first case a host that rebooted twice. A soak
+reproduces the load and not that history, and the difference between them is the whole of what is
+left. This item does not get to say what the difference is.
+
+**A confound was recorded before the WSL run rather than found after it:** that stand ran with the
+retention [B-100](B-100-the-broker-keeps-every-event-for-ever.md) added hours earlier, and both stands
+that failed had none. Retention deletes closed segments and has no plausible path to slowing an
+append, so it is a weak candidate — and it is written down instead of being argued away, because a
+clean run with two possible reasons is not the same as a clean run with one.
+
+## Why this closes rather than stays open
+
+An item that cannot be worked on is not an item. What could be done has been:
+
+* four mechanisms refuted in writing, each by measurement, so nobody proposes them again;
+* `probes/lag.sh` and `probes/soak/` — the instruments, committed, so the next attempt starts where
+  this one ended rather than from a theory;
+* **and the trap stays armed.** `Stand.standDiagnosis` already puts the stand's age, its load and
+  `usage_counter`'s live/dead/size into the failure message. The next occurrence arrives measured,
+  without anybody having thought to look — which is exactly what was missing the first two times,
+  when the evidence was torn down within minutes.
+
+Reopen it on the next occurrence, with those numbers attached. Do not reopen it on a suspicion.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The scenarios | `e2e/src/test/kotlin/io/konekt/e2e/LiveUpdateScenarioTest.kt`, `RoamingScenarioTest.kt` |
+| The lag probe | `probes/lag.sh` |
+| The soak, and the same soak run inside a cluster | `probes/soak/soak.sh`, `probes/soak/in-cluster-soak.py` |
+| The diagnosis that travels with a failure | `e2e/src/test/kotlin/io/konekt/e2e/Stand.kt` (`standDiagnosis`) |
+| The broker's growth, which is a different item | `docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md` |
