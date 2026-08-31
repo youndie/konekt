@@ -1,100 +1,75 @@
 ---
 id: screen-tariffs
-title: Tariff catalogue and one change — the confirmation a subscriber has to give
+title: The tariff catalogue and one change — two screens that no longer exist
 type: client_screen
 platform: [jvm, android, ios]
-status: active
+status: deprecated
 entry:
-  jvm: "GET /api/v1/screens/tariffs and GET /api/v1/screens/tariff-changes/{changeId} — server-built trees; there is no client-side screen class"
+  jvm: "none — GET /api/v1/screens/tariffs and GET /api/v1/screens/tariff-changes/{changeId} were removed by B-102 and answer 404"
 parent_feature: feature-tariff-change
 calls_api:
   - api-openapi
-source: server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt
+source: docs/backlog/B-102-the-profile-states-a-tariff-nothing-bills.md
 ---
 
-# Screen: the tariff catalogue, and one change
+# Screen: the tariff catalogue, and one change — removed
 
-> Two trees, and the second is the point. A purchase's confirmation asks *spend this?*; this one asks
-> *change what you are on?* — and it is the only screen in the build where two facts are true at once
-> and both have to be on it: the tariff a subscriber is on, and the one they are moving to.
->
-> Read out of the source on 2026-08-29.
+> **These screens are gone.** `B-102` removed them, and this document stays because a closed item's
+> acceptance criteria name it ([B-93](../backlog/B-93-two-verticals-have-screens-and-no-documents.md))
+> and because a reader who finds nothing at `app://tariffs` deserves to learn that it was a decision
+> rather than a gap. Deleting the file would have made the two indistinguishable, which is the
+> failure [reference-scope](../services/reference-scope.md) exists to prevent.
+
+## Why they went
+
+The catalogue drew every tariff with its **price per month**, and the profile named the tariff a
+subscriber was on beside a `Change tariff` control. Nothing in this build has ever charged a monthly
+price: there is no scheduler, no billing period and no recurring charge anywhere in it. So the screens
+stated a commitment the product does not have, next to a package that really was bought and really was
+paid for — reported by somebody using the application, and filed as
+[B-102](../backlog/B-102-the-profile-states-a-tariff-nothing-bills.md).
+
+Of that item's three ways out, the third was taken: remove the tariff from the subscriber's view and
+keep the saga as the demonstration it is. Billing it would have been a vertical — scheduler,
+proration, failure handling — demonstrating none of the six toolkits this build is about.
+
+## What went, exactly
+
+| Gone | Where it was |
+|---|---|
+| `GET /api/v1/screens/tariffs`, `GET /api/v1/screens/tariff-changes/{changeId}` | `server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt`, `TariffScreenRouting.kt` |
+| `app://tariffs`, and the `Shell.graph()` route for it | `server/src/main/kotlin/io/konekt/screens/Shell.kt` |
+| The tariff block and its `Change tariff` control | `server/src/main/kotlin/io/konekt/screens/ProfileScreen.kt` |
+| `change_tariff`, `confirm_tariff_change`, and the client handler that answered them | `feature/tariff-shared-api/.../TariffApi.kt`, `client/.../app/ChangeTariff.kt` |
+| `Tariff.monthlyPrice` — the price itself | `server/src/main/kotlin/io/konekt/tariff/TariffDomain.kt` |
+
+## What survives
+
+The saga. `POST /api/v1/tariff-changes` requests a change, the saga suspends, and
+`POST /api/v1/tariff-changes/{changeId}/confirmation` resumes it — petich's suspend/resume on a second
+shape of transaction, which is the whole of what this vertical was ever for. `TariffChangeScenarioTest`
+drives it end to end and `TariffChangeSagaTest` covers the boundary rule.
+
+The reasoning worth keeping outlived the screens and is not buried here: why a change had to be an
+action rather than a `navigate` is in `TariffApi.kt`, and why the profile no longer names a tariff is
+at the top of `ProfileScreen.kt` — the place a reader actually meets the question.
 
 ## 0a. Code anchors
 
 | What | File |
 |---|---|
-| Both trees | `server/src/main/kotlin/io/konekt/tariff/TariffScreens.kt` |
-| Their routes | `server/src/main/kotlin/io/konekt/tariff/TariffScreenRouting.kt` |
-| The way in | `server/src/main/kotlin/io/konekt/screens/ProfileScreen.kt` |
-| The graph entry | `server/src/main/kotlin/io/konekt/screens/Shell.kt` |
-| What the client does with the actions | `client/src/commonMain/kotlin/io/konekt/client/app/ChangeTariff.kt` |
+| Where the tariff used to be, and why it is not | `server/src/main/kotlin/io/konekt/screens/ProfileScreen.kt` |
+| The saga that survived them | `server/src/main/kotlin/io/konekt/tariff/TariffUseCases.kt` |
+| The wire that is left | `feature/tariff-shared-api/src/commonMain/kotlin/io/konekt/feature/tariff/shared/api/TariffApi.kt` |
 
-## 0. Entry point and visibility
+## Quirks worth not losing
 
-`app://tariffs`, reached from the **profile** tab, which is where a subscriber looks for what they are
-on. Not a tab of its own: the canvas has four, and a fifth would be a change to the shell for a screen
-opened rarely.
+Three things these screens taught, kept because the next screen can repeat all three:
 
-One change is `/api/v1/screens/tariff-changes/{changeId}` and has **no deeplink**. Nothing navigates
-to a change — it is reached by an action whose answer carries the id — and a constant used by nothing
-is the shape this repository files as a defect.
-
-Both are behind the user tier. The change screen's owner check is in the use case: a stranger's change
-answers **404**, not 403, because refusing differently would confirm that it exists.
-
-## 1. Screen states
-
-### The catalogue
-
-| State | What is on screen |
-|---|---|
-| ordinary | every tariff as a `plan_card` — title, price *per month*, allowance. The current one carries the badge **Your tariff** and no action; every other one carries `change_tariff` |
-| a change is waiting | a banner naming the tariff the change is to and the date it takes effect, with **Review it** — and **no tariff offers a change**, because the server answers 409 to a second one |
-
-### One change
-
-| State | Title | What is on screen |
-|---|---|---|
-| awaiting confirmation | *Confirm the change* | both tariffs, the date, "nothing changes until you confirm", and the **Confirm** button |
-| confirmed | *Change confirmed* | both tariffs, the date, "you stay on your current tariff until …", and **no control** |
-| refused | *Change refused* | "the change could not be made and you stay on your current tariff. Nothing was billed" |
-| reversed | *Change reversed* | "the change was reversed …". A different sentence from refused, because a subscriber told only that something did not work cannot tell whether trying again is worth anything (`B-68`) |
-| still processing | *Your change* | "this change is still being processed" |
-
-## 2. API integration
-
-The catalogue is a GET. A press sends `change_tariff`, which the client posts to
-`POST /api/v1/tariff-changes`; the answer carries the change id, and the client builds the change
-screen's address from the `@Resource` pattern and refetches. **Nothing asserts on the POST's body** —
-the client discards it, so anything asserted there is asserted about a payload nothing renders, which
-is the rule `B-66` cost.
-
-Confirming sends `confirm_tariff_change` and ends on the same address in a different state.
-
-## 3. UI elements, top to bottom
-
-**Catalogue:** the title *Your tariff*; the pending banner if there is one; a card per tariff, in
-catalogue order; the bottom bar with **Profile** current.
-
-**One change:** the title, which states the outcome; *Now on* / *Changing to* / *Takes effect* as
-label-and-value rows; a banner saying what happens next; and the confirmation, when one is wanted.
-
-There is **no way-out button**. The bottom bar is the way out of every screen that is not a flow, and
-a second primary beside the confirmation is what `B-71` removed from the purchase result.
-
-## 4. Navigation (summary)
-
-`profile → app://tariffs → (change_tariff) → one change → (confirm_tariff_change) → the same change`.
-
-## 5. Quirks
-
-- **The current tariff is `available`, not `sold_out`.** `sold_out` makes a card unpressable and also
-  makes the client draw the words **Sold out**, in red, in the badge's slot — over the subscriber's
-  own tariff. What makes a card unpressable is `action == null`. Found by a screenshot from a device;
-  every tree assertion had passed over it.
-- **No new component type.** A tariff is a `plan_card`. A `tariff_card` would be a client release for
-  a card that differs from an existing one in nothing but the word.
-- **There is no success tone.** The vocabulary is `info`, `low`, `error`; a confirmed change uses
-  `info` and the words carry the outcome. Inventing a fourth tone would be a client release for a
-  banner's colour.
+- **`sold_out` is a word, not just a state.** Making the current tariff's card unpressable with
+  `sold_out` drew **Sold out** in red over the subscriber's own tariff. What makes a card unpressable
+  is `action == null`. Found by a screenshot from a device; every tree assertion had passed over it.
+- **No new component type for a new noun.** A tariff was drawn with `plan_card`. A `tariff_card` would
+  have been a client release for a card differing from an existing one in nothing but the word.
+- **There is no success tone.** The vocabulary is `info`, `low`, `error`, and a confirmed change used
+  `info` with the words carrying the outcome.

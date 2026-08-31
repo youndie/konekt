@@ -124,7 +124,8 @@ Line and allowance:
 
 Subscription and assembly:
 - [x] [feature-tariff-change](features/feature-tariff-change.md) — the second saga, and the one that is
-  not about money arriving: a subscription changing under a subscriber who has to agree to it
+  not about money arriving: a change under a subscriber who has to agree to it. Reachable over HTTP
+  and by nothing a subscriber can press — `B-102` took its screens away
 - [x] [feature-custom-package](features/feature-custom-package.md) — three quantities, a price the
   server computes on every change, and a plan the catalogue did not write down
 
@@ -138,8 +139,8 @@ Subscription and assembly:
   including the compensated one
 - [x] [screen-order-history](screens/screen-order-history.md) — everything that moved money, keyset
   paged, with reversals visible
-- [x] [screen-tariffs](screens/screen-tariffs.md) — the catalogue with the current tariff marked, and
-  one change with both tariffs true until the boundary
+- [x] [screen-tariffs](screens/screen-tariffs.md) — **deprecated**: the two screens `B-102` removed,
+  and why a monthly price could not stay on a build that never charges one
 - [x] [screen-custom-package](screens/screen-custom-package.md) — the one form where a patch does real
   work: the server prices a combination and nothing is redrawn
 

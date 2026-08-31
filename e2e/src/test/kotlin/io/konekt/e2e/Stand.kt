@@ -27,7 +27,6 @@ import io.konekt.feature.purchase.shared.api.TopUpResponse
 import io.konekt.feature.purchase.shared.api.TopUps
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
-import io.konekt.feature.tariff.shared.api.tariffActionsSerializersModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -106,7 +105,6 @@ object Stand {
                 esimActionsSerializersModule +
                 purchaseActionsSerializersModule +
                 shellActionsSerializersModule +
-                tariffActionsSerializersModule +
                 // `submit_form`, kompot's own, and the FOURTH time a hand-registered action has cost
                 // something here. The form COMPONENTS are generated into
                 // `generatedFormsSerializersModule` above and its ACTION is not, so this suite decoded

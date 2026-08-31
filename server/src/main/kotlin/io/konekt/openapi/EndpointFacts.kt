@@ -21,9 +21,7 @@ import io.konekt.feature.realtime.shared.api.RealtimeStream
 import io.konekt.feature.roaming.shared.api.RoamingScreenResource
 import io.konekt.feature.shell.shared.api.NavigationResource
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
-import io.konekt.feature.tariff.shared.api.TariffChangeScreenResource
 import io.konekt.feature.tariff.shared.api.TariffChanges
-import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.screens.dev.FailingResource
@@ -354,22 +352,6 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 summary = "Travel packages, grouped by zone, with the waiting ones marked as waiting",
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
-            ),
-        endpointKey<TariffsScreenResource>("GET") to
-            EndpointFacts(
-                summary = "The tariff catalogue, with the current one marked and unpressable",
-                kind = EndpointKind.SCREEN,
-                successBodyRef = WireSchema.PROFILE_COMPONENT,
-            ),
-        endpointKey<TariffChangeScreenResource>("GET") to
-            EndpointFacts(
-                summary = "One tariff change: what changes, when it takes effect, and the confirmation",
-                kind = EndpointKind.SCREEN,
-                successBodyRef = WireSchema.PROFILE_COMPONENT,
-                // 404 for a change that does not exist AND for one belonging to somebody else. The
-                // same code for both on purpose: asking for a stranger's change must not confirm that
-                // it exists.
-                refusals = setOf(404),
             ),
         endpointKey<ProfileScreenResource>("GET") to
             EndpointFacts(

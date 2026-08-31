@@ -5,14 +5,11 @@ import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
-import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
-import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
-import io.konekt.tariff.waitingSentence
 
 // THE ACCOUNT, as its owner sees it — and deliberately shorter than the canvas draws it.
 //
@@ -22,6 +19,17 @@ import io.konekt.tariff.waitingSentence
 // screen that gets photographed, shown to somebody, and believed. So this draws what konekt knows —
 // the number the session belongs to, what is installed on it, and the way out — and the absent rows
 // stay absent rather than becoming decoration.
+//
+// THE TARIFF IS GONE FROM HERE, and that is `B-102` rather than tidying. It named a tariff nobody
+// chose, beside a `Change tariff` control, and the catalogue behind it advertised `$5 / month` and
+// `2 GB` — a price nothing in this build ever takes and an allowance nothing ever grants. A screen
+// that offers a commitment the product does not have is the same defect as a row reading
+// "Payment methods · 2 cards" on a build with no payment methods, one layer deeper: it survives a
+// press.
+//
+// The saga is not gone. It is petich's second shape of transaction — suspend, confirm, a boundary in
+// time — and it is demonstrated over `/api/v1/tariff-changes` by `TariffChangeScenarioTest`, which is
+// where it always did its work. What went is the fiction on top of it.
 //
 // `Appearance` is the interesting omission of the four. It is not a missing feature, it is a CLIENT
 // setting: which palette to draw is decided where the drawing happens, and a server-driven row for
@@ -81,49 +89,6 @@ object ProfileScreen {
                             text = esimLine(view.esims),
                             style = M3Typography.BodyMedium,
                             color = M3Colors.OnSurfaceVariant,
-                        ),
-                    )
-                    add(
-                        TextComponent(
-                            id = "profile-tariff-label",
-                            text = "Tariff",
-                            style = M3Typography.LabelMedium,
-                            color = M3Colors.OnSurfaceVariant,
-                        ),
-                    )
-                    add(
-                        TextComponent(
-                            id = "profile-tariff",
-                            text = view.tariffTitle,
-                            style = M3Typography.TitleMedium,
-                            color = M3Colors.OnSurface,
-                        ),
-                    )
-                    // THE SENTENCE IS THE TARIFF CATALOGUE'S, not a second copy of it. Both screens
-                    // tell a subscriber about the same waiting change, and this one used to spell it
-                    // out again — in the routing file, which is where `B-96` found it.
-                    //
-                    // No control here, unlike the catalogue's banner: the way back to a confirmation
-                    // is what the catalogue is for, and a second door to it on the profile is a
-                    // second thing to keep in step for no gain.
-                    view.pendingChange?.let {
-                        add(
-                            BannerComponent(
-                                id = "profile-tariff-pending",
-                                text = it.waitingSentence(),
-                                tone = MessageTones.INFO,
-                            ),
-                        )
-                    }
-                    add(
-                        ButtonComponent(
-                            id = "profile-tariff-change",
-                            text = "Change tariff",
-                            // A `navigate` and not an action: the catalogue is an address known in
-                            // advance, and what a press here does is move. Buying is the other shape
-                            // — there the destination does not exist until the press.
-                            action = NavigateAction(TARIFFS_DEEPLINK),
-                            modifiers = FILLS_THE_ROW,
                         ),
                     )
                     add(

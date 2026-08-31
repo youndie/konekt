@@ -63,7 +63,7 @@ class TabScreensNameThemselvesTest {
                 ),
             "Profile" to
                 ProfileScreen.build(
-                    ProfileView(msisdn = "+15551234567", esims = EsimHoldings.none, tariffTitle = "Basic"),
+                    ProfileView(msisdn = "+15551234567", esims = EsimHoldings.none),
                 ),
         )
 

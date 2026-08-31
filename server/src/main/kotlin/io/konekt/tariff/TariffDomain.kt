@@ -1,6 +1,5 @@
 package io.konekt.tariff
 
-import io.konekt.domain.Money
 import io.konekt.time.KonektClock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,12 +8,16 @@ import java.time.ZoneId
 import kotlin.time.Instant
 import java.time.Instant as JavaInstant
 
-// What a tariff is here: a name, a monthly price and the allowance it carries. In memory, because the
-// BSS is outside this system's boundary — the same reason `StaticPlanCatalog` is.
+// What a tariff is here: a name and the allowance it carries. In memory, because the BSS is outside
+// this system's boundary — the same reason `StaticPlanCatalog` is.
+//
+// NO PRICE, and its absence is `B-102`. A `monthlyPrice` sat here and was read by nothing once the
+// tariff screens went: this build has no billing period, no scheduler and no recurring charge, so a
+// monthly figure could only ever be drawn, never taken. Keeping the field would have preserved the
+// exact claim the item was filed about, one screen away from being shown again.
 data class Tariff(
     val id: String,
     val title: String,
-    val monthlyPrice: Money,
     val dataMb: Long,
 )
 

@@ -26,8 +26,6 @@ import io.konekt.feature.shell.shared.api.HOME_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.shell.shared.api.PROFILE_DEEPLINK
 import io.konekt.feature.shell.shared.api.ProfileScreenResource
-import io.konekt.feature.tariff.shared.api.TARIFFS_DEEPLINK
-import io.konekt.feature.tariff.shared.api.TariffsScreenResource
 import io.konekt.feature.usage.shared.api.HomeScreenResource
 import io.konekt.openapi.resourceAddress
 import io.konekt.feature.packages.shared.api.CustomPackageForm as CustomPackageFormResource
@@ -118,16 +116,6 @@ object Shell {
                         endpoint = resourceAddress<CustomPackageFormResource>(),
                         title = "Build your own",
                         kind = ScreenRouteKind.FORM,
-                    ),
-                    // THE TARIFF CATALOGUE, reached from the profile. Not a tab: the canvas has four
-                    // and a fifth would be a change to the shell for a screen a subscriber opens
-                    // rarely — what they are on belongs beside their number, and changing it belongs
-                    // one press further in.
-                    ScreenRoute(
-                        deeplink = TARIFFS_DEEPLINK,
-                        endpoint = resourceAddress<TariffsScreenResource>(),
-                        title = "Your tariff",
-                        kind = ScreenRouteKind.SCREEN,
                     ),
                     ScreenRoute(
                         deeplink = ESIM_INSTALL_DEEPLINK,

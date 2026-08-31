@@ -5,11 +5,6 @@ import io.konekt.domain.suspendRunCatching
 import io.konekt.feature.auth.server.domain.SubscriberRepository
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.server.domain.EsimRepository
-import io.konekt.tariff.PendingTariffChange
-import io.konekt.tariff.TariffCatalogue
-import io.konekt.tariff.TariffChanges
-import io.konekt.tariff.pendingTariffChangeOf
-import io.konekt.tariff.titleOf
 
 // THE ACCOUNT SCREEN AS A SET OF ANSWERS, before anything decides how to draw them — the first
 // vertical done the way `B-96` says every screen should be.
@@ -23,11 +18,6 @@ import io.konekt.tariff.titleOf
 data class ProfileView(
     val msisdn: String,
     val esims: EsimHoldings,
-    val tariffTitle: String,
-    // The change already asked for and not yet confirmed, which is the ordinary case for it to be
-    // absent. It belongs on this screen rather than only on the catalogue: a subscriber who started
-    // something and closed the application looks for it where they look for what they are on.
-    val pendingChange: PendingTariffChange? = null,
 )
 
 // ASSEMBLED IN `:server` and not in a feature, for the reason the screen itself was: it reads the
@@ -37,8 +27,6 @@ data class ProfileView(
 class ViewProfileUseCase(
     private val subscribers: SubscriberRepository,
     private val esims: EsimRepository,
-    private val tariffs: TariffCatalogue,
-    private val changes: TariffChanges,
 ) {
     suspend operator fun invoke(subscriberId: String): Result<ProfileView> =
         suspendRunCatching {
@@ -52,14 +40,6 @@ class ViewProfileUseCase(
             ProfileView(
                 msisdn = subscriber.msisdn.value,
                 esims = esims.holdingsOf(subscriberId),
-                // The catalogue's TITLE and not its id, through the same `titleOf` the tariff
-                // screens use. An id on a screen is a value that leaked out of a table, and
-                // `tr-standard` is not what a subscriber calls anything.
-                tariffTitle = tariffs.titleOf(changes.currentTariffId(subscriberId) ?: tariffs.default.id),
-                // THROUGH THE SHARED RESOLVER, so the profile and the tariff catalogue cannot come to
-                // describe one waiting change differently — which is what they were doing, in two
-                // places, one of them a routing file.
-                pendingChange = pendingTariffChangeOf(subscriberId, changes, tariffs),
             )
         }
 }

@@ -1,7 +1,7 @@
 ---
 id: B-102
 title: "The profile states a tariff the subscriber never chose and nothing ever charges for"
-status: open
+status: done
 priority: P2
 size: M
 stage: stage-m7-completeness
@@ -60,6 +60,43 @@ an absence without one look identical, which is that document's whole purpose.
 - AC: if the tariff stays on the profile, its screens still work end to end and the e2e scenario
   still covers the change saga; if it goes, the saga's demonstration survives somewhere.
 - AC: `reference-scope.md` says whether recurring billing is a non-goal and why.
+
+## What was done — the third way out
+
+**The tariff is gone from the subscriber's view. The saga is not.**
+
+| Removed | Kept |
+|---|---|
+| The tariff block and `Change tariff` on the profile | `POST /api/v1/tariff-changes` and its confirmation route |
+| `GET /api/v1/screens/tariffs`, `GET /api/v1/screens/tariff-changes/{changeId}`, `app://tariffs` | the saga, its interceptors, its sweeper claim, its boundary rule |
+| `change_tariff`, `confirm_tariff_change` and the client handler for them | `TariffChangeScenarioTest` end to end, `TariffChangeSagaTest` on the boundary |
+| `Tariff.monthlyPrice` | `Tariff`'s id, title and allowance — a change is still visibly a change |
+
+Three things beyond the item as written, each because leaving them would have re-created it:
+
+- **The two actions went too.** Nothing composes an action once no screen carries it, and wire
+  vocabulary nobody speaks is what this repository files as a defect. Same for the two `@Resource`
+  classes and the deeplink: an address nothing answers is a 404 waiting for whoever believes the file.
+- **The price itself went**, not just its display. `monthlyPrice` was read by nothing the moment the
+  screens left, and it *was* the claim this item is about — one screen away from being shown again.
+- **Three BDD scenarios went** with the screens they described. The rule they were really about —
+  both tariffs true until the boundary — is a rule about the change log, and `TariffChangeSagaTest`
+  still asserts it.
+
+`OpenApiDocumentTest`'s endpoint count moved 38 → 36, by hand, which is what that constant is for.
+
+## Where the reason is written
+
+Not only here — the second AC asked for exactly that:
+
+| Where a reader meets the tariff | What it now says |
+|---|---|
+| `server/src/main/kotlin/io/konekt/screens/ProfileScreen.kt` | why the block is gone, and that the saga is demonstrated over the DTO routes |
+| `server/src/main/kotlin/io/konekt/tariff/TariffDomain.kt` | why a `monthlyPrice` could not stay on a build with no billing period |
+| `feature/tariff-shared-api/.../TariffApi.kt` | why the actions, resources and deeplink went, and that the saga did not |
+| [screen-tariffs](../screens/screen-tariffs.md) | `deprecated`, and the whole story — kept so a reader finding nothing at `app://tariffs` can tell a decision from a gap |
+| [feature-tariff-change](../features/feature-tariff-change.md) | a feature reachable over HTTP and by nothing a subscriber can press |
+| [reference-scope](../services/reference-scope.md) | **recurring billing** as a non-goal, with why and with what would end it |
 
 ## Anchors
 

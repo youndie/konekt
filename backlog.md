@@ -43,13 +43,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (0)
 
-| Task | | Priority | Size | Blocked by |
-|---|---|---|---|---|
-| [B-102](docs/backlog/B-102-the-profile-states-a-tariff-nothing-bills.md) `[ ]` | The profile states a tariff the subscriber never chose and nothing ever charges for | P2 | M | - |
+No open tasks.
 
-## Closed (104)
+## Closed (105)
 
 **The wire and the shell**
 
@@ -161,6 +159,7 @@ so re-prioritising must never move a file.
 
 - [B-100](docs/backlog/B-100-the-broker-keeps-every-event-for-ever.md) `[x]` - The broker is deployed with retention off, so its volume fills and the failure is silent
 - [B-101](docs/backlog/B-101-the-form-never-asks-the-server-to-recompute.md) `[x]` - Every form is drawn with no patch fetcher, so the custom package's price never changes
+- [B-102](docs/backlog/B-102-the-profile-states-a-tariff-nothing-bills.md) `[x]` - The profile states a tariff the subscriber never chose and nothing ever charges for
 - [B-103](docs/backlog/B-103-a-travel-package-cannot-be-bought-from-the-travel-screen.md) `[x]` - The travel screen shows what you own and offers no way to buy, so travel packages read as unavailable
 - [B-104](docs/backlog/B-104-a-slider-of-our-own.md) `[x]` - A slider, as konekt's own dictionary extension — the builder's quantities are a range, not a list
 - [B-105](docs/backlog/B-105-the-home-screen-diverges-from-the-canvas.md) `[x]` - The home screen draws three cards where the canvas draws one, and the balance block is laid out differently

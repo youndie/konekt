@@ -44,6 +44,7 @@ Each non-goal carries two things, and a row missing either is not a boundary:
 | **A real SM-DP+ contract** — `SmDpPlus` has two methods, `capacityFor` and `issue` | GSMA's ES2+ has an order lifecycle, an EID, a download counter and a notification that says a profile was installed. Here a button says it. The two methods are the ones the *flow* needs, and the refusal is modelled because the canvas draws it | The ES2+ order states on the interface, an EID from the device, and the install confirmation arriving as an event rather than as a tap |
 | **A real PSP** — `PaymentGateway.settle` is one synchronous call | A real provider has capture, void, refund, retries and 3-DS, and 3-DS alone is a redirect out of the application and back. The one call is what makes the decline branch reachable on demand, which is the branch the saga exists to show | Capture and refund as separate steps in the saga, an idempotency key per attempt, and a screen for the interrupted 3-DS return |
 | **A real SMSC** — `OtpDelivery` is a `fun interface`, is not `suspend`, and returns nothing | The boundary of this system stops at the SMSC. A delivery that cannot fail and cannot be awaited is honest about being a mock; one that pretended to retry would be fiction with a queue around it | `suspend`, a result, and a delivery status the OTP screen can show. The auth flow would then have a state it does not have today |
+| **Recurring billing** — no scheduler, no billing period, no invoice, no monthly charge of any kind. The only thing in the build that resembles a period is `BillingBoundary.nextAfter`, and nothing crosses it with money | A recurring charge is a scheduler, proration, a dunning path and a failure mode per cycle, and it demonstrates **none** of the six toolkits this build is about — the sagas already show a confirmation and a compensation on a purchase that happens once. It was not a decision until [B-102](../backlog/B-102-the-profile-states-a-tariff-nothing-bills.md): the profile named a tariff priced at *$5 / month* that nothing had ever charged for, which is an absence that reads as a bug because the product claimed otherwise | A scheduled charge per subscriber against the boundary the tariff saga already computes, a ledger entry per cycle, and a refusal path for the cycle that cannot be paid. The tariff change saga is the half that exists |
 | **Multi-tenancy** — no tenant column in any migration | One brand per deployment is what the rebrand demonstration needs, and `BRAND` already picks among the kits an image carries. A tenant column touches every table, every query and every index in the build | A tenant on every table and in every unique index, a resolver at the edge, and the theme becoming per-request rather than per-process |
 | **Localisation** — no `stringResource`, no `Accept-Language`, no bundles. Every string is an English literal in the server's Kotlin | The server composes every screen, so language is a server-side concern and one audience per deployment is the stated assumption — `MoneyFormat` says so for currency and `DayFormat` pins `Locale.ENGLISH` and `ZoneId.of("UTC")` | A locale on the request, a bundle per language on the server, and formatting that stops being a constant. The client needs no change, which is the point of the wire |
 | **Presence in an app store** — no signing, no icon, no store metadata | Everything an app review needs exercises none of the six toolkits. Android *runs* — [B-85](../backlog/B-85-the-client-has-no-android-target.md) put a build on a physical Pixel — and shipping is a different job | Everything an app review needs. This is the row most likely to stay here permanently |
@@ -58,11 +59,14 @@ Three things look like they belong here and do not:
   [B-85](../backlog/B-85-the-client-has-no-android-target.md) put a build on a physical Pixel, signed
   in against a stand and drew the home screen. The iOS device build went the other way and is a
   boundary now, in the table above.
-- **The screens that existed on the server and nowhere else** — the tariff change and the custom
-  package builder. A vertical whose only user is an e2e test was unfinished rather than scoped out,
-  and both are finished now: each has its screens, its destinations and its e2e scenario.
-  [B-86](../backlog/B-86-changing-tariff-has-no-screen.md),
-  [B-87](../backlog/B-87-the-custom-package-cannot-be-bought.md).
+- **The custom package builder**, which existed on the server and nowhere else. A vertical whose only
+  user is an e2e test was unfinished rather than scoped out, and it is finished now: its screens, its
+  destinations and its e2e scenario. [B-87](../backlog/B-87-the-custom-package-cannot-be-bought.md).
+  The tariff change went the same way in
+  [B-86](../backlog/B-86-changing-tariff-has-no-screen.md) and then **back**: those screens priced
+  something that is never charged, so [B-102](../backlog/B-102-the-profile-states-a-tariff-nothing-bills.md)
+  removed them and the row above is the boundary that replaced them. The saga is still driven end to
+  end — over its DTO routes, by `TariffChangeScenarioTest`.
 - **Alerting thresholds** ([B-26](../backlog/B-26-observability-wiring.md)). Not a decision: tuning
   them needs traffic this build does not have, which is a precondition rather than a boundary.
 

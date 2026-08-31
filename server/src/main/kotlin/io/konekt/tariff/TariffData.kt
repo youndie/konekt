@@ -1,8 +1,6 @@
 package io.konekt.tariff
 
 import io.konekt.db.tables.TariffChangeTable
-import io.konekt.domain.Currency
-import io.konekt.domain.Money
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,13 +18,14 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 // Three tariffs, in memory. The BSS is outside this system's boundary; what matters for the
-// demonstration is that they differ in price and in allowance, so a change is visibly a change.
+// demonstration is that they differ in allowance, so a change is visibly a change. They differed in
+// price too until `B-102` — see `Tariff` for why a monthly figure could not stay.
 class StaticTariffCatalogue : TariffCatalogue {
     private val tariffs =
         listOf(
-            Tariff("tr-basic", "Basic", Money.ofMajor(5, Currency.DEFAULT), dataMb = 2 * MB_PER_GB),
-            Tariff("tr-standard", "Standard", Money.ofMajor(12, Currency.DEFAULT), dataMb = 10 * MB_PER_GB),
-            Tariff("tr-max", "Max", Money.ofMajor(25, Currency.DEFAULT), dataMb = 50 * MB_PER_GB),
+            Tariff("tr-basic", "Basic", dataMb = 2 * MB_PER_GB),
+            Tariff("tr-standard", "Standard", dataMb = 10 * MB_PER_GB),
+            Tariff("tr-max", "Max", dataMb = 50 * MB_PER_GB),
         )
 
     private companion object {
@@ -35,9 +34,10 @@ class StaticTariffCatalogue : TariffCatalogue {
         //
         // It cost nothing while no screen displayed them. `B-86` displayed them, and `UsageUnits`
         // divides by 1024 like everywhere else, so the catalogue offered "9.8 GB" for the tariff
-        // called Standard and "48.8 GB" for Max. Neither is a rounding error a reader forgives on a
-        // price list. The same base `StaticPlanCatalog` uses, named for the same reason: two figures
-        // computed in two bases disagree with each other for a living.
+        // called Standard and "48.8 GB" for Max. Neither is a rounding error a reader forgives in a
+        // catalogue. No screen displays them again since `B-102`, and the base stays anyway: it is
+        // the one `StaticPlanCatalog` uses, and two figures computed in two bases disagree with each
+        // other for a living.
         const val MB_PER_GB = 1_024L
     }
 
