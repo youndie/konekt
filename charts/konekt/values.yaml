@@ -116,9 +116,15 @@ broker:
   #
   # RETENTION COSTS THIS PRODUCT NOTHING. The usage consumer starts from the END of the log, because
   # booblik keeps no consumer offsets, so no record here is ever read a second time.
-  segmentBytes: 33554432
-  retentionBytes: 134217728
-  retentionMillis: 21600000
+  #
+  # QUOTED, AND THAT IS NOT STYLE. Helm's YAML parses a bare integer this size into a float64 and
+  # renders it back in scientific notation: `33554432` reaches the container as `3.3554432e+07`, and
+  # booblik refuses it with "is not an integer" — which is the whole of why the first deploy of these
+  # values rolled back. The compose stand never showed it, because there the number is already a
+  # string in an environment file.
+  segmentBytes: "33554432"
+  retentionBytes: "134217728"
+  retentionMillis: "21600000"
   size: 2Gi
   class: local-path
   resources:

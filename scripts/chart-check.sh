@@ -61,4 +61,31 @@ refuses "a missing image version" "server.version is required" \
 refuses "a missing hostname" "hostname is required" \
   --set jwtSecret=ci --set postgres.password=ci --set server.version=v0.0.0
 
+# EVERY NUMBER THAT REACHES A CONTAINER IS READ FROM THE RENDER, not from values.yaml.
+#
+# `ComposeStandTest` compares the broker's settings between the chart's values and the compose file,
+# and it passed while the deploy rolled back: Helm's YAML parses a bare `33554432` into a float64 and
+# renders it as `3.3554432e+07`, which booblik refuses with "is not an integer". The file was right
+# and the render was not, so a check that reads the file cannot see it — and a deployment is the
+# render.
+#
+# Written over EVERY env value rather than the three that broke: the next number added to this chart
+# is the one nobody thinks to quote.
+scientific() {
+  local bad
+  bad=$(helm template konekt "$CHART" "${VALID[@]}" \
+    | grep -E '^\s+value: ' \
+    | grep -Ei '[0-9]e\+?[0-9]' || true)
+  if [ -n "$bad" ]; then
+    echo "FAIL  a value renders in scientific notation, which a container reads as text:"
+    echo "$bad" | sed 's/^/        /'
+    echo "        Quote it in values.yaml — Helm parses a bare integer this size into a float."
+    fail=1
+  else
+    echo "ok    no rendered value is a float in disguise"
+  fi
+}
+
+scientific
+
 exit $fail

@@ -20,7 +20,10 @@ type: application
 # template. A values file that does not mention them renders exactly as before and gets the
 # defaults, so nothing an existing consumer wrote stops working — additive, and by the rule above
 # that moves the PATCH.
-version: 0.2.1
+# 0.2.1 -> 0.2.2: the three broker numbers are quoted. They rendered as floats in scientific
+# notation and the broker refused to start on them, so the shape did move — a chart that cannot be
+# deployed and one that can are not the same shape.
+version: 0.2.2
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this
