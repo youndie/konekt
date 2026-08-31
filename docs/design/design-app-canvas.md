@@ -191,7 +191,7 @@ somebody has decided which of the two moves ([B-51](../backlog/B-51-the-screens-
 | Drawn | Why it is not served |
 |---|---|
 | the avatar chip with initials | `subscriber` holds an msisdn and nothing else, so initials would be invented. It joins the day sign-up asks for a name — [B-55](../backlog/B-55-home-header.md). |
-| `Smart 20 · renews 12 Sep` over the counters | there is no subscription. A purchase grants an allowance and that is the end of it, so nothing renews and there is no plan for the three counters to belong to. The container to draw the group exists — [B-60](../backlog/B-60-counter-copy-and-grouping.md). |
+| `Smart 20 · renews 12 Sep` over the counters | there is no subscription. A purchase grants an allowance and that is the end of it, so nothing renews and there is no plan for the three counters to belong to. The container to draw the group exists — [B-60](../backlog/B-60-counter-copy-and-grouping.md) settled the copy and left the grouping, and [B-105](../backlog/B-105-the-home-screen-diverges-from-the-canvas.md) carries what is left of it. |
 | a `Roaming` button beside `Buy a package` | the catalogue is one list and roaming plans are in it. A second button filtering the same screen is [B-57](../backlog/B-57-plans-catalogue-against-section-02.md)'s filters, not a control of its own. |
 | the roaming package as its own row | it is drawn as a `usage_counter_card`, which carries the quota the canvas's row does not. What the row is FOR — the install control — is served as a banner on the same screen and on the same condition, and on the count of profiles held rather than on there being a roaming package: what makes an eSIM installable is holding none, and a home bundle needs one exactly as much as a trip does. |
 

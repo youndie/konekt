@@ -28,32 +28,49 @@ another screen: two controls of equal weight where one is the thing to press. It
 screen; here it is the same defect in the balance block, which suggests the emphasis rule wants to be
 derived rather than chosen each time.
 
-## Why this is not simply "restyle the cards"
+## Half of this is already decided, and by an item that got further than this one did
 
-**`usage_counter_card` is one counter.** The canvas's card is a group with a head and N rows, which is
-not the same type with different padding — it is either a new dictionary type or a `surface` holding
-rows that are not cards. Choosing between those is the work in this item, and it decides how much of
-it is a client release:
+**The grouping is [B-60](B-60-counter-copy-and-grouping.md)'s open remainder, not a new question.**
+That item closed having settled the copy and left the grouping deliberately, with the analysis this
+item should not repeat:
 
-- **a `surface` with plain rows** costs no wire type: `surface`, `text` and a progress row already
-  exist, and the head is two texts in a row. The bars are the open question — there is no bare
-  progress component, only the one inside `usage_counter_card`;
-- **a new grouped type** carries the head and the rows as one thing, prices in one dictionary entry,
-  and is a client release like any other.
+> The container it needed exists — `B-52` added `surface` — so nothing about the wire or the client is
+> in the way. What is missing is a subscription: a purchase grants an allowance and that is the end of
+> it, so there is no plan for the three counters to belong to and no renewal date to state. Drawing
+> the title anyway would mean inventing both.
 
-**And the head needs a fact the server does not have.** `renews 12 Sep` is a renewal date; a plan here
-is bought once and grants an allowance, and nothing renews. Either the head says something true — the
-package's name and what it grants — or the product acquires renewals, which it does not have. This
-item takes the first and records it, rather than drawing a date that means nothing.
+So: **no new dictionary type and no client release** for the grouping — `surface` holds it today. The
+blocker was never the wire, it is that the head has nothing true to say.
+
+**Which makes the head the whole of the remaining decision.** The canvas draws `Smart 20 · renews
+12 Sep`; this build has no subscription, no plan the three counters belong to, and no renewal. Two
+honest ways out, and this item takes the first:
+
+1. **the head says what is true** — what the allowance came from, and nothing about renewal;
+2. **the product acquires subscriptions**, which is a vertical and not a layout change.
+
+**And one thing that must NOT be reopened.** B-60 decided that a counter states what is LEFT for all
+three kinds, against the canvas, which writes `18 of 300` for the metered ones. That was a product
+decision with a reason — two directions on one screen is how a subscriber misreads their own balance —
+and moving the numbers into one card does not revisit it.
+
+## What is genuinely new here
+
+The balance block's internals. [B-52](B-52-the-balance-is-not-a-card.md) made it a card holding the
+label, the amount, the number and both buttons — and said nothing about their arrangement, because
+the defect it fixed was that there was no card at all. So the phone's position and the two buttons'
+weights are open, and the buttons are [B-71](B-71-two-primary-buttons-on-the-completed-purchase.md)'s
+shape a second time: two controls of equal weight where one is the thing to press.
 
 ## The decision
 
-- **Bring the build to the canvas on the four things that need no new fact**: one card for the three
-  allowances, the head carrying the package's name, full-width bars, and the number beside its label.
+- **One `surface` for the three allowances**, with full-width bars and the number beside its label —
+  all of it inside the vocabulary that exists, per B-60.
 - **The phone moves beside the balance and the two buttons stop being equals** — `Top up` takes the
   row, `History` is quiet. Derived from what the block is for, not set per screen.
-- **The renewal date is replaced by what is true**, and the absence of renewals is written down where
-  a reader meets the card.
+- **The head states what is true and no date.** The absence of renewals is already written in
+  `design-app-canvas.md` and in B-60; this item adds nothing to that reasoning and does not overturn
+  it.
 - **Rejected: keeping three cards and restyling them.** The complaint is that three cards read as
   three unrelated things; padding does not fix that.
 
