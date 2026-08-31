@@ -1,7 +1,7 @@
 ---
 id: B-105
 title: "The home screen draws three cards where the canvas draws one, and the balance block is laid out differently"
-status: open
+status: done
 priority: P2
 size: M
 stage: stage-m7-completeness
@@ -95,3 +95,65 @@ shape a second time: two controls of equal weight where one is the thing to pres
 | The card that holds one counter | `shared/components/.../UsageCounterCardComponent`, `client/.../render/UsageCounterCardRenderer.kt` |
 | The balance block | `HomeScreen.balanceCard` |
 | The same two-primaries defect, fixed once already | `docs/backlog/B-71-two-primary-buttons-on-the-completed-purchase.md` |
+
+## What was done
+
+Checked against `docs/design/konekt-esim-app.dc.html` line by line, not from memory, and the served
+tree brought to it:
+
+| | now |
+|---|---|
+| the allowances | one `surface`, three rows inside it |
+| the card's head | `Your allowance` left, `since 31 Aug` right |
+| the bars | full width, 12 pt tall |
+| the number | beside its label, on one baseline |
+| the phone | right of the balance, same row |
+| Top up | takes the row (`Weight`) |
+| History | narrow **and quiet** — `ButtonEmphasis.QUIET` |
+
+**No new dictionary type.** `usage_counter_card` gained `inline: Boolean`, which drops the card's own
+ground and puts the label and the value on one baseline; the content is identical and only the chrome
+differs, so a second component would have been a second thing to keep in step. Default false, because
+the travel screen still draws each package as its own card.
+
+**The head says what is true.** The canvas writes `Smart 20 · renews 12 Sep` and neither half can be
+said: `UsageCounter` carries no reference to the plan that granted it — checked, not assumed — and
+nothing renews. What IS available is `startedAt`, so the slot the canvas puts a date in carries a real
+one. `B-60` reached this first and left the grouping for it.
+
+## Two defects the screenshot found and the tree could not
+
+Both were invisible in the served JSON and obvious in the picture, which is the argument for looking.
+
+**The bar was filling with what had been SPENT while the number beside it said what was LEFT.** A
+brand new 20 GB allowance drew an empty bar next to the words "20 GB left". `UsageCounter.progress` is
+`used / limit` — a true number and the wrong one for this row — and `RoamingPackageCards` was already
+filling with the remainder, so **one component was drawn in opposite directions by the two factories
+that build it**. `B-60` settled that a counter states what is left because two directions on one
+screen is how a subscriber misreads their own balance; the bar is part of that sentence.
+
+**Width alone did not make the two buttons different.** They were the same colour and the eye had
+nothing to land on. `ButtonEmphasis.QUIET` is the vocabulary `B-71` introduced for exactly this on the
+purchase result — the second time the same defect has appeared on a different screen, which is worth
+noting: the emphasis rule is still chosen per screen rather than derived.
+
+## Verified
+
+- Both recorded trees re-recorded from a running stand, reached through the product's own paths —
+  including the issued-but-not-installed state, walked through the eSIM wizard rather than
+  hand-edited — and each at least as rich as the frame it replaces.
+- Screenshots re-recorded and **looked at**, not merely regenerated: the bar direction and the button
+  colour are both things a green `viddikVerify` would have accepted.
+- `:server:test`, `:client:jvmTest`, `build` and `make e2e` all green; `make check` green.
+- The generated schema regenerated with `KONEKT_SPEC_RECORD=true`, **locally** — a record run on the
+  replica writes files the one-way sync then reverts, so it reports success and changes nothing.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The screen | `server/src/main/kotlin/io/konekt/screens/HomeScreen.kt` |
+| The row form of the card | `shared/components/.../UsageCounterCardComponent.kt`, `client/.../UsageCounterCardRenderer.kt` |
+| The bar's direction | `feature/usage-server-data/.../UsageCounterCards.kt` |
+| The weight vocabulary | `server/src/main/kotlin/io/konekt/screens/Widths.kt` |
+| The canvas it was checked against | `docs/design/konekt-esim-app.dc.html` |

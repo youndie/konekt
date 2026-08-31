@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://kompot.workinprogress.ru/schema/konekt-components.schema.json",
   "title": "konekt-components",
-  "description": "The nine component types konekt adds to the kompot wire: counters, plans, eSIM, orders and feedback.",
+  "description": "The twelve component types konekt adds to the kompot wire: counters, plans, eSIM, orders and feedback.",
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
   "x-kompot-contributes": {
     "KompotComponent": {
@@ -13,6 +13,7 @@
       "order_row": "#/$defs/KompotComponentOrderRow",
       "plan_card": "#/$defs/KompotComponentPlanCard",
       "skeleton": "#/$defs/KompotComponentSkeleton",
+      "slider_input": "#/$defs/KompotComponentSliderInput",
       "snackbar": "#/$defs/KompotComponentSnackbar",
       "step_meter": "#/$defs/KompotComponentStepMeter",
       "surface": "#/$defs/KompotComponentSurface",
@@ -373,6 +374,51 @@
       ],
       "additionalProperties": true
     },
+    "KompotComponentSliderInput": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "slider_input",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "slider_input"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "fieldId": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "fieldId",
+        "label",
+        "steps"
+      ],
+      "additionalProperties": true
+    },
     "KompotComponentSnackbar": {
       "x-kompot-kind": "variant",
       "x-kompot-wire-type": "snackbar",
@@ -542,6 +588,9 @@
               "type": "null"
             }
           ]
+        },
+        "inline": {
+          "type": "boolean"
         }
       },
       "required": [

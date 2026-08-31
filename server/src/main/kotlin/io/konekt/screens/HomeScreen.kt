@@ -9,6 +9,7 @@ import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.MessageTones
 import io.konekt.components.SurfaceComponent
 import io.konekt.components.SurfaceTones
@@ -22,6 +23,7 @@ import io.konekt.feature.roaming.shared.api.ROAMING_DEEPLINK
 import io.konekt.feature.shell.shared.api.ORDERS_DEEPLINK
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
+import io.konekt.money.DayFormat
 import io.konekt.money.MoneyFormat
 import io.konekt.roaming.RoamingPackageCards
 
@@ -86,10 +88,15 @@ class HomeScreen(
                             ),
                         )
                     } else {
+                        // ONE CARD FOR THE THREE, which is what the canvas draws and what three
+                        // separate cards read as: three unrelated things. `B-60` settled that the
+                        // container for it exists — `surface` — and that what blocked it was the
+                        // domain rather than the wire.
+                        //
                         // Ordered by the repository, which sorts by the enum rather than by the
                         // database — two screens that disagree about which counter comes first read
                         // as two products.
-                        addAll(view.counters.map { cards.of(it, view.at) })
+                        add(allowanceCard(view))
 
                         // AFTER the home counters, always. What a subscriber is spending right now is
                         // the answer to the question they opened the screen with; a package for a trip
@@ -193,38 +200,57 @@ class HomeScreen(
             spacing = 4,
             children =
                 buildList {
+                    // THE HEAD, AS THE CANVAS DRAWS IT: the label and the amount on the left, the
+                    // number on the right of the same line. It was three stacked texts, which put the
+                    // number under the money and made the block a list rather than a card with a
+                    // figure on it.
+                    //
+                    // The left column carries the weight, so the number sits against the far edge —
+                    // there is no `space-between` on the wire and none is needed for two items.
                     add(
-                        TextComponent(
-                            id = "balance-label",
-                            text = "Balance",
-                            style = M3Typography.LabelMedium,
-                            color = M3Colors.OnPrimaryContainer,
+                        RowComponent(
+                            id = "balance-head",
+                            spacing = 12,
+                            children =
+                                listOfNotNull(
+                                    ColumnComponent(
+                                        id = "balance-figure",
+                                        spacing = 2,
+                                        modifiers = TAKES_THE_SPACE,
+                                        children =
+                                            listOf(
+                                                TextComponent(
+                                                    id = "balance-label",
+                                                    text = "Balance",
+                                                    style = M3Typography.LabelMedium,
+                                                    color = M3Colors.OnPrimaryContainer,
+                                                ),
+                                                TextComponent(
+                                                    id = "balance-amount",
+                                                    // Formatted on the server, because it is the only
+                                                    // side that can (D15). The client renders a string
+                                                    // and cannot format it inconsistently.
+                                                    text = MoneyFormat.format(balance),
+                                                    style = M3Typography.DisplaySmall,
+                                                    color = M3Colors.OnPrimaryContainer,
+                                                ),
+                                            ),
+                                    ),
+                                    msisdn?.let {
+                                        TextComponent(
+                                            id = "balance-msisdn",
+                                            // The plus put back on, exactly as the profile screen does
+                                            // it and for the same reason: `Msisdn` stores digits, and
+                                            // "79990001234" reads as a local number in one country and
+                                            // a wrong one everywhere else.
+                                            text = "+$it",
+                                            style = M3Typography.BodyMedium,
+                                            color = M3Colors.OnPrimaryContainer,
+                                        )
+                                    },
+                                ),
                         ),
                     )
-                    add(
-                        TextComponent(
-                            id = "balance-amount",
-                            // Formatted on the server, because it is the only side that can (D15).
-                            // The client renders a string and therefore cannot format it
-                            // inconsistently.
-                            text = MoneyFormat.format(balance),
-                            style = M3Typography.DisplaySmall,
-                            color = M3Colors.OnPrimaryContainer,
-                        ),
-                    )
-                    msisdn?.let {
-                        add(
-                            TextComponent(
-                                id = "balance-msisdn",
-                                // The plus put back on, exactly as the profile screen does it and for
-                                // the same reason: `Msisdn` stores digits, and "79990001234" reads as
-                                // a local number in one country and a wrong one everywhere else.
-                                text = "+$it",
-                                style = M3Typography.BodyMedium,
-                                color = M3Colors.OnPrimaryContainer,
-                            ),
-                        )
-                    }
                     add(
                         // THE TWO THINGS A SUBSCRIBER DOES WITH A BALANCE, beside it because that is
                         // where they are asked for. `Top up` was missing for a build, and the comment
@@ -234,15 +260,27 @@ class HomeScreen(
                             spacing = 8,
                             children =
                                 listOf(
+                                    // TOP UP TAKES THE ROW AND HISTORY HUGS ITS WORD. Two buttons of
+                                    // equal weight is the defect `B-71` fixed on the purchase result,
+                                    // met again here: where one control is the thing to press, drawing
+                                    // both the same size makes the screen ask a question instead of
+                                    // offering an answer.
                                     ButtonComponent(
                                         id = "balance-top-up",
                                         text = "Top up",
                                         action = NavigateAction(TOP_UP_DEEPLINK),
+                                        modifiers = TAKES_THE_SPACE,
                                     ),
                                     ButtonComponent(
                                         id = "balance-history",
                                         text = "History",
                                         action = NavigateAction(ORDERS_DEEPLINK),
+                                        // QUIET, which is the other half of the same decision as the
+                                        // weight above. Width alone left two buttons the same colour,
+                                        // and the canvas draws this one on a pale ground precisely so
+                                        // that the eye lands on `Top up`. Same vocabulary `B-71` used
+                                        // on the purchase result rather than a colour chosen here.
+                                        variant = ButtonEmphasis.QUIET,
                                     ),
                                 ),
                         ),
@@ -250,6 +288,58 @@ class HomeScreen(
                 },
         )
     }
+
+    // THE THREE ALLOWANCES UNDER ONE HEAD, per the canvas — and the head is where this build and the
+    // drawing part company.
+    //
+    // The canvas writes `Smart 20 · renews 12 Sep`. Neither half can be said here and both were
+    // checked rather than assumed: `UsageCounter` carries a subscriber, a kind, two numbers and
+    // `startedAt`, and NO reference to the plan that granted it — so there is no package to name —
+    // and nothing in this product renews, so there is no renewal date. `B-60` recorded exactly this
+    // and left the grouping open because of it.
+    //
+    // So the head says what IS true: that this is the allowance, and WHEN it started. The date is
+    // real — `startedAt` is what the projection on every card is already computed from — and it sits
+    // in the slot the canvas puts a date in. Inventing a renewal to fill that slot would be a mockup
+    // wearing the product's clothes, which is the same argument that keeps the avatar off this
+    // screen.
+    private fun allowanceCard(view: HomeView): KompotComponent =
+        SurfaceComponent(
+            id = "allowance",
+            tone = SurfaceTones.NEUTRAL,
+            spacing = 16,
+            children =
+                buildList {
+                    add(
+                        RowComponent(
+                            id = "allowance-head",
+                            spacing = 12,
+                            children =
+                                listOfNotNull(
+                                    TextComponent(
+                                        id = "allowance-title",
+                                        text = "Your allowance",
+                                        style = M3Typography.TitleMedium,
+                                        color = M3Colors.OnSurface,
+                                        modifiers = TAKES_THE_SPACE,
+                                    ),
+                                    // The earliest start among the three: they are granted together
+                                    // by one purchase today, and `minOf` is what keeps the line true
+                                    // rather than arbitrary on the day they are not.
+                                    view.counters.minByOrNull { it.startedAt }?.let {
+                                        TextComponent(
+                                            id = "allowance-since",
+                                            text = "since ${DayFormat.dayAndMonth(it.startedAt)}",
+                                            style = M3Typography.BodySmall,
+                                            color = M3Colors.OnSurfaceVariant,
+                                        )
+                                    },
+                                ),
+                        ),
+                    )
+                    addAll(view.counters.map { cards.of(it, view.at, inline = true) })
+                },
+        )
 
     // The door to the install flow, or none. Two sentences because the two states are different
     // errands: one issues a profile, the other shows the code for one that already exists, and a

@@ -27,8 +27,12 @@ class UsageCounterCards(
     fun of(
         counter: UsageCounter,
         at: Instant,
+        // A ROW IN A GROUPED CARD RATHER THAN A CARD, for the home screen's one allowance block. The
+        // travel screen still asks for cards, so this is a parameter and not a change of default.
+        inline: Boolean = false,
     ): UsageCounterCardComponent =
         UsageCounterCardComponent(
+            inline = inline,
             id = idOf(counter),
             title = counter.kind.title(),
             valueText = "${UsageUnits.remaining(counter)} left",
@@ -36,7 +40,16 @@ class UsageCounterCards(
             // reason `state` is on the wire at all: a subscriber who is nearly out is told when they
             // will run out and what it costs to fix, and one who has run out is told plainly.
             captionText = captionFor(counter, at),
-            progress = counter.progress,
+            // THE BAR FILLS WITH WHAT IS LEFT, not with what was spent — and it did the opposite,
+            // which a screenshot showed and no tree assertion could: a brand new 20 GB allowance drew
+            // an EMPTY bar beside the words "20 GB left".
+            //
+            // `UsageCounter.progress` is `used / limit`, which is a true number and the wrong one for
+            // this row. `B-60` settled that a counter states what is LEFT — two directions on one
+            // screen is how a subscriber misreads their own balance — and the bar is part of that
+            // sentence. `RoamingPackageCards` was already filling with the remainder, so the two
+            // factories drew one component in opposite directions until now.
+            progress = counter.progress?.let { 1f - it },
             state =
                 when {
                     counter.isExhausted -> CounterStates.EXHAUSTED

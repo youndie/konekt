@@ -3,12 +3,15 @@ package io.konekt.client.render
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -47,25 +50,53 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
         val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
         val accent = designSystem.resolveColor(component.state.accentToken())
 
+        // INLINE IS A ROW IN SOMEBODY ELSE'S CARD, and the difference is the chrome and the way the
+        // label and the value sit — not the content. The canvas draws the grouped allowances as
+        // label and figure on ONE baseline with a fat bar under them; a card stacks them and stands
+        // them on a ground of their own, which inside another card is two grounds and a double
+        // padding.
         Column(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(surface.shape ?: RoundedCornerShape(20.dp))
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                    .padding(16.dp),
+                if (component.inline) {
+                    Modifier.fillMaxWidth()
+                } else {
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(surface.shape ?: RoundedCornerShape(20.dp))
+                        .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                        .padding(16.dp)
+                },
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = component.title,
-                style = designSystem.resolveTypography(M3Typography.LabelMedium),
-                color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
-            )
-            Text(
-                text = component.valueText,
-                style = designSystem.resolveTypography(M3Typography.HeadlineMedium),
-                color = accent,
-            )
+            if (component.inline) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    Text(
+                        text = component.title,
+                        style = designSystem.resolveTypography(M3Typography.BodyMedium),
+                        color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                    )
+                    Text(
+                        text = component.valueText,
+                        style = designSystem.resolveTypography(M3Typography.TitleMedium),
+                        color = accent,
+                    )
+                }
+            } else {
+                Text(
+                    text = component.title,
+                    style = designSystem.resolveTypography(M3Typography.LabelMedium),
+                    color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                )
+                Text(
+                    text = component.valueText,
+                    style = designSystem.resolveTypography(M3Typography.HeadlineMedium),
+                    color = accent,
+                )
+            }
 
             component.progress?.let { fraction ->
                 LinearProgressIndicator(
@@ -75,7 +106,13 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                     progress = { fraction.coerceIn(0f, 1f) },
                     color = accent,
                     trackColor = designSystem.resolveColor(M3Colors.Outline),
-                    modifier = Modifier.fillMaxWidth(),
+                    // TWELVE POINTS TALL WHEN IT IS A ROW, which is what the canvas draws and what the
+                    // complaint was about: the default indicator is a hairline, and a hairline under a
+                    // number reads as decoration rather than as the quantity it represents.
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .then(if (component.inline) Modifier.height(12.dp) else Modifier),
                 )
             }
 

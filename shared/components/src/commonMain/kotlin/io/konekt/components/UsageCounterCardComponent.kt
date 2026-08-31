@@ -36,4 +36,16 @@ data class UsageCounterCardComponent(
     // One of CounterStates. Open string: an unknown word draws the ordinary card rather than nothing.
     val state: String = CounterStates.NORMAL,
     val action: KompotAction? = null,
+    // DRAWN AS A ROW INSIDE SOMETHING ELSE, rather than as a card with its own ground.
+    //
+    // The canvas groups the three allowances under one head — `B-60` settled that the container for
+    // it exists and that what blocked it was the domain, not the wire — so the home screen puts them
+    // in a `surface` and each counter becomes a line in it: the label and the value on one baseline,
+    // a full-width bar under them, the caption below that. A card inside a card is two grounds and a
+    // double padding, which is what this flag is for and why it is not a second component: the
+    // content is identical, only the chrome differs.
+    //
+    // False by default, because the travel screen still draws each package as its own card and a
+    // default that changed under it would be this change reaching a screen that did not ask.
+    val inline: Boolean = false,
 ) : KompotComponent

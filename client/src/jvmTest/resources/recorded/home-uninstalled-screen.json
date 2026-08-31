@@ -1,149 +1,223 @@
 {
-    "type": "column",
-    "id": "home",
-    "children": [
+  "type": "column",
+  "id": "home",
+  "children": [
+    {
+      "type": "text",
+      "id": "home-brand",
+      "text": "Konekt",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "surface",
+      "id": "balance",
+      "children": [
         {
-            "type": "text",
-            "id": "home-brand",
-            "text": "Konekt",
-            "style": "headline_small",
-            "color": "on_surface"
-        },
-        {
-            "type": "surface",
-            "id": "balance",
-            "children": [
+          "type": "row",
+          "id": "balance-head",
+          "children": [
+            {
+              "type": "column",
+              "id": "balance-figure",
+              "modifiers": [
                 {
-                    "type": "text",
-                    "id": "balance-label",
-                    "text": "Balance",
-                    "style": "label_medium",
-                    "color": "on_primary_container"
-                },
-                {
-                    "type": "text",
-                    "id": "balance-amount",
-                    "text": "$35",
-                    "style": "display_small",
-                    "color": "on_primary_container"
-                },
-                {
-                    "type": "text",
-                    "id": "balance-msisdn",
-                    "text": "+79996660001",
-                    "style": "body_medium",
-                    "color": "on_primary_container"
-                },
-                {
-                    "type": "row",
-                    "id": "balance-actions",
-                    "children": [
-                        {
-                            "type": "button",
-                            "id": "balance-top-up",
-                            "text": "Top up",
-                            "action": {
-                                "type": "navigate",
-                                "deeplink": "app://top-up"
-                            }
-                        },
-                        {
-                            "type": "button",
-                            "id": "balance-history",
-                            "text": "History",
-                            "action": {
-                                "type": "navigate",
-                                "deeplink": "app://orders"
-                            }
-                        }
-                    ],
-                    "spacing": 8
+                  "type": "weight",
+                  "value": 1.0
                 }
-            ],
-            "tone": "accent",
-            "spacing": 4
-        },
-        {
-            "type": "usage_counter_card",
-            "id": "counter-data",
-            "title": "Data",
-            "valueText": "20 GB left",
-            "progress": 0.0
-        },
-        {
-            "type": "usage_counter_card",
-            "id": "counter-minutes",
-            "title": "Minutes",
-            "valueText": "300 min left",
-            "progress": 0.0
-        },
-        {
-            "type": "usage_counter_card",
-            "id": "counter-messages",
-            "title": "Messages",
-            "valueText": "50 SMS left",
-            "progress": 0.0
-        },
-        {
-            "type": "banner",
-            "id": "home-install-esim",
-            "text": "Your eSIM is not installed yet. Install it to start using what you have bought.",
-            "actionText": "Install eSIM",
-            "action": {
-                "type": "navigate",
-                "deeplink": "app://esim-install"
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "balance-label",
+                  "text": "Balance",
+                  "style": "label_medium",
+                  "color": "on_primary_container"
+                },
+                {
+                  "type": "text",
+                  "id": "balance-amount",
+                  "text": "$35",
+                  "style": "display_small",
+                  "color": "on_primary_container"
+                }
+              ],
+              "spacing": 2
+            },
+            {
+              "type": "text",
+              "id": "balance-msisdn",
+              "text": "+15559990003",
+              "style": "body_medium",
+              "color": "on_primary_container"
             }
+          ],
+          "spacing": 12
         },
         {
-            "type": "button",
-            "id": "home-buy",
-            "modifiers": [
+          "type": "row",
+          "id": "balance-actions",
+          "children": [
+            {
+              "type": "button",
+              "id": "balance-top-up",
+              "modifiers": [
                 {
-                    "type": "size",
-                    "width": "Fill"
+                  "type": "weight",
+                  "value": 1.0
                 }
-            ],
-            "text": "Buy a package",
-            "action": {
+              ],
+              "text": "Top up",
+              "action": {
                 "type": "navigate",
-                "deeplink": "app://plans"
+                "deeplink": "app://top-up"
+              }
+            },
+            {
+              "type": "button",
+              "id": "balance-history",
+              "text": "History",
+              "action": {
+                "type": "navigate",
+                "deeplink": "app://orders"
+              },
+              "variant": "quiet"
             }
-        },
-        {
-            "type": "bottom_nav",
-            "id": "shell-nav",
-            "items": [
-                {
-                    "label": "Home",
-                    "action": {
-                        "type": "navigate",
-                        "deeplink": "app://home"
-                    },
-                    "selected": true
-                },
-                {
-                    "label": "Plans",
-                    "action": {
-                        "type": "navigate",
-                        "deeplink": "app://plans"
-                    }
-                },
-                {
-                    "label": "Orders",
-                    "action": {
-                        "type": "navigate",
-                        "deeplink": "app://orders"
-                    }
-                },
-                {
-                    "label": "Profile",
-                    "action": {
-                        "type": "navigate",
-                        "deeplink": "app://profile"
-                    }
-                }
-            ]
+          ],
+          "spacing": 8
         }
-    ],
-    "spacing": 16
+      ],
+      "tone": "accent",
+      "spacing": 4
+    },
+    {
+      "type": "surface",
+      "id": "allowance",
+      "children": [
+        {
+          "type": "row",
+          "id": "allowance-head",
+          "children": [
+            {
+              "type": "text",
+              "id": "allowance-title",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Your allowance",
+              "style": "title_medium",
+              "color": "on_surface"
+            },
+            {
+              "type": "text",
+              "id": "allowance-since",
+              "text": "since 31 Aug",
+              "style": "body_small",
+              "color": "on_surface_variant"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-data",
+          "title": "Data",
+          "valueText": "20 GB left",
+          "progress": 0.9975586,
+          "inline": true
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-minutes",
+          "title": "Minutes",
+          "valueText": "298 min left",
+          "progress": 0.99333334,
+          "inline": true
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-messages",
+          "title": "Messages",
+          "valueText": "48 SMS left",
+          "progress": 0.96,
+          "inline": true
+        }
+      ],
+      "spacing": 16
+    },
+    {
+      "type": "banner",
+      "id": "home-roaming",
+      "text": "Going abroad? See what you have for each trip.",
+      "actionText": "Travel packages",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://roaming"
+      }
+    },
+    {
+      "type": "banner",
+      "id": "home-install-esim",
+      "text": "Your eSIM is not installed yet. Install it to start using what you have bought.",
+      "actionText": "Install eSIM",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://esim-install"
+      }
+    },
+    {
+      "type": "button",
+      "id": "home-buy",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Buy a package",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://plans"
+      }
+    },
+    {
+      "type": "bottom_nav",
+      "id": "shell-nav",
+      "items": [
+        {
+          "label": "Home",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://home"
+          },
+          "selected": true
+        },
+        {
+          "label": "Plans",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://plans"
+          }
+        },
+        {
+          "label": "Orders",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders"
+          }
+        },
+        {
+          "label": "Profile",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://profile"
+          }
+        }
+      ]
+    }
+  ],
+  "spacing": 16
 }

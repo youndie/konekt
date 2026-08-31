@@ -14,25 +14,45 @@
       "id": "balance",
       "children": [
         {
-          "type": "text",
-          "id": "balance-label",
-          "text": "Balance",
-          "style": "label_medium",
-          "color": "on_primary_container"
-        },
-        {
-          "type": "text",
-          "id": "balance-amount",
-          "text": "$63",
-          "style": "display_small",
-          "color": "on_primary_container"
-        },
-        {
-          "type": "text",
-          "id": "balance-msisdn",
-          "text": "+79996660001",
-          "style": "body_medium",
-          "color": "on_primary_container"
+          "type": "row",
+          "id": "balance-head",
+          "children": [
+            {
+              "type": "column",
+              "id": "balance-figure",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "balance-label",
+                  "text": "Balance",
+                  "style": "label_medium",
+                  "color": "on_primary_container"
+                },
+                {
+                  "type": "text",
+                  "id": "balance-amount",
+                  "text": "$63",
+                  "style": "display_small",
+                  "color": "on_primary_container"
+                }
+              ],
+              "spacing": 2
+            },
+            {
+              "type": "text",
+              "id": "balance-msisdn",
+              "text": "+15559990001",
+              "style": "body_medium",
+              "color": "on_primary_container"
+            }
+          ],
+          "spacing": 12
         },
         {
           "type": "row",
@@ -41,6 +61,12 @@
             {
               "type": "button",
               "id": "balance-top-up",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
               "text": "Top up",
               "action": {
                 "type": "navigate",
@@ -54,7 +80,8 @@
               "action": {
                 "type": "navigate",
                 "deeplink": "app://orders"
-              }
+              },
+              "variant": "quiet"
             }
           ],
           "spacing": 8
@@ -64,34 +91,81 @@
       "spacing": 4
     },
     {
-      "type": "usage_counter_card",
-      "id": "counter-data",
-      "title": "Data",
-      "valueText": "20 GB left",
-      "progress": 0.0
+      "type": "surface",
+      "id": "allowance",
+      "children": [
+        {
+          "type": "row",
+          "id": "allowance-head",
+          "children": [
+            {
+              "type": "text",
+              "id": "allowance-title",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Your allowance",
+              "style": "title_medium",
+              "color": "on_surface"
+            },
+            {
+              "type": "text",
+              "id": "allowance-since",
+              "text": "since 31 Aug",
+              "style": "body_small",
+              "color": "on_surface_variant"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-data",
+          "title": "Data",
+          "valueText": "20 GB left",
+          "progress": 0.9975586,
+          "inline": true
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-minutes",
+          "title": "Minutes",
+          "valueText": "298 min left",
+          "progress": 0.99333334,
+          "inline": true
+        },
+        {
+          "type": "usage_counter_card",
+          "id": "counter-messages",
+          "title": "Messages",
+          "valueText": "48 SMS left",
+          "progress": 0.96,
+          "inline": true
+        }
+      ],
+      "spacing": 16
     },
     {
       "type": "usage_counter_card",
-      "id": "counter-minutes",
-      "title": "Minutes",
-      "valueText": "300 min left",
-      "progress": 0.0
-    },
-    {
-      "type": "usage_counter_card",
-      "id": "counter-messages",
-      "title": "Messages",
-      "valueText": "50 SMS left",
-      "progress": 0.0
-    },
-    {
-      "type": "usage_counter_card",
-      "id": "roaming-48bb4361-7cab-4ece-8d41-bf8ee0eb8f31",
+      "id": "roaming-d79a9108-def3-4415-aa9e-ee33978c3148",
       "title": "Turkey data",
       "valueText": "10 GB ready",
       "captionText": "Starts when you first connect in Turkey, then runs for 30 days.",
       "progress": 1.0,
       "state": "dormant"
+    },
+    {
+      "type": "banner",
+      "id": "home-roaming",
+      "text": "Going abroad? See what you have for each trip.",
+      "actionText": "Travel packages",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://roaming"
+      }
     },
     {
       "type": "banner",

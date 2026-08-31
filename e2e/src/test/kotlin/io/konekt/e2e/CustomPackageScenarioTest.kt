@@ -8,13 +8,13 @@ import io.github.youndie.kompot.form.standard.EntityValue
 import io.github.youndie.kompot.forms.FormPatchRequest
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.forms.ReadOnlyFieldComponent
-import io.github.youndie.kompot.forms.SelectInputComponent
 import io.github.youndie.kompot.forms.SubmitFormAction
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
 import io.konekt.components.BannerComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.SliderInputComponent
 import io.konekt.components.konektWalk
 import io.konekt.feature.packages.shared.api.CUSTOM_PACKAGE_DEEPLINK
 import io.konekt.feature.packages.shared.api.CustomPackageFields
@@ -123,8 +123,11 @@ class CustomPackageScenarioTest {
                         .children
                         .mapNotNull {
                             when (it) {
-                                is SelectInputComponent -> it.fieldId
+                                // konekt's own slider since `B-104`; the toolkit has no such field.
+                                is SliderInputComponent -> it.fieldId
+
                                 is ReadOnlyFieldComponent -> it.fieldId
+
                                 else -> null
                             }
                         }.toSet()

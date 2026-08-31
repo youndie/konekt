@@ -10,7 +10,7 @@ import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import kotlinx.serialization.json.JsonObject
 
-// konekt's own contribution to the wire specification: the nine component types of
+// konekt's own contribution to the wire specification: the twelve component types of
 // :shared:components, described the same way the toolkit describes its own modules — out of the very
 // SerialDescriptors kotlinx.serialization encodes a response with, so the schema cannot fall quietly
 // behind the types.
@@ -22,7 +22,7 @@ fun konektSpecModule(): KompotSpecModule =
     KompotSpecModule(
         name = "konekt-components",
         description =
-            "The nine component types konekt adds to the kompot wire: " +
+            "The twelve component types konekt adds to the kompot wire: " +
                 "counters, plans, eSIM, orders and feedback.",
         serializersModule = generatedKonektSerializersModule,
     )

@@ -165,8 +165,15 @@ draws nothing.
 
 **Every type this build serves has a renderer**, and every screen is photographed. The list is
 `usage_counter_card`, `plan_card`, `esim_card`, `esim_qr`, `order_row`, `banner`, `snackbar`,
-`step_meter`, `skeleton`, `bottom_nav`, `surface` — kept in step with the code by
+`step_meter`, `skeleton`, `bottom_nav`, `surface`, `slider_input` — kept in step with the code by
 `RendererCoverageIsDocumentedTest`, which fails if this sentence and `konektRenderers` disagree.
+
+**`slider_input` is the one the canvas does not draw**, and it is worth saying rather than leaving as
+an oddity in the list: kompot's field set has no slider, `B-87` rejected one on that ground, and
+`B-104` reversed that deliberately because this dictionary already exists for exactly the case where
+the toolkit's vocabulary does not carry the product's meaning. The canvas has no builder frame at
+all — the word entered this repository through `B-20`'s acceptance criteria and never through a
+drawing.
 
 **The paragraph this replaces said the opposite, and had for three releases.** It read: *"this client
 registers a renderer for two of the nine types only (`usage_counter_card` and `esim_qr`)"*, and gave
