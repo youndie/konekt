@@ -16,3 +16,6 @@ local.properties
 # A soak's readings are a measurement of one machine over one night, not a fact about the product.
 # The probe that produces them is committed; its output is not.
 probes/soak/*.tsv
+
+# The Kotlin compiler daemon leaves a session file here when the desktop app is run locally.
+.kotlin/
