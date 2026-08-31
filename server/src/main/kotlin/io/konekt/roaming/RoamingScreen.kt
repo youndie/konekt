@@ -4,11 +4,10 @@ import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ColumnComponent
-import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
-import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.screens.PlansScreen
 
 // WHAT YOU HAVE FOR THIS TRIP, which is the question `B-19` built the whole vertical for and gave
 // nobody a place to ask.
@@ -48,15 +47,17 @@ class RoamingScreen(
 
                     if (view.zones.isEmpty()) {
                         // A screen that draws nothing is indistinguishable from one that failed to
-                        // load — the same rule the home screen and the catalogue follow — and this
-                        // one can say something useful besides: where the packages are sold.
+                        // load — the same rule the home screen and the catalogue follow.
+                        //
+                        // AND IT NO LONGER SENDS ANYBODY ELSEWHERE. The banner used to carry
+                        // "See plans", because the offer was on another screen; it is below this line
+                        // now, so a control pointing away from it would be a door out of the room a
+                        // subscriber has just been let into (`B-103`).
                         add(
                             BannerComponent(
                                 id = "roaming-empty",
                                 text = "No travel package on this line yet.",
                                 tone = MessageTones.INFO,
-                                action = NavigateAction(PLANS_DEEPLINK),
-                                actionText = "See plans",
                             ),
                         )
                     } else {
@@ -71,6 +72,24 @@ class RoamingScreen(
                             )
                             addAll(zone.packages.map { cards.of(it, view.at) })
                         }
+                    }
+
+                    // WHAT CAN BE BOUGHT, under what is already held. The order is the order of the
+                    // questions: what have I got, then what else is there — the same order the home
+                    // screen puts its counters and its catalogue door in.
+                    if (view.onOffer.isNotEmpty()) {
+                        add(
+                            TextComponent(
+                                id = "roaming-offer-title",
+                                text = "Packages for your next trip",
+                                style = M3Typography.LabelMedium,
+                                color = M3Colors.OnSurfaceVariant,
+                            ),
+                        )
+                        // THE CATALOGUE'S OWN CARD BUILDER. Not a card of this screen's making: one
+                        // plan with two builders is one plan with two prices the first time either is
+                        // edited.
+                        addAll(view.onOffer.map(PlansScreen::card))
                     }
 
                     nav?.let(::add)

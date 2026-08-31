@@ -133,6 +133,7 @@ class KoinGraphTest {
             io.konekt.feature.purchase.server.domain.AccountBalances::class,
             io.konekt.feature.auth.server.domain.SubscriberRepository::class,
             io.konekt.feature.esim.server.domain.EsimRepository::class,
+            io.konekt.feature.purchase.server.domain.PlanCatalog::class,
             // The served brand kit, which `brandModule` binds from a value the root is handed —
             // the same shape as the Database entry below, and invisible to `verify` for the same
             // reason.

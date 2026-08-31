@@ -84,7 +84,10 @@ object PlansScreen {
                 },
         )
 
-    private fun card(plan: Plan): PlanCardComponent =
+    // INTERNAL BECAUSE TWO SCREENS DRAW IT. The travel screen offers the same plans filtered by zone
+    // (`B-103`), and a second card builder is how one plan comes to have two prices, two badges and
+    // two ideas of what "sold out" looks like. One function, one card.
+    internal fun card(plan: Plan): PlanCardComponent =
         PlanCardComponent(
             id = "plan-${plan.id}",
             // THE PLACE, AND THE QUOTA BENEATH IT — which is how the canvas draws a card and what

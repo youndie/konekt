@@ -1,5 +1,9 @@
 package io.konekt.roaming
 
+import io.konekt.domain.Currency
+import io.konekt.domain.Money
+import io.konekt.feature.purchase.server.domain.Plan
+import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.roaming.server.domain.RoamingConsumption
 import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.roaming.server.domain.RoamingPackages
@@ -68,7 +72,75 @@ class ViewRoamingUseCaseTest {
             ): RoamingConsumption = TODO("not part of this screen")
         }
 
-    private fun useCase(held: List<RoamingPackage>) = ViewRoamingUseCase(heldBy(held), KonektClock { now })
+    // THE CATALOGUE THE TRAVEL SCREEN NOW OFFERS FROM. Two travel plans and one home bundle, because
+    // the filter is the whole of what this use case does with it, and a catalogue of travel plans
+    // only would pass on a use case that filters nothing.
+    private val catalogue =
+        object : PlanCatalog {
+            override suspend fun all(): List<Plan> =
+                listOf(
+                    Plan(
+                        "home-20gb-30d",
+                        "Home · 20 GB",
+                        Money.ofMajor(15, Currency.DEFAULT),
+                        onSale = true,
+                        dataMb = 20_480,
+                    ),
+                    Plan(
+                        "tr-10gb-30d",
+                        "Turkey · 10 GB",
+                        Money.ofMajor(12, Currency.DEFAULT),
+                        onSale = true,
+                        dataMb = 10_240,
+                        zone = "tr",
+                    ),
+                    Plan(
+                        "us-20gb-30d",
+                        "US · 20 GB",
+                        Money.ofMajor(24, Currency.DEFAULT),
+                        onSale = false,
+                        dataMb = 20_480,
+                        zone = "us",
+                    ),
+                )
+
+            override suspend fun find(planId: String): Plan? = all().firstOrNull { it.id == planId }
+        }
+
+    private fun useCase(held: List<RoamingPackage>) = ViewRoamingUseCase(heldBy(held), catalogue, KonektClock { now })
+
+    // THE SCREEN NAMED AFTER TRAVEL PACKAGES NOW SELLS THEM. It listed what the line held and nothing
+    // else, so a subscriber arriving with none found one banner and concluded there was nothing to
+    // buy — which is exactly what happened (`B-103`).
+    @Test
+    fun `the travel screen offers the travel plans and not the home bundle`() =
+        runTest {
+            val view = useCase(emptyList()).invoke("sub-1").getOrThrow()
+
+            assertEquals(listOf("tr-10gb-30d", "us-20gb-30d"), view.onOffer.map { it.id })
+        }
+
+    // SOLD OUT IS OFFERED RATHER THAN HIDDEN, the same rule the catalogue follows: a list that
+    // silently omits what it will not sell teaches a subscriber that the list is what exists, and the
+    // refusal path needs a fixture somebody can find.
+    @Test
+    fun `a plan that is not on sale is still shown`() =
+        runTest {
+            val view = useCase(emptyList()).invoke("sub-1").getOrThrow()
+
+            assertTrue(view.onOffer.any { !it.onSale }, "the sold-out plan is missing: ${view.onOffer.map { it.id }}")
+        }
+
+    // AND THE OFFER DOES NOT REPLACE WHAT IS HELD. Both halves are on the screen at once, in that
+    // order — what have I got, then what else is there.
+    @Test
+    fun `a line that holds a package sees both it and the offer`() =
+        runTest {
+            val view = useCase(listOf(pkg("p", "tr"))).invoke("sub-1").getOrThrow()
+
+            assertEquals(listOf("tr"), view.zones.map { it.zone })
+            assertTrue(view.onOffer.isNotEmpty(), "the offer vanished the moment something was held")
+        }
 
     // THE WHOLE ORDERING, as a table. Running, then waiting, then over — the order of a subscriber's
     // attention, and the reason a package bought for next month must not sit above the one counting
@@ -160,6 +232,7 @@ class ViewRoamingUseCaseTest {
                             pkg("waiting", "eu"),
                         ),
                     ),
+                    catalogue,
                     KonektClock { now + (reads++).days },
                 )("sub-1").getOrThrow()
 

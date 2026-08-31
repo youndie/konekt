@@ -1,8 +1,11 @@
 package io.konekt.roaming
 
 import io.konekt.domain.suspendRunCatching
+import io.konekt.feature.purchase.server.domain.Plan
+import io.konekt.feature.purchase.server.domain.PlanCatalog
 import io.konekt.feature.roaming.server.domain.RoamingPackage
 import io.konekt.feature.roaming.server.domain.RoamingPackages
+import io.konekt.feature.roaming.server.domain.Zones
 import io.konekt.time.KonektClock
 import kotlin.time.Instant
 
@@ -18,6 +21,13 @@ import kotlin.time.Instant
 data class RoamingView(
     val at: Instant,
     val zones: List<RoamingZoneView>,
+    // WHAT CAN BE BOUGHT, on the screen named after it. Without this the travel screen answered the
+    // question "what have I got" and had no answer at all to "how do I get one" — so a subscriber
+    // who arrived with nothing found one banner and concluded there was nothing to buy (`B-103`).
+    //
+    // The plans themselves and not a summary: the card is built by the catalogue's own builder, so
+    // the price, the badge and the sold-out state are decided in one place for both screens.
+    val onOffer: List<Plan> = emptyList(),
 )
 
 // ONE ZONE, WITH ITS NAME ALREADY RESOLVED and its packages in the order they will be spent.
@@ -34,6 +44,7 @@ data class RoamingZoneView(
 
 class ViewRoamingUseCase(
     private val packages: RoamingPackages,
+    private val catalogue: PlanCatalog,
     private val clock: KonektClock,
 ) {
     suspend operator fun invoke(subscriberId: String): Result<RoamingView> =
@@ -43,6 +54,13 @@ class ViewRoamingUseCase(
 
             RoamingView(
                 at = now,
+                // EVERY TRAVEL PLAN THE CATALOGUE HAS, sold out ones included. A catalogue that
+                // silently omits what it will not sell teaches a subscriber that the list is what
+                // exists — and the refusal path needs its fixture to be findable.
+                //
+                // The zone is what makes a plan a travel plan; `Zones.HOME` is the absence of
+                // roaming rather than somewhere anyone goes.
+                onOffer = catalogue.all().filter { it.zone != Zones.HOME },
                 zones =
                     mine
                         .groupBy { it.zone }

@@ -465,7 +465,7 @@ fun serverModule(
         // The first screen's answers, out of four repositories and a brand kit (`B-96`).
         factory { ViewHomeUseCase(get(), get(), get(), get(), get(), get(), get()) }
         // The grouping, the ordering and the one `now` they are both decided against (`B-96`).
-        factory { ViewRoamingUseCase(get(), get()) }
+        factory { ViewRoamingUseCase(get(), get(), get()) }
         // THE PRODUCT'S OWN WORKER, started whenever the application starts. It reads whatever
         // arrives on a topic this deployment owns, and it used to exist only inside the simulator's
         // starter — so with the simulator off, nothing in this build read the topic at all (`B-89`).

@@ -1,7 +1,7 @@
 ---
 id: B-103
 title: "The travel screen shows what you own and offers no way to buy, so travel packages read as unavailable"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -63,3 +63,57 @@ it is what a person meets now.
 | The catalogue and the zone each plan carries | `feature/purchase-server-data/.../StaticPlanCatalog.kt` |
 | The general catalogue that does offer them | `server/src/main/kotlin/io/konekt/screens/PlansScreen.kt` |
 | The item that scoped the screen without one | `docs/backlog/B-88-roaming-starts-through-a-dev-route.md` |
+
+## What was done
+
+The travel screen carries the offer under what is held:
+
+```
+Travel packages
+[banner] No travel package on this line yet.
+Packages for your next trip
+  Turkey        $12   pressable
+  Europe        $9    pressable
+  United States $24   sold_out, not pressable
+```
+
+**The card comes from the catalogue's own builder.** `PlansScreen.card` became `internal` and the
+travel screen calls it — one plan, one price, one badge, one idea of what sold out looks like. A
+second builder here is how a plan acquires two prices the first time either is edited, which is the
+defect this repository has already met on the eSIM count and on the pending-change sentence.
+
+**The empty banner lost its "See plans" control.** It pointed at another screen because the offer
+lived there; with the offer on this screen a control pointing away from it would be a door out of the
+room a subscriber has just been let into.
+
+**Sold out is offered rather than hidden**, the same rule the catalogue follows. `us-20gb-30d` is in
+the list, marked, unpressable — a list that silently omits what it will not sell teaches a subscriber
+that the list is what exists, and the refusal path needs a fixture somebody can find.
+
+## Where this came from, which is worth recording
+
+The door to this screen was opened **in the same session that found it empty**. `B-88` made the home
+banner conditional on already owning a package, so the empty state was unreachable;
+`EveryScreenIsReachableTest` said *reachable from nowhere*, the banner was made unconditional — and
+what that opened was a room with nothing in it. A reachability guard proves there is a door, not that
+there is anything behind it.
+
+## Verified
+
+- Three new assertions on the view: the filter is by zone and excludes the home bundle; a plan not on
+  sale is still shown; the offer does not vanish when something is held. Nine tests in that file, all
+  green.
+- Driven against a running stand with a brand new subscriber — the output above is that response,
+  not a rendering of the intent.
+- `:server:test` green; `make e2e` green.
+- `KoinGraphTest` gained `PlanCatalog`, which is the honest consequence of the composition root
+  reaching one module further: a route is not verified, a `factory` is.
+
+## Anchors
+
+| What | Where |
+|---|---|
+| The offer on the view | `server/src/main/kotlin/io/konekt/roaming/RoamingUseCases.kt` |
+| The screen | `server/src/main/kotlin/io/konekt/roaming/RoamingScreen.kt` |
+| The one card builder | `server/src/main/kotlin/io/konekt/screens/PlansScreen.kt` (`internal fun card`) |
+| The tests | `server/src/test/kotlin/io/konekt/roaming/ViewRoamingUseCaseTest.kt` |
