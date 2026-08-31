@@ -43,9 +43,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (5)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-101](docs/backlog/B-101-the-form-never-asks-the-server-to-recompute.md) `[ ]` | Every form is drawn with no patch fetcher, so the custom package's price never changes | P1 | S | - |
+| [B-102](docs/backlog/B-102-the-profile-states-a-tariff-nothing-bills.md) `[ ]` | The profile states a tariff the subscriber never chose and nothing ever charges for | P2 | M | - |
+| [B-103](docs/backlog/B-103-a-travel-package-cannot-be-bought-from-the-travel-screen.md) `[ ]` | The travel screen shows what you own and offers no way to buy, so travel packages read as unavailable | P2 | S | - |
+| [B-104](docs/backlog/B-104-a-slider-of-our-own.md) `[ ]` | A slider, as konekt's own dictionary extension — the builder's quantities are a range, not a list | P2 | M | - |
+| [B-105](docs/backlog/B-105-the-home-screen-diverges-from-the-canvas.md) `[ ]` | The home screen draws three cards where the canvas draws one, and the balance block is laid out differently | P2 | M | - |
 
 ## Closed (100)
 
