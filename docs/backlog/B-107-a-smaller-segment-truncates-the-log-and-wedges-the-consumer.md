@@ -112,6 +112,28 @@ sends rather than flushing a producer it did not choose.
 with `start()` and broken underneath, because every test of the mechanism would have stayed green
 over a `UsageConsumer` whose recovery had been deleted.
 
+## Verified where it was found
+
+`v0.1.28` deployed, and the broker restarted under the running server on purpose:
+
+```
+07:39:33.495  the broker connection broke at offset 529537
+07:39:33.498  the broker is not back yet; retrying in 200ms
+   … 71 seconds of the same, every 200 ms …
+07:40:44.661  reconnected to the broker at konekt-broker:9092 — generation 1
+```
+
+and then the broker's own line, with nobody having restarted anything:
+
+```
+booblik: in 5 rec/s | fetch 5/s | conns 1
+```
+
+Producer and consumer both back. **Seventy-one seconds** is longer than the pod took to become
+ready — the Service kept resolving to the terminating pod for most of it — and it is a measurement
+rather than a complaint: the loop retried about 355 times, each dial failing locally and cheaply, and
+recovered without help. A backoff would be kinder to the log and is not what this item is for.
+
 ## Two things this cost on the way
 
 - **A `@Test` that returned a value never ran.** Written as `= runBlocking { … }` ending on
