@@ -1,6 +1,7 @@
 package io.konekt.client.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
@@ -179,7 +183,27 @@ fun KonektApp(
     // was no way off it.
     var stack by remember(address) { mutableStateOf(NavigationBackStack(address)) }
     val current = stack.current
-    var screen by remember(current) { mutableStateOf<Screen?>(null) }
+    // KEYED ON THE ROOT AND NOT ON THE DESTINATION, which is the whole of `B-111`.
+    //
+    // Written `remember(current)`, this reset itself to null the instant the destination changed —
+    // BEFORE any request went out — so the content box had nothing to draw for a round trip. And the
+    // bottom bar is part of the tree the server sends (`B-51`), so `shell` went with it: the whole
+    // frame disappeared and came back together, which reads as the application vanishing rather than
+    // as a screen loading. Over a local stand that gap is milliseconds; over a deployment it is
+    // exactly as long as the network takes.
+    //
+    // Keyed on `address` it survives navigation, which is what makes the previous screen still be
+    // there to show while the next one is fetched.
+    var screen by remember(address) { mutableStateOf<Screen?>(null) }
+
+    // A FETCH IS IN FLIGHT. What it buys is not the spinner — it is that the tree on screen belongs
+    // to a destination the subscriber has already left, so it must stop taking presses.
+    var loading by remember(address) { mutableStateOf(false) }
+
+    // AND THE OTHER HALF, which `B-111` was filed without knowing: a fetch that THREW left this
+    // composition with a dead effect and a permanently blank window, indistinguishable from a slow
+    // one because both drew nothing. `screens.fetch` was called with nothing catching it.
+    var failure by remember(address) { mutableStateOf<Throwable?>(null) }
     // KEYED BY A PRESS COUNT AND NOT BY THE ACTION, and that is a fix rather than a flourish.
     //
     // A `LaunchedEffect(pending)` that clears `pending` inside itself changes its own key, which
@@ -239,7 +263,21 @@ fun KonektApp(
     //
     // It is the same shape as the press counter below, and this file already carried that lesson: an
     // effect keyed on a value that does not change does nothing.
-    LaunchedEffect(current, reloads) { screen = screens.fetch(current) }
+    LaunchedEffect(current, reloads) {
+        loading = true
+        failure = null
+        try {
+            screen = screens.fetch(current)
+        } catch (cancellation: kotlinx.coroutines.CancellationException) {
+            // Not a failure: a destination that changed again while this one was in flight cancels
+            // this effect, and the effect that replaced it owns the state now.
+            throw cancellation
+        } catch (thrown: Exception) {
+            failure = thrown
+        } finally {
+            loading = false
+        }
+    }
 
     LaunchedEffect(presses) {
         val action = pending ?: return@LaunchedEffect
@@ -468,11 +506,18 @@ fun KonektApp(
                             ).padding(horizontal = 20.dp, vertical = 16.dp),
                 ) {
                     when {
+                        // A FETCH THAT FAILED IS NOT A FETCH THAT IS SLOW, and until `B-111` they
+                        // were the same blank window. The tree that is still on screen belongs to a
+                        // destination the subscriber has left, so it is not what to leave them
+                        // looking at: a stale screen wearing the address of the one they asked for
+                        // is a screen pretending to be something else.
+                        failure != null -> FetchFailed { reloads++ }
+
                         // The tree with its bar taken out. Rendered through the source like any
                         // other, so nothing about the shell reaches the renderers.
-                        shell?.nav != null -> screens.render(Screen.Tree(shell.content), handle)
+                        shell?.nav != null -> Stale(loading) { screens.render(Screen.Tree(shell.content), handle) }
 
-                        else -> screen?.let { screens.render(it, handle) }
+                        else -> screen?.let { shown -> Stale(loading) { screens.render(shown, handle) } }
                     }
                 }
 
@@ -593,3 +638,81 @@ internal fun resolve(
 
     return routes.getValue(prefix) + deeplink.removePrefix(prefix)
 }
+
+// WHAT IS ON SCREEN DURING A ROUND TRIP THAT WILL ALWAYS EXIST — `B-111`'s decision, written where it
+// is made.
+//
+// THREE ANSWERS WERE AVAILABLE and the middle one is the trap. A SPINNER over nothing is the blank
+// window this replaces, with a mark on it. A SKELETON needs to know the shape of a screen the server
+// has not sent yet, which is a client with an opinion about a tree it has not seen. THE PREVIOUS TREE
+// is the least jarring and the most misleading: it is a screen that looks live, sits under the address
+// of a different one, and still takes presses — and a press on it starts an errand from a screen the
+// subscriber has already left.
+//
+// So it is the previous tree WITH ITS INTERACTIVITY REMOVED. Dimmed, so it does not claim to be
+// current; deaf to presses, so it cannot start anything; and the bottom bar is deliberately OUTSIDE
+// this, because switching tabs again is the one thing that must keep working while a tab is loading.
+@Composable
+private fun Stale(
+    loading: Boolean,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .alpha(if (loading) STALE_ALPHA else 1f)
+                .then(
+                    if (!loading) {
+                        Modifier
+                    } else {
+                        // CONSUMED ON THE INITIAL PASS, which is what makes this a barrier rather than
+                        // a suggestion: on any later pass the children have already been offered the
+                        // event and a button under here would take it.
+                        Modifier.pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                                }
+                            }
+                        }
+                    },
+                ),
+    ) {
+        content()
+    }
+}
+
+// A FETCH THAT DID NOT ARRIVE, said plainly and with a way out.
+//
+// NO EXCEPTION TEXT. What went wrong is a socket, a status code or a parse, and none of the three is
+// a sentence for a subscriber; what they need is whether to press again. The detail belongs in the
+// observability channel and does not have one yet — `B-111` says so out loud rather than inventing a
+// second one here.
+@Composable
+private fun FetchFailed(onRetry: () -> Unit) {
+    val designSystem = LocalKompotDesignSystem.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "This screen did not load.",
+            style = designSystem.resolveTypography(M3Typography.TitleMedium),
+            color = designSystem.resolveColor(M3Colors.OnSurface),
+        )
+        Text(
+            text = "Check your connection and try again.",
+            style = designSystem.resolveTypography(M3Typography.BodyMedium),
+            color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+        )
+        TextButton(onClick = onRetry) {
+            Text(
+                text = "Try again",
+                style = designSystem.resolveTypography(M3Typography.LabelLarge),
+                color = designSystem.resolveColor(M3Colors.Primary),
+            )
+        }
+    }
+}
+
+// Enough to read as "not the current screen" and not so much that the words become unreadable — a
+// subscriber must still be able to see what they are leaving.
+private const val STALE_ALPHA = 0.45f
