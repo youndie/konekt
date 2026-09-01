@@ -146,9 +146,17 @@ This matters when reading a golden failure. **A change to brand A's scale is vis
 states and brand A's light and dark pair) and neither of brand B's. That is the isolation property
 worth having; `lg` cannot demonstrate it.
 
-**Answered, and the answer is the second.** Brand A's scale says plainly that `lg` is inert while pills
-are on: `KonektShapeScale.largeIsDrawn` is `!pillButtons`, and `InertRadiusIsDeclaredTest` holds it in
-both directions — brand A must not claim to draw it, brand B must.
+**Answered twice, and the second answer is now out of date.** It used to be the second option: brand
+A's scale said plainly that `lg` was inert while pills were on, and `InertRadiusIsDeclaredTest` held
+that in both directions.
+
+**`B-112` ended the inertia**, and not by giving 36 a surface to satisfy a test — the rejected answer
+below — but because the canvas turned out to pair its headline blocks with `lg` all along.
+`CardGeometry.Tier.CARD` resolves to `largeShape`, so brand A's 36 is on the balance block, the
+allowance block and a package's card. Measured: changing brand A's `lg` from 36 to 8 moves **sixteen
+goldens and not one of brand B's**, which is `B-28`'s second acceptance criterion satisfied for the
+first time. `EveryStepOfTheScaleIsDrawnTest` replaced the old one and holds the mirror statement —
+no step of a brand's scale is inert.
 
 The rejected answer is giving 36 a surface of its own. A pill is a shape that follows the height of
 what it wraps, so it HAS no radius to take from a scale; inventing a full-bleed card or a sheet so the

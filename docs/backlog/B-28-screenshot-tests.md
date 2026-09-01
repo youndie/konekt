@@ -25,8 +25,12 @@ and exhausted, the four purchase states, and one screen in each brand.
   compiles and runs zero tests is the failure mode here, so the gate asserts the case count.
 
 - AC: `./gradlew :client:viddikVerify` compares the named subjects and reports a non-zero case count.
-- AC: changing brand A's `lg` radius fails only the brand A goldens. **This AC has a trap `B-22`
-  measured**: `RoundedCornerShape` clamps a corner to half the smaller dimension, so on a button at
+- AC: changing brand A's `lg` radius fails only the brand A goldens. **Unsatisfiable when this was
+  written and satisfied since `B-112`**: `lg` was read by `buttonShape` alone and only when pills
+  were off, so brand A stated a radius nothing drew. The canvas pairs its headline blocks with
+  `lg`, `CardGeometry.Tier.CARD` now resolves to it, and the mutation moves sixteen goldens with
+  none of brand B's among them. The trap below is unchanged and still worth reading. **This AC
+  has a trap `B-22` measured**: `RoundedCornerShape` clamps a corner to half the smaller dimension, so on a button at
   Material's default 40dp height every radius of 20dp or more draws the identical pill — brand A's
   `lg` is 36 and brand B's is 22, and both render as the same pill. Changing brand A's `lg` from 36 to
   anything else above 20 therefore fails NOTHING on a default-height button, and a golden pair that

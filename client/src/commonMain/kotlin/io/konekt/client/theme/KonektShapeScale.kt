@@ -1,6 +1,7 @@
 package io.konekt.client.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -27,22 +28,21 @@ data class KonektShapeScale(
 ) {
     val largeShape: Shape get() = RoundedCornerShape(large)
 
-    // WHETHER `large` IS DRAWN AT ALL, and it is a property of the scale rather than of a screen.
+    // `large` USED TO BE DRAWN BY NOTHING ON A PILL BRAND, and since `B-112` it is drawn by every
+    // headline card on every screen.
     //
-    // `largeShape` is read by exactly one thing — `buttonShape`, and only when pills are off. So a
-    // brand with `pillButtons = true` states a large radius that nothing in this build can draw:
-    // brand A's 36 was measured to change nothing on any screen when set to 8.
+    // What was here said so as a fact: `largeShape` was read by `buttonShape` alone and only when
+    // pills were off, so brand A stated a 36 that nothing rendered — measured, by setting it to 8 and
+    // watching no golden move. `InertRadiusIsDeclaredTest` held that in both directions and told the
+    // next reader what to do if it ever stopped being true: reinstate `B-28`'s second acceptance
+    // criterion rather than relax the line.
     //
-    // That is not a defect and it is not a gap waiting for a surface. It is what a pill MEANS: a
-    // shape that follows the height of what it wraps has no radius to take from a scale. Saying so in
-    // the type is what stops the next reader from either wiring `lg` somewhere to make a golden bite,
-    // or deleting a number brand B genuinely draws.
+    // It stopped being true. `CardGeometry.Tier.CARD` resolves to `largeShape`, because the canvas
+    // pairs its headline blocks with `lg` — so brand A's 36 reaches the balance block, the allowance
+    // block and a package's card, and a mutation of it now moves brand A's goldens and only theirs.
     //
-    // B-28 asked for a mutation of brand A's `lg` to fail brand A's goldens. It cannot, and the
-    // premise is what is wrong: the property that acceptance exists for — a brand's radius reaching
-    // the screen — is held through `md`, which both brands draw, and through brand B's `lg`, which is
-    // drawn because brand B turns pills off.
-    val largeIsDrawn: Boolean get() = !pillButtons
+    // The property that reported the inertia is gone with it: every step of this scale is drawn now,
+    // and a boolean answering "is it?" would always say yes.
     val mediumShape: Shape get() = RoundedCornerShape(medium)
     val smallShape: Shape get() = RoundedCornerShape(small)
     val buttonShape: Shape get() = if (pillButtons) PILL_SHAPE else largeShape
@@ -84,3 +84,11 @@ data class KonektShapeScale(
         val PILL_SHAPE: Shape = RoundedCornerShape(percent = 50)
     }
 }
+
+// THE BRAND'S SCALE, where a renderer can reach it. `LocalKompotDesignSystem` answers ONE container
+// role, so it cannot express the tiers the canvas draws; this can.
+//
+// DEFAULTS TO BRAND A, which is the same silent fallback `forBrand` already makes for a brand this
+// build has never heard of. A composable drawn outside `KonektTheme` — a preview, a fixture that
+// builds its own kit — gets brand A's radii rather than none.
+val LocalKonektShapeScale = staticCompositionLocalOf { KonektShapeScale.BrandA }

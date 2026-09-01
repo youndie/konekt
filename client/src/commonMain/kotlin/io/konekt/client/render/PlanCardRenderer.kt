@@ -42,7 +42,7 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
     ) {
         val designSystem = LocalKompotDesignSystem.current
         val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
-        val shape = surface.shape ?: CardGeometry.Shape
+        val shape = CardGeometry.shapeOf(CardGeometry.Tier.ITEM)
 
         val soldOut = component.state == PlanStates.SOLD_OUT
         val loading = component.state == PlanStates.LOADING
@@ -64,7 +64,7 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                         } else {
                             Modifier
                         },
-                    ).padding(CardGeometry.Inset),
+                    ).padding(CardGeometry.Tier.ITEM.inset),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(

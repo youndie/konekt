@@ -114,13 +114,13 @@ class UnknownBlockRenderer(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(surface.shape ?: CardGeometry.Shape)
+                    .clip(CardGeometry.shapeOf(CardGeometry.Tier.NOTICE))
                     .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
                     .border(
                         1.dp,
                         designSystem.resolveColor(M3Colors.Outline),
-                        surface.shape ?: CardGeometry.Shape,
-                    ).padding(CardGeometry.Inset),
+                        CardGeometry.shapeOf(CardGeometry.Tier.NOTICE),
+                    ).padding(CardGeometry.Tier.NOTICE.inset),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(

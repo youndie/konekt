@@ -72,6 +72,14 @@ fun KonektTheme(
     MaterialTheme(colorScheme = scheme) {
         CompositionLocalProvider(
             LocalKompotDesignSystem provides designSystem,
+            // THE SCALE ITSELF, beside the design system built from it (`B-112`).
+            //
+            // A card's radius and its inset are a PAIR in the canvas — 36 with 22, 20 with 18 — and
+            // the radius half is a brand's, resolved from its name. The design system answers one
+            // container role, so every card resolved to `md` and the hierarchy the canvas draws was
+            // flat here. `CardGeometry` needs the steps to pick from, and this is what gives them to
+            // it without inventing a role vocabulary kompot does not have.
+            LocalKonektShapeScale provides shapes,
             content = content,
         )
     }

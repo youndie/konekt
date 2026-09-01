@@ -61,9 +61,9 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                 } else {
                     Modifier
                         .fillMaxWidth()
-                        .clip(surface.shape ?: CardGeometry.Shape)
+                        .clip(CardGeometry.shapeOf(CardGeometry.Tier.CARD))
                         .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                        .padding(CardGeometry.Inset)
+                        .padding(CardGeometry.Tier.CARD.inset)
                 },
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

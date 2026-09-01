@@ -43,7 +43,7 @@ class SurfaceRenderer : KompotComponentRenderer<SurfaceComponent> {
         //
         // The fallback is the same one `PlanCardRenderer` uses, and it is reached when the served kit
         // carries no surface — a deployment in the default palette is a coherent thing to be.
-        val shape = designSystem.resolveSurface(KompotSurfaceRoles.Container).shape ?: CardGeometry.Shape
+        val shape = CardGeometry.shapeOf(CardGeometry.Tier.CARD)
 
         // AN UNKNOWN TONE DRAWS THE NEUTRAL CARD rather than nothing, which is the rule every open
         // string in this dictionary follows: a server one release ahead may name a ground this build
@@ -64,7 +64,7 @@ class SurfaceRenderer : KompotComponentRenderer<SurfaceComponent> {
                     // component exists at all (U14).
                     .clip(shape)
                     .background(designSystem.resolveColor(ground))
-                    .padding(CardGeometry.Inset),
+                    .padding(CardGeometry.Tier.CARD.inset),
             verticalArrangement = Arrangement.spacedBy(component.spacing.dp),
         ) {
             component.children.forEach { child ->

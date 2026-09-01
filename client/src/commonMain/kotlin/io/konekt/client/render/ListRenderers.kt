@@ -151,7 +151,7 @@ class EsimCardRenderer : KompotComponentRenderer<EsimCardComponent> {
     ) {
         val designSystem = LocalKompotDesignSystem.current
         val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
-        val shape = surface.shape ?: CardGeometry.Shape
+        val shape = CardGeometry.shapeOf(CardGeometry.Tier.ITEM)
         val action = component.action
 
         // The two terminal states are separate words because they mean opposite things: one can be
@@ -171,7 +171,7 @@ class EsimCardRenderer : KompotComponentRenderer<EsimCardComponent> {
                     .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
                     .border(1.dp, designSystem.resolveColor(M3Colors.Outline), shape)
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)
-                    .padding(CardGeometry.Inset),
+                    .padding(CardGeometry.Tier.ITEM.inset),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
