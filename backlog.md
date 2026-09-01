@@ -43,14 +43,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (0)
 
-| Task | | Priority | Size | Blocked by |
-|---|---|---|---|---|
-| [B-106](docs/backlog/B-106-reuse-values-drops-what-the-chart-added.md) `[ ]` | A deploy with --reuse-values runs a shape the chart guard has never rendered | P1 | S | - |
-| [B-107](docs/backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) `[ ]` | Lowering the segment size truncated the log, and the consumer polled a vanished offset for ever | P1 | M | - |
+No open tasks.
 
-## Closed (105)
+## Closed (108)
 
 **The wire and the shell**
 
@@ -166,6 +163,9 @@ so re-prioritising must never move a file.
 - [B-103](docs/backlog/B-103-a-travel-package-cannot-be-bought-from-the-travel-screen.md) `[x]` - The travel screen shows what you own and offers no way to buy, so travel packages read as unavailable
 - [B-104](docs/backlog/B-104-a-slider-of-our-own.md) `[x]` - A slider, as konekt's own dictionary extension — the builder's quantities are a range, not a list
 - [B-105](docs/backlog/B-105-the-home-screen-diverges-from-the-canvas.md) `[x]` - The home screen draws three cards where the canvas draws one, and the balance block is laid out differently
+- [B-106](docs/backlog/B-106-reuse-values-drops-what-the-chart-added.md) `[x]` - A deploy with --reuse-values runs a shape the chart guard has never rendered
+- [B-107](docs/backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) `[x]` - The consumer never recovered from a broker restart, and the offset hypothesis was wrong
+- [B-108](docs/backlog/B-108-the-usage-consumer-starts-a-megabyte-from-the-beginning.md) `[x]` - The usage consumer starts a megabyte from the beginning of the log and replays the rest
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

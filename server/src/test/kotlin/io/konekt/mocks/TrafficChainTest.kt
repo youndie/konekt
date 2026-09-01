@@ -103,6 +103,208 @@ class TrafficChainTest {
         }
     }
 
+    // THE CHAIN STARTS AT THE END OF THE LOG, WHICH IT SAID IT DID AND DID NOT (`B-108`).
+    //
+    // The comment in `UsageChain` has always been right — replaying a day of invented usage on every
+    // restart would empty every counter in the product — and the code under it built a consumer at
+    // offset ZERO, polled once, and took the position: one `maxBytes` of records in from the START.
+    // Measured on the stage deployment, it began at 11915 while the log ended at 374473, so a
+    // restart replayed 362,558 historical events against live counters.
+    //
+    // Nothing caught it, and nothing would have: every other test in this file publishes AFTER the
+    // consumer starts, which is the one arrangement in which the two offsets are the same number.
+    // So this test publishes BEFORE.
+    @Test
+    fun `a chain starting on a log that already has records applies none of them`() =
+        runBlocking {
+            // ITS OWN BROKER, and that is not tidiness. This test has to put more than a megabyte on
+            // the `usage` topic before it starts anything; on the shared container that is not
+            // padding but pollution, and it broke `BrokerTopicsTest`, which reads its own probe back
+            // and got a filler record. An empty log of its own also means the offsets below are
+            // known rather than inherited.
+            val isolated = BrokerHarness.isolated()
+            val connection = isolated.connect()
+            val brokerConnection = isolated.broker()
+            try {
+                counters.grant(subscriberId, UsageCounter.Kind.DATA, 10_000)
+
+                val producer = Producer(connection, scope)
+                val handle = producer.topic(TopicName(EventTopics.USAGE))
+
+                // MORE THAN ONE `maxBytes` OF PADDING FIRST, and this is the whole reason the defect
+                // survived two seasons of green tests.
+                //
+                // The broken version built a consumer at zero, polled ONCE and took the position —
+                // which is `Consumer.DEFAULT_MAX_BYTES` (1 MiB) in from the start, not the end. On a
+                // short log those two numbers are the SAME, because one poll reaches the end; every
+                // other test in this file has a short log, so all of them passed over it. It took a
+                // 141 MiB log in production to tell the difference.
+                //
+                // These records are inert: a subscriber id nothing has granted, so `apply` finds no
+                // counter and returns. They exist to take up bytes.
+                // THE SIZE IS NOT REASONED, IT IS ASSERTED. The first attempt used 24 records of
+                // 48 KiB — 1.18 MiB, comfortably over `DEFAULT_MAX_BYTES` on paper — and one poll
+                // still reached the end of the log. Rather than model what the broker does with
+                // `maxBytes`, the precondition below states the property this test needs and fails
+                // when it does not hold.
+                val filler = "x".repeat(48 * 1024)
+                repeat(120) {
+                    handle.send(
+                        """{"subscriberId":"padding-$it","kind":"data","units":1,"pad":"$filler"}""".toByteArray(),
+                    )
+                }
+                producer.flush()
+
+                // AND THEN THE HISTORY THAT WOULD HURT, on the far side of that first poll's reach.
+                // These are this subscriber's own events, so a consumer that resumed anywhere before
+                // them takes 3 000 units off a counter that owes nothing.
+                repeat(30) { handle.send(event(units = 100).toByteArray(), subscriberId.toByteArray()) }
+                producer.flush()
+
+                // THE PRECONDITION, ASSERTED. Everything below is about the difference between "one
+                // poll in from the start" and "the end", and on a short log those are the same
+                // number — a padding that silently failed to reach past one `maxBytes` would leave
+                // this test passing over the exact defect it was written for.
+                val end = endOf(connection, EventTopics.USAGE)
+                // DELIBERATELY THE BROKEN EXPRESSION, spelled out rather than through `endOf`: this
+                // line IS the defect, kept here so the precondition measures the same thing the
+                // mutation restores. (Written through the helper first — and a regex that replaced
+                // every instance of this shape replaced the probe too, which made the assertion
+                // compare the end against the end and pass regardless.)
+                val brokenStart = Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first())
+                brokenStart.poll()
+                val onePollIn = brokenStart.position
+                assertTrue(
+                    onePollIn < end,
+                    "one poll from zero reached offset ${onePollIn.value} and the log ends at " +
+                        "${end.value} — the padding did not exceed Consumer.DEFAULT_MAX_BYTES, so " +
+                        "this test cannot tell the two starting points apart",
+                )
+
+                val job =
+                    UsageChain(
+                        brokerConnection,
+                        ConsumeUsageUseCase(counters),
+                        push,
+                        cards,
+                        roaming,
+                        roamingCards,
+                        clock,
+                        json,
+                    ).start(scope)
+
+                try {
+                    // ONE EVENT AFTER THE START, and it is what makes this test able to fail in the
+                    // right direction. Without it a chain that read NOTHING AT ALL — a broken
+                    // consumer, a wrong partition — would satisfy "the history was not replayed".
+                    handle.send(event(units = 40).toByteArray(), subscriberId.toByteArray())
+                    producer.flush()
+
+                    assertNotNull(
+                        remainingBecomes(9_960),
+                        "the counter did not settle at 9960. Anything lower means the log's history " +
+                            "was replayed (`B-108`); no movement at all means the chain read nothing",
+                    )
+                } finally {
+                    job.cancel()
+                }
+                // AND THE METHOD RETURNS UNIT, which is not style. Written as `= runBlocking { … }`
+                // ending on `assertNotNull`, this method returned a `Long` — and JUnit 5 does not
+                // run a `@Test` that returns a value. It silently did not run, and the mutations
+                // written to prove it works all passed. A test that cannot fail is worse than none.
+                Unit
+            } finally {
+                brokerConnection.close()
+            }
+        }
+
+    // THE RUNNING LOOP SURVIVES ITS BROKER GOING AWAY (`B-107`) — and this test exists because the
+    // other three about reconnecting are about `BrokerConnection`, not about the loop that has to
+    // use it. Every one of them would stay green over a `UsageConsumer` whose recovery had been
+    // deleted, which is the shape of a mechanism written and never called.
+    //
+    // So this one calls `start()` and then breaks the connection underneath it, exactly as a
+    // replaced broker pod does, and asks the only question that matters: does an event published
+    // afterwards still reach the counter, with nobody restarting anything.
+    @Test
+    fun `a consumer whose connection dies keeps applying events without being restarted`() =
+        runBlocking {
+            val broker = BrokerConnection(BrokerHarness.host, BrokerHarness.port)
+            // A SECOND CONNECTION FOR THE PUBLISHING SIDE, and it is load-bearing: breaking the
+            // consumer's socket must not break the thing that proves the consumer came back. With
+            // one connection this test could only ever say "everything is broken, then everything
+            // works", which is a statement about `close()`.
+            val writerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            val writer = BrokerHarness.connect(writerScope)
+            try {
+                counters.grant(subscriberId, UsageCounter.Kind.DATA, 10_000)
+
+                val producer = Producer(writer, writerScope)
+                val handle = producer.topic(TopicName(EventTopics.USAGE))
+                val partition = handle.partitions.first()
+                val from =
+                    writer
+                        .metadata(listOf(TopicName(EventTopics.USAGE)))
+                        .topics
+                        .single()
+                        .partitions
+                        .single { it.partition == partition }
+                        .highWatermark
+
+                val job =
+                    UsageConsumer(
+                        broker,
+                        ConsumeUsageUseCase(counters),
+                        push,
+                        cards,
+                        roaming,
+                        roamingCards,
+                        clock,
+                        json,
+                    ).start(scope, partition, from)
+
+                handle.send(usageEvent(100).toByteArray()).await()
+                producer.flush()
+                assertNotNull(
+                    remainingBecomes(9_900),
+                    "the consumer never applied the first event, so the break below proves nothing",
+                )
+
+                // The break. From here the consumer's own loop is the only thing that can recover.
+                broker.connection.close()
+
+                handle.send(usageEvent(250).toByteArray()).await()
+                producer.flush()
+
+                assertNotNull(
+                    remainingBecomes(9_650),
+                    "the consumer never came back: an event published after the connection broke was " +
+                        "not applied, which is `B-107` exactly",
+                )
+
+                job.cancel()
+            } finally {
+                broker.close()
+                writerScope.cancel()
+            }
+        }
+
+    private fun usageEvent(megabytes: Long) = """{"subscriberId":"$subscriberId","kind":"data","units":$megabytes}"""
+
+    // Polls the counter rather than the broadcast, because the subject is "the event was applied"
+    // and the push is a consequence of it. Returns null on timeout so the caller names the failure.
+    private suspend fun remainingBecomes(expected: Long): Long? =
+        withTimeoutOrNull(20.seconds) {
+            while (true) {
+                val remaining =
+                    counters.of(subscriberId).firstOrNull { it.kind == UsageCounter.Kind.DATA }?.remainingUnits
+                if (remaining == expected) return@withTimeoutOrNull remaining
+                kotlinx.coroutines.delay(100)
+            }
+            @Suppress("UNREACHABLE_CODE")
+            null
+        }
+
     @Test
     fun `traffic published to the broker moves the counter and pushes the new card`() =
         runBlocking {
@@ -118,10 +320,7 @@ class TrafficChainTest {
                 // Where the topic already stands. The broker is shared by every test in this JVM, so
                 // a consumer starting at zero would replay somebody else's traffic.
                 val start =
-                    Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first()).let {
-                        it.poll()
-                        it.position
-                    }
+                    endOf(connection, EventTopics.USAGE)
 
                 val simulator =
                     TrafficSimulator(
@@ -142,7 +341,7 @@ class TrafficChainTest {
                 val consumer = Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first(), start)
                 val applied =
                     UsageConsumer(
-                        connection,
+                        BrokerHarness.broker(),
                         ConsumeUsageUseCase(counters),
                         push,
                         cards,
@@ -178,7 +377,7 @@ class TrafficChainTest {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
             val consumer =
                 UsageConsumer(
-                    BrokerHarness.connect(),
+                    BrokerHarness.broker(),
                     ConsumeUsageUseCase(counters),
                     push,
                     cards,
@@ -204,7 +403,7 @@ class TrafficChainTest {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 10)
             val consumer =
                 UsageConsumer(
-                    BrokerHarness.connect(),
+                    BrokerHarness.broker(),
                     ConsumeUsageUseCase(counters),
                     push,
                     cards,
@@ -230,7 +429,7 @@ class TrafficChainTest {
             counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
             val consumer =
                 UsageConsumer(
-                    BrokerHarness.connect(),
+                    BrokerHarness.broker(),
                     ConsumeUsageUseCase(counters),
                     push,
                     cards,
@@ -256,7 +455,7 @@ class TrafficChainTest {
         runBlocking {
             val consumer =
                 UsageConsumer(
-                    BrokerHarness.connect(),
+                    BrokerHarness.broker(),
                     ConsumeUsageUseCase(counters),
                     push,
                     cards,
@@ -300,10 +499,7 @@ class TrafficChainTest {
                 val producer = Producer(connection, scope)
                 val handle = producer.topic(TopicName(EventTopics.USAGE))
                 val start =
-                    Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first()).let {
-                        it.poll()
-                        it.position
-                    }
+                    endOf(connection, EventTopics.USAGE)
 
                 TrafficSimulator(
                     producer,
@@ -404,4 +600,22 @@ class TrafficChainTest {
         }
 
     private fun event(units: Long) = """{"subscriberId":"$subscriberId","kind":"data","units":$units}"""
+
+    // WHERE A TOPIC ALREADY STANDS, asked of METADATA.
+    //
+    // Every one of these used to be `Consumer(...).let { it.poll(); it.position }`, which is one
+    // `maxBytes` in from the START of the log and only equals the end while the log is short. The
+    // shared broker in this JVM makes that a matter of what the other tests published — and the
+    // moment one of them padded the log past a megabyte (`B-108`'s own test), two tests here started
+    // reading from the wrong place. It is the same mistake `UsageChain` shipped with.
+    private suspend fun endOf(
+        connection: ru.workinprogress.booblik.net.client.BooblikConnection,
+        topic: String,
+    ) = connection
+        .metadata(listOf(TopicName(topic)))
+        .topics
+        .single()
+        .partitions
+        .first()
+        .highWatermark
 }

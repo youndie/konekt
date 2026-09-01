@@ -1,5 +1,6 @@
 package io.konekt.mocks.traffic
 
+import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.RoamingConsumption
 import io.konekt.feature.roaming.server.domain.RoamingPackages
@@ -22,8 +23,9 @@ import org.slf4j.LoggerFactory
 import ru.workinprogress.booblik.Offset
 import ru.workinprogress.booblik.PartitionId
 import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.BooblikConnection
 import ru.workinprogress.booblik.net.client.Consumer
+import ru.workinprogress.booblik.net.client.FetchFailedException
+import ru.workinprogress.booblik.net.wire.ErrorCode
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -35,7 +37,9 @@ import kotlin.time.Duration.Companion.milliseconds
 // for simulated traffic and wrong for anything real: replaying a day of usage on a restart would
 // empty every counter in the product.
 class UsageConsumer(
-    private val connection: BooblikConnection,
+    // THE HOLDER, NOT THE SOCKET (`B-107`). A `BooblikConnection` taken once is a socket held for
+    // the life of the process, and a broker pod being replaced then wedges this loop for ever.
+    private val broker: BrokerConnection,
     private val consume: ConsumeUsageUseCase,
     private val push: ComponentBroadcaster,
     // The card builder rather than its output, because the caption it writes now depends on the time
@@ -52,24 +56,90 @@ class UsageConsumer(
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.traffic.consumer")
 
+    // Which socket this loop is holding, so a reconnect asks to replace THAT one rather than
+    // whatever is live by the time it gets there — see `BrokerConnection.generation`.
+    private var brokerGeneration: Int = broker.generation
+
     fun start(
         scope: CoroutineScope,
         partition: PartitionId,
         from: Offset,
     ): Job =
         scope.launch {
-            val consumer = Consumer(connection, TopicName(EventTopics.USAGE), partition, from)
+            val topic = TopicName(EventTopics.USAGE)
+            brokerGeneration = broker.generation
+            var consumer = Consumer(broker.connection, topic, partition, from)
             while (isActive) {
                 try {
                     drain(consumer)
                 } catch (cancellation: kotlinx.coroutines.CancellationException) {
                     throw cancellation
                 } catch (failure: Exception) {
-                    logger.warn("a usage poll failed", failure)
+                    consumer = recoverFrom(failure, consumer, topic, partition) { brokerGeneration = it }
                 }
                 delay(pollInterval)
             }
         }
+
+    // THE TWO WAYS THIS LOOP CANNOT WIN ON ITS OWN, and one way it can carry on unchanged.
+    //
+    // Returns the consumer to poll next — the same one when there was nothing to recover from, so a
+    // transient failure still costs one poll interval and nothing else.
+    private suspend fun recoverFrom(
+        failure: Exception,
+        consumer: Consumer,
+        topic: TopicName,
+        partition: PartitionId,
+        reconnected: (Int) -> Unit,
+    ): Consumer =
+        when {
+            BrokerConnection.isFinished(failure) -> {
+                // THE SOCKET, NOT THE OFFSET. The position is fine and the connection is not, so
+                // resume exactly where this consumer had got to: a poll that failed consumed nothing.
+                val resumeAt = consumer.position
+                logger.warn("the broker connection broke at offset {}", resumeAt.value, failure)
+                reconnected(broker.reconnect(brokerGeneration))
+                Consumer(broker.connection, topic, partition, resumeAt)
+            }
+
+            failure is FetchFailedException && failure.code == ErrorCode.OFFSET_OUT_OF_RANGE -> {
+                // THE OTHER WAY, and `B-100` is what made it reachable: retention now deletes whole
+                // segments, so a consumer slower than the retention bound asks for an offset that no
+                // longer exists and is refused for ever. The recovery is the one this consumer
+                // already performs at boot — go to where the broker is now — and the loud part is
+                // not the seek, it is saying that records were SKIPPED. A consumer that silently
+                // reseeks is a counter that quietly disagrees with what was published.
+                val lost = consumer.position
+                val resumeAt = endOf(partition)
+                logger.warn(
+                    "the broker no longer has offset {} on partition {} — retention passed this " +
+                        "consumer, so {} usage events were never applied. Resuming at {}",
+                    lost.value,
+                    partition.value,
+                    resumeAt.value - lost.value,
+                    resumeAt.value,
+                )
+                Consumer(broker.connection, topic, partition, resumeAt)
+            }
+
+            else -> {
+                logger.warn("a usage poll failed", failure)
+                consumer
+            }
+        }
+
+    // WHERE THE BROKER IS NOW, asked of METADATA rather than read out of a poll. A fetch cannot
+    // answer this once the log's start has moved past zero, which is exactly the state that brings
+    // a caller here.
+    private suspend fun endOf(partition: PartitionId): Offset {
+        val answer = broker.connection.metadata(listOf(TopicName(EventTopics.USAGE)))
+        return answer.topics
+            .singleOrNull()
+            ?.partitions
+            ?.firstOrNull { it.partition == partition }
+            ?.highWatermark
+            ?: Offset.ZERO
+    }
 
     suspend fun drain(consumer: Consumer): Int {
         val records = consumer.poll().records

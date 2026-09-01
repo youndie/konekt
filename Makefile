@@ -101,7 +101,7 @@ tck:
 
 COMPOSE := docker compose -f deploy/compose.yaml
 
-.PHONY: stand-up stand-down stand-logs e2e rolling-check release-image
+.PHONY: stand-up stand-down stand-logs e2e rolling-check release-image deploy deploy-check
 
 # The distribution is built OUTSIDE the image — see deploy/Dockerfile for why — so it has to exist
 # before the image does. Forgetting that step gives a container running whatever was built last time,
@@ -141,6 +141,46 @@ stand-logs:
 # change is a suite people learn to ignore.
 e2e:
 	./gradlew :e2e:e2e :client:standTest
+
+# THE UPGRADE FLAG, WRITTEN DOWN WHERE IT CANNOT BE FORGOTTEN — which is the whole of this target.
+#
+# `--reset-then-reuse-values` and NOT `--reuse-values`. The second reuses the previous release's
+# user-supplied config INSTEAD of coalescing with the new chart's `values.yaml`, so every key the
+# chart has gained since the last deploy renders EMPTY. `B-106` is that, in production: three broker
+# settings declared in `values.yaml`, absent from the containers, retention silently off, and
+# `chart-check.sh` green throughout because it renders the chart rather than the deployment.
+#
+# What the right flag does NOT do is worth knowing too: it re-applies the operator's own values, so a
+# value they set and the chart has since REMOVED is still carried forward. Helm has no flag that
+# both takes the chart's defaults and drops an obsolete override; that one is read by a person.
+#
+# The check is part of the target rather than a thing to remember afterwards. A guard that has to be
+# invoked separately is a guard that runs on the deploys nobody was worried about.
+#
+#     make deploy                        # the newest tag, like release-image
+#     make deploy VERSION=v0.1.26
+#     make deploy VERSION=v0.1.26 NAMESPACE=konekt RELEASE=konekt
+#
+# `VERSION` IS THE ONE `release-image` ALREADY DEFINES — the newest tag — and this target does not
+# add a refusal of its own for the empty case. The first draft of it did, and the refusal could
+# never fire: `VERSION ?=` above had always already resolved it, so the branch was unreachable code
+# with an error message in it. What DOES refuse an empty version is the chart, at render time
+# (`server.version is required`), and `chart-check.sh` proves that refusal names its own reason.
+#
+# Where the cluster is, which context reaches it and what the values are: not here, and deliberately
+# — the chart carries the SHAPE and an operator keeps their own addresses and keys beside their
+# cluster. This target adds no opinion about somebody else's network.
+NAMESPACE ?= konekt
+RELEASE ?= konekt
+deploy:
+	helm upgrade $(RELEASE) charts/konekt --namespace $(NAMESPACE) \
+		--reset-then-reuse-values --set server.version=$(VERSION) --wait --timeout 5m
+	$(MAKE) deploy-check
+
+# Runnable on its own, because the question "is the cluster running what this chart says" is worth
+# asking without deploying anything.
+deploy-check:
+	NAMESPACE=$(NAMESPACE) RELEASE=$(RELEASE) ./scripts/deploy-check.sh
 
 # THE RELEASE IMAGE, tagged with the version rather than with the day.
 #

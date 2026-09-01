@@ -57,14 +57,11 @@ class OutboxRelayTest {
                 // test in this class, so "there is a record on the topic" is only meaningful relative
                 // to where it already was.
                 val before =
-                    Consumer(connection, TopicName(EventTopics.ORDERS), handle.partitions.first()).let {
-                        it.poll()
-                        it.position
-                    }
+                    endOf(connection, EventTopics.ORDERS)
 
                 writeOutboxRow(id = "$orderId:purchase.completed", type = "purchase.completed", orderId = orderId)
 
-                OutboxRelayWorker(outbox, BooblikOutboxPublisher(producer)).tick()
+                OutboxRelayWorker(outbox, BooblikOutboxPublisher(BrokerHarness.broker())).tick()
                 producer.flush()
 
                 val consumer = Consumer(connection, TopicName(EventTopics.ORDERS), handle.partitions.first())
@@ -182,4 +179,22 @@ class OutboxRelayTest {
             }
         }
     }
+
+    // WHERE A TOPIC ALREADY STANDS, asked of METADATA.
+    //
+    // Every one of these used to be `Consumer(...).let { it.poll(); it.position }`, which is one
+    // `maxBytes` in from the START of the log and only equals the end while the log is short. The
+    // shared broker in this JVM makes that a matter of what the other tests published — and the
+    // moment one of them padded the log past a megabyte (`B-108`'s own test), two tests here started
+    // reading from the wrong place. It is the same mistake `UsageChain` shipped with.
+    private suspend fun endOf(
+        connection: ru.workinprogress.booblik.net.client.BooblikConnection,
+        topic: String,
+    ) = connection
+        .metadata(listOf(TopicName(topic)))
+        .topics
+        .single()
+        .partitions
+        .first()
+        .highWatermark
 }

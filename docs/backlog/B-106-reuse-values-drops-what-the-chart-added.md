@@ -1,7 +1,7 @@
 ---
 id: B-106
 title: "A deploy with --reuse-values runs a shape the chart guard has never rendered"
-status: open
+status: done
 priority: P1
 size: S
 stage: stage-m7-completeness
@@ -71,6 +71,46 @@ That is a fix for one deploy, not for the next one.
   it re-applies user-supplied values, so a value the operator set and the chart later removed is
   still carried forward.
 
+## What was done
+
+**The flag is written down as a target rather than as a sentence.** `make deploy` is
+`helm upgrade --reset-then-reuse-values`, and it runs the check itself — a guard that has to be
+invoked separately runs on the deploys nobody was worried about.
+
+**`scripts/deploy-check.sh` + `scripts/deploy_check.py`** compare the environment the CLUSTER is
+running against the environment this chart renders **with the release's own user-supplied values** —
+which is exactly what the right flag produces and exactly what the wrong one does not. Three
+assertions, in this order:
+
+1. no value in the cluster is **empty** — the observable form of this defect, and true independently
+   of whether the working tree's chart still matches what was deployed;
+2. every variable the chart declares is present in the cluster with the same value — which catches
+   the case the first misses, a variable wrapped in `{{- if }}` that renders to nothing at all;
+3. neither side is empty, because every statement above is satisfied by two empty dictionaries.
+
+The comparison lives in a separate `.py` **so it can be run on files**. Proving assertion 1 fires
+would otherwise have meant deploying a broken release to prove a check works.
+
+## Proved by mutation
+
+| Mutation | Result |
+|---|---|
+| control, unmutated | `ok 34 environment values` |
+| a chart default changed to `999` | `different: … chart '999', cluster '134217728'` |
+| a new `BOOBLIK_SOMETHING_NEW` added to the template | `the chart declares it and the cluster has not got it` |
+| **this defect itself** — the three broker values blanked in the cluster's manifest | `empty in the cluster: … BOOBLIK_RETENTION_BYTES=` ×3, plus three `different` |
+| both inputs empty | `every comparison above was vacuous` ×2 |
+
+## One thing found while writing it
+
+The first draft of `make deploy` refused an empty `VERSION` with an explanatory message. The branch
+was **unreachable**: `VERSION ?= $(shell git describe --tags --abbrev=0)` is already defined above it
+for `release-image`, so the variable was never empty and the refusal never ran — a guard that cannot
+fire, which is the mirror of the guard that cannot be skipped. Removed, and the comment now says
+what actually refuses an empty version: the chart, at render time, with
+`server.version is required — a tag that moves leaves helm nothing to notice`, which
+`chart-check.sh` already proves names its own reason.
+
 ## Anchors
 
 | What | Where |
@@ -79,3 +119,6 @@ That is a fix for one deploy, not for the next one.
 | The values that were dropped | `charts/konekt/values.yaml` (`broker.segmentBytes`, `retentionBytes`, `retentionMillis`) |
 | Where they reach a container | `charts/konekt/templates/broker.yaml` |
 | The sibling defect | [B-97](B-97-the-rolling-check-can-run-a-stale-binary.md) |
+| The check written for it | `scripts/deploy-check.sh`, `scripts/deploy_check.py` |
+| The flag, as a target | `Makefile` — `deploy`, `deploy-check` |
+| Where a deployer reads it | [konekt-server](../services/konekt-server.md) §5 |

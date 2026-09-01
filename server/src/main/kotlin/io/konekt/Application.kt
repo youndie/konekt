@@ -537,7 +537,7 @@ fun petichModule(
     // — this is where that sentence is answered.
     single { ExposedOutboxRepository(database, get()) }
     single { BrokerConnection(config.brokerHost, config.brokerPort) }
-    single<OutboxPublisher> { BooblikOutboxPublisher(get<BrokerConnection>().producer, get()) }
+    single<OutboxPublisher> { BooblikOutboxPublisher(get<BrokerConnection>(), get()) }
 
     single {
         OutboxRelayWorker(

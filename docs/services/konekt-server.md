@@ -163,6 +163,18 @@ is the profile a coroutine-per-connection engine is shaped for. See
   before the release's own objects, which on a first install means before the database exists. Four
   values have no default and stop the render rather than the pod: the hostname, the image tag, the
   JWT secret and the database password. Each of them, absent, produces a deploy that reports success.
+- **Upgrading a release uses `--reset-then-reuse-values`, and `make deploy` is where that is
+  written down.** `helm upgrade --reuse-values` reuses the previous release's *user-supplied* config
+  INSTEAD of coalescing with the new chart's `values.yaml`, so every key the chart has gained since
+  the last deploy renders **empty** — not defaulted. `B-106` is that in production: the three broker
+  settings `B-100` added were declared in `values.yaml`, arrived at the container as
+  `BOOBLIK_RETENTION_BYTES=`, retention was silently off, and nothing was red. `chart-check.sh` could
+  not have seen it — it renders the chart, and a deployment is a different render. What the right
+  flag does **not** do is re-examine the operator's own values: one they set and the chart has since
+  removed is still carried forward, and no helm flag covers both cases. `make deploy` then runs
+  `scripts/deploy-check.sh`, which compares the environment the cluster is running against the
+  environment this chart renders with the same values — the only check here whose subject is a
+  cluster rather than a file.
 - **Where the environment lives:** nowhere in this repository, and that is the split. The chart
   carries the SHAPE — what runs, what may not be reached, what stops the render — and a deployment's
   own addresses, keys and image tag are values an operator keeps beside their cluster. A chart that

@@ -13,7 +13,6 @@ import kotlinx.coroutines.Job
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
 
 // THE PRODUCT'S OWN WORKER: whatever arrives on the `usage` topic is applied to the counters and
 // pushed to whoever is looking at a screen.
@@ -41,11 +40,17 @@ class UsageChain(
     private val logger = LoggerFactory.getLogger("io.konekt.usage.chain")
 
     suspend fun start(scope: CoroutineScope): Job {
-        val partition =
-            connection.producer
-                .topic(TopicName(EventTopics.USAGE))
-                .partitions
-                .first()
+        // ONE METADATA CALL FOR BOTH ANSWERS: which partition, and where its log ends. `B-108` is
+        // why this is metadata and not a poll — see below.
+        val info =
+            connection.connection
+                .metadata(listOf(TopicName(EventTopics.USAGE)))
+                .topics
+                .singleOrNull()
+                ?.partitions
+                ?.firstOrNull()
+                ?: error("the broker has no partition for ${EventTopics.USAGE}")
+        val partition = info.partition
 
         // FROM WHERE THE BROKER IS NOW, and this is the decision the split forces into the open.
         //
@@ -63,15 +68,24 @@ class UsageChain(
         // down is not applied when it comes back.** For a reference build on a fictional feed that is
         // an acceptable cost and it is written into `konekt-broker.md`; for a real integration it is
         // the first thing that would have to change.
-        val from =
-            Consumer(connection.connection, TopicName(EventTopics.USAGE), partition).let {
-                it.poll()
-                it.position
-            }
+        //
+        // AND FOR TWO SEASONS THIS LINE DID NOT GIVE THE END (`B-108`). It used to build a
+        // consumer at offset ZERO, poll once and take the position: one `maxBytes` of records in
+        // from the START of the log, which is a different number entirely. Measured on the stage
+        // deployment: it began at 11915 while the log ended at 374473, so every restart replayed
+        // 362,558 historical usage events against live counters — the exact thing the paragraph
+        // above says must not happen, written correctly and implemented backwards.
+        //
+        // It was also about to stop working at all. `B-100` turned retention on, so the log's start
+        // will move above zero, and a fetch below the start is `OFFSET_OUT_OF_RANGE` — a throw out
+        // of `start()` on the first boot after the first segment is deleted.
+        //
+        // METADATA answers both, cannot read a record, and cannot be out of range.
+        val from = info.highWatermark
 
         logger.info("usage consumer starting on partition {} from offset {}", partition, from)
 
-        return UsageConsumer(connection.connection, consume, push, cards, roaming, roamingCards, clock, json)
+        return UsageConsumer(connection, consume, push, cards, roaming, roamingCards, clock, json)
             .start(scope, partition, from)
     }
 }
