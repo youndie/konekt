@@ -31,6 +31,16 @@
         "action": {
           "$ref": "kompot-core.schema.json#/$defs/KompotAction"
         },
+        "icon": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VectorIcon"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "selected": {
           "type": "boolean"
         }
@@ -598,6 +608,28 @@
         "id",
         "title",
         "valueText"
+      ],
+      "additionalProperties": true
+    },
+    "VectorIcon": {
+      "x-kompot-kind": "object",
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "viewportSize": {
+          "type": "number"
+        },
+        "strokeWidth": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "paths"
       ],
       "additionalProperties": true
     }

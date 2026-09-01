@@ -1,1 +1,112 @@
-{"type":"column","id":"profile","children":[{"type":"text","id":"profile-title","text":"Profile","style":"headline_small","color":"on_surface"},{"type":"text","id":"profile-msisdn-label","text":"Number","style":"label_medium","color":"on_surface_variant"},{"type":"text","id":"profile-msisdn","text":"+79990009876","style":"title_medium","color":"on_surface"},{"type":"text","id":"profile-esims","text":"No eSIM installed on this line yet","style":"body_medium","color":"on_surface_variant"},{"type":"banner","id":"profile-support","text":"Support answers around the clock. Have your order reference ready."},{"type":"button","id":"profile-sign-out","modifiers":[{"type":"size","width":"Fill"}],"text":"Sign out","action":{"type":"sign_out"}},{"type":"bottom_nav","id":"shell-nav","items":[{"label":"Home","action":{"type":"navigate","deeplink":"app://home"}},{"label":"Plans","action":{"type":"navigate","deeplink":"app://plans"}},{"label":"Orders","action":{"type":"navigate","deeplink":"app://orders"}},{"label":"Profile","action":{"type":"navigate","deeplink":"app://profile"},"selected":true}]}],"spacing":12}
+{
+  "type": "column",
+  "id": "profile",
+  "children": [
+    {
+      "type": "text",
+      "id": "profile-title",
+      "text": "Profile",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "profile-msisdn-label",
+      "text": "Number",
+      "style": "label_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "text",
+      "id": "profile-msisdn",
+      "text": "+79990009876",
+      "style": "title_medium",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "profile-esims",
+      "text": "No eSIM installed on this line yet",
+      "style": "body_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "banner",
+      "id": "profile-support",
+      "text": "Support answers around the clock. Have your order reference ready."
+    },
+    {
+      "type": "button",
+      "id": "profile-sign-out",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Sign out",
+      "action": {
+        "type": "sign_out"
+      }
+    },
+    {
+      "type": "bottom_nav",
+      "id": "shell-nav",
+      "items": [
+        {
+          "label": "Home",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://home"
+          },
+          "icon": {
+            "paths": [
+              "M3 10.5 12 3l9 7.5V21H3z"
+            ]
+          }
+        },
+        {
+          "label": "Plans",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://plans"
+          },
+          "icon": {
+            "paths": [
+              "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
+              "M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"
+            ]
+          }
+        },
+        {
+          "label": "Orders",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders"
+          },
+          "icon": {
+            "paths": [
+              "M4 5h16v14H4z",
+              "M8 9h8M8 13h5"
+            ]
+          }
+        },
+        {
+          "label": "Profile",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://profile"
+          },
+          "icon": {
+            "paths": [
+              "M8 8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0",
+              "M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"
+            ]
+          },
+          "selected": true
+        }
+      ]
+    }
+  ],
+  "spacing": 12
+}

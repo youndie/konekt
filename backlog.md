@@ -43,15 +43,14 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-111](docs/backlog/B-111-navigation-blanks-the-screen-before-the-tree-arrives.md) `[ ]` | Every navigation blanks the whole window until the next tree arrives | P1 | M | - |
-| [B-110](docs/backlog/B-110-the-tabs-have-no-icons.md) `[ ]` | The four tabs are words with no icons, because kompot has no icon vocabulary | P2 | M | - |
 | [B-112](docs/backlog/B-112-the-cards-do-not-use-the-canvas-geometry.md) `[ ]` | Every card in the build is a radius and an inset the canvas does not pair | P3 | M | - |
 
-## Closed (109)
+## Closed (110)
 
 **The wire and the shell**
 
@@ -171,6 +170,7 @@ so re-prioritising must never move a file.
 - [B-107](docs/backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) `[x]` - The consumer never recovered from a broker restart, and the offset hypothesis was wrong
 - [B-108](docs/backlog/B-108-the-usage-consumer-starts-a-megabyte-from-the-beginning.md) `[x]` - The usage consumer starts a megabyte from the beginning of the log and replays the rest
 - [B-109](docs/backlog/B-109-the-allowance-card-pads-twice.md) `[x]` - Two kinds of card sat side by side with different insets
+- [B-110](docs/backlog/B-110-the-tabs-have-no-icons.md) `[x]` - The four tabs are words with no icons, because kompot has no icon vocabulary
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

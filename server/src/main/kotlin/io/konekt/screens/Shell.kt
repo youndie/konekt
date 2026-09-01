@@ -6,6 +6,7 @@ import io.github.youndie.kompot.navigation.ScreenRouteKind
 import io.github.youndie.kompot.standard.NavigateAction
 import io.konekt.components.BottomNavComponent
 import io.konekt.components.BottomNavItem
+import io.konekt.components.VectorIcon
 import io.konekt.feature.auth.shared.api.LOGIN_CODE_DEEPLINK
 import io.konekt.feature.auth.shared.api.LOGIN_DEEPLINK
 import io.konekt.feature.auth.shared.api.LoginCodeScreenResource
@@ -172,6 +173,7 @@ object Shell {
                     BottomNavItem(
                         label = tab.label,
                         action = NavigateAction(tab.deeplink),
+                        icon = tab.icon,
                         selected = tab == selected,
                     )
                 },
@@ -185,10 +187,43 @@ object Shell {
     enum class Tab(
         val label: String,
         val deeplink: String,
+        val icon: VectorIcon,
     ) {
-        HOME("Home", HOME_DEEPLINK),
-        PLANS("Plans", PLANS_DEEPLINK),
-        ORDERS("Orders", ORDERS_DEEPLINK),
-        PROFILE("Profile", PROFILE_DEEPLINK),
+        HOME("Home", HOME_DEEPLINK, TabIcons.HOUSE),
+        PLANS("Plans", PLANS_DEEPLINK, TabIcons.GLOBE),
+        ORDERS("Orders", ORDERS_DEEPLINK, TabIcons.DOCUMENT),
+        PROFILE("Profile", PROFILE_DEEPLINK, TabIcons.PERSON),
+    }
+
+    // THE FOUR SHAPES, COPIED OUT OF THE CANVAS rather than chosen here. Each is the `d` of the
+    // `<svg>` beside that tab's label in `docs/design/konekt-esim-app.dc.html`, on the 24-unit grid it
+    // was drawn on, with its stroke width.
+    //
+    // TWO OF THEM CONTAIN A CIRCLE IN THE DESIGN, and SVG's `<circle>` is not path data — so the
+    // circles are written here as the two arcs that draw them. That conversion is the one place this
+    // file is not a transcription, and it is why `TabIconsMatchTheCanvasTest` compares what is drawn
+    // against what the canvas holds rather than trusting the copy.
+    private object TabIcons {
+        val HOUSE = VectorIcon(paths = listOf("M3 10.5 12 3l9 7.5V21H3z"))
+
+        val GLOBE =
+            VectorIcon(
+                paths =
+                    listOf(
+                        "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
+                        "M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18",
+                    ),
+            )
+
+        val DOCUMENT = VectorIcon(paths = listOf("M4 5h16v14H4z", "M8 9h8M8 13h5"))
+
+        val PERSON =
+            VectorIcon(
+                paths =
+                    listOf(
+                        "M8 8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0",
+                        "M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
+                    ),
+            )
     }
 }

@@ -34,13 +34,18 @@ data class BottomNavComponent(
 // same thing is a second place for it to break. What that buys concretely: the client's action
 // handling is unchanged, and a tab that one day needs to do something other than navigate can.
 //
-// NO ICON. `kompot` has no icon vocabulary — no wire type, no token — so an icon here would be a
-// string the client has to map to a drawable it compiled in, which is a second dictionary kept in
-// step by hand. The canvas draws icons; until the toolkit has a way to name one, this is labels.
+// THE ICON IS DATA, not a name (`B-110`). It used to be nothing at all, and the reasoning for that
+// still stands against the version it was written about: a name here plus a table in the client is a
+// second dictionary kept in step by hand, failing silently when they drift. `VectorIcon` says why the
+// shape travels instead, and why its colour does not.
 @Serializable
 data class BottomNavItem(
     val label: String,
     val action: KompotAction,
+    // NULLABLE, and it stays nullable. A bar is legible without icons — that is what this build
+    // shipped for two seasons — so an item that has not been given one draws its label and nothing
+    // else, rather than a gap where a picture should be.
+    val icon: VectorIcon? = null,
     // Set by the SERVER, because the server is what knows which screen it is building. A client
     // deciding this by comparing its current address against an action's payload would be a second
     // opinion about which tab is open, and the two would disagree the first time an address gained a

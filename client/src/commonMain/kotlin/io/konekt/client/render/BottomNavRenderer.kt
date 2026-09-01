@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -25,10 +26,15 @@ import io.konekt.components.BottomNavComponent
 
 // The shell's bar. Four destinations, the current one marked, and the server decided all of it.
 //
-// LABELS AND NO ICONS, because kompot has no icon vocabulary — no wire type, no token — and an icon
-// name here would be a string this client maps to a drawable it compiled in, which is a second
-// dictionary kept in step by hand. The canvas draws icons; that is a gap to close in the toolkit
-// rather than to paper over with a lookup table.
+// THE ICON ARRIVES AS A SHAPE, not as a name (`B-110`). kompot still has no icon vocabulary; what
+// changed is the answer to that. A name plus a table here would be a second dictionary kept in step
+// by hand, failing silently — an unknown name draws nothing, and a tab with no icon looks like a tab
+// whose icon has not loaded. So the server sends path data and this draws it, the same arrangement
+// `EsimQrRenderer` already uses for a QR.
+//
+// THE COLOUR IS DECIDED HERE and never sent. It is the same role the label takes, so the two cannot
+// disagree, and a brand kit can still repaint the bar — which a server-sent hex would have made the
+// one thing a rebrand could not reach.
 //
 // THE SELECTED TAB IS STILL PRESSABLE, and that is not an oversight. Pressing the tab you are on is a
 // refetch, which is the closest thing this application has to pull-to-refresh — and a disabled
@@ -59,19 +65,23 @@ class BottomNavRenderer : KompotComponentRenderer<BottomNavComponent> {
             ) {
                 component.items.forEach { item ->
                     TextButton(onClick = { actionHandler.handle(item.action) }) {
-                        Text(
-                            text = item.label,
-                            style = designSystem.resolveTypography(M3Typography.LabelLarge),
-                            // The current tab is marked by COLOUR AND WEIGHT rather than by colour
-                            // alone: a mark that only a hue carries is a mark a colour-blind
-                            // subscriber does not get, and the brand kit is free to make the two
-                            // roles close together.
-                            fontWeight = if (item.selected) FontWeight.Bold else FontWeight.Normal,
-                            color =
-                                designSystem.resolveColor(
-                                    if (item.selected) M3Colors.Primary else M3Colors.OnSurfaceVariant,
-                                ),
-                        )
+                        val ink =
+                            designSystem.resolveColor(
+                                if (item.selected) M3Colors.Primary else M3Colors.OnSurfaceVariant,
+                            )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            item.icon?.let { VectorIconGlyph(it, ink) }
+                            Text(
+                                text = item.label,
+                                style = designSystem.resolveTypography(M3Typography.LabelLarge),
+                                // The current tab is marked by COLOUR AND WEIGHT rather than by colour
+                                // alone: a mark that only a hue carries is a mark a colour-blind
+                                // subscriber does not get, and the brand kit is free to make the two
+                                // roles close together.
+                                fontWeight = if (item.selected) FontWeight.Bold else FontWeight.Normal,
+                                color = ink,
+                            )
+                        }
                     }
                 }
             }

@@ -1,1 +1,211 @@
-{"type":"column","id":"plan-detail","children":[{"type":"text","id":"plan-detail-title","text":"Turkey · 10 GB · 30 days","style":"headline_small","color":"on_surface"},{"type":"text","id":"plan-detail-price","text":"$12","style":"display_small","color":"on_surface"},{"type":"text","id":"plan-detail-includes","text":"What is included","style":"label_medium","color":"on_surface_variant"},{"type":"row","id":"plan-detail-data","children":[{"type":"text","id":"plan-detail-data-label","text":"Data","style":"body_medium","color":"on_surface_variant"},{"type":"text","id":"plan-detail-data-value","text":"10 GB","style":"body_medium","color":"on_surface"}],"spacing":8},{"type":"row","id":"plan-detail-minutes","children":[{"type":"text","id":"plan-detail-minutes-label","text":"Calls","style":"body_medium","color":"on_surface_variant"},{"type":"text","id":"plan-detail-minutes-value","text":"Not included","style":"body_medium","color":"on_surface"}],"spacing":8},{"type":"row","id":"plan-detail-messages","children":[{"type":"text","id":"plan-detail-messages-label","text":"SMS","style":"body_medium","color":"on_surface_variant"},{"type":"text","id":"plan-detail-messages-value","text":"Not included","style":"body_medium","color":"on_surface"}],"spacing":8},{"type":"row","id":"plan-detail-validity","children":[{"type":"text","id":"plan-detail-validity-label","text":"Runs for","style":"body_medium","color":"on_surface_variant"},{"type":"text","id":"plan-detail-validity-value","text":"30 days once it starts","style":"body_medium","color":"on_surface"}],"spacing":8},{"type":"row","id":"plan-detail-zone","children":[{"type":"text","id":"plan-detail-zone-label","text":"Works in","style":"body_medium","color":"on_surface_variant"},{"type":"text","id":"plan-detail-zone-value","text":"Turkey","style":"body_medium","color":"on_surface"}],"spacing":8},{"type":"banner","id":"plan-detail-activation","text":"Starts counting when you first connect in Turkey, not when you buy it."},{"type":"button","id":"plan-detail-buy","modifiers":[{"type":"size","width":"Fill"}],"text":"Buy for $12","action":{"type":"buy_plan","planId":"tr-10gb-30d"}},{"type":"bottom_nav","id":"shell-nav","items":[{"label":"Home","action":{"type":"navigate","deeplink":"app://home"}},{"label":"Plans","action":{"type":"navigate","deeplink":"app://plans"},"selected":true},{"label":"Orders","action":{"type":"navigate","deeplink":"app://orders"}},{"label":"Profile","action":{"type":"navigate","deeplink":"app://profile"}}]}],"spacing":12}
+{
+  "type": "column",
+  "id": "plan-detail",
+  "children": [
+    {
+      "type": "text",
+      "id": "plan-detail-title",
+      "text": "Turkey · 10 GB · 30 days",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "plan-detail-price",
+      "text": "$12",
+      "style": "display_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "plan-detail-includes",
+      "text": "What is included",
+      "style": "label_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "row",
+      "id": "plan-detail-data",
+      "children": [
+        {
+          "type": "text",
+          "id": "plan-detail-data-label",
+          "text": "Data",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "plan-detail-data-value",
+          "text": "10 GB",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "plan-detail-minutes",
+      "children": [
+        {
+          "type": "text",
+          "id": "plan-detail-minutes-label",
+          "text": "Calls",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "plan-detail-minutes-value",
+          "text": "Not included",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "plan-detail-messages",
+      "children": [
+        {
+          "type": "text",
+          "id": "plan-detail-messages-label",
+          "text": "SMS",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "plan-detail-messages-value",
+          "text": "Not included",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "plan-detail-validity",
+      "children": [
+        {
+          "type": "text",
+          "id": "plan-detail-validity-label",
+          "text": "Runs for",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "plan-detail-validity-value",
+          "text": "30 days once it starts",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "row",
+      "id": "plan-detail-zone",
+      "children": [
+        {
+          "type": "text",
+          "id": "plan-detail-zone-label",
+          "text": "Works in",
+          "style": "body_medium",
+          "color": "on_surface_variant"
+        },
+        {
+          "type": "text",
+          "id": "plan-detail-zone-value",
+          "text": "Turkey",
+          "style": "body_medium",
+          "color": "on_surface"
+        }
+      ],
+      "spacing": 8
+    },
+    {
+      "type": "banner",
+      "id": "plan-detail-activation",
+      "text": "Starts counting when you first connect in Turkey, not when you buy it."
+    },
+    {
+      "type": "button",
+      "id": "plan-detail-buy",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Buy for $12",
+      "action": {
+        "type": "buy_plan",
+        "planId": "tr-10gb-30d"
+      }
+    },
+    {
+      "type": "bottom_nav",
+      "id": "shell-nav",
+      "items": [
+        {
+          "label": "Home",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://home"
+          },
+          "icon": {
+            "paths": [
+              "M3 10.5 12 3l9 7.5V21H3z"
+            ]
+          }
+        },
+        {
+          "label": "Plans",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://plans"
+          },
+          "icon": {
+            "paths": [
+              "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
+              "M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"
+            ]
+          },
+          "selected": true
+        },
+        {
+          "label": "Orders",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://orders"
+          },
+          "icon": {
+            "paths": [
+              "M4 5h16v14H4z",
+              "M8 9h8M8 13h5"
+            ]
+          }
+        },
+        {
+          "label": "Profile",
+          "action": {
+            "type": "navigate",
+            "deeplink": "app://profile"
+          },
+          "icon": {
+            "paths": [
+              "M8 8a4 4 0 1 0 8 0a4 4 0 1 0 -8 0",
+              "M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "spacing": 12
+}
