@@ -103,6 +103,66 @@ class TrafficChainTest {
         }
     }
 
+    // A BROKER THAT IS NOT BACK YET MUST NOT KILL THE LOOP (`B-107`, second half).
+    //
+    // The first version of the recovery reconnected from inside the catch block, and
+    // `BrokerConnection.reconnect` dials in a constructor — so a broker that had gone away and not
+    // yet come back threw out of the catch, out of the `while`, and took the coroutine with it.
+    //
+    // On the contour that read like a fix: the five-a-second storm of `EOFException` stopped after
+    // exactly one line. It stopped because there was nothing left to poll. A consumer that dies
+    // quietly and one that recovered are indistinguishable in a log.
+    @Test
+    fun `a consumer whose broker stays down keeps trying instead of dying`() =
+        runBlocking {
+            val isolated = BrokerHarness.isolated()
+            val brokerConnection = isolated.broker()
+            try {
+                counters.grant(subscriberId, UsageCounter.Kind.DATA, 10_000)
+
+                val partition =
+                    isolated
+                        .connect()
+                        .metadata(listOf(TopicName(EventTopics.USAGE)))
+                        .topics
+                        .single()
+                        .partitions
+                        .first()
+                        .partition
+
+                val job =
+                    UsageConsumer(
+                        brokerConnection,
+                        ConsumeUsageUseCase(counters),
+                        push,
+                        cards,
+                        roaming,
+                        roamingCards,
+                        clock,
+                        json,
+                    ).start(scope, partition, ru.workinprogress.booblik.Offset.ZERO)
+
+                // THE BROKER GOES AWAY AND STAYS AWAY. Not a replaced pod — a port that answers
+                // nothing, which is the state a pod is in for the seconds between the old one dying
+                // and the new one listening. Every reconnect attempt in that window fails.
+                isolated.close()
+
+                // Many poll intervals, so this is not one lucky tick: the loop must have failed to
+                // poll, failed to reconnect, and gone round again, repeatedly.
+                kotlinx.coroutines.delay(3.seconds)
+
+                assertTrue(
+                    job.isActive,
+                    "the consumer died while its broker was down — a recovery that throws out of the " +
+                        "catch block it lives in takes the loop with it",
+                )
+
+                job.cancel()
+            } finally {
+                brokerConnection.close()
+            }
+        }
+
     // THE CHAIN STARTS AT THE END OF THE LOG, WHICH IT SAID IT DID AND DID NOT (`B-108`).
     //
     // The comment in `UsageChain` has always been right — replaying a day of invented usage on every
@@ -324,7 +384,7 @@ class TrafficChainTest {
 
                 val simulator =
                     TrafficSimulator(
-                        producer,
+                        BrokerHarness.broker(),
                         subscribers = { listOf(subscriberId) },
                         travelling = { roaming.travelling() },
                         // NO ARRIVALS IN THIS TEST, and the empty list is the honest way to say so:
@@ -502,7 +562,7 @@ class TrafficChainTest {
                     endOf(connection, EventTopics.USAGE)
 
                 TrafficSimulator(
-                    producer,
+                    BrokerHarness.broker(),
                     // Nobody with a home counter and nobody travelling, so every event this tick
                     // produces is an arrival and the assertion below needs no subtraction.
                     subscribers = { emptyList() },

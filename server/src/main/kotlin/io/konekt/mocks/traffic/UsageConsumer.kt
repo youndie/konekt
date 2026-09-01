@@ -75,7 +75,24 @@ class UsageConsumer(
                 } catch (cancellation: kotlinx.coroutines.CancellationException) {
                     throw cancellation
                 } catch (failure: Exception) {
-                    consumer = recoverFrom(failure, consumer, topic, partition) { brokerGeneration = it }
+                    // THE RECOVERY NEEDS A RECOVERY, and the live contour is what said so. A broker
+                    // pod is replaced, this loop finds the dead socket on its very next poll — 200 ms
+                    // later, while the new pod is still starting — and `BrokerConnection.reconnect`
+                    // dials in a constructor and THROWS. Thrown from inside a catch block, that
+                    // leaves the try/catch, leaves the while, and kills the coroutine: the storm of
+                    // EOFs stops, which reads like a fix, and the consumer is simply gone.
+                    //
+                    // Observed exactly once in production, at 07:23:59, and it is why "the next
+                    // caller asks again" only works if there IS a next caller.
+                    consumer =
+                        try {
+                            recoverFrom(failure, consumer, topic, partition) { brokerGeneration = it }
+                        } catch (cancellation: kotlinx.coroutines.CancellationException) {
+                            throw cancellation
+                        } catch (stillDown: Exception) {
+                            logger.warn("the broker is not back yet; retrying in {}", pollInterval, stillDown)
+                            consumer
+                        }
                 }
                 delay(pollInterval)
             }

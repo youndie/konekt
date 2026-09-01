@@ -44,7 +44,7 @@ class TrafficChain(
         logger.info("DEV ONLY — traffic simulator starting, arrivals after {}", dormantFor)
 
         return TrafficSimulator(
-            producer = connection.producer,
+            broker = connection,
             // Only subscribers who have something to spend. Publishing for anyone else produces
             // events the consumer correctly ignores, and a simulator producing only ignored events
             // looks exactly like one that is not running.

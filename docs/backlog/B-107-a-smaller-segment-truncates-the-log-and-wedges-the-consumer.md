@@ -75,6 +75,30 @@ look identical from outside.
 this side raises the second from the outbound channel. The first version matched `IOException` alone
 and would have worked in production and been exercised by nothing — the test is what said so.
 
+## The fix had the defect it was fixing, and the contour said so
+
+`v0.1.27` went out, the broker was restarted under it deliberately, and the storm of `EOFException`
+stopped after **exactly one line**:
+
+```
+07:23:59.709 WARN io.konekt.mocks.traffic.consumer - the broker connection broke at offset 529465
+```
+
+No `reconnected to the broker` followed it, and the broker still read `conns 0`. The recovery had run
+once and **killed the loop**: `BrokerConnection.reconnect` dials in a constructor, the new pod was
+still starting, and an exception thrown from inside a `catch` block leaves the `try`, leaves the
+`while`, and takes the coroutine with it. The comment saying "the next caller asks again" was true
+only if there was a next caller.
+
+That reads like a fix in a log — the noise stops — which is why it needed the contour rather than a
+test to find. **A consumer that dies quietly and a consumer that recovered look identical.**
+
+And the same lesson found a THIRD instance while fixing it: `TrafficSimulator` resolved its
+`TopicHandle` once before its loop, so a replaced broker left it publishing into a dead socket for
+ever — never dying, never recovering, one `a traffic tick failed` per interval in a mock nobody
+watches. It resolves the handle inside the loop now, on a generation change, and it awaits its own
+sends rather than flushing a producer it did not choose.
+
 ## Proved by mutation
 
 | Mutation | Result |
@@ -82,6 +106,7 @@ and would have worked in production and been exercised by nothing — the test i
 | control | 128 tests, green |
 | the loop stops recognising a finished connection | `TrafficChainTest > a consumer whose connection dies…` FAILED |
 | `isFinished` back to `IOException` alone | that test **and both** `BrokerReconnectTest` recovery tests FAILED |
+| reconnecting straight from the catch block, as `v0.1.27` shipped | `TrafficChainTest > a consumer whose broker stays down…` FAILED |
 
 `BrokerReconnectTest` covers the mechanism; `TrafficChainTest` covers **the running loop**, started
 with `start()` and broken underneath, because every test of the mechanism would have stayed green

@@ -1,11 +1,13 @@
 package io.konekt.mocks.traffic
 
+import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.Travelling
 import io.konekt.feature.roaming.server.domain.Zones
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -14,7 +16,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Producer
+import ru.workinprogress.booblik.net.client.TopicHandle
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -30,7 +32,12 @@ import kotlin.time.Instant
 // The rate is configuration and not a die: a demonstration that moves a counter one time in ten is a
 // demonstration that fails while somebody is watching.
 class TrafficSimulator(
-    private val producer: Producer,
+    // THE HOLDER, NOT THE PRODUCER (`B-107`). This was a `Producer`, resolved once, and its
+    // `TopicHandle` was resolved once more before the loop — so a replaced broker left the simulator
+    // publishing into a dead socket for ever. It never died and it never came back, which is the
+    // quietest of the three shapes this defect took: one `a traffic tick failed` per interval, at
+    // WARN, in a mock nobody watches.
+    private val broker: BrokerConnection,
     private val subscribers: suspend () -> List<String>,
     // Trips already under way. Deliberately NOT "everyone holding a roaming package": a dormant
     // package must stay dormant until somebody starts it, or the state this feature exists to show —
@@ -72,9 +79,19 @@ class TrafficSimulator(
 
     fun start(scope: CoroutineScope): Job =
         scope.launch {
-            val topic = producer.topic(TopicName(EventTopics.USAGE))
+            var generation = broker.generation
+            var topic: TopicHandle? = null
             while (isActive) {
                 try {
+                    // THE HANDLE IS RESOLVED INSIDE THE LOOP, and re-resolved whenever the socket
+                    // under it has been replaced — by this loop or by the usage consumer, which
+                    // shares the same broker and usually notices first. A `TopicHandle` wraps the
+                    // `Producer` it came from, so one taken before a reconnect is as dead as the
+                    // socket it was made on.
+                    if (topic == null || broker.generation != generation) {
+                        generation = broker.generation
+                        topic = broker.producer.topic(TopicName(EventTopics.USAGE))
+                    }
                     tick(topic)
                 } catch (cancellation: kotlinx.coroutines.CancellationException) {
                     throw cancellation
@@ -82,12 +99,25 @@ class TrafficSimulator(
                     // A tick that failed is a tick, not the end of the simulator. The broker being
                     // briefly away is the ordinary case here.
                     logger.warn("a traffic tick failed", failure)
+                    topic = null
+                    if (BrokerConnection.isFinished(failure)) {
+                        // Best effort, and the loop must survive it failing: a broker that has gone
+                        // and not yet come back cannot be dialled, and the next interval is when to
+                        // try again. A reconnect thrown from inside this block would take the
+                        // simulator with it — which is exactly what it did to the consumer.
+                        try {
+                            generation = broker.reconnect(generation)
+                        } catch (stillDown: Exception) {
+                            logger.warn("the broker is not back yet; retrying in {}", interval, stillDown)
+                        }
+                    }
                 }
                 delay(interval)
             }
         }
 
-    suspend fun tick(topic: ru.workinprogress.booblik.net.client.TopicHandle): Int {
+    suspend fun tick(topic: TopicHandle): Int {
+        val sent = mutableListOf<kotlinx.coroutines.Deferred<*>>()
         val ids = subscribers()
         ids.forEach { subscriberId ->
             // ONE EVENT PER KIND, and all three keyed by the subscriber — so every event about one
@@ -99,10 +129,11 @@ class TrafficSimulator(
             // consumer finds nothing to decrement and returns. A roaming package holder gets no
             // minutes event because they have no minutes counter, not because this asked.
             usageAmounts.forEach { (kind, units) ->
-                topic.send(
-                    usageEvent(subscriberId, Zones.HOME, kind, units).toByteArray(),
-                    subscriberId.toByteArray(),
-                )
+                sent +=
+                    topic.send(
+                        usageEvent(subscriberId, Zones.HOME, kind, units).toByteArray(),
+                        subscriberId.toByteArray(),
+                    )
             }
         }
         // The same event with a zone on it. One code path publishes both, so a roaming decrement
@@ -113,10 +144,11 @@ class TrafficSimulator(
             // DATA ONLY, and that is the catalogue's own answer rather than a simplification here: a
             // roaming package includes no minutes and no messages, which its detail frame says out
             // loud. Sending them would spend a home allowance while the subscriber is abroad.
-            topic.send(
-                usageEvent(trip.subscriberId, trip.zone, UsageKinds.DATA, megabytesPerTick).toByteArray(),
-                trip.subscriberId.toByteArray(),
-            )
+            sent +=
+                topic.send(
+                    usageEvent(trip.subscriberId, trip.zone, UsageKinds.DATA, megabytesPerTick).toByteArray(),
+                    trip.subscriberId.toByteArray(),
+                )
         }
 
         // ARRIVALS, after the trips already under way and before the flush. One megabyte per package,
@@ -130,13 +162,22 @@ class TrafficSimulator(
         // nothing about the path.
         val arrivals = awaitingArrival(clock.now() - dormantFor)
         arrivals.forEach { arrival ->
-            topic.send(
-                usageEvent(arrival.subscriberId, arrival.zone, UsageKinds.DATA, ARRIVAL_MB).toByteArray(),
-                arrival.subscriberId.toByteArray(),
-            )
+            sent +=
+                topic.send(
+                    usageEvent(arrival.subscriberId, arrival.zone, UsageKinds.DATA, ARRIVAL_MB).toByteArray(),
+                    arrival.subscriberId.toByteArray(),
+                )
         }
 
-        producer.flush()
+        // AWAITED, NOT FLUSHED, and the difference is which producer. A tick is handed a
+        // `TopicHandle`, which wraps a `Producer` it does not expose — so `flush()` had to be called
+        // on some producer this method chose for itself, and after `B-107` gave this class the
+        // holder that was a DIFFERENT producer from the handle's. Records went out on one connection
+        // and the flush waited on another; nothing arrived and two tests said so.
+        //
+        // Awaiting what this tick actually sent needs no such choice, and it is the same wait: the
+        // deferred completes when the broker has answered for the record.
+        sent.awaitAll()
         return ids.size * usageAmounts.size + trips.size + arrivals.size
     }
 
