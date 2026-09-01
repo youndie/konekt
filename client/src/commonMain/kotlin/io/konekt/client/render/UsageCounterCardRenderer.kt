@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,9 +61,9 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                 } else {
                     Modifier
                         .fillMaxWidth()
-                        .clip(surface.shape ?: RoundedCornerShape(20.dp))
+                        .clip(surface.shape ?: CardGeometry.Shape)
                         .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                        .padding(16.dp)
+                        .padding(CardGeometry.Inset)
                 },
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

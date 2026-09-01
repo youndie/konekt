@@ -99,6 +99,10 @@ class ScreenshotCasesTest {
             // looking at the running application while this suite stayed green.
             "AppFrame - App home",
             "AppFrame - App home Dark",
+            // NO DARK VARIANT, and that is the one thing this frame is not about. It exists to show
+            // two different KINDS of card with their left edges side by side (`B-109`), and a second
+            // copy of it in the other palette photographs the same edges twice.
+            "AppFrame - App home wide",
             "AppFrame - App plans",
             "AppFrame - App plans Dark",
             "AppFrame - App orders",

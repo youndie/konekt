@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,7 +42,7 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
     ) {
         val designSystem = LocalKompotDesignSystem.current
         val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
-        val shape = surface.shape ?: RoundedCornerShape(20.dp)
+        val shape = surface.shape ?: CardGeometry.Shape
 
         val soldOut = component.state == PlanStates.SOLD_OUT
         val loading = component.state == PlanStates.LOADING
@@ -65,7 +64,7 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                         } else {
                             Modifier
                         },
-                    ).padding(16.dp),
+                    ).padding(CardGeometry.Inset),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(

@@ -162,6 +162,17 @@ private fun App(
 @Composable
 fun AppHome() = App("home-screen")
 
+// THE HOME SCREEN IN A DESKTOP WINDOW, and it is here because `B-109` was invisible without a frame
+// that puts two DIFFERENT kinds of card next to each other and shows their left edges.
+//
+// The allowance block is a `surface` and the travel package under it is a `usage_counter_card`; they
+// were inset by 20 and 16, because each renderer spelled its own number, and side by side that is a
+// step in a line that should be straight. At a phone's width it is four pixels and easy to argue
+// with; at a window's width the same four pixels sit under a much longer line and are not.
+@ViddikScreenshot(name = "App home wide", group = "AppFrame", width = 1100, height = 1000)
+@Composable
+fun AppHomeWide() = App("home-screen")
+
 @ViddikScreenshot(name = "App plans", group = "AppFrame", width = APP_WIDTH, height = APP_HEIGHT, darkVariant = true)
 @Composable
 fun AppPlans() = App("plans-screen")

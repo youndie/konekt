@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -115,13 +114,13 @@ class UnknownBlockRenderer(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(surface.shape ?: RoundedCornerShape(20.dp))
+                    .clip(surface.shape ?: CardGeometry.Shape)
                     .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
                     .border(
                         1.dp,
                         designSystem.resolveColor(M3Colors.Outline),
-                        surface.shape ?: RoundedCornerShape(20.dp),
-                    ).padding(16.dp),
+                        surface.shape ?: CardGeometry.Shape,
+                    ).padding(CardGeometry.Inset),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(

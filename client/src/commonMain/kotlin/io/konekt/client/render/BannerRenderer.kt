@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,10 +62,10 @@ class BannerRenderer : KompotComponentRenderer<BannerComponent> {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(surface.shape ?: RoundedCornerShape(20.dp))
+                    .clip(surface.shape ?: CardGeometry.Shape)
                     .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                    .border(1.dp, designSystem.resolveColor(accent), surface.shape ?: RoundedCornerShape(20.dp))
-                    .padding(16.dp),
+                    .border(1.dp, designSystem.resolveColor(accent), surface.shape ?: CardGeometry.Shape)
+                    .padding(CardGeometry.Inset),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
