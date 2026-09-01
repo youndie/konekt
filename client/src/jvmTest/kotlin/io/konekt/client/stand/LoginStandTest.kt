@@ -191,6 +191,17 @@ class LoginStandTest {
                     .isNotEmpty()
             }
 
+            // AND THE REFUSED CODE IS GONE FROM THE FIELD. Stated rather than relied upon: the lines
+            // below type the real code into the same field, so a field that kept "000000" would send
+            // twelve digits and this test would fail three steps later with a wrong-code message —
+            // which is exactly what it did when `B-111` stopped the frame nulling the screen between
+            // fetches. `KonektFormScreen` remembers its controller by FORM ID, so nothing unmounted
+            // it any more; `KonektScreenSource` keys the form on the server's answer for this reason.
+            assertTrue(
+                onAllNodesWithText("000000").fetchSemanticsNodes().isEmpty(),
+                "the refused code is still in the field, so the real one will be appended to it",
+            )
+
             // THE REAL CODE, out of the SMSC mock's log. Not `/api/v1/dev/otp`: this test is what
             // proves the application no longer needs that route, so using it here would prove the
             // opposite.

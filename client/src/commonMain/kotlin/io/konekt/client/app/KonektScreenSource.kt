@@ -1,6 +1,7 @@
 package io.konekt.client.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
@@ -186,51 +187,68 @@ class KonektScreenSource(
             // below is what every other screen gets, and a form drawn with it holds nothing: the
             // inputs render, accept typing, and lose it.
             is Screen.Form -> {
-                KonektFormScreen(
-                    response = screen.response,
-                    registry = registry,
-                    // THE FETCHER THE APPLICATION FORGOT. This read `null` while the implementation
-                    // below was written, commented and called from nowhere, so the custom package's
-                    // price sat at `$0` whatever anybody chose — the server recomputed correctly and
-                    // the answer had no way back to the screen (`B-101`).
-                    //
-                    // Null when the form has no patch address, which is the login form and is correct
-                    // for it: a fetcher there would be a round trip nothing asks for.
-                    patchFetcher =
-                        patches[screen.response.schema.formId]?.let {
-                            patchFetcher(it, screen.response.schema.formId)
-                        },
-                    onAction = onAction,
-                    // SUBMITTING GOES BACK OUT THROUGH THE SAME HANDLER. The endpoint answers a
-                    // `KompotAction` — a `navigate` for the first login step, an `update_session` for
-                    // the second — and the client feeds it into the chain it already has. Nothing new
-                    // travels back and no new endpoint kind appears; that is the toolkit's own design,
-                    // and the reason a form submit needs no machinery of its own here.
-                    submit = { formId, values ->
-                        val address =
-                            submits[formId]
-                                ?: error("no address for form \"$formId\" — a submit button posting nowhere")
+                // KEYED ON THE ANSWER, and `B-111` is why it has to be. `KonektFormScreen` remembers
+                // its `FormController` by FORM ID, so a form refetched under the same id keeps
+                // whatever was typed into it — which was invisible while the frame nulled the screen
+                // between fetches and tore the whole subtree down. Now that the previous screen stays
+                // on screen while the next is fetched, nothing unmounts it, and a login refused for a
+                // wrong code came back with the wrong code still in the field.
+                //
+                // The rule this states is the one a subscriber would expect: **the form is rebuilt
+                // when the server's answer changes.** An identical answer refetched keeps what was
+                // typed, which is right — that is the same screen — and an answer carrying a refusal
+                // is a different one, which is why it clears.
+                key(screen.response) {
+                    KonektFormScreen(
+                        response = screen.response,
+                        registry = registry,
+                        // THE FETCHER THE APPLICATION FORGOT. This read `null` while the implementation
+                        // below was written, commented and called from nowhere, so the custom package's
+                        // price sat at `$0` whatever anybody chose — the server recomputed correctly and
+                        // the answer had no way back to the screen (`B-101`).
+                        //
+                        // Null when the form has no patch address, which is the login form and is correct
+                        // for it: a fetcher there would be a round trip nothing asks for.
+                        patchFetcher =
+                            patches[screen.response.schema.formId]?.let {
+                                patchFetcher(it, screen.response.schema.formId)
+                            },
+                        onAction = onAction,
+                        // SUBMITTING GOES BACK OUT THROUGH THE SAME HANDLER. The endpoint answers a
+                        // `KompotAction` — a `navigate` for the first login step, an `update_session` for
+                        // the second — and the client feeds it into the chain it already has. Nothing new
+                        // travels back and no new endpoint kind appears; that is the toolkit's own design,
+                        // and the reason a form submit needs no machinery of its own here.
+                        submit = { formId, values ->
+                            val address =
+                                submits[formId]
+                                    ?: error("no address for form \"$formId\" — a submit button posting nowhere")
 
-                        val answer =
-                            json.decodeKompotAction(
-                                http
-                                    .post(address) {
-                                        contentType(ContentType.Application.Json)
-                                        setBody(
-                                            json.encodeToString(
-                                                FormPatchRequest.serializer(),
-                                                // `fieldId` is what CHANGED, and a submit changes
-                                                // nothing — the form is the subject. Sending the form's
-                                                // own id rather than inventing a field keeps the shape
-                                                // one thing rather than two.
-                                                FormPatchRequest(formId = formId, fieldId = formId, values = values),
-                                            ),
-                                        )
-                                    }.bodyAsText(),
-                            )
-                        onAction(answer)
-                    },
-                )
+                            val answer =
+                                json.decodeKompotAction(
+                                    http
+                                        .post(address) {
+                                            contentType(ContentType.Application.Json)
+                                            setBody(
+                                                json.encodeToString(
+                                                    FormPatchRequest.serializer(),
+                                                    // `fieldId` is what CHANGED, and a submit changes
+                                                    // nothing — the form is the subject. Sending the form's
+                                                    // own id rather than inventing a field keeps the shape
+                                                    // one thing rather than two.
+                                                    FormPatchRequest(
+                                                        formId = formId,
+                                                        fieldId = formId,
+                                                        values = values,
+                                                    ),
+                                                ),
+                                            )
+                                        }.bodyAsText(),
+                                )
+                            onAction(answer)
+                        },
+                    )
+                }
             }
 
             is Screen.Tree -> {
