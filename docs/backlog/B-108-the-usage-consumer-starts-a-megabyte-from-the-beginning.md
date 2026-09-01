@@ -86,6 +86,55 @@ Three things were needed to make that test able to fail at all, and each is wort
   helper. A regex that replaced every instance of the shape replaced the probe too, and the assertion
   then compared the end against the end and passed regardless.
 
+## Verified on the contour, by measurement
+
+Not by reading the fix. The server was restarted twice, 81 seconds apart, and the offset it announces
+starting from was read each time:
+
+```
+usage consumer starting on partition 0 from offset 531505
+usage consumer starting on partition 0 from offset 531841
+```
+
+**336 records in 81 seconds — 4.1/s**, against the broker's own `in 5 rec/s` for a server that was
+down for part of that window. The starting offset tracks the live end of the log in real time, which
+is the property the old code could not have: pinned one megabyte in from the start, it would have
+answered nearly the same number both times.
+
+## The load-bearing sentence this falsified
+
+`docs/services/konekt-broker.md` justified a six-hour retention bound with:
+
+> Retention costs this product nothing … the usage consumer starts from the END of the log, so no
+> record here is ever read a second time.
+
+**That was false when it was written, and it is why six hours looked safe.** A retention bound was
+not a bound on what gets applied; it was a bound on how much gets replayed at the next restart. The
+document now carries the correction and the measurement, and the same section says why "now" must be
+asked of METADATA rather than of a fetch.
+
+## And a guard so it cannot come back
+
+`PollIsNotAPositionTest` refuses any Kotlin source in the repository that reads a `position` out of a
+`poll()`. The behaviour is already guarded where it matters — `TrafficChainTest` publishes before the
+chain starts — and this second, cheaper guard exists because **the idiom spreads**: it looks right,
+it works on a short log, and all four instances were written by somebody who had just read another.
+
+Its allow-list is two files, and a second test asserts every exemption still contains the shape it
+was granted for. An entry that stops earning its keep is how a hole in a guard widens: the file goes
+unguarded and nothing says so.
+
+| Mutation | Result |
+|---|---|
+| the idiom returns to `UsageChain` | `nothing reads a position out of a poll` FAILED |
+| an exemption for a file that no longer breaks the rule | `every exemption still contains the shape…` FAILED |
+| the matcher stops matching anything | `every exemption still contains the shape…` FAILED — the exemption test doubles as the matcher's vacuity floor |
+
+The guard's first run failed on a file nobody expected: a **comment** in `OutboxRelayTest` explaining
+the mistake by spelling it out. The comment was reworded rather than the file exempted — a guard whose
+allow-list grows to hold explanations of the thing it forbids is a guard that ends up forbidding
+nothing.
+
 ## Anchors
 
 | What | Where |
@@ -95,3 +144,5 @@ Three things were needed to make that test able to fail at all, and each is wort
 | The isolated broker | `server/src/test/kotlin/io/konekt/events/BrokerHarness.kt` |
 | What made it urgent | [B-100](B-100-the-broker-keeps-every-event-for-ever.md) |
 | Found while doing | [B-107](B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) |
+| The guard against a fifth instance | `server/src/test/kotlin/io/konekt/events/PollIsNotAPositionTest.kt` |
+| The sentence it falsified | [konekt-broker](../services/konekt-broker.md) §7 |

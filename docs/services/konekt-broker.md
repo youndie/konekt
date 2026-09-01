@@ -114,6 +114,14 @@ smaller than a segment, which is a pair of plausible numbers that does nothing.
 **Retention costs this product nothing**, and that is what makes six hours safe: the usage consumer
 starts from the END of the log, so no record here is ever read a second time. See §8.
 
+That sentence was **false when it was written**, and it was the reason six hours looked safe. Until
+[B-108](../backlog/B-108-the-usage-consumer-starts-a-megabyte-from-the-beginning.md) the consumer
+started one megabyte in from the START of the log — measured on the stage deployment, offset 11915
+against a log ending at 374473 — so every restart replayed what retention was about to delete, and a
+retention bound was not a bound on what gets applied but a bound on how much gets replayed. It reads
+the high watermark from METADATA now, and `TrafficChainTest` publishes *before* the chain starts to
+hold it to that.
+
 The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default `9092`) in
 `server/src/main/kotlin/io/konekt/KonektConfig.kt`.
 
@@ -132,6 +140,12 @@ The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default
   wherever the broker is **now** rather than from zero, because replaying a day of simulated usage on
   every restart would empty every counter in the product.
 
+  **"Now" is asked of METADATA, and asking it any other way is how `B-108` happened.** A fetch cannot
+  answer it: one poll from offset zero lands one `maxBytes` in from the start, which equals the end
+  only while the log is shorter than a single poll — true of every test in this build and of no
+  deployment that has been running a day. It also stops working outright once retention moves the
+  log's start above zero, because a fetch below the start is `OFFSET_OUT_OF_RANGE`.
+
   Which means **usage published while the server is down is not applied when it comes back.** For a
   simulated feed that is the right answer; for a real one it is the first thing that would have to
   change, and what it would take is a position this application stores itself — a table, updated per
@@ -149,6 +163,16 @@ The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default
   mock and starts behind `SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with
   the flag off — the default, and what the chart requires above one replica — **no process in this
   build read the `usage` topic at all**: the broker accepted events and nobody applied them.
+- **A broker restart used to be permanent.** `BooblikConnection` opens one socket in its constructor
+  and never dials again — the position and the socket both live on the client, which is the same
+  decision that removes the coordinator — so a replaced pod left the consumer, the outbox relay and
+  the simulator all holding a dead socket until somebody restarted the server.
+  [B-107](../backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md) gave
+  `BrokerConnection` a generation and a `reconnect`, and every holder of a `Producer` or a
+  `TopicHandle` re-resolves it when that number moves. The part worth remembering is what the first
+  fix got wrong: reconnecting from inside the `catch` block threw when the replacement pod was still
+  starting, which left the `while` loop and killed the consumer — and in a log that reads like a
+  success, because the noise stops either way.
 - **The producer is an accumulator with a coroutine of its own**, held per process rather than per
   call: it batches for a few milliseconds before sending. Creating one per event would give up the
   largest factor in the broker and leave a coroutine behind on every publish. The figure booblik

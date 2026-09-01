@@ -663,11 +663,13 @@ class TrafficChainTest {
 
     // WHERE A TOPIC ALREADY STANDS, asked of METADATA.
     //
-    // Every one of these used to be `Consumer(...).let { it.poll(); it.position }`, which is one
-    // `maxBytes` in from the START of the log and only equals the end while the log is short. The
-    // shared broker in this JVM makes that a matter of what the other tests published — and the
-    // moment one of them padded the log past a megabyte (`B-108`'s own test), two tests here started
-    // reading from the wrong place. It is the same mistake `UsageChain` shipped with.
+    // Every one of these used to find that number by consuming from the start of the log and asking
+    // the consumer where it had got to — which is one `maxBytes` in, and only equals the end while
+    // the log is short. The shared broker in this JVM makes that a matter of what the other tests
+    // published, and the moment one of them padded the log past a megabyte (`B-108`'s own test), two
+    // tests started reading from the wrong place. It is the same mistake `UsageChain` shipped with,
+    // and `PollIsNotAPositionTest` is what stops it coming back — including through a comment that
+    // spells it out, which is why this one does not.
     private suspend fun endOf(
         connection: ru.workinprogress.booblik.net.client.BooblikConnection,
         topic: String,
