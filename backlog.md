@@ -43,9 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (3)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-111](docs/backlog/B-111-navigation-blanks-the-screen-before-the-tree-arrives.md) `[ ]` | Every navigation blanks the whole window until the next tree arrives | P1 | M | - |
+| [B-110](docs/backlog/B-110-the-tabs-have-no-icons.md) `[ ]` | The four tabs are words with no icons, because kompot has no icon vocabulary | P2 | M | - |
+| [B-109](docs/backlog/B-109-the-allowance-card-pads-twice.md) `[ ]` | The allowance card has an extra inset around the three counters | P3 | S | - |
 
 ## Closed (108)
 
