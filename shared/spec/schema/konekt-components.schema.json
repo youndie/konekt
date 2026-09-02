@@ -13,6 +13,7 @@
       "icon": "#/$defs/KompotComponentIcon",
       "order_row": "#/$defs/KompotComponentOrderRow",
       "plan_card": "#/$defs/KompotComponentPlanCard",
+      "screen_header": "#/$defs/KompotComponentScreenHeader",
       "skeleton": "#/$defs/KompotComponentSkeleton",
       "slider_input": "#/$defs/KompotComponentSliderInput",
       "snackbar": "#/$defs/KompotComponentSnackbar",
@@ -392,6 +393,47 @@
         "id",
         "title",
         "priceText"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentScreenHeader": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "screen_header",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "screen_header"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "$ref": "kompot-core.schema.json#/$defs/KompotAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "closes": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "title"
       ],
       "additionalProperties": true
     },

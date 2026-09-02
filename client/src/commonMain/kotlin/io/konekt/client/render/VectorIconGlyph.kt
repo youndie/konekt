@@ -81,3 +81,11 @@ internal fun VectorIconGlyph(
         }
     }
 }
+
+// THE SHELL'S OWN GLYPHS, on the 24-grid every icon in this build is drawn on: the canvas's back
+// chevron and its close cross, the same strokes its buttons use. Here rather than in the shell, so
+// the header a screen carries (`B-115`) and the chevron the shell draws without one are one drawing.
+object ShellGlyphs {
+    val BACK = VectorIcon(paths = listOf("M15 18l-6-6 6-6"))
+    val CLOSE = VectorIcon(paths = listOf("M6 6l12 12M18 6L6 18"))
+}

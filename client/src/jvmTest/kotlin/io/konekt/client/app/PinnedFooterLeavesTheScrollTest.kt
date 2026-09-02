@@ -5,6 +5,7 @@ import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BottomNavComponent
 import io.konekt.components.BottomNavItem
+import io.konekt.components.ScreenHeaderComponent
 import io.konekt.components.SurfaceComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -64,5 +65,29 @@ class PinnedFooterLeavesTheScrollTest {
 
         assertNull(shell.footer)
         assertEquals(listOf(card), (shell.content as ColumnComponent).children)
+    }
+
+    // THE HEADER COMES OUT THE SAME WAY (`B-115`): a screen's own back control and title, drawn by
+    // the shell in the chevron's place. One at most, for the footer's reason.
+    @Test
+    fun `the screen header comes out with the bar and the footer`() {
+        val header = ScreenHeaderComponent(id = "header", title = "Install eSIM", action = NavigateAction("app://back"))
+        val shell = ColumnComponent(id = "root", children = listOf(header, body, footer, bar)).withoutShell()
+
+        assertEquals(header, shell.header)
+        assertEquals(footer, shell.footer)
+        assertEquals(bar, shell.nav)
+        assertEquals(listOf(body), (shell.content as ColumnComponent).children)
+    }
+
+    @Test
+    fun `two headers are drawn where they were sent`() {
+        val header = ScreenHeaderComponent(id = "header", title = "One")
+        val tree = ColumnComponent(id = "root", children = listOf(header, header.copy(id = "header-2"), body))
+
+        val shell = tree.withoutShell()
+
+        assertNull(shell.header)
+        assertEquals(tree, shell.content)
     }
 }

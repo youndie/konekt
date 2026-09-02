@@ -16,6 +16,7 @@ import io.konekt.components.EsimQrComponent
 import io.konekt.components.IconComponent
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.PlanCardComponent
+import io.konekt.components.ScreenHeaderComponent
 import io.konekt.components.SkeletonComponent
 import io.konekt.components.SliderInputComponent
 import io.konekt.components.SnackbarComponent
@@ -75,6 +76,7 @@ val konektRenderers: Map<KClass<out KompotComponent>, KompotComponentRenderer<ou
         // into the `FormController` it is handed rather than only reading the component.
         SliderInputComponent::class to SliderInputRenderer(),
         IconComponent::class to IconRenderer(),
+        ScreenHeaderComponent::class to ScreenHeaderRenderer(),
         // REPLACES the toolkit's entry, which is why order matters below: `kompotCoreRenderers +
         // konektRenderers` puts ours last and last wins. The toolkit's default draws nothing when the
         // server named no fallback, and a hole is indistinguishable from a screen that failed to load.

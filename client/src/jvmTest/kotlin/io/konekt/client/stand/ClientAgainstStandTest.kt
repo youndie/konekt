@@ -316,7 +316,10 @@ class ClientAgainstStandTest {
                 // on a phone-shaped frame, so its controls are below the fold and a press without
                 // this lands on nothing — which is `B-74` costing something concrete rather than
                 // looking untidy.
-                onNodeWithText(control).performScrollTo().performClick()
+                // NOT SCROLLED TO: the way forward is the pinned footer since `B-115`, outside the
+                // scroll and always on screen — which is the point of pinning it, and which a
+                // `performScrollTo` refuses to believe.
+                onNodeWithText(control).performClick()
             }
 
             // THE HOME SCREEN, which is where a finished install leaves somebody. Waited for by its

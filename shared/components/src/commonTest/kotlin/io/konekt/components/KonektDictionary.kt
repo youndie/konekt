@@ -133,6 +133,13 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                 icon = VectorIcon(paths = listOf("M5 12l5 5L20 7")),
                 tone = MessageTones.INFO,
             ),
+        "screen_header" to
+            ScreenHeaderComponent(
+                id = "esim-wizard-header",
+                title = "Install eSIM",
+                action = NavigateAction("app://home"),
+                closes = true,
+            ),
     )
 
 // The application's own Json: the toolkit's core and standard sets plus this dictionary. Assembled

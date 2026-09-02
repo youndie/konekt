@@ -8,7 +8,6 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
-import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.github.youndie.kompot.wizard.core.WizardSession
 import io.github.youndie.kompot.wizard.core.WizardTransition
@@ -17,7 +16,9 @@ import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.EsimStatuses
 import io.konekt.components.MessageTones
+import io.konekt.components.ScreenHeaderComponent
 import io.konekt.components.StepMeterComponent
+import io.konekt.components.konektWalk
 import io.konekt.feature.esim.server.domain.EsimOrderDraft
 import io.konekt.feature.esim.server.domain.EsimProfile
 import io.konekt.feature.esim.server.domain.EsimRefusal
@@ -85,7 +86,7 @@ class EsimWizardScreenTest {
     // something that is not there, and confirming MOVES the run off the only step that would have
     // shown the code once the row came back.
     //
-    // Back stays, because the copy above it tells them to go back.
+    // The way back stays, because the copy above it tells them to go back.
     @Test
     fun `the activate step offers nothing to confirm when there is no code to scan`() {
         val screen = EsimWizardScreen.build(viewAt(EsimWizardSteps.ACTIVATE, esim = null))
@@ -95,9 +96,15 @@ class EsimWizardScreenTest {
             buttons.none { it.text == "I have scanned it" },
             "the screen asked for confirmation of a scan it could not offer: ${buttons.map { it.text }}",
         )
-        // Not a screen with no controls at all, which is the other way to pass the assertion above
-        // and is a subscriber stuck on a step.
-        assertTrue(buttons.any { it.text == "Back" }, "no way off the step: ${buttons.map { it.text }}")
+        // Not a screen with no way off at all, which is the other way to pass the assertion above
+        // and is a subscriber stuck on a step. Since `B-115` the way back is the header's circle,
+        // not a pill: it has to carry the step-back transition.
+        val header = screen.all<ScreenHeaderComponent>().single()
+        assertEquals(
+            EsimWizardStepAction("wiz-1", WizardTransition.Back),
+            header.action,
+            "no way off the step: the header presses ${header.action}",
+        )
     }
 
     // The control for the control: with a profile, the same step DOES ask. Without this the
@@ -215,11 +222,7 @@ class EsimWizardScreenTest {
 
     private inline fun <reified T : KompotComponent> KompotComponent.all(): List<T> = walk().filterIsInstance<T>()
 
-    private fun KompotComponent.walk(): List<KompotComponent> =
-        listOf(this) +
-            when (this) {
-                is ColumnComponent -> children.flatMap { it.walk() }
-                is RowComponent -> children.flatMap { it.walk() }
-                else -> emptyList()
-            }
+    // THE DICTIONARY'S OWN WALK, which descends a `surface` — the forward button is inside the
+    // pinned footer since `B-115`, and a walk that stopped at columns and rows saw no button at all.
+    private fun KompotComponent.walk(): List<KompotComponent> = konektWalk()
 }

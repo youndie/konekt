@@ -1,59 +1,64 @@
 {
-    "type": "column",
-    "id": "esim-wizard",
-    "children": [
-        {
-            "type": "step_meter",
-            "id": "esim-wizard-progress",
-            "current": 3,
-            "total": 4,
-            "label": "Add an eSIM"
-        },
-        {
-            "type": "esim_qr",
-            "id": "esim-wizard-qr",
-            "payload": "LPA:1$rsp.konekt.io$AB8C0F9A",
-            "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
-            "manualCodeText": "AB8C-0F9A"
-        },
-        {
-            "type": "text",
-            "id": "esim-wizard-activate",
-            "text": "Open Settings, add an eSIM, and point the camera at this code. If the camera will not read it, type the code underneath instead."
-        },
-        {
-            "type": "row",
-            "id": "esim-wizard-controls",
-            "children": [
-                {
-                    "type": "button",
-                    "id": "esim-wizard-back",
-                    "text": "Back",
-                    "action": {
-                        "type": "esim_wizard_step",
-                        "wizardId": "749877c9-be31-4e42-a124-5eaf92dc5fa6",
-                        "transition": {
-                            "type": "back"
-                        }
-                    },
-                    "variant": "quiet"
-                },
-                {
-                    "type": "button",
-                    "id": "esim-wizard-next",
-                    "text": "I have scanned it",
-                    "action": {
-                        "type": "esim_wizard_step",
-                        "wizardId": "749877c9-be31-4e42-a124-5eaf92dc5fa6",
-                        "transition": {
-                            "type": "next"
-                        }
-                    },
-                    "variant": "primary"
-                }
-            ],
-            "spacing": 12
+  "type": "column",
+  "id": "esim-wizard",
+  "children": [
+    {
+      "type": "screen_header",
+      "id": "esim-wizard-header",
+      "title": "Scan or install",
+      "action": {
+        "type": "esim_wizard_step",
+        "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+        "transition": {
+          "type": "back"
         }
-    ],
-    "spacing": 16
+      }
+    },
+    {
+      "type": "step_meter",
+      "id": "esim-wizard-progress",
+      "current": 3,
+      "total": 4,
+      "label": "Add an eSIM"
+    },
+    {
+      "type": "esim_qr",
+      "id": "esim-wizard-qr",
+      "payload": "LPA:1$rsp.konekt.io$84721BD9",
+      "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
+      "manualCodeText": "8472-1BD9"
+    },
+    {
+      "type": "text",
+      "id": "esim-wizard-activate",
+      "text": "Open Settings, add an eSIM, and point the camera at this code. If the camera will not read it, type the code underneath instead."
+    },
+    {
+      "type": "surface",
+      "id": "esim-wizard-controls",
+      "children": [
+        {
+          "type": "button",
+          "id": "esim-wizard-next",
+          "modifiers": [
+            {
+              "type": "size",
+              "width": "Fill"
+            }
+          ],
+          "text": "I have scanned it",
+          "action": {
+            "type": "esim_wizard_step",
+            "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+            "transition": {
+              "type": "next"
+            }
+          },
+          "variant": "primary"
+        }
+      ],
+      "pinned": true
+    }
+  ],
+  "spacing": 16
 }

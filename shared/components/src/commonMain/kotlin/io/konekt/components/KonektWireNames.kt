@@ -28,4 +28,6 @@ val konektWireNames: List<String> =
         "slider_input",
         // A shape in a circle: the outcome mark over a purchase result (`B-114`).
         "icon",
+        // A screen's own back control and title, pulled out by the shell (`B-115`).
+        "screen_header",
     )

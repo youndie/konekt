@@ -3,6 +3,12 @@
   "id": "esim-wizard",
   "children": [
     {
+      "type": "screen_header",
+      "id": "esim-wizard-header",
+      "title": "Install eSIM",
+      "closes": true
+    },
+    {
       "type": "step_meter",
       "id": "esim-wizard-progress",
       "current": 1,
@@ -15,16 +21,22 @@
       "text": "An eSIM is a profile your phone downloads — there is nothing to post and nothing to swap. It takes about a minute, and you can keep using this line while it installs."
     },
     {
-      "type": "row",
+      "type": "surface",
       "id": "esim-wizard-controls",
       "children": [
         {
           "type": "button",
           "id": "esim-wizard-next",
+          "modifiers": [
+            {
+              "type": "size",
+              "width": "Fill"
+            }
+          ],
           "text": "Continue",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "476a969a-ad15-4a15-bb8f-d04afc9d7a58",
+            "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
             "transition": {
               "type": "next"
             }
@@ -32,7 +44,7 @@
           "variant": "primary"
         }
       ],
-      "spacing": 12
+      "pinned": true
     }
   ],
   "spacing": 16

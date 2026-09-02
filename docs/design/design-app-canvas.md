@@ -165,7 +165,7 @@ draws nothing.
 
 **Every type this build serves has a renderer**, and every screen is photographed. The list is
 `usage_counter_card`, `plan_card`, `esim_card`, `esim_qr`, `order_row`, `banner`, `snackbar`,
-`step_meter`, `skeleton`, `bottom_nav`, `surface`, `slider_input`, `icon` — kept in step with the code by
+`step_meter`, `skeleton`, `bottom_nav`, `surface`, `slider_input`, `icon`, `screen_header` — kept in step with the code by
 `RendererCoverageIsDocumentedTest`, which fails if this sentence and `konektRenderers` disagree.
 
 **`slider_input` is the one the canvas does not draw**, and it is worth saying rather than leaving as

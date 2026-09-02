@@ -63,6 +63,7 @@ class KonektRendererCoverageTest {
             // subscriber cannot move, which is a screen that cannot be completed.
             "slider_input",
             "icon",
+            "screen_header",
             // `surface` joined the same way `bottom_nav` did, and had to: a container the server
             // sends and the client cannot draw is not a degraded card, it is a screen with its
             // contents missing — the children would go nowhere at all.

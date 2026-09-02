@@ -48,7 +48,7 @@ Four steps, in the order they are lived, from `EsimWizardSteps`: `check` → `co
 
 | Step | What is on it | Forward button |
 |---|---|---|
-| `check` (1 of 4) | one `text`, `esim-wizard-check` — what an eSIM is and how long it takes | "Continue" (`Next`) — **and no Back**: there is nowhere to go, and a button that is always there and sometimes does nothing teaches people that buttons sometimes do nothing |
+| `check` (1 of 4) | one `text`, `esim-wizard-check` — what an eSIM is and how long it takes | "Continue" (`Next`) — and the header's cross leaves: there is no step to go back to |
 | `confirm` (2 of 4) | one `text`, `esim-wizard-confirm` — that a profile will be requested, and that the code does not expire | "Get my eSIM" (`Next`) |
 | `activate` (3 of 4) | `esim_qr` (`esim-wizard-qr`) plus a `text` telling the subscriber where to point the camera | "I have scanned it" (`Next`) |
 | `done` (4 of 4) | a `banner` "Your eSIM is ready.", an `esim_card` with the ICCID and a sentence for its status, **and the QR again** | "Done" (`Finish`) |
@@ -109,11 +109,19 @@ holding a run it cannot find would be holding a button that does nothing.
   to branch on and the sentence is the subscriber's to read, so an unfamiliar word still gets a
   sentence: "This profile is in a state this version of the app does not describe."
 
-### 4.4. The controls row
+### 4.4. The header and the way forward
 
-- Back (`esim-wizard-back`, variant `quiet`) and one forward button (`esim-wizard-next`, variant
-  `primary`), except on `check` (forward only) and `done` (`esim-wizard-finish`).
-- Every one of them carries `EsimWizardStepAction(wizardId, transition)`. **Nothing about a step's
+- **The tree opens with a `screen_header`** (`esim-wizard-header`, `B-115`): the title — *Install
+  eSIM*, or *Scan or install* on `activate` — and the one back control. On `check` it `closes` with
+  no action, so the shell's circle is a cross that leaves the flow; on `confirm` and `activate` it
+  carries `EsimWizardStepAction(wizardId, Back)`; on `done` it `closes` with `Finish`, because going
+  back from a finished flow re-issues nothing and confuses everything. There is no `Back` pill any
+  more — the pill and the shell's chevron used to go different ways with nothing to tell them apart.
+- **The way forward is a `surface` marked `pinned`** (`esim-wizard-controls`) holding one full-width
+  button: `esim-wizard-next` (`Continue`, `Get my eSIM`, `I have scanned it`) or `esim-wizard-finish`
+  (`Done`). The shell draws it above the bottom edge, outside the scroll. `activate` without a code
+  pins nothing; the header is still the way back.
+- Every control carries `EsimWizardStepAction(wizardId, transition)`. **Nothing about a step's
   meaning is assembled on the client.**
 
 ## 5. Navigation (summary)
@@ -131,7 +139,8 @@ holding a run it cannot find would be holding a button that does nothing.
   a fact about the device and says what to do next, because "could not add eSIM" is what sends
   somebody to support. Written in `MockSmDpPlus`, asserted in `MockSmDpPlusTest`.
 - **Back is never gated.** A subscriber who cannot go forward must still be able to go back; a refusal
-  that blocked both would be a wizard with no exit except closing the application.
+  that blocked both would be a wizard with no exit except closing the application. Since `B-115` the
+  way back is the header's circle rather than a pill, and it is there on every step.
 - **The code is shown twice on purpose.** Somebody arrives at `done` having failed to scan — the
   camera would not focus, the sheet was dismissed — and a flow that takes the code away at the end
   hides the one thing still worth having.

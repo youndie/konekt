@@ -1,6 +1,8 @@
 package io.konekt.feature.esim.server.data
 
 import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.KompotModifierNode
+import io.github.youndie.kompot.SizeType
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
@@ -12,7 +14,9 @@ import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.EsimStatuses
 import io.konekt.components.MessageTones
+import io.konekt.components.ScreenHeaderComponent
 import io.konekt.components.StepMeterComponent
+import io.konekt.components.SurfaceComponent
 import io.konekt.feature.esim.server.domain.EsimProfile
 import io.konekt.feature.esim.server.domain.EsimWizardSteps
 import io.konekt.feature.esim.server.domain.EsimWizardView
@@ -33,6 +37,7 @@ object EsimWizardScreen {
             spacing = 16,
             children =
                 buildList {
+                    add(headerOf(step, wizardId))
                     add(
                         StepMeterComponent(
                             // Derived from the subject rather than generated, so a live update can
@@ -59,7 +64,7 @@ object EsimWizardScreen {
                     }
 
                     addAll(contentOf(step, view.esim))
-                    add(controlsOf(step, wizardId, view.esim))
+                    controlsOf(step, wizardId, view.esim)?.let(::add)
                 },
         )
     }
@@ -207,19 +212,56 @@ object EsimWizardScreen {
             else -> "This profile is in a state this version of the app does not describe."
         }
 
+    // ONE BACK, AND IT IS THE HEADER'S (`B-115`). The circle on the first step is a cross that leaves
+    // — the shell's business, so no action travels; on every other step it is the chevron that goes
+    // a step back, which is the wizard's business and travels as its own transition. The `Back` pill
+    // that used to sit under the shell's chevron is gone: two controls that went different ways
+    // with nothing on screen to tell them apart.
+    private fun headerOf(
+        step: String,
+        wizardId: String,
+    ): ScreenHeaderComponent =
+        when (step) {
+            EsimWizardSteps.CHECK -> {
+                ScreenHeaderComponent(id = "esim-wizard-header", title = "Install eSIM", closes = true)
+            }
+
+            EsimWizardSteps.ACTIVATE -> {
+                ScreenHeaderComponent(
+                    id = "esim-wizard-header",
+                    title = "Scan or install",
+                    action = EsimWizardStepAction(wizardId, WizardTransition.Back),
+                )
+            }
+
+            // A FINISHED FLOW HAS NO BACK: going back from `done` re-issues nothing and confuses
+            // everything, so the cross finishes — the same transition `Done` sends.
+            EsimWizardSteps.DONE -> {
+                ScreenHeaderComponent(
+                    id = "esim-wizard-header",
+                    title = "Install eSIM",
+                    action = EsimWizardStepAction(wizardId, WizardTransition.Finish),
+                    closes = true,
+                )
+            }
+
+            else -> {
+                ScreenHeaderComponent(
+                    id = "esim-wizard-header",
+                    title = "Install eSIM",
+                    action = EsimWizardStepAction(wizardId, WizardTransition.Back),
+                )
+            }
+        }
+
+    // THE WAY FORWARD, PINNED above the bottom edge and full width, the way the canvas draws it and
+    // the way the plan page's buy button is drawn since `B-114`. The step that cannot go forward —
+    // `activate` without a code — pins nothing, and the header is still the way back.
     private fun controlsOf(
         step: String,
         wizardId: String,
         esim: EsimProfile?,
-    ): KompotComponent {
-        val back =
-            ButtonComponent(
-                id = "esim-wizard-back",
-                text = "Back",
-                action = EsimWizardStepAction(wizardId, WizardTransition.Back),
-                variant = ButtonEmphasis.QUIET,
-            )
-
+    ): KompotComponent? {
         val forward =
             when (step) {
                 EsimWizardSteps.CHECK -> {
@@ -231,15 +273,6 @@ object EsimWizardScreen {
                 }
 
                 EsimWizardSteps.ACTIVATE -> {
-                    // NOTHING TO HAVE SCANNED. When the code could not be read, the content above is
-                    // an apology and this button asks the subscriber to confirm scanning something
-                    // that is not on the screen — and confirming MOVES the run, so the one state that
-                    // still had the code behind it is left behind.
-                    //
-                    // Only Back, which is what the copy above already tells them to press. This is
-                    // the second half of `B-66`: the first half is that the branch should be
-                    // unreachable, and a control that contradicts its own screen is worth removing
-                    // whatever made the screen say it.
                     esim?.activationCode?.let { forwardButton(wizardId, "I have scanned it") }
                 }
 
@@ -247,33 +280,17 @@ object EsimWizardScreen {
                     ButtonComponent(
                         id = "esim-wizard-finish",
                         text = "Done",
-                        // Finish and not Next. On the last step wizard-core's resolver answers null,
-                        // so a Next would stay put and the button would do nothing visible — which is
-                        // exactly the bug this distinction exists to prevent.
                         action = EsimWizardStepAction(wizardId, WizardTransition.Finish),
                         variant = ButtonEmphasis.PRIMARY,
+                        modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
                     )
                 }
 
                 else -> {
                     forwardButton(wizardId, "Continue")
                 }
-            }
-
-        // No Back on the first step: there is nowhere to go, and wizard-core would keep the session
-        // where it is. A button that is always there and sometimes does nothing teaches people that
-        // buttons sometimes do nothing.
-        // `forward` is nullable now, and only for the step above. `listOfNotNull` rather than a
-        // branch on the step, so a step that later has nothing to go forward to does the right thing
-        // without this line being edited again.
-        val buttons =
-            if (step == EsimWizardSteps.CHECK) listOfNotNull(forward) else listOfNotNull(back, forward)
-
-        return RowComponent(
-            id = "esim-wizard-controls",
-            spacing = 12,
-            children = buttons,
-        )
+            } ?: return null
+        return SurfaceComponent(id = "esim-wizard-controls", pinned = true, children = listOf(forward))
     }
 
     private fun forwardButton(
@@ -285,5 +302,6 @@ object EsimWizardScreen {
             text = text,
             action = EsimWizardStepAction(wizardId, WizardTransition.Next),
             variant = ButtonEmphasis.PRIMARY,
+            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
         )
 }

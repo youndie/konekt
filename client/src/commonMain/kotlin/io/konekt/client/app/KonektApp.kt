@@ -51,6 +51,7 @@ import io.github.youndie.kompot.navigation.NavigationBackStack
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
+import io.konekt.client.render.ScreenHeaderRow
 import io.konekt.client.render.VectorIconGlyph
 import io.konekt.client.theme.KonektTheme
 import io.konekt.client.theme.KonektTypography
@@ -483,43 +484,30 @@ fun KonektApp(
                         // is gone. A measurement is only as true as the thing it was taken on.
                         .windowInsetsPadding(WindowInsets.safeDrawing),
             ) {
-                // THE TOOLBAR, and it holds a back control and nothing else.
+                // THE TOOLBAR: one control, and the title when the screen sends one.
                 //
-                // No title: every screen this build serves draws its own — "Plans", "Profile",
-                // "Enter the code" — and a second one in a bar above them would be the same words
-                // twice. The day a screen stops titling itself, the graph already carries a title
-                // per route to put here.
-                //
-                // Drawn only when there is somewhere to go, so a tab screen has no empty bar over
-                // it. A TEXT ARROW rather than an icon: this client compiles in no icon set, and
-                // adding one for a single glyph is a dependency for a character.
-                if (stack.canGoBack) {
-                    // A ROUND CHEVRON, not the words "← Back" (`B-114` G4). The canvas draws a
-                    // 44-point circle in `surface_variant` with a stroked chevron, beside the screen's
-                    // title. The title is the SERVER's — every screen draws its own — so the circle
-                    // sits alone on its line above it; putting the two on one line would mean this
-                    // frame reading a title out of a tree it is not supposed to know the shape of.
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(start = 20.dp, top = 12.dp)
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                                .clickable { stack = stack.pop() }
-                                // Named for a screen reader and for `BackControlTest`: a chevron
-                                // is a picture, and a picture has no text to find it by.
-                                .semantics { contentDescription = BACK },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        VectorIconGlyph(
-                            icon = BACK_CHEVRON,
-                            color = designSystem.resolveColor(M3Colors.OnSurface),
-                            size = 22.dp,
-                        )
-                    }
+                // A screen that carries a `screen_header` (`B-115`) owns its back control: the
+                // circle presses the header's action — a wizard's step back — or, with none, leaves
+                // the screen the way the chevron does, and the title sits beside it. Without a
+                // header, the chevron alone, drawn only when there is somewhere to go, so a tab
+                // screen has no empty bar over it. Either way ONE control, which is the point: the
+                // wizard used to draw a `Back` pill under the shell's chevron, and the two did
+                // different things with nothing on screen to tell them apart.
+                val header = shell?.header
+                val headerPress = header?.action
+                if (header != null || stack.canGoBack) {
+                    ScreenHeaderRow(
+                        title = header?.title,
+                        closes = header?.closes == true,
+                        onPress =
+                            when {
+                                headerPress != null -> ({ handle(headerPress) })
+                                stack.canGoBack -> ({ stack = stack.pop() })
+                                else -> null
+                            },
+                        modifier = Modifier.padding(start = 20.dp, top = 12.dp, end = 20.dp),
+                    )
                 }
-
                 Box(
                     modifier =
                         Modifier
@@ -768,6 +756,5 @@ private const val STALE_ALPHA = 0.45f
 
 // The canvas's back chevron, the same shape its buttons use: a 24-grid stroked path, drawn by the
 // same glyph the tab icons are.
-private val BACK_CHEVRON = VectorIcon(paths = listOf("M15 18l-6-6 6-6"))
 
 private const val BACK = "Back"

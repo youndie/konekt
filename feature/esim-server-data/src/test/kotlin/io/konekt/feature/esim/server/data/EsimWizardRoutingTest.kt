@@ -8,13 +8,13 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
-import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.github.youndie.kompot.wizard.core.WizardTransition
 import io.konekt.components.BannerComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.EsimStatuses
 import io.konekt.components.StepMeterComponent
+import io.konekt.components.konektWalk
 import io.konekt.db.tables.EsimTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.feature.esim.shared.api.EsimWizardStepAction
@@ -311,11 +311,7 @@ class EsimWizardRoutingTest {
 
     private inline fun <reified T : KompotComponent> KompotComponent.all(): List<T> = walk().filterIsInstance<T>()
 
-    private fun KompotComponent.walk(): List<KompotComponent> =
-        listOf(this) +
-            when (this) {
-                is ColumnComponent -> children.flatMap { it.walk() }
-                is RowComponent -> children.flatMap { it.walk() }
-                else -> emptyList()
-            }
+    // THE DICTIONARY'S OWN WALK, which descends a `surface` — the forward button is inside the
+    // pinned footer since `B-115`, and a walk that stopped at columns and rows saw no button at all.
+    private fun KompotComponent.walk(): List<KompotComponent> = konektWalk()
 }

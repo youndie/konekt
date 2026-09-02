@@ -150,6 +150,16 @@ delivered black on whatever the page was. The test renders the code on a painted
 reads the quiet zone's pixels — on the harness's white window it would have passed without the
 tile, which is how the frame went out; by mutation, removing the tile fails it.
 
+### 2 — the header, one back, the pinned way forward (W1, W2, W5), done
+
+`screen_header` went on the wire: a title and one control, a chevron that presses the action it
+carries or a cross that leaves. The shell pulls it out of the tree like the bar and the pinned
+footer and draws it in its chevron's place — `ScreenHeaderIsTheBackControlTest` presses the circle
+and watches the wizard's own step-back reach the host, with no second control on the screen. The
+wizard sends it first on every step (`×` on `check`, `‹` with `Back` on the middle two, `×` with
+`Finish` on `done`) and pins its one forward button full width. The `Back` pill is gone, and the
+tests that walked columns and rows for it now use the dictionary's walk, which descends a surface.
+
 ## Acceptance criteria
 
 - AC: every step has a golden at 393×852 in both themes, re-recorded from the server; the dark QR
