@@ -43,10 +43,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
+| [B-117](docs/backlog/B-117-what-the-stack-costs-measured-under-load-and-over-time.md) `[ ]` | What the stack costs, measured: load by RPS, a soak, and six things a green build does not show | P1 | L | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 
 ## Closed (115)
