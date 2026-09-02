@@ -117,6 +117,44 @@ CPU allowed, HotSpot's ergonomics pick the single-threaded collector and a 247 M
 400 rps a young collection runs about once a second for 5–7 ms. That is the chart's `cpu: 1`
 choosing the garbage collector, and it is the first thing to try when the knee is found.
 
+## 1. Load by RPS — buying
+
+**What was measured.** The saga end to end — `POST /api/v1/purchases` then `POST …/confirm`, the
+hold, the provision, the capture, the outbox, booblik and the consumer — at a constant arrival rate
+of *purchases* held for 60 s, each purchase a funded subscriber's first (`purchase.js` through
+`staircase.sh`; every point signs its own subscribers in beforehand, which is why a 40-a-second
+point starts with 2 450 sign-ins and why k6's default minute for setup had to go). Three rounds.
+
+**What came out** — metrik per route, rounds separated by slashes; k6's p50/p95 across both
+requests; every purchase in every round completed, none was refused, no request failed.
+
+| purchases/s | route | p50 ms | p95 ms | k6 p50 / p95 | server CPU mean–max % | Postgres CPU % |
+|---|---|---|---|---|---|---|
+| 5 | purchases | 10.5 / 10.4 / 10.7 | 16.0 / 17.4 / 17.1 | 8.4–8.9 / 18.8–18.9 | 31–89 | 43–61 |
+| 5 | confirm | 14.0 / 14.2 / 14.6 | 21.9 / 21.3 / 22.1 | | | |
+| 10 | purchases | 10.6 / 10.3 / 10.1 | 16.8 / 17.4 / 15.2 | 8.6–8.7 / 18.1–18.3 | 32–54 | 43–58 |
+| 10 | confirm | 14.0 / 13.6 / 13.8 | 21.2 / 21.5 / 21.2 | | | |
+| 20 | purchases | 10.2 / 9.6 / 9.7 | 17.1 / 15.1 / 15.1 | 8.7 / 17.2–18.0 | 42–55 | 50–61 |
+| 20 | confirm | 13.8 / 13.2 / 13.2 | 21.0 / 20.4 / 20.6 | | | |
+| 40 | purchases | 9.0 / 9.4 / 9.4 | 17.4 / 19.3 / 19.5 | 8.5–8.6 / 17.7–18.6 | 48–80 | 56–63 |
+| 40 | confirm | 12.6 / 12.8 / 13.1 | 21.3 / 23.1 / 23.7 | | | |
+
+**What it says.** A purchase costs the subscriber about 9 ms to start and 13 ms to confirm at the
+median, 20 ms at p95, and the figure does not move between five and forty purchases a second —
+there is no knee under 40, which is the rate the staircase was extended past. The saga is the
+expensive request on this server: forty of them a second put the server's core at 50–60% and
+Postgres at 60%, where four hundred screen reads had cost the same — one purchase is roughly ten
+screens, which is what ≈17 writes, an outbox row and a broker publish come to.
+
+The confirm is 4 ms dearer than the start at every rate: that is the capture, the outbox and the
+provision, against the hold alone.
+
+**Where the two columns disagree.** Here metrik's medians sit *above* k6's, by one to five
+milliseconds, where on the reading profile they sat below. metrik's percentiles come from
+exponential histogram buckets and carry up to 20% of bucket width (its own README says so); at
+10 ms that is the whole of the gap. Neither column is wrong; the table keeps both and the report
+does not add them.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from
