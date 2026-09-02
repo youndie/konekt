@@ -48,14 +48,17 @@ conformance kit passing vacuously, an Apple target nobody published.
 
 ### 🚧 Status
 
-**Building.** The server, the saga, the broker bridge, the realtime channel and the eSIM wizard are
-in and driven end to end by a docker-compose stand; the Compose client runs on the desktop, on an
-Android device and in the iOS simulator, and draws every screen the way the canvas draws it — matched
-screen by screen against the real frames, with the differences kept on purpose written down
+**Built.** The server, the saga, the broker bridge, the realtime channel and the eSIM wizard are in
+and driven end to end by a docker-compose stand; a tagged image deploys to a test contour by Helm
+and is checked there after every release. The Compose client runs on the desktop, on an Android
+device and in the iOS simulator, and draws every screen the way the canvas draws it — matched screen
+by screen against the real frames, with the differences kept on purpose written down
 ([B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md),
-[B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md)). What is done and what is not is [backlog.md](backlog.md),
-item by item, with the reason attached to each — and the ones stopped on a stated cause say what the
-cause is rather than sitting in a list of the unfinished.
+[B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md)). What remains
+open is presentation, not product: the purchase confirmation as a sheet over the plan page
+([B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md)). Everything else is in
+[backlog.md](backlog.md), item by item, with the reason attached to each — and the ones stopped on a
+stated cause say what the cause is rather than sitting in a list of the unfinished.
 
 - [docs/research/research-architecture.md](docs/research/research-architecture.md) — what was read in
   the six toolkits, each fact with the artefact it was read in, and the decisions and deviations that

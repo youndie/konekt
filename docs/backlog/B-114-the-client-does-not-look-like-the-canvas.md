@@ -1,7 +1,7 @@
 ---
 id: B-114
 title: "Screen by screen, the client does not look like the canvas — the audit and the fix list"
-status: open
+status: done
 priority: P1
 size: L
 stage: stage-m7-completeness
@@ -334,6 +334,14 @@ it precise; the consent checkbox is not drawn because there are no terms to acce
 to how the client navigates — a modal layer over a screen that stays mounted — and not to what the
 server sends; it is the last item of the audit's order and the one with the least on the wire, so
 it stays open here rather than being half-done inside this item.
+
+### Closed
+
+Every block above landed, the eSIM flow got its own audit and fixes in
+[B-115](B-115-the-esim-install-flow-does-not-look-like-the-canvas.md), and the one thing left — the
+confirmation presented as a sheet over the plan page — is
+[B-116](B-116-the-confirmation-is-a-screen-not-a-sheet.md), its own item, because it changes how the
+client navigates and nothing about what the server sends.
 
 ## Acceptance criteria
 
