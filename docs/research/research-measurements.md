@@ -292,6 +292,33 @@ subscriber's delay from the event to the screen, because the event carries no st
 from. A stamp on `UpdateComponentMessage` would be a small addition to the wire and the next thing
 to measure.
 
+## 8. The broker, and a restart under load
+
+**What was measured.** With the 1 110 subscribers the fan-out had signed in and the simulator on,
+the consumer's progress read off the counters every five seconds (`scripts/measure/broker-lag.sh`):
+the data consumed across the stand should grow by 25 MB × 1 110 = 27 750 MB per tick, and what it
+grew by is what the consumer applied. Sixty seconds in, `docker restart konekt-broker-1`.
+
+**What came out.** Before the restart the consumer applied 25 000–27 700 MB per five seconds
+against 27 750 produced — **5–10% behind per tick**, which is the ~500–600 events a second of
+measurement 4 against the 666 the simulator was producing. The broker's own CPU never left 0.1%
+and its memory 195 MiB: the broker is not the party that is busy.
+
+The restart: the broker went down at 18:03:26; the producer side logged *reconnected to the broker
+— generation 1* at 18:03:27, one second later; the consumer noticed *the broker connection broke at
+offset 191958 — broker closed the connection* at 18:03:39, twelve seconds later, on its next read;
+the applied rate dipped to 24 000 in the one sample that spanned the break and was back at 26 500
+in the next, with a catch-up sample of 31 400 ninety seconds on. **Recovery under load is within
+one tick on the producer and within three on the consumer, and the counters kept climbing
+monotonically** — the reconnect [B-107](../backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md)
+built holds under load, not only in its test.
+
+**What it does not say.** Three minutes cannot tell a 5% lag from a 5% loss; the fan-out's
+per-stream counts (every stream received *some* of its updates late, none lost a tick outright at
+100 streams) say lag, and the long answer is the soak's outbox and counter columns over hours.
+booblik's throughput ceiling was not reached and is not stated: on this stand the consumer is the
+wall, and a broker number measured behind it would be a number about the consumer.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from
