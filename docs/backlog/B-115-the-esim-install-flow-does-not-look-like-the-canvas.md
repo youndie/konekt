@@ -1,7 +1,7 @@
 ---
 id: B-115
 title: "The eSIM install flow does not look like the canvas — the audit and the fix list"
-status: open
+status: done
 priority: P1
 size: M
 stage: stage-m7-completeness
@@ -168,6 +168,15 @@ step opens with its heading (*Before you start*, *Get your eSIM*) over a body in
 `activate` opens on the QR card, since its header is the heading. The refusal is the canvas's
 failed-check row — an amber disc with the mark beside the sentence, in a card — without the
 checklist the server cannot honestly draw around it.
+
+### 4 — the done step, the copy action, the eSIM card (done)
+
+The last step is the outcome the purchase result draws: the check in a disc, *Your eSIM is ready*,
+one sentence, the profile as a card of rows — `ICCID` grouped in fours, `Status` in the brand's
+colour rather than the amber that made good news read as a warning — and the code again in its
+card. **`copy` went on the wire**, decided with the owner: a tonal `Copy activation code` under the
+tile carries the whole LPA string, the client puts it on its clipboard, and nothing about it reaches
+the host or the server (`CopyActionTest`). Priced in operator-boundaries.
 
 ## Acceptance criteria
 

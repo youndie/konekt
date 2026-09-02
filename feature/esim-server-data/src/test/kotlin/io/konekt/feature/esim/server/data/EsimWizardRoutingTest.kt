@@ -19,6 +19,7 @@ import io.konekt.db.tables.EsimTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.feature.esim.shared.api.EsimWizardStepAction
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import io.konekt.http.SubscriberPrincipal
 import io.konekt.http.configureStatusPages
 import io.konekt.testing.PostgresHarness
@@ -79,7 +80,8 @@ class EsimWizardRoutingTest {
                 kompotStandardSerializersModule +
                 generatedStandardSerializersModule +
                 generatedKonektSerializersModule +
-                esimActionsSerializersModule
+                esimActionsSerializersModule +
+                shellActionsSerializersModule
         }
 
     private lateinit var subscriberId: String

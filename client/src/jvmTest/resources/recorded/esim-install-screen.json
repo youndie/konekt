@@ -44,7 +44,7 @@
           "text": "Continue",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
+            "wizardId": "bf3630a6-478e-4bfb-af36-b1a439675978",
             "transition": {
               "type": "next"
             }

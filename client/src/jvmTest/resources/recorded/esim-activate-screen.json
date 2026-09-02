@@ -8,7 +8,7 @@
       "title": "Scan or install",
       "action": {
         "type": "esim_wizard_step",
-        "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
+        "wizardId": "bf3630a6-478e-4bfb-af36-b1a439675978",
         "transition": {
           "type": "back"
         }
@@ -27,9 +27,25 @@
         {
           "type": "esim_qr",
           "id": "esim-wizard-qr",
-          "payload": "LPA:1$rsp.konekt.io$DA4D5BB6",
+          "payload": "LPA:1$rsp.konekt.io$5436BC4C",
           "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
-          "manualCodeText": "DA4D-5BB6"
+          "manualCodeText": "5436-BC4C"
+        },
+        {
+          "type": "button",
+          "id": "esim-wizard-qr-copy",
+          "modifiers": [
+            {
+              "type": "size",
+              "width": "Fill"
+            }
+          ],
+          "text": "Copy activation code",
+          "action": {
+            "type": "copy",
+            "text": "LPA:1$rsp.konekt.io$5436BC4C"
+          },
+          "variant": "tonal"
         }
       ]
     },
@@ -56,7 +72,7 @@
           "text": "I have scanned it",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
+            "wizardId": "bf3630a6-478e-4bfb-af36-b1a439675978",
             "transition": {
               "type": "next"
             }

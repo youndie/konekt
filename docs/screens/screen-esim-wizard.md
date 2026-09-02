@@ -52,7 +52,7 @@ Four steps, in the order they are lived, from `EsimWizardSteps`: `check` → `co
 | `check` (1 of 4) | the heading *Before you start* (`esim-wizard-title`, `headline_medium`) and one `text`, `esim-wizard-check` — what an eSIM is and how long it takes | "Continue" (`Next`) — and the header's cross leaves: there is no step to go back to |
 | `confirm` (2 of 4) | the heading *Get your eSIM* and one `text`, `esim-wizard-confirm` — that a profile will be requested, and that the code does not expire | "Get my eSIM" (`Next`) |
 | `activate` (3 of 4) | `esim_qr` (`esim-wizard-qr`) in a `surface` card (`esim-wizard-qr-card`), plus a `text` telling the subscriber where to point the camera; no heading — the header already says *Scan or install* | "I have scanned it" (`Next`) |
-| `done` (4 of 4) | a `banner` "Your eSIM is ready.", an `esim_card` with the ICCID and a sentence for its status, **and the QR again** | "Done" (`Finish`) |
+| `done` (4 of 4) | the outcome (`B-115`): an `icon` check, the heading *Your eSIM is ready*, one sentence (`esim-wizard-done`), an `esim_card` with the ICCID and a sentence for its status, **and the QR again** in its card | "Done" (`Finish`) |
 | refused | the step it was refused on, unchanged, with the refusal above the content as a `surface` card (`esim-wizard-refusal`) holding an amber `icon` and the sentence (`esim-wizard-refusal-text`) — the canvas's failed-check row, without the checklist (`B-115`) | the same controls |
 | unknown step id | one `text` — "This step is not available in this version of the app. Update to continue." | "Continue" |
 
@@ -98,6 +98,9 @@ holding a run it cannot find would be holding a button that does nothing.
   screen. Not the whole `LPA:1$…$…` string: what a person is asked to type is the part that
   identifies the profile, and the rest is scheme and hostname they would only get wrong.
 - **`captionText`:** "Stay on Wi-Fi. This takes up to a minute and finishes on its own."
+- **The block sits in a `surface` card with `Copy activation code` under it** (`esim-wizard-qr-copy`,
+  `B-115`): a `button` carrying `copy` with the whole LPA string. The client puts it on the
+  clipboard and nothing about it reaches the server — see [operator-boundaries](../services/operator-boundaries.md).
 - **A payload too large to encode leaves the typed code rather than throwing** —
   `EsimQrRendererTest`.
 - **The code sits on a fixed light tile, in both themes** (`B-115`). The modules were black and the
@@ -111,6 +114,10 @@ holding a run it cannot find would be holding a button that does nothing.
 - **Fields:** `label` ("New line"), `iccid`, `status`, `statusText`. The status word is the client's
   to branch on and the sentence is the subscriber's to read, so an unfamiliar word still gets a
   sentence: "This profile is in a state this version of the app does not describe."
+- **Drawn as rows** since `B-115`: the label as the card's title, then `ICCID` — grouped in fours
+  by the client, as a SIM tray prints it — and `Status` with a hairline between. `ready`, `installed`
+  and `active` are the brand's colour; the rest, and any unknown word, the neutral text colour.
+  `ready` used to be drawn in the amber the counters use for `low`, so good news read as a warning.
 
 ### 4.4. The header and the way forward
 

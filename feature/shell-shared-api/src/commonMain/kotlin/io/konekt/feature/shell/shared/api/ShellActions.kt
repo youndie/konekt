@@ -28,10 +28,21 @@ class SignOutAction : KompotAction {
 // this out fails nothing at build time and everything at the one press that matters. That has cost
 // this repository three separate incidents, which is why `KonektActionWireNames` and the guard over
 // it now exist.
+// PUT THIS TEXT ON THE CLIPBOARD (`B-115`): the activation code under the QR, for the subscriber on a
+// desktop who has no camera to point at their own screen. The client does it and the server learns
+// nothing, which is the whole of the contract — a copy that reported back would be a credential in
+// an access log. A client that predates the action draws the button and presses nothing.
+@Serializable
+@SerialName("copy")
+data class CopyAction(
+    val text: String,
+) : KompotAction
+
 val shellActionsSerializersModule =
     SerializersModule {
         polymorphic(KompotAction::class) {
             subclass(SignOutAction::class)
+            subclass(CopyAction::class)
         }
     }
 

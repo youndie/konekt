@@ -29,6 +29,8 @@ import io.konekt.feature.esim.server.domain.EsimWizardSteps
 import io.konekt.feature.esim.server.domain.EsimWizardView
 import io.konekt.feature.esim.shared.api.EsimWizardStepAction
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
+import io.konekt.feature.shell.shared.api.CopyAction
+import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import kotlin.test.Test
@@ -49,7 +51,8 @@ class EsimWizardScreenTest {
                 kompotStandardSerializersModule +
                 generatedStandardSerializersModule +
                 generatedKonektSerializersModule +
-                esimActionsSerializersModule
+                esimActionsSerializersModule +
+                shellActionsSerializersModule
         }
 
     private val activationCode = "LPA:1\$rsp.konekt.io\$8F214C90"
@@ -208,13 +211,48 @@ class EsimWizardScreenTest {
     fun `every button carries this run's id`() {
         EsimWizardSteps.order.forEach { step ->
             val screen = EsimWizardScreen.build(viewAt(step, esim = profile))
-            val actions = screen.all<ButtonComponent>().map { it.action }
+            // The copy pill carries the code, not the run — it is the one button here that is not
+            // a step (`B-115`), and it has its own test.
+            val actions = screen.all<ButtonComponent>().map { it.action }.filterNot { it is CopyAction }
 
             assertTrue(actions.isNotEmpty(), "$step has no way out")
             actions.forEach { action ->
                 assertEquals("wiz-1", assertNotNull(action as? EsimWizardStepAction, "$step: $action").wizardId)
             }
         }
+    }
+
+    // THE CODE CAN BE COPIED WHOLE (`B-115`): the pill under the tile carries the entire LPA string
+    // — what a settings sheet wants — while the typed code stays the short form a person reads.
+    @Test
+    fun `the code step offers to copy the whole activation code`() {
+        val screen = EsimWizardScreen.build(viewAt(EsimWizardSteps.ACTIVATE, esim = profile))
+
+        val copy = assertNotNull(screen.all<ButtonComponent>().firstOrNull { it.id == "esim-wizard-qr-copy" })
+        assertEquals(CopyAction(activationCode), copy.action)
+    }
+
+    // THE LAST STEP IS AN OUTCOME (`B-115`): the mark, the heading, then the profile and the code.
+    @Test
+    fun `the last step opens as an outcome`() {
+        val screen = EsimWizardScreen.build(viewAt(EsimWizardSteps.DONE, esim = profile))
+
+        assertEquals(MessageTones.INFO, assertNotNull(screen.first<IconComponent>()).tone)
+        assertEquals(
+            "Your eSIM is ready",
+            assertNotNull(
+                screen.all<TextComponent>().firstOrNull {
+                    it.id ==
+                        "esim-wizard-title"
+                },
+            ).text,
+        )
+        assertTrue(
+            screen.all<ButtonComponent>().any {
+                it.id == "esim-wizard-qr-again-copy"
+            },
+            "the code shown again cannot be copied",
+        )
     }
 
     @Test

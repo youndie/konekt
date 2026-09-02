@@ -34,8 +34,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
@@ -56,6 +58,7 @@ import io.konekt.client.render.VectorIconGlyph
 import io.konekt.client.theme.KonektTheme
 import io.konekt.client.theme.KonektTypography
 import io.konekt.components.VectorIcon
+import io.konekt.feature.shell.shared.api.CopyAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -380,7 +383,17 @@ fun KonektApp(
             // THE HANDLER IS THE HOLDER'S, because navigation is. A source constructed with its own
             // handler could not move the screen it is a source for — which is why `render` takes one
             // rather than the source keeping it.
-            val handle: (KompotAction) -> Unit = { action ->
+            // The deprecated manager rather than `LocalClipboard`: the replacement's entry type is
+            // built per platform, and a copy of a string is not worth an expect/actual pair.
+            @Suppress("DEPRECATION")
+            val clipboard = LocalClipboardManager.current
+            val handle: (KompotAction) -> Unit = handle@{ action ->
+                // A COPY IS ANSWERED HERE AND GOES NO FURTHER (`B-115`): the text lands on the
+                // clipboard and nothing about it reaches the host or the server.
+                if (action is CopyAction) {
+                    clipboard.setText(AnnotatedString(action.text))
+                    return@handle
+                }
                 // The deeplink AND the address it resolved to, as one value: the stack needs the
                 // first to decide whether this was a tab, and the screen needs the second.
                 val move =

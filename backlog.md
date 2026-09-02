@@ -43,14 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (1)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md) `[ ]` | Screen by screen, the client does not look like the canvas — the audit and the fix list | P1 | L | - |
-| [B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md) `[ ]` | The eSIM install flow does not look like the canvas — the audit and the fix list | P1 | M | - |
 
-## Closed (113)
+## Closed (114)
 
 **The wire and the shell**
 
@@ -174,6 +173,7 @@ so re-prioritising must never move a file.
 - [B-111](docs/backlog/B-111-navigation-blanks-the-screen-before-the-tree-arrives.md) `[x]` - Every navigation blanks the whole window until the next tree arrives
 - [B-112](docs/backlog/B-112-the-cards-do-not-use-the-canvas-geometry.md) `[x]` - Every card in the build is a radius and an inset the canvas does not pair
 - [B-113](docs/backlog/B-113-a-live-update-replaces-a-row-with-a-card.md) `[x]` - An SSE update replaced a row inside the allowance card with a card of its own
+- [B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md) `[x]` - The eSIM install flow does not look like the canvas — the audit and the fix list
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

@@ -10,7 +10,6 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.wizard.core.WizardTransition
-import io.konekt.components.BannerComponent
 import io.konekt.components.ButtonEmphasis
 import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
@@ -25,6 +24,7 @@ import io.konekt.feature.esim.server.domain.EsimProfile
 import io.konekt.feature.esim.server.domain.EsimWizardSteps
 import io.konekt.feature.esim.server.domain.EsimWizardView
 import io.konekt.feature.esim.shared.api.EsimWizardStepAction
+import io.konekt.feature.shell.shared.api.CopyAction
 
 // The install flow, drawn on the server, one screen per step.
 //
@@ -167,7 +167,7 @@ object EsimWizardScreen {
         return listOf(
             // The code on its tile, in a card (`B-115` W6): the canvas's QR block is a white card
             // with the tile centred in it, and the paragraph is the body under it.
-            SurfaceComponent(id = "esim-wizard-qr-card", children = listOf(qrOf(code, id = "esim-wizard-qr"))),
+            qrCard(code, id = "esim-wizard-qr"),
             TextComponent(
                 id = "esim-wizard-activate",
                 style = M3Typography.BodyLarge,
@@ -179,16 +179,21 @@ object EsimWizardScreen {
         )
     }
 
+    // THE OUTCOME, THE WAY THE PURCHASE RESULT DRAWS ONE (`B-115`): the check in a disc, the
+    // heading, one sentence, then the profile as the card — ICCID and status as rows — and the code
+    // again in its card, kept on purpose (§6): somebody arrives here having failed to scan.
     private fun doneContent(esim: EsimProfile?): List<KompotComponent> =
         buildList {
+            add(IconComponent(id = "esim-wizard-mark", icon = CHECK, tone = MessageTones.INFO))
+            add(heading("Your eSIM is ready"))
             add(
-                BannerComponent(
+                TextComponent(
                     id = "esim-wizard-done",
-                    text = "Your eSIM is ready.",
-                    tone = MessageTones.INFO,
+                    text = "Scan the code below to install it now, or keep it for later — it does not expire.",
+                    style = M3Typography.BodyLarge,
+                    color = M3Colors.OnSurfaceVariant,
                 ),
             )
-
             esim?.let { profile ->
                 add(
                     EsimCardComponent(
@@ -199,12 +204,7 @@ object EsimWizardScreen {
                         statusText = statusTextFor(profile.status),
                     ),
                 )
-
-                // THE CODE IS SHOWN AGAIN, and this is the point of the last step rather than a
-                // duplicate of the one before it. Somebody arrives here having failed to scan — the
-                // camera would not focus, the sheet was dismissed — and a flow that takes the code
-                // away at the end is a flow that hides the one thing still worth having.
-                profile.activationCode?.let { add(qrOf(it, id = "esim-wizard-qr-again")) }
+                profile.activationCode?.let { add(qrCard(it, id = "esim-wizard-qr-again")) }
             }
         }
 
@@ -217,6 +217,29 @@ object EsimWizardScreen {
             text = text,
             style = M3Typography.HeadlineMedium,
             color = M3Colors.OnSurface,
+        )
+
+    // THE CODE ON ITS TILE, IN A CARD, with `Copy activation code` under it (`B-115`): on a desktop
+    // the clipboard is the way into the phone's settings, and a QR on a screen nobody can point a
+    // camera at is a picture. The pill copies the whole LPA string — what a settings sheet wants —
+    // while the typed code under the tile stays the short form a person reads aloud.
+    private fun qrCard(
+        activationCode: String,
+        id: String,
+    ): SurfaceComponent =
+        SurfaceComponent(
+            id = "$id-card",
+            children =
+                listOf(
+                    qrOf(activationCode, id = id),
+                    ButtonComponent(
+                        id = "$id-copy",
+                        text = "Copy activation code",
+                        action = CopyAction(activationCode),
+                        variant = ButtonEmphasis.TONAL,
+                        modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                    ),
+                ),
         )
 
     private fun qrOf(
@@ -357,3 +380,6 @@ object EsimWizardScreen {
 
 // The mark on a failed check, on the 24-grid every icon in this build is drawn on: a bar and a dot.
 private val EXCLAMATION = VectorIcon(paths = listOf("M12 7v6", "M12 16.5v.5"))
+
+// The outcome's mark, the same check the purchase result draws.
+private val CHECK = VectorIcon(paths = listOf("M5 12l5 5L20 7"))

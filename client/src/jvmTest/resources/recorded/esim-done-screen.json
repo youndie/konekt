@@ -8,7 +8,7 @@
       "title": "Install eSIM",
       "action": {
         "type": "esim_wizard_step",
-        "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
+        "wizardId": "bf3630a6-478e-4bfb-af36-b1a439675978",
         "transition": {
           "type": "finish"
         }
@@ -22,24 +22,64 @@
       "total": 4
     },
     {
-      "type": "banner",
+      "type": "icon",
+      "id": "esim-wizard-mark",
+      "icon": {
+        "paths": [
+          "M5 12l5 5L20 7"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "id": "esim-wizard-title",
+      "text": "Your eSIM is ready",
+      "style": "headline_medium",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
       "id": "esim-wizard-done",
-      "text": "Your eSIM is ready."
+      "text": "Scan the code below to install it now, or keep it for later — it does not expire.",
+      "style": "body_large",
+      "color": "on_surface_variant"
     },
     {
       "type": "esim_card",
-      "id": "esim-7ad4b3c3-651f-4dee-9421-83b3f315c85d",
+      "id": "esim-3770a008-670f-44ec-b4fc-eb6d600ebd4c",
       "label": "New line",
-      "iccid": "8944746408273594395",
+      "iccid": "8944130629089042824",
       "status": "ready",
       "statusText": "Installs as an eSIM by QR code. Your device supports it."
     },
     {
-      "type": "esim_qr",
-      "id": "esim-wizard-qr-again",
-      "payload": "LPA:1$rsp.konekt.io$DA4D5BB6",
-      "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
-      "manualCodeText": "DA4D-5BB6"
+      "type": "surface",
+      "id": "esim-wizard-qr-again-card",
+      "children": [
+        {
+          "type": "esim_qr",
+          "id": "esim-wizard-qr-again",
+          "payload": "LPA:1$rsp.konekt.io$5436BC4C",
+          "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
+          "manualCodeText": "5436-BC4C"
+        },
+        {
+          "type": "button",
+          "id": "esim-wizard-qr-again-copy",
+          "modifiers": [
+            {
+              "type": "size",
+              "width": "Fill"
+            }
+          ],
+          "text": "Copy activation code",
+          "action": {
+            "type": "copy",
+            "text": "LPA:1$rsp.konekt.io$5436BC4C"
+          },
+          "variant": "tonal"
+        }
+      ]
     },
     {
       "type": "surface",
@@ -57,7 +97,7 @@
           "text": "Done",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
+            "wizardId": "bf3630a6-478e-4bfb-af36-b1a439675978",
             "transition": {
               "type": "finish"
             }
