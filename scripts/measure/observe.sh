@@ -16,11 +16,14 @@ MEASURE_HOME=${MEASURE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/konekt-measur
 ENV_FILE=$MEASURE_HOME/env
 COMPOSE=(docker compose -p "$PROJECT" -f deploy/compose.yaml -f deploy/compose.measure.yaml --env-file "$ENV_FILE")
 
-sed -i '/^METRIK_ENDPOINT=/d; /^TRACY_ENDPOINT=/d' "$ENV_FILE"
+sed -i '/^METRIK_ENDPOINT=/d; /^TRACY_ENDPOINT=/d; /^METRIK_KEY=/d; /^TRACY_KEY=/d' "$ENV_FILE"
 if [ "$MODE" = off ]; then
-  # `${VAR-default}` in the compose takes an EMPTY value as a value: the agents get no endpoint.
-  printf 'METRIK_ENDPOINT=\nTRACY_ENDPOINT=\n' >> "$ENV_FILE"
+  # `${VAR-default}` in the compose takes an EMPTY value as a value, so the agents get no endpoint —
+  # and no key either: the server refuses an endpoint without a key and a key without an endpoint
+  # ("a deployment that believes it is observed and is not"), and the first switch left the key in
+  # place and the server exited at start.
+  printf 'METRIK_ENDPOINT=\nMETRIK_KEY=\nTRACY_ENDPOINT=\nTRACY_KEY=\n' >> "$ENV_FILE"
 fi
 "${COMPOSE[@]}" up -d --no-build --wait server >/dev/null
-"${COMPOSE[@]}" exec server bash -c 'echo "METRIK_ENDPOINT=[$METRIK_ENDPOINT] TRACY_ENDPOINT=[$TRACY_ENDPOINT]"'
+"${COMPOSE[@]}" exec server bash -c 'echo "METRIK_ENDPOINT=[$METRIK_ENDPOINT] METRIK_KEY=[${METRIK_KEY:+set}] TRACY_ENDPOINT=[$TRACY_ENDPOINT] TRACY_KEY=[${TRACY_KEY:+set}]"'
 echo "observability $MODE; the server restarted — warm it up before measuring"
