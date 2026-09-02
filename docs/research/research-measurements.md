@@ -259,6 +259,39 @@ does; what it does not do is warm the pod, and this is the number that says whet
 request in the probe would be worth it: it would take the first subscriber's 800 ms, not the next
 hundred's 14.
 
+## 4. Realtime fan-out
+
+**What was measured.** N subscribers, each with a plan and an open SSE stream from the generator
+box (`scripts/measure/fanout.py`, a hand-rolled HTTP/1.1 client, standard library only), while the
+simulator ticked every five seconds — three usage updates per subscriber per tick. Two minutes per
+size, on the reset stand with the simulator verified on. Counted per stream against the ticks that
+happened; and, since the wire carries no server stamp, the fan-out's own latency as the time from
+the first stream to receive a tick's update to the last.
+
+| streams | updates received | per stream (min / median / max of 72 expected) | first-to-last within a tick | server CPU | descriptors |
+|---|---|---|---|---|---|
+| 10 | 720 of 720 — 100% | 72 / 72 / 72 | 90 ms median, 131 p95, 167 max | ~1% | 164 |
+| 100 | 7 200 of 7 200 — 100% | 72 / 72 / 72 | 594 ms median, 694 p95, 843 max | ~40–67% | 254 |
+| 1 000 | 65 270 of 72 000 — 90.7% | 60 / 66 / 66 | *no tick boundary left to measure* | 40–89% | 1 155 |
+
+No stream closed early at any size; the thousand held for the full window.
+
+**What it says.** The channel is fine; the **consumer is the limit**. A tick's updates reach ten
+streams within a tenth of a second and a hundred within six tenths — about 2 ms per update, which
+is one usage event applied: a counter read, a row update, an outbox row, a push. At a thousand
+subscribers a tick is 3 000 events, six seconds of work for a five-second tick, and the updates
+stop arriving in ticks and arrive continuously — every stream got most of its updates, none got
+them on time, and the consumer was still applying the first minute when the second ended. **On one
+core the usage consumer applies about 500 events a second**, and the simulator's three-per-five-
+seconds means it keeps up with roughly 800 lines. That is the same wall the load session ran into
+with 57 000 subscribers (the finding above), measured cleanly.
+
+**What it does not say.** Nothing about the fan-out to many devices of *one* line — every stream
+here was its own subscriber, which is how the product's topics are keyed — and nothing about a
+subscriber's delay from the event to the screen, because the event carries no stamp to measure it
+from. A stamp on `UpdateComponentMessage` would be a small addition to the wire and the next thing
+to measure.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from
