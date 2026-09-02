@@ -20,9 +20,12 @@ import urllib.parse
 import urllib.request
 
 
-def call(base, path, body=None, token=None):
+def call(base, path, body=None, token=None, method=None):
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(base + path, data=data, method="POST" if data is not None else "GET")
+    # The method is named when there is no body to imply it: a confirm is a POST with nothing in
+    # it, and the first run sent it as a GET and got 404 for every subscriber.
+    req = urllib.request.Request(base + path, data=data if data is not None else (b"" if method == "POST" else None),
+                                 method=method or ("POST" if data is not None else "GET"))
     req.add_header("Content-Type", "application/json")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
@@ -41,7 +44,7 @@ def sign_in(base):
     _, started = call(base, "/api/v1/purchases", {"planId": "home-20gb-30d"}, token)
     order = json.loads(started)
     if order.get("status") == "awaiting_confirmation":
-        call(base, f"/api/v1/purchases/{order['orderId']}/confirm", None, token)
+        call(base, f"/api/v1/purchases/{order['orderId']}/confirm", None, token, method="POST")
     return token
 
 
