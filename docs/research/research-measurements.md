@@ -26,6 +26,12 @@ relative together, the axis decided before the run — is in the item and is not
 
 Everything on the load stand ran on **2026-09-02**, one session, in the order the item gives.
 
+The raw record is beside this document in `measurements-2026-09-02/`: every staircase's points
+(`points-*.csv`, from the generator), the collector's route table per window (`points-routes-*.csv`),
+the sampler's ten-second lines from the stand (`stand/load2/samples.csv`), the cold starts, the
+broker lag and the fan-out counts. k6's per-run summaries were not kept — the points files carry
+what the report cites from them.
+
 ## 3. The saga under contention — no defect
 
 **What was measured.** One account funded for exactly 20 purchases of the $15 plan, asked for 200 at
