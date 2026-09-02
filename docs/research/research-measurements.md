@@ -97,3 +97,39 @@ CPU allowed, HotSpot's ergonomics pick the single-threaded collector and a 247 M
 400 rps a young collection runs about once a second for 5–7 ms. That is the chart's `cpu: 1`
 choosing the garbage collector, and it is the first thing to try when the knee is found.
 
+## 7. The cost of the wire
+
+**What was measured.** Every recorded screen the client's goldens are drawn from
+(`client/src/jvmTest/resources/recorded/*.json` — the server's own responses at `v0.1.40`, captured
+through the API): the JSON re-serialised without whitespace, the same gzipped at level 9, the
+number of nodes in the tree, the number of distinct wire types, and the depth. No load, no stand.
+
+| screen | bytes | gzip | nodes | types | depth |
+|---|---|---|---|---|---|
+| plan detail | 4,310 | 954 | 35 | 7 | 5 |
+| home | 3,369 | 1,031 | 24 | 8 | 5 |
+| home, eSIM not installed | 3,130 | 920 | 23 | 8 | 5 |
+| orders | 2,981 | 904 | 13 | 7 | 3 |
+| confirm purchase | 2,161 | 672 | 19 | 6 | 5 |
+| profile | 1,992 | 690 | 14 | 6 | 4 |
+| order (paid) | 1,974 | 577 | 16 | 6 | 4 |
+| plans | 1,957 | 690 | 8 | 5 | 2 |
+| eSIM, done | 1,709 | 746 | 12 | 9 | 3 |
+| order (refused) | 1,561 | 489 | 13 | 6 | 4 |
+| eSIM, scan | 1,336 | 577 | 9 | 7 | 3 |
+| enter the code | 1,278 | 497 | 8 | 6 | 2 |
+| eSIM, before you start | 920 | 475 | 7 | 6 | 3 |
+| top up | 685 | 345 | 5 | 4 | 2 |
+| sign in | 583 | 322 | 4 | 4 | 2 |
+
+**What it says.** The heaviest screen the product serves is under five kilobytes plain and under one
+gzipped; the median is two kilobytes. B-114 and B-115 added three types to the dictionary
+(`surface`, `icon`, `screen_header`) and a card's worth of structure to the plan page — the
+largest tree is 35 nodes, five deep — and none of it is a size a phone notices: one screen is
+smaller than one icon in a native app. What the dictionary costs is a client release per type, not
+bytes.
+
+**Not measured here:** the time from a tree's arrival to the first frame on the client. It needs a
+test through the real `KonektScreenSource` at 393×852 with the clock read at the frame, and that
+harness is not written; the number is absent rather than estimated.
+
