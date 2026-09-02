@@ -47,12 +47,29 @@ export function topUp(token, amountMinor) {
 // scenario can count `completed` against `rejected` without parsing anything twice.
 export function buy(token, planId) {
   const started = http.post(`${BASE}/api/v1/purchases`, JSON.stringify({ planId }), bearer(token, { name: 'purchase' }));
-  if (started.status !== 200 && started.status !== 201) return { status: `http-${started.status}` };
+  // 202: the order is accepted and the saga runs — the first dry run of the contention scenario
+  // took that for an error and confirmed nothing, which read as a saga that never captured.
+  if (![200, 201, 202].includes(started.status)) return { status: `http-${started.status}`, body: started.body };
   const order = started.json();
-  if (order.status !== 'awaiting_confirmation') return { status: order.status, orderId: order.orderId };
+  if (order.status !== 'awaiting_confirmation') return { status: order.status, orderId: order.orderId, reason: order.declineReason };
   const confirmed = http.post(`${BASE}/api/v1/purchases/${order.orderId}/confirm`, null, bearer(token, { name: 'confirm' }));
-  if (confirmed.status !== 200) return { status: `http-${confirmed.status}`, orderId: order.orderId };
+  if (![200, 202].includes(confirmed.status)) return { status: `http-${confirmed.status}`, orderId: order.orderId, body: confirmed.body };
   return { status: confirmed.json('status'), orderId: order.orderId };
+}
+
+// ONE COUNTER PER OUTCOME, because k6's exported summary drops tags: a single counter tagged by
+// status reads back as one number, and the question every purchase scenario asks is how many
+// completed against how many were refused.
+import { Counter } from 'k6/metrics';
+const outcomeCounters = {
+  completed: new Counter('outcome_completed'),
+  rejected: new Counter('outcome_rejected'),
+  compensated: new Counter('outcome_compensated'),
+  other: new Counter('outcome_other'),
+};
+export function countOutcome(outcome) {
+  (outcomeCounters[outcome.status] || outcomeCounters.other).add(1);
+  if (__ENV.DEBUG) console.log(JSON.stringify(outcome));
 }
 
 export function screen(token, path, name) {

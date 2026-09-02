@@ -198,6 +198,16 @@ soak of its own at the same time (its broker holds ~660 MiB and a few percent of
 report names as noise. The first sample after the setup burst: the server at 143 MiB of its 1 GiB,
 155 descriptors, 11 Postgres connections.
 
+### 3 — the saga under contention, done: no defect
+
+Two rented boxes (2 vCPU / 3.8 GiB each, a private link), the stand on one and k6 on the other.
+Three runs of 200 attempts on an account funded for 20: exactly 20 completed and 180 refused every
+time, the ledger's invariants at zero. Under fifty concurrent attempts a purchase costs ~250 ms at
+the median and ~450 ms at p95 — the queue on the account row. The first three runs said "no
+captures" and the database said "the harness is wrong": `POST /purchases` answers 202 and the
+scenario had accepted only 200 and 201. Figures and captions in
+[research-measurements](../research/research-measurements.md).
+
 ## Acceptance criteria
 
 - AC: `scripts/measure/stand-up.sh` takes a fresh box to a running stand with the chart's limits and

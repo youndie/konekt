@@ -3,15 +3,13 @@
 // `scripts/measure/contention-check.sh` afterwards — the database, not the responses.
 //
 //     scripts/measure/k6.sh contention AFFORDABLE=20 ATTEMPTS=200 RATE=50
-import { Counter } from 'k6/metrics';
-import { announce, buy, signIn, topUp } from './lib.js';
+import { announce, countOutcome, buy, signIn, topUp } from './lib.js';
 
 const AFFORDABLE = parseInt(__ENV.AFFORDABLE || '20', 10);
 const ATTEMPTS = parseInt(__ENV.ATTEMPTS || '200', 10);
 const RATE = parseInt(__ENV.RATE || '50', 10);
 const PLAN = __ENV.PLAN || 'home-20gb-30d';
 const PRICE_MINOR = parseInt(__ENV.PRICE_MINOR || '1500', 10);
-const outcomes = new Counter('contention_outcomes');
 
 export const options = {
   scenarios: {
@@ -34,7 +32,7 @@ export function setup() {
 
 export function attempt(data) {
   const outcome = buy(data.token, PLAN);
-  outcomes.add(1, { status: outcome.status });
+  countOutcome(outcome);
 }
 
 export function teardown(data) {

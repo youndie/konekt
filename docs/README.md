@@ -75,7 +75,7 @@ The list below is **checked** against the files on disk: a document missing here
 file behind it, fails `coverage_map.py`. The grouping and the descriptions are written by a person —
 the machine only guards the membership.
 
-### Research (4)
+### Research (5)
 
 - [x] [research-architecture](research/research-architecture.md) — verified facts about the six
   toolkits, the decisions taken, and the risks; the entry point
@@ -90,6 +90,7 @@ the machine only guards the membership.
 Not in the map, because the checker guards only the five layer directories:
 [design-app-canvas](design/design-app-canvas.md) — the interface design and the component dictionary
 it commits konekt to.
+- [x] [research-measurements](research/research-measurements.md) - konekt — what the stack costs, measured  <!-- added by coverage_map.py: write the description and pick the group -->
 
 ### Services (5)
 

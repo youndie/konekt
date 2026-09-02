@@ -4,14 +4,12 @@
 // server doing what it does on the test contour, all night.
 //
 //     scripts/measure/k6.sh soak DURATION=6h READ_RATE=3 BUY_PER_MINUTE=2 SUBSCRIBERS=20
-import { Counter } from 'k6/metrics';
-import { announce, buy, screen, signIn, topUp } from './lib.js';
+import { announce, countOutcome, buy, screen, signIn, topUp } from './lib.js';
 
 const DURATION = __ENV.DURATION || '6h';
 const READ_RATE = parseInt(__ENV.READ_RATE || '3', 10);
 const BUY_PER_MINUTE = parseInt(__ENV.BUY_PER_MINUTE || '2', 10);
 const SUBSCRIBERS = parseInt(__ENV.SUBSCRIBERS || '20', 10);
-const outcomes = new Counter('soak_purchase_outcomes');
 
 export const options = {
   scenarios: {
@@ -67,5 +65,5 @@ export function purchase(data) {
   const token = data.tokens[Math.floor(Math.random() * data.tokens.length)];
   topUp(token, 15_00);
   const outcome = buy(token, 'home-20gb-30d');
-  outcomes.add(1, { status: outcome.status });
+  countOutcome(outcome);
 }

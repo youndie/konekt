@@ -27,14 +27,13 @@ COMPOSE=(docker compose -p "$PROJECT" -f deploy/compose.yaml -f deploy/compose.m
 ENV_FILE=$MEASURE_HOME/env
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "installing docker (Debian/Ubuntu)"
-  apt-get update -qq && apt-get install -y -qq ca-certificates curl >/dev/null
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-  . /etc/os-release
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable" \
-    > /etc/apt/sources.list.d/docker.list
-  apt-get update -qq && apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+  # Ubuntu's own packages rather than Docker's repository: a fresh release (26.04 on the rented
+  # boxes) is in the distribution before it is in Docker's list, and a stand script that fails on
+  # the newest Ubuntu is a script that fails on the box somebody just rented.
+  echo "installing docker from the distribution"
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq && apt-get install -y -qq docker.io docker-compose-v2 >/dev/null
+  systemctl enable --now docker >/dev/null 2>&1 || true
 fi
 docker compose version >/dev/null
 
