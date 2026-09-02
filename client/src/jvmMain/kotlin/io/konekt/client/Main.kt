@@ -1,7 +1,10 @@
 package io.konekt.client
 
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import io.konekt.client.app.KonektComposition
 import io.konekt.client.app.KonektPlatform
 import io.ktor.client.engine.cio.CIO
@@ -37,7 +40,22 @@ fun main() {
     composition.start()
 
     application {
-        Window(onCloseRequest = ::exitApplication, title = "konekt") {
+        // THE WINDOW'S SIZE, from the environment like every other setting here. A desktop window
+        // defaults to whatever the platform gives it, and the product is designed for a phone: the
+        // canvas is drawn at 393×852 and every golden is photographed there. `KONEKT_WINDOW=393x852`
+        // opens the application at the size it was designed for, which is the only way to compare it
+        // against the design without a second device.
+        val size =
+            System
+                .getenv("KONEKT_WINDOW")
+                ?.split("x")
+                ?.takeIf { it.size == 2 }
+                ?.let { (w, h) -> DpSize(w.trim().toInt().dp, h.trim().toInt().dp) }
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "konekt",
+            state = rememberWindowState(size = size ?: DpSize.Unspecified),
+        ) {
             composition.Screen()
         }
     }

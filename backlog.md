@@ -43,9 +43,11 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (0)
+## Open (1)
 
-No open tasks.
+| Task | | Priority | Size | Blocked by |
+|---|---|---|---|---|
+| [B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md) `[ ]` | Screen by screen, the client does not look like the canvas — the audit and the fix list | P1 | L | - |
 
 ## Closed (113)
 
