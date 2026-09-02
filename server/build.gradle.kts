@@ -1,4 +1,6 @@
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.attributes.LibraryElements
 import org.gradle.jvm.application.tasks.CreateStartScripts
 
 plugins {
@@ -82,10 +84,52 @@ exposed {
         // A single package ROOT. Every Table in every feature module has to sit under it, which is
         // why the package layout of this repository is `io.konekt.*` without exception.
         tablesPackage.set("io.konekt.db.tables")
-        // Against a throwaway Postgres with the committed migrations already applied, so the draft
-        // accounts for everything in db/migration rather than for whatever a developer's local
-        // database happens to hold.
-        testContainersImageName.set("postgres:18-alpine")
+        // WHAT IS SCANNED, AND IN WHAT FORM. The plugin walks every classpath entry that carries the
+        // package above as a DIRECTORY — `File(resource.toURI())` — and a `jar:` URL is not one: it
+        // throws "URI is not hierarchical" before any database is touched. The default classpath is
+        // this project's runtime classpath, on which `:shared:db`, where every Table lives, arrives
+        // as a jar. So the scan never worked here (B-118), on the 1.4.0 plugin as much as on 1.5.0.
+        //
+        // Two views of the same configuration, joined: the project dependencies asked for as
+        // `classes` — the directory variant every Java project exposes — and the external ones as the
+        // jars they are, which the scan never opens but `Class.forName` on a Table needs, since a
+        // Table's supertypes are Exposed's.
+        val runtime = configurations.runtimeClasspath
+        val projectClasses =
+            runtime.map { configuration ->
+                configuration.incoming
+                    .artifactView {
+                        componentFilter { it is ProjectComponentIdentifier }
+                        attributes.attribute(
+                            LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                            objects.named(LibraryElements.CLASSES),
+                        )
+                    }.files
+            }
+        val externalJars =
+            runtime.map { configuration ->
+                configuration.incoming
+                    .artifactView { componentFilter { it !is ProjectComponentIdentifier } }
+                    .files
+            }
+        classpath.setFrom(projectClasses, externalJars)
+        // AGAINST THE STAND'S POSTGRES, migrated by the application's own Flyway — not against the
+        // plugin's throwaway container. The container path applies whatever is in `fileDirectory`
+        // with a Flyway it configures itself, and that Flyway cannot be told
+        // `postgresql.transactional.lock=false`: V11's CREATE INDEX CONCURRENTLY then waits on
+        // Flyway's own transactional lock and dies of V11's lock timeout (55P03) — the second half of
+        // the recipe `DatabaseFactory` explains, missing in a place this build cannot reach. Given a
+        // URL instead, the plugin runs no Flyway at all: it connects and diffs. The stand's database
+        // is the one whose schema is exactly the committed migrations, applied by the same code and
+        // configuration production uses; `scripts/generate-migration.sh` brings the stand up first.
+        //
+        // The address is the compose file's loopback mapping on the build box; `-Pkonekt.draft.db=`
+        // points it elsewhere (a measure stand moves the port).
+        databaseUrl.set(
+            providers.gradleProperty("konekt.draft.db").orElse("jdbc:postgresql://127.0.0.1:55432/konekt"),
+        )
+        databaseUser.set("konekt")
+        databasePassword.set("konekt")
         // Drafts land in build/, never straight into db/migration. What the differ writes is the
         // shortest SQL that makes two schemas equal — DROP COLUMN, RENAME — which is exactly what
         // breaks a rolling deploy, so a human turns it into an expand/contract pair before it is

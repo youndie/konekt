@@ -27,13 +27,17 @@ remote_dir="server/build/generated-migrations"
 mkdir -p "$out_dir"
 rm -f "$out_dir"/*.sql
 
-"$HOME/.claude/bin/wsl-run" "rm -rf $remote_dir && ./gradlew :server:generateMigrations --console=plain"
+# THE STAND FIRST. The generator diffs the Table definitions against the stand's Postgres — migrated
+# by the application's own Flyway, which is the only Flyway here that knows the concurrent-index
+# recipe (B-118) — so the stand has to be up and built from THIS tree, or the draft is a diff against
+# somebody else's schema. `stand-up` is idempotent and rebuilds the server image when the tree moved.
+"$HOME/.claude/bin/wsl-run" "make stand-up >/dev/null && rm -rf $remote_dir && ./gradlew :server:generateMigrations --console=plain"
 
 # Read them back one by one rather than mounting anything: the list is short and the failure mode of
 # a partial copy is a migration that looks complete.
 names=$(ssh -o BatchMode=yes -p 2222 youndie@127.0.0.1 "ls \$HOME/konekt/$remote_dir 2>/dev/null || true")
 if [ -z "$names" ]; then
-    echo "generate-migration: the generator produced nothing — no schema change to draft?" >&2
+    echo "generate-migration: nothing to draft — the Table definitions match the committed migrations." >&2
     exit 1
 fi
 
@@ -45,7 +49,7 @@ done <<< "$names"
 
 cat >&2 <<'NOTE'
 
-Not a migration yet. Before anything goes into server/src/main/resources/db/migration:
+Not a migration yet. Before anything goes into shared/db/src/main/resources/db/migration:
   1. rewrite it as an expand/contract pair (B-36) — the generator's form breaks a rolling deploy;
   2. renumber it — the generator stamps versions to the second and collides with itself;
   3. run the tests: KonektSchemaTest is what actually proves the schema is complete.
