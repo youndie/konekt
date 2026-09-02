@@ -12,6 +12,7 @@ import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
 import io.ktor.util.cio.ChannelWriteException
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
 import ru.workinprogress.katcher.Katcher
@@ -123,6 +124,20 @@ fun Application.configureStatusPages() {
         // same exception again, from inside the handler for it.
         exception<ChannelWriteException> { call, cause ->
             logger.debug("the client on {} went away mid-response", call.request.local.uri, cause)
+        }
+
+        // A CANCELLED CALL IS NOT A FAILURE, AND IT MUST KEEP PROPAGATING. A subscriber that closes
+        // `/api/v1/realtime` cancels the coroutine serving it; the exception is
+        // `JobCancellationException`, and the handler below would have reported it to katcher as a
+        // crash — with the job's identity hash in the message, so every closed stream was its OWN
+        // group, and sixteen of them pushed the one real group off the collector's first page. That
+        // is how it was found: an operator's page that no longer showed the failure that was there.
+        //
+        // Rethrown rather than swallowed: cancellation is how structured concurrency unwinds, and a
+        // handler that answers it has turned a cancelled job into a completed one.
+        exception<CancellationException> { call, cause ->
+            logger.debug("the call on {} was cancelled", call.request.local.uri, cause)
+            throw cause
         }
 
         exception<Throwable> { call, cause ->

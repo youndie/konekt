@@ -46,4 +46,24 @@ class StatusPagesReportsToKatcherTest {
             "a domain refusal is being reported as a crash — 4xx is an answer, not a defect",
         )
     }
+
+    @Test
+    fun `a cancelled call is neither reported nor answered`() {
+        val text = source.readText()
+
+        // A subscriber closing `/api/v1/realtime` cancels the coroutine serving it. Before this branch
+        // existed the catch-all reported every such cancellation as a crash, each under its own group
+        // because the message carries the job's identity hash, and sixteen of them pushed the one
+        // real failure off the collector's first page — found by the stand scenario that reads that
+        // page. So: the branch exists, sits BEFORE the catch-all so that StatusPages picks it as the
+        // more specific handler, reports nothing, and rethrows, because cancellation is how
+        // structured concurrency unwinds and a handler that answers it has completed a cancelled job.
+        val cancellation =
+            text
+                .substringAfter("exception<CancellationException>", missingDelimiterValue = "")
+                .substringBefore("exception<Throwable>")
+        assertTrue(cancellation.isNotBlank(), "StatusPages has no branch for a cancelled call before the catch-all")
+        assertTrue("Katcher.catch(" !in cancellation, "a cancelled call is reported as a crash")
+        assertTrue("throw cause" in cancellation, "a cancelled call is swallowed instead of propagated")
+    }
 }
