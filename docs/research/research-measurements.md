@@ -81,16 +81,36 @@ the three routes beside them; failures were zero at every point.
 | 400 | home | 2.0 / 2.0 / 2.0 | 6.0 / 6.2 / 6.2 | 2.1–2.2 / 6.1–6.4 | 58–69 |
 | 400 | plans, plan detail | 0.6–0.7 | 1.2–1.8 | | |
 
+The staircase was then extended to 800 and 1 600 with the sampler also reading Postgres's CPU:
+
+| rps | route | p50 ms | p95 ms | k6 p50 / p95 (all routes) | server CPU mean–max % | Postgres CPU % |
+|---|---|---|---|---|---|---|
+| 800 | home | 3.6 / 4.2 / 4.7 | 53 / 68 / 82 | 2.8–3.5 / 31–47 | 87–96 | 48–59 |
+| 800 | plans, plan detail | 0.9–1.1 | 14–23 | | | |
+| ≈1 390 (asked 1 600) | home | 74 / 77 / 77 | 194 / 191 / 195 | 101–107 / 234–239 | 82–101 | 56–64 |
+| ≈1 390 | plans, plan detail | 12–14 | 71–75 | | | |
+
+At 1 600 the generator delivered 125 000 of the 144 000 requests it was asked for — about 1 390 a
+second — because the server stopped taking them faster; every one that arrived was answered, and
+none failed.
+
 **What it says.** Up to 400 requests a second — sixteen times the rate the test contour has ever
 seen — the server answers a screen in one to four milliseconds at the median and under seven at p95,
-and its CPU is at 60% of the one core the chart allows. Latency *falls* as the rate rises, from 4 ms
+and its CPU is at 60% of the one core the chart allows. **The knee is at about 800 a second on that
+core**: the server's CPU reaches 90% and the p95 of the home screen goes from 6 ms to 50–80 while
+its median barely moves — the queue forms, the work does not change. Past it, at the ~1 400 the
+generator could push through, the core is at 100% and the median is 75 ms. What saturated is the
+server: Postgres sat at 55–60% of its own core at the same moments, and the broker under 1%. Latency *falls* as the rate rises, from 4 ms
 at 25 rps to 2 ms at 400: the JIT and the connection pool are warmer, and the 25-rps point is the
 one closest to idle. The home screen costs three times a plan screen — it is the one that reads
 counters and the ledger — and the difference is the whole of the per-route spread.
 
-k6's p50 sits a millisecond above metrik's, which is the private link and the generator's own
-overhead, and k6's p95 above metrik's by three: the tail the collector does not see is the wire's.
-Where the two disagree more than that, the report will say so; here they do not.
+k6's p50 sits a millisecond above metrik's up to 400 rps, which is the private link and the
+generator's own overhead, and k6's p95 above metrik's by three: the tail the collector does not see
+is the wire's. Past the knee the two part company the other way: at ~1 400 rps metrik's median is
+75 ms and k6's is 102 — the 27 ms between them is time a request spent in the accept queue before
+the server stamped it, which the collector cannot see by construction. That is the reason for two
+columns: the collector measures the server, the generator measures the subscriber.
 
 **The JVM runs the Serial collector.** `-Xlog:gc` on the stand opens with `Using Serial`: with one
 CPU allowed, HotSpot's ergonomics pick the single-threaded collector and a 247 MB heap, and at
