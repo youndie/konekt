@@ -1,6 +1,7 @@
 package io.konekt.client.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -50,6 +51,11 @@ import io.github.youndie.kompot.theme.client.RemoteThemeDesignSystem
 fun KonektTheme(
     theme: KompotTheme?,
     darkMode: Boolean,
+    // THE TYPE SCALE, AND A CALLER MAY HAND IN ANOTHER. The default is the product's — the canvas's
+    // faces, sizes and weights. The screenshot harness passes the same scale with viddik's pinned
+    // family instead, because a golden must render to the pixel on every machine and a shipped
+    // typeface, static and unhinted, still does not (`B-114` G1, measured at 0.07–0.08%).
+    typography: Typography = KonektTypography.material,
     content: @Composable () -> Unit,
 ) {
     val base = if (darkMode) darkColorScheme() else lightColorScheme()
@@ -71,7 +77,7 @@ fun KonektTheme(
 
     // THE TYPE SCALE IS OURS, not Material's (`B-114`). kompot resolves every typography token from
     // here, so this one argument is what puts the canvas's faces, sizes and weights on every screen.
-    MaterialTheme(colorScheme = scheme, typography = KonektTypography.material) {
+    MaterialTheme(colorScheme = scheme, typography = typography) {
         CompositionLocalProvider(
             LocalKompotDesignSystem provides designSystem,
             // THE SCALE ITSELF, beside the design system built from it (`B-112`).

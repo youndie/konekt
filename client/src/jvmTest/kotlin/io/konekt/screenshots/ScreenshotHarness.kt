@@ -1,6 +1,5 @@
 package io.konekt.screenshots
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import io.github.youndie.kompot.ColumnRenderer
@@ -14,6 +13,7 @@ import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.theme.BrandKits
 import io.konekt.client.theme.KonektTheme
+import io.konekt.client.theme.KonektTypography
 import ru.workinprogress.viddik.LocalViddikDarkTheme
 import ru.workinprogress.viddik.core.viddikTypography
 
@@ -45,8 +45,17 @@ fun BrandFrame(
     // The fixture has to read it: viddik cannot know which of konekt's own switches means "dark".
     val darkMode = LocalViddikDarkTheme.current
 
-    MaterialTheme(typography = viddikTypography()) {
-        KonektTheme(theme = BrandKits.kits().getValue(brand), darkMode = darkMode) {
+    // THE PRODUCT'S SCALE IN VIDDIK'S FAMILY: every size and weight `KonektTypography` decides, on
+    // the Roboto viddik pins so a golden is the same pixels on a Mac and on the Linux runner. What
+    // a golden therefore does NOT photograph is the typeface itself — Manrope and Space Grotesk are
+    // shipped, static and unhinted, and still drift by 50–80 glyph-edge pixels between the two
+    // platforms (`B-114` G1). The face is checked by eye against the canvas; the layout, by this.
+    KonektTheme(
+        theme = BrandKits.kits().getValue(brand),
+        darkMode = darkMode,
+        typography = viddikTypography(KonektTypography.material),
+    ) {
+        run {
             CompositionLocalProvider(LocalKompotRegistry provides konektRegistry()) {
                 content()
             }

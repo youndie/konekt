@@ -243,14 +243,22 @@ These are not per-screen defects; fix them once and every frame below moves.
 **What the fonts cost, measured.** With the platform face, a frame recorded on a Mac and verified on the
 Linux runner differed by 4–8% of its pixels. With the variable files bundled, 0.07–0.26%. With static
 instances, 0.07–0.08% — and dehinting changed not one pixel, so it was never hinting. What is left is
-single glyphs of 12sp text whose sub-pixel position the two platforms round differently, and it is
-admitted by widening viddik's **per-channel** allowance from ±2 to ±24 rather than the per-frame
-percentage: a one-point inset change still fails at 4–7.6%, measured by mutation, so the guard is not
-blind — it is deaf to the one thing that is noise.
+single glyphs of 12sp text whose sub-pixel position the two platforms round differently.
 
-**Not touched in this block, on purpose:** the button height (kompot's), the state words under the bars
-(a decision for block 3), and the chevron sharing a line with the title (needs the frame to know the
-title).
+**The goldens therefore keep viddik's family.** `viddikTypography(KonektTypography.material)` — every
+size and weight the product decides, on the Roboto viddik pins — is what the screenshot harness hands
+to `KonektTheme` and to `KonektApp`, which builds its own theme and had been overriding the harness's.
+A golden photographs the layout, not the typeface; the face is checked against the canvas by eye. The
+per-channel tolerance that was widened to admit the drift went back to its default once nothing needed
+admitting, and a one-point inset change fails at 4–7.6%, measured by mutation.
+
+**G6 is upstream.** `KompotSurface` carries shape, colours and a text style and nothing about size, so
+a design system can make a button a pill and cannot make it 56 tall — filed as
+[youndie/kompot#106](https://github.com/youndie/kompot/issues/106) with the smallest contract change
+that keeps appearance off the wire.
+
+**Not touched in this block, on purpose:** the state words under the bars (a decision for block 3) and
+the chevron sharing a line with the title (needs the frame to know the title).
 
 ## Acceptance criteria
 

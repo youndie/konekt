@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +53,7 @@ import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.render.VectorIconGlyph
 import io.konekt.client.theme.KonektTheme
+import io.konekt.client.theme.KonektTypography
 import io.konekt.components.VectorIcon
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -138,6 +140,10 @@ fun KonektApp(
     topic: String,
     darkMode: Boolean,
     theme: KompotTheme? = null,
+    // THE TYPE SCALE, for the same caller `theme` exists for: a screenshot fixture hands in the
+    // product's scale on viddik's pinned family, because this frame builds its own `KonektTheme` and
+    // an outer `MaterialTheme` cannot reach through it. Everything else takes the product's.
+    typography: Typography = KonektTypography.material,
     // NOT DEFAULTED TO A NO-OP THAT LOOKS LIKE A SINK. A caller that does not want to record says so
     // by passing this explicitly; the default records nothing and is named for what it is, so a
     // deployment reporting nothing is a deployment that chose to rather than one that forgot.
@@ -364,7 +370,7 @@ fun KonektApp(
     // gives; what changes is that a new screenful gets a new one.
     val scroll = key(current, reloads) { rememberScrollState() }
 
-    KonektTheme(theme = theme ?: fetchedTheme, darkMode = darkMode) {
+    KonektTheme(theme = theme ?: fetchedTheme, darkMode = darkMode, typography = typography) {
         CompositionLocalProvider(
             LocalKompotRealtimeUpdates provides updates,
             LocalKompotDegradationSink provides sink,

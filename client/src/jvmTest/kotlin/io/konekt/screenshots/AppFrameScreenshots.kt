@@ -21,10 +21,12 @@ import io.konekt.client.app.ScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.theme.BrandKits
+import io.konekt.client.theme.KonektTypography
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import ru.workinprogress.viddik.LocalViddikDarkTheme
 import ru.workinprogress.viddik.annotations.ViddikScreenshot
+import ru.workinprogress.viddik.core.viddikTypography
 
 // THE APPLICATION, PHOTOGRAPHED — which the gallery beside this file does not do, and that omission
 // is why every frame-level defect in this product was found by a person and none by the harness.
@@ -154,6 +156,9 @@ private fun App(
             topic = "screenshots",
             darkMode = LocalViddikDarkTheme.current,
             theme = BrandKits.kits().getValue(brand),
+            // The product's scale on viddik's family — `BrandFrame` says why, and this frame has to
+            // say it again because `KonektApp` builds its own theme inside it.
+            typography = viddikTypography(KonektTypography.material),
         )
     }
 }
