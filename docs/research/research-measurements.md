@@ -139,9 +139,22 @@ requests; every purchase in every round completed, none was refused, no request 
 | 40 | purchases | 9.0 / 9.4 / 9.4 | 17.4 / 19.3 / 19.5 | 8.5–8.6 / 17.7–18.6 | 48–80 | 56–63 |
 | 40 | confirm | 12.6 / 12.8 / 13.1 | 21.3 / 23.1 / 23.7 | | | |
 
+Extended to 80 and 160 a second (three rounds, the sampler reading Postgres too):
+
+| purchases/s | route | p50 ms | p95 ms | k6 p50 / p95 | delivered | server CPU % | Postgres CPU % |
+|---|---|---|---|---|---|---|---|
+| 80 | purchases | 10.9 / 11.2 / 11.7 | 40 / 49 / 85 | 8.9–9.0 / 27–40 | 4 800 of 4 800 | 49–92 | 57–112 |
+| 80 | confirm | 15.2 / 15.3 / 15.8 | 46 / 55 / 100 | | | | |
+| 160 | purchases | 187 / 176 / 161 | 390 / 356 / 339 | 8.9–9.4 / 339–376 | ≈9 000–9 260 of 9 600 | 55–85 | 56–100 |
+| 160 | confirm | 210 / 202 / 185 | 416 / 389 / 374 | | | | |
+
 **What it says.** A purchase costs the subscriber about 9 ms to start and 13 ms to confirm at the
-median, 20 ms at p95, and the figure does not move between five and forty purchases a second —
-there is no knee under 40, which is the rate the staircase was extended past. The saga is the
+median, 20 ms at p95, and the figure does not move between five and forty purchases a second. **The
+knee is between 80 and 160 a second**: at 80 the medians hold and the tail lengthens (p95 40 → 85 ms
+across the rounds — the simulator's weight, see the finding below), at 160 the median itself is
+160–190 ms, the generator delivers 9 000 of the 9 600 it was asked for, and Postgres touches 100%
+of a core. This knee is Postgres's, not the server's — the other way round from the reading
+profile, and the reason the sampler records both. The saga is the
 expensive request on this server: forty of them a second put the server's core at 50–60% and
 Postgres at 60%, where four hundred screen reads had cost the same — one purchase is roughly ten
 screens, which is what ≈17 writes, an outbox row and a broker publish come to.
