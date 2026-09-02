@@ -45,8 +45,8 @@ import ru.workinprogress.viddik.core.viddikTypography
 // point: the gallery sizes each frame to its content, so a bar that lands in the middle of the window
 // has no window to land in the middle OF. A defect about where something sits inside a phone needs a
 // phone-shaped frame.
-private const val APP_WIDTH = 393
-private const val APP_HEIGHT = 852
+internal const val APP_WIDTH = 393
+internal const val APP_HEIGHT = 852
 
 private class AppRecordings
 
@@ -60,7 +60,7 @@ private fun body(name: String): String =
 // ONE ADDRESS, ONE ANSWER, and the shape is decided by the body exactly as `KonektScreenSource`
 // decides it: a form response carries `schema`, a screen does not. Reproducing that choice rather
 // than hard-coding it per frame keeps this fixture honest about which of the two a recording is.
-private class Recorded(
+internal class Recorded(
     private val name: String,
 ) : ScreenSource {
     override suspend fun fetch(address: String): Screen {

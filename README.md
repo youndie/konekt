@@ -6,6 +6,14 @@ the stack costs to carry it is the subject.
 
 > 📱 a new screen ships from the server; a new *kind* of screen ships with the client
 
+<p align="center">
+  <img src="docs/screenshots/brand-a-home.png" width="180" alt="Home — brand A">
+  <img src="docs/screenshots/brand-a-plan-detail.png" width="180" alt="Plan detail — brand A">
+  <img src="docs/screenshots/brand-a-esim-scan.png" width="180" alt="eSIM install, the QR step — brand A">
+  <img src="docs/screenshots/brand-b-home.png" width="180" alt="Home — brand B, the same markup on a second kit">
+</p>
+<p align="center"><sub>The desktop client at phone size, on the recorded screens the goldens use, in the product's own typefaces. The fourth frame is the second brand kit — the same trees, a different server response. More in <a href="docs/screenshots/">docs/screenshots</a>, both themes.</sub></p>
+
 ### 🤔 What it is
 
 The product is real enough to photograph — balance and quotas, plans and packages, ordering and
@@ -42,7 +50,10 @@ conformance kit passing vacuously, an Apple target nobody published.
 
 **Building.** The server, the saga, the broker bridge, the realtime channel and the eSIM wizard are
 in and driven end to end by a docker-compose stand; the Compose client runs on the desktop, on an
-Android device and in the iOS simulator. What is done and what is not is [backlog.md](backlog.md),
+Android device and in the iOS simulator, and draws every screen the way the canvas draws it — matched
+screen by screen against the real frames, with the differences kept on purpose written down
+([B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md),
+[B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md)). What is done and what is not is [backlog.md](backlog.md),
 item by item, with the reason attached to each — and the ones stopped on a stated cause say what the
 cause is rather than sitting in a list of the unfinished.
 
@@ -101,12 +112,12 @@ not where it is usually assumed to be:
 | Axis | Ships as |
 |---|---|
 | colours and every string | a server response — **no client rebuild**; a new kit is a server deploy |
-| the type scale — sizes, weights, letter spacing | the same way, and no kit here carries one yet |
-| the font family | **not available** — the wire's text style has no family, so a face a server named would not arrive |
+| the type scale — sizes, weights, letter spacing | the same way, and no kit here carries one yet — the client's own scale is the canvas's |
+| the font family | **a client release** — Manrope and Space Grotesk ship inside the client as static instances; the wire's text style has no family, so a face a server named would not arrive |
 | screens, layouts, flows | a server response — no rebuild |
-| the shape scale (corner radii) | **a client release** — the wire has no vocabulary for shape, deliberately |
+| the shape scale (corner radii), and how tall a control is | **a client release** — the wire has no vocabulary for shape or size, deliberately |
 | a new kind of component | **a client release** — the dictionary is the API |
-| icons in the interface | **not available** — kompot has no icon vocabulary, so the bottom bar is text labels |
+| icons in the interface | a server deploy — an icon travels as path data on a 24-grid and the client colours it; what an unknown icon degrades to is written down per control |
 | a new event topic | a broker restart — booblik fixes its topics at startup |
 
 The reasoning behind each row is in the research, §1.2, §1.5 and §1.8. The full version — what is a
