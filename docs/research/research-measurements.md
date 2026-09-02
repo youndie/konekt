@@ -184,8 +184,17 @@ built, doing what it was built for, on a stand that never meant to ask for it.
 rounds — 53, 68, 82 ms — and the buying profile's server CPU at 5 purchases a second is 30–90%
 where it should be near idle: the background grew with every point. The medians did not move, so
 the knees stand; the tails and the CPU columns of later rounds carry the simulator's weight, and
-this document says so rather than averaging it away. The remaining measurements ran on a **reset
-stand with the simulator off** (`scripts/measure/reset.sh`, `SIMULATE_TRAFFIC=false`).
+this document says so rather than averaging it away.
+
+**A rerun that was not what it said.** The stand was reset and the key points run again with the
+simulator meant to be off — and it was not: the switch had been written into the stand script
+after this stand was brought up, the environment file had no line for `sed` to change, and the
+container still said `SIMULATE_TRAFFIC=true`. The reading points of that rerun stand (40
+subscribers, a simulator's worth of nothing): 400 rps at p50 2.4 / p95 7.3 ms once warm — the first
+point after the reset, p50 22 / p95 442, is the cold JVM and is excluded as warm-up. The buying
+points of that rerun signed in 33 000 subscribers and are the same picture as before, with the
+same weight. The stand was reset a second time with the variable **verified inside the container**
+before the measurements that follow; the numbers above are not restated.
 
 **What it says about the product.** The simulator is a mock, but its cost is the shape a real usage
 stream would have: three events per subscriber per five seconds is 36 events a minute per line,
