@@ -10,6 +10,9 @@ const SUBSCRIBERS = parseInt(__ENV.SUBSCRIBERS || '30', 10);
 const MAX_VUS = parseInt(__ENV.MAX_VUS || '200', 10);
 
 export const options = {
+  // The setup signs subscribers in one by one — thousands of them for a big point — and k6's
+  // default of a minute for it ended the 40-rps purchase point before a single purchase.
+  setupTimeout: '30m',
   scenarios: staircase('read', RATES, HOLD, MAX_VUS),
   thresholds: { checks: ['rate>0.99'] },
 };

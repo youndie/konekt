@@ -12,6 +12,9 @@ const PLAN = __ENV.PLAN || 'home-20gb-30d';
 const PRICE_MINOR = parseInt(__ENV.PRICE_MINOR || '1500', 10);
 
 export const options = {
+  // The setup signs subscribers in one by one — thousands of them for a big point — and k6's
+  // default of a minute for it ended the 40-rps purchase point before a single purchase.
+  setupTimeout: '30m',
   scenarios: {
     same_account: {
       executor: 'shared-iterations',

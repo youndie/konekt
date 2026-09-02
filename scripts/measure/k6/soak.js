@@ -12,6 +12,9 @@ const BUY_PER_MINUTE = parseInt(__ENV.BUY_PER_MINUTE || '2', 10);
 const SUBSCRIBERS = parseInt(__ENV.SUBSCRIBERS || '20', 10);
 
 export const options = {
+  // The setup signs subscribers in one by one — thousands of them for a big point — and k6's
+  // default of a minute for it ended the 40-rps purchase point before a single purchase.
+  setupTimeout: '30m',
   scenarios: {
     reading: {
       executor: 'constant-arrival-rate',

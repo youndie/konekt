@@ -10,7 +10,10 @@ const HOLD = parseInt(__ENV.HOLD || '60', 10);
 const MAX_VUS = parseInt(__ENV.MAX_VUS || '100', 10);
 const PLAN = __ENV.PLAN || 'home-20gb-30d';
 
-export const options = { scenarios: staircase('purchase', RATES, HOLD, MAX_VUS) };
+export const options = {
+  // The setup signs subscribers in one by one — thousands of them for a big point — and k6's
+  // default of a minute for it ended the 40-rps purchase point before a single purchase.
+  setupTimeout: '30m', scenarios: staircase('purchase', RATES, HOLD, MAX_VUS) };
 
 // A pool of funded subscribers large enough for the whole run: buying twice on one line is a
 // different product path (a second package on a line) and a different number.
