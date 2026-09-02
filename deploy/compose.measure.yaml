@@ -1,0 +1,34 @@
+# THE STAND AS A MEASUREMENT STAND (`B-117`), layered over `compose.yaml`:
+#
+#     docker compose -f deploy/compose.yaml -f deploy/compose.measure.yaml up -d --no-build --wait
+#
+# Three things differ from the development stand, and each is the difference between a number
+# about the deployment and a number about whatever machine ran it:
+#
+#   * the server carries THE CHART'S LIMITS (`charts/konekt/values.yaml`, `resources.limits`), so
+#     the knee found here is the knee the test contour has, not the knee of a twenty-core box;
+#   * the JVM writes its GC log, so a soak can tell a growing heap from a busy one;
+#   * the declining server is behind a profile — a measurement of the saga's happy path does not
+#     need a second JVM eating the same cores, and the refusal scenarios ask for it by name.
+#
+# Ports are NOT exposed differently here: the generator runs on the compose network
+# (`scripts/measure/k6.sh`) and reaches `server:8080` by name. On a box with a public address the
+# host ports the base file opens are bound to loopback through `.env.measure`, written by
+# `scripts/measure/stand-up.sh` — a stand with Postgres on a public port is not a stand.
+services:
+  server:
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+    environment:
+      JAVA_OPTS: "-Xlog:gc:file=/tmp/gc.log:time,uptime,level,tags"
+
+  server-declining:
+    profiles: ["declining"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G

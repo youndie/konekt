@@ -172,6 +172,32 @@ from B-107 holds under load rather than only in a test.
 7. The report: `docs/research/research-measurements.md`, one section per measurement, every figure
    with its caption; the README's cost paragraph updated with the two or three numbers that earned it.
 
+## Progress
+
+### 1 — the stand script and the scenarios, done; the pipeline proved on the build box
+
+`scripts/measure/stand-up.sh` takes a box to the stand with `deploy/compose.measure.yaml` layered
+on (the chart's limits on the server, the GC log, the declining server behind a profile), every
+host port on loopback and overridable, the environment file and every output **outside the tree**
+— on the build box the tree is a mutagen replica, and the first dry run lost its environment file
+to the next sync ten seconds after writing it. `scripts/measure/k6.sh` runs a scenario as the
+caller on the stand's own network; `sample.sh` is the soak's sampler; `contention-check.sh` reads
+the ledger's invariants off the database (hold −, release +, top-up +, reversal −, capture and
+decline 0, so the sum of an account's entries *is* its balance).
+
+Four scenarios ran end to end on the build box — `screens`, `purchase`, `contention`, `soak` —
+every check green and the invariants at zero. Those numbers are thrown away: the box is shared and
+the point was the pipeline.
+
+### 2 — the soak, running
+
+Started **2026-09-02 14:26 UTC** on the spare box, image `ghcr.io/youndie/konekt-server:v0.1.40`
+under the chart's limits, `SIMULATE_TRAFFIC` on, `DURATION=12h READ_RATE=3 BUY_PER_MINUTE=2
+SUBSCRIBERS=20`, the sampler every 60 s; both under `systemd-run`. The box carries a light booblik
+soak of its own at the same time (its broker holds ~660 MiB and a few percent of CPU), which the
+report names as noise. The first sample after the setup burst: the server at 143 MiB of its 1 GiB,
+155 descriptors, 11 Postgres connections.
+
 ## Acceptance criteria
 
 - AC: `scripts/measure/stand-up.sh` takes a fresh box to a running stand with the chart's limits and
