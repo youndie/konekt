@@ -21,7 +21,7 @@ test contour beside the real canvas frames, and the list of what has to move.
 A fresh number on the test contour (`v0.1.39`), money and a plan given through the API, the wizard
 entered from the home banner and walked to `done`. Every application frame is a screenshot of that
 window, captured over the same rectangle B-114 used; every reference frame is the canvas rendered at
-393×852 with its own fonts. The dark frame is the golden `AppFrame_App_esim_activate_Dark`, because
+393×852 with its own fonts. The dark frame is the golden `AppFrame_App_esim_activate_Dark` as it was before this item, because
 the window was not switched — and it is the frame with the one defect that is not cosmetic.
 
 ## What is deliberately NOT on the list
@@ -84,7 +84,7 @@ These are not per-step defects; fix them once and every frame moves.
 | As it is | As it should be |
 |---|---|
 | ![](../design/audit-2026-09-02/app/13-esim-3-activate.png) | ![](../design/audit-2026-09-02/design/12.png) |
-| ![](../../client/src/jvmTest/snapshots/AppFrame_App_esim_activate_Dark.png) | ![](../design/audit-2026-09-02/design/13.png) *(dark)* |
+| ![](../design/audit-2026-09-02/app/13-esim-3-activate-dark.png) | ![](../design/audit-2026-09-02/design/13.png) *(dark)* |
 
 - **The QR in dark mode is black modules on a near-black page** — the golden above. A camera does not
   read it. The canvas keeps the QR on a **light tile** (`#E6EFEC`-ish) inside the dark card, and the
@@ -139,6 +139,16 @@ These are not per-step defects; fix them once and every frame moves.
 3. **W3 + W4 + W6** — the meter, the eyebrow, the headings, the cards. Server copy per step, one
    renderer for the meter, the QR tile, the eSIM card's colour rule.
 4. **The done step** as the outcome shape, the ICCID table, the copy action decision.
+
+## Progress
+
+### 1 — the dark QR tile, done
+
+`EsimQrRenderer` paints a fixed light tile (`QR_LIGHT`, the canvas's mint-grey) under the quiet zone
+and the modules, in both themes. The renderer's own comment had promised "black on white" and
+delivered black on whatever the page was. The test renders the code on a painted dark page and
+reads the quiet zone's pixels — on the harness's white window it would have passed without the
+tile, which is how the frame went out; by mutation, removing the tile fails it.
 
 ## Acceptance criteria
 

@@ -1,6 +1,7 @@
 package io.konekt.client.render
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -83,6 +84,13 @@ class EsimQrRenderer : KompotComponentRenderer<EsimQrComponent> {
                             surface.shape ?: androidx.compose.foundation.shape
                                 .RoundedCornerShape(20.dp),
                         )
+                        // THE LIGHT TILE IS DRAWN, in both themes, and it is not the theme's colour.
+                        // The comment below about black on white was true of the modules and false
+                        // of the ground: the quiet zone was padding over whatever the page was, and
+                        // in dark mode the page is near-black — black modules on it, a code no
+                        // camera reads (`B-115`). A scanner needs LIGHT around and between the
+                        // modules, so the tile is a fixed light and the card around it is themed.
+                        .background(QR_LIGHT)
                         // The QUIET ZONE is drawn rather than assumed: a scanner needs light around
                         // the code, and a card whose background happens to be light is not the same
                         // promise. Four modules is the specification's minimum.
@@ -143,6 +151,10 @@ class EsimQrRenderer : KompotComponentRenderer<EsimQrComponent> {
         // which is a comfortable seven centimetres for a camera held up to a screen.
         const val QR_LAYOUT_MAX_DP = 400
         const val QUIET_ZONE_DP = 12
+
+        // The tile the code sits on: the canvas's light mint-grey, the same in the dark frame as in
+        // the light one, because it is there for a camera and not for the eye.
+        val QR_LIGHT = Color(0xFFEAF1EE)
         const val SEAM_BLEED = 0.5f
 
         // MEDIUM error correction, which is the level a printed-on-a-screen code wants: it survives a

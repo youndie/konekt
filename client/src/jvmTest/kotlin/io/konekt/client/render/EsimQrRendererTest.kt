@@ -1,10 +1,22 @@
 package io.konekt.client.render
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.LocalKompotDesignSystem
 import io.github.youndie.kompot.LocalKompotRegistry
@@ -110,5 +122,50 @@ class EsimQrRendererTest {
                 manualCodeText = "8F21-4C90",
             ),
         )
+    }
+
+    // THE TILE IS LIGHT ON A DARK PAGE (`B-115`). The modules were black and the quiet zone was
+    // padding over whatever the page was — near-black in dark mode, so the code was black on black
+    // and no camera read it. The page here is painted the dark ground on purpose: a test on the
+    // harness's white window would pass with or without the tile, which is how the frame went out.
+    @Test
+    fun `the code sits on a light tile whatever the page is`() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = darkColorScheme()) {
+                    CompositionLocalProvider(
+                        LocalKompotDesignSystem provides KonektDesignSystem(),
+                        LocalKompotRegistry provides konektRegistry(),
+                    ) {
+                        Box(Modifier.size(400.dp).background(DARK_PAGE).testTag("page")) {
+                            EsimQrRenderer().Render(
+                                component = EsimQrComponent(id = "qr", payload = activationCode),
+                                actionHandler = KompotActionHandler { },
+                                formController = FormController(FormSchema(formId = "qr", fields = emptyList())),
+                            )
+                        }
+                    }
+                }
+            }
+
+            val image = onNodeWithTag("page").captureToImage()
+            val pixels = image.toPixelMap()
+            // The tile: 0.7 of the 400-point box, centred at the top.
+            val tile = (image.width * EsimQrRenderer.QR_WIDTH_FRACTION).toInt()
+            val left = (image.width - tile) / 2
+            val quiet = EsimQrRenderer.QUIET_ZONE_DP * image.width / 400 / 2
+
+            // Every pixel of the quiet zone's top edge is light — that is the zone a scanner needs.
+            val zone = (left + quiet until left + tile - quiet step 4).map { x -> pixels[x, quiet] }
+            assertTrue(zone.isNotEmpty(), "the tile could not be located, so nothing here was checked")
+            zone.forEach { assertTrue(it.luminance() > 0.8f, "a quiet-zone pixel is dark: $it") }
+
+            // And the finder pattern in the corner is dark — the tile did not paint the code away.
+            val inside = (left + quiet * 2 + 2 until left + tile / 3).map { x -> pixels[x, quiet * 2 + 2] }
+            assertTrue(inside.any { it.luminance() < 0.2f }, "no dark module found inside the tile")
+        }
+
+    private companion object {
+        val DARK_PAGE = Color(0xFF0F1614)
     }
 }

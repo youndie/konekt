@@ -97,6 +97,11 @@ holding a run it cannot find would be holding a button that does nothing.
 - **`captionText`:** "Stay on Wi-Fi. This takes up to a minute and finishes on its own."
 - **A payload too large to encode leaves the typed code rather than throwing** —
   `EsimQrRendererTest`.
+- **The code sits on a fixed light tile, in both themes** (`B-115`). The modules were black and the
+  quiet zone was padding over the page — near-black in dark mode, so the dark frame was a code no
+  camera could read. `EsimQrRenderer.QR_LIGHT` is the tile and it is not the theme's colour: it is
+  there for a scanner, not for the eye. `EsimQrRendererTest` renders it on a painted dark page and
+  reads the quiet zone's pixels.
 
 ### 4.3. The eSIM card, on the last step
 
