@@ -10,9 +10,9 @@ the stack costs to carry it is the subject.
   <img src="docs/screenshots/brand-a-home.png" width="180" alt="Home — brand A">
   <img src="docs/screenshots/brand-a-plan-detail.png" width="180" alt="Plan detail — brand A">
   <img src="docs/screenshots/brand-a-esim-scan.png" width="180" alt="eSIM install, the QR step — brand A">
-  <img src="docs/screenshots/brand-b-home.png" width="180" alt="Home — brand B, the same markup on a second kit">
+  <img src="docs/screenshots/brand-b-home-dark.png" width="180" alt="Home — brand B in the dark theme, the same markup on a second kit">
 </p>
-<p align="center"><sub>The desktop client at phone size, on the recorded screens the goldens use, in the product's own typefaces. The fourth frame is the second brand kit — the same trees, a different server response. More in <a href="docs/screenshots/">docs/screenshots</a>, both themes.</sub></p>
+<p align="center"><sub>The desktop client at phone size, on the recorded screens the goldens use, in the product's own typefaces. The fourth frame is the second brand kit in the dark theme — the same trees, a different server response. More in <a href="docs/screenshots/">docs/screenshots</a>, both themes.</sub></p>
 
 ### 🤔 What it is
 

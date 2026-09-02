@@ -44,6 +44,7 @@ class ShowcaseFrames {
             Frame("brand-a-home-dark", "home-screen", dark = true),
             Frame("brand-a-esim-scan-dark", "esim-activate-screen", dark = true),
             Frame("brand-b-home", "home-screen", brand = "brand-b"),
+            Frame("brand-b-home-dark", "home-screen", brand = "brand-b", dark = true),
             Frame("brand-b-plans", "plans-screen", brand = "brand-b"),
             Frame("brand-b-plan-detail", "plan-detail-screen", brand = "brand-b"),
         )
