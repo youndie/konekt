@@ -43,11 +43,12 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (1)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md) `[ ]` | Screen by screen, the client does not look like the canvas — the audit and the fix list | P1 | L | - |
+| [B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md) `[ ]` | The eSIM install flow does not look like the canvas — the audit and the fix list | P1 | M | - |
 
 ## Closed (113)
 
