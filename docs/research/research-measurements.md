@@ -55,3 +55,45 @@ it is paid only by the account under contention.
 same twenty holds, and the ledger agreed. The saga was fine: `POST /purchases` answers **202** and
 the scenario's `buy()` accepted only 200 and 201, so it never confirmed. The harness's output is
 data too, and the database was the thing that said which side was wrong.
+
+## 1. Load by RPS — reading screens
+
+**What was measured.** `GET /api/v1/screens/home`, `/plans` and `/plans/{planId}`, chosen at random
+per request from 30 signed-in subscribers holding a plan, at a constant arrival rate held for 90 s
+(`scripts/measure/k6/screens.js` through `staircase.sh`: one k6 invocation per rate, three rounds,
+15 s between points). metrik's route table read for each point's window; the server's CPU from
+`docker stats` every 10 s, as a share of its one allowed core. The first staircase was 25 → 400,
+extended when nothing gave.
+
+**What came out** — metrik's figures, the three rounds separated by slashes; k6's own p50/p95 across
+the three routes beside them; failures were zero at every point.
+
+| rps | route | p50 ms | p95 ms | k6 p50 / p95 (all routes) | server CPU mean–max % |
+|---|---|---|---|---|---|
+| 25 | home | 3.9 / 3.5 / 3.3 | 7.7 / 5.3 / 5.1 | 3.1–4.1 / 9.0–11.1 | 11–33 |
+| 25 | plans, plan detail | 1.1 | 1.2–3.4 | | |
+| 50 | home | 3.5 / 3.4 / 3.3 | 6.5 / 5.1 / 4.8 | 3.0–3.4 / 6.9–8.7 | 18–34 |
+| 50 | plans, plan detail | 1.1 | 1.2–2.0 | | |
+| 100 | home | 3.3 / 3.2 / 3.1 | 5.5 / 5.0 / 4.7 | 2.8–2.9 / 6.3–7.0 | 26–54 |
+| 100 | plans, plan detail | 1.0–1.1 | 1.2–1.8 | | |
+| 200 | home | 3.0 / 2.0 / 2.0 | 5.5 / 5.0 / 5.0 | 2.5 / 5.9–6.5 | 37–53 |
+| 200 | plans, plan detail | 0.7–0.9 | 1.2 | | |
+| 400 | home | 2.0 / 2.0 / 2.0 | 6.0 / 6.2 / 6.2 | 2.1–2.2 / 6.1–6.4 | 58–69 |
+| 400 | plans, plan detail | 0.6–0.7 | 1.2–1.8 | | |
+
+**What it says.** Up to 400 requests a second — sixteen times the rate the test contour has ever
+seen — the server answers a screen in one to four milliseconds at the median and under seven at p95,
+and its CPU is at 60% of the one core the chart allows. Latency *falls* as the rate rises, from 4 ms
+at 25 rps to 2 ms at 400: the JIT and the connection pool are warmer, and the 25-rps point is the
+one closest to idle. The home screen costs three times a plan screen — it is the one that reads
+counters and the ledger — and the difference is the whole of the per-route spread.
+
+k6's p50 sits a millisecond above metrik's, which is the private link and the generator's own
+overhead, and k6's p95 above metrik's by three: the tail the collector does not see is the wire's.
+Where the two disagree more than that, the report will say so; here they do not.
+
+**The JVM runs the Serial collector.** `-Xlog:gc` on the stand opens with `Using Serial`: with one
+CPU allowed, HotSpot's ergonomics pick the single-threaded collector and a 247 MB heap, and at
+400 rps a young collection runs about once a second for 5–7 ms. That is the chart's `cpu: 1`
+choosing the garbage collector, and it is the first thing to try when the knee is found.
+
