@@ -112,7 +112,11 @@ object PlansScreen {
             // card computed in two bases would disagree with each other for a living.
             perUnitText = MoneyFormat.perUnit(plan.price * MB_PER_GB, plan.dataMb, "GB"),
             quotaTexts = quotas(plan),
-            badgeText = if (plan.onSale) "On sale" else null,
+            // THE TAG SAYS SOMETHING ONLY WHEN THERE IS SOMETHING TO SAY (`B-114`, block 4): `On sale`
+            // under every card read as a warning, and availability is the ordinary case. The
+            // sold-out card is the one that speaks, and it is the one without a pill.
+            badgeText = if (plan.onSale) null else "Sold out",
+            actionText = if (plan.onSale) "Choose" else null,
             // SOLD OUT IS A STATE AND NOT AN ABSENCE. `us-20gb-30d` carries `onSale = false` and is
             // deliberately in the catalogue: the refusal path needs a fixture, and a subscriber who
             // was told about a plan should find it rather than find nothing.

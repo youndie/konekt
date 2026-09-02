@@ -35,6 +35,7 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                 badgeText = "Popular",
                 state = PlanStates.AVAILABLE,
                 action = NavigateAction("app://plans/tr-10"),
+                actionText = "Choose",
             ),
         "esim_card" to
             EsimCardComponent(

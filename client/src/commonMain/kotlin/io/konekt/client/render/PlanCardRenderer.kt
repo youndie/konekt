@@ -1,13 +1,14 @@
 package io.konekt.client.render
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,11 +19,16 @@ import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotSurfaceRoles
 import io.github.youndie.kompot.LocalKompotDesignSystem
+import io.github.youndie.kompot.LocalKompotRegistry
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.standard.ButtonComponent
+import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.PlanCardComponent
 import io.konekt.components.PlanStates
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceDensities
 
 // A plan as the subscriber chooses it.
 //
@@ -47,17 +53,17 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
         val soldOut = component.state == PlanStates.SOLD_OUT
         val loading = component.state == PlanStates.LOADING
         val action = component.action
+        val registry = LocalKompotRegistry.current
 
+        // A CARD ON THE PAGE GROUND, no outline (`B-114`, block 4): the canvas separates cards from
+        // the page by ground alone — `surface` on `background` — and the hairline that used to be
+        // here was a card drawn on a white page, where nothing else separated them.
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .clip(shape)
                     .background(designSystem.resolveColor(M3Colors.Surface))
-                    .border(1.dp, designSystem.resolveColor(M3Colors.Outline), shape)
-                    // NOT CLICKABLE WHILE SOLD OUT OR STILL BEING PRICED, and the two are refused for
-                    // different reasons: one cannot be bought and the other has no price yet. A card
-                    // that accepts a tap and then refuses is worse than one that does not accept it.
                     .then(
                         if (action != null && !soldOut && !loading) {
                             Modifier.clickable { actionHandler.handle(action) }
@@ -77,20 +83,17 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                     style = designSystem.resolveTypography(M3Typography.TitleMedium),
                     color = designSystem.resolveColor(if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.OnSurface),
                 )
-                // THE PRICE AND WHAT A UNIT OF IT COSTS, stacked and right-aligned — which is what
-                // makes the second readable AS a comparison rather than as another number on the
-                // card. The canvas draws it exactly here.
                 Column(horizontalAlignment = Alignment.End) {
+                    // THE PRICE IN THE TEXT COLOUR, not the brand's: the canvas's figure is black
+                    // and bold, and a green price beside a green pill was two accents in one row.
                     Text(
-                        // A plan still being priced says so where the price goes, rather than showing
-                        // a stale number or an empty space. `LOADING` is on the wire precisely because
-                        // only the server knows the difference.
                         text = if (loading) "…" else component.priceText,
                         style = designSystem.resolveTypography(M3Typography.TitleMedium),
-                        color = designSystem.resolveColor(if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.Primary),
+                        color =
+                            designSystem.resolveColor(
+                                if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.OnSurface,
+                            ),
                     )
-                    // Not drawn while the price is unknown: a per-unit figure beside "…" would be a
-                    // number derived from one the server has said it does not have yet.
                     if (!loading) {
                         component.perUnitText?.let {
                             Text(
@@ -111,15 +114,6 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                 )
             }
 
-            // ONE LINE, JOINED, and it was one `Text` per entry. The canvas writes the quota as a
-            // single subtitle — "10 GB · 30 days · 5G" — and stacking them made a card as tall as the
-            // number of things a plan includes: adding minutes and messages to the home bundle turned
-            // it into five lines and pushed the next card off the screen.
-            //
-            // The SERVER still sends them apart, which is the right way round: they are separate
-            // facts, and gluing them into one string upstream would leave a client that wants a
-            // column with nothing to make one from. The separator is a rendering decision and lives
-            // where rendering decisions live.
             component.quotaTexts
                 .takeIf { it.isNotEmpty() }
                 ?.let { quotas ->
@@ -130,15 +124,49 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                     )
                 }
 
-            // The badge and the sold-out word are the same slot: a plan that is both on sale and sold
-            // out has nothing to advertise.
-            val note = if (soldOut) "Sold out" else component.badgeText
-            note?.let {
-                Text(
-                    text = it,
-                    style = designSystem.resolveTypography(M3Typography.LabelMedium),
-                    color = designSystem.resolveColor(if (soldOut) M3Colors.Error else M3Colors.Secondary),
-                )
+            // THE TAG AND THE PILL on one row: the tag on the left, in the chip every other chip in
+            // this build is drawn by, and `Choose` on the right, in the button every other button is
+            // drawn by. Both go THROUGH THE REGISTRY as synthetic nodes rather than being painted here
+            // — a chip painted twice is two chips the moment one of them changes. The pill presses the
+            // card's own action; a card without one, or a sold-out card, draws no pill.
+            val tag = if (soldOut) component.badgeText ?: "Sold out" else component.badgeText
+            val choose = component.actionText?.takeIf { action != null && !soldOut && !loading }
+            if (tag != null || choose != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (tag != null) {
+                        registry.RenderNode(
+                            component =
+                                SurfaceComponent(
+                                    id = "${component.id}-tag",
+                                    density = SurfaceDensities.CHIP,
+                                    children =
+                                        listOf(
+                                            TextComponent(
+                                                id = "${component.id}-tag-text",
+                                                text = tag,
+                                                style = M3Typography.LabelMedium,
+                                                color = if (soldOut) M3Colors.OnSurfaceVariant else M3Colors.Primary,
+                                            ),
+                                        ),
+                                ),
+                            actionHandler = actionHandler,
+                            formController = formController,
+                        )
+                    } else {
+                        Spacer(Modifier.width(1.dp))
+                    }
+                    if (choose != null && action != null) {
+                        registry.RenderNode(
+                            component = ButtonComponent(id = "${component.id}-choose", text = choose, action = action),
+                            actionHandler = actionHandler,
+                            formController = formController,
+                        )
+                    }
+                }
             }
         }
     }

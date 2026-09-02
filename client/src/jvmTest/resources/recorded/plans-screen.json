@@ -20,11 +20,11 @@
         "50 SMS"
       ],
       "perUnitText": "$0.75 / GB",
-      "badgeText": "On sale",
       "action": {
         "type": "navigate",
         "deeplink": "app://plans/home-20gb-30d"
-      }
+      },
+      "actionText": "Choose"
     },
     {
       "type": "plan_card",
@@ -36,11 +36,11 @@
         "30 days once it starts"
       ],
       "perUnitText": "$1.20 / GB",
-      "badgeText": "On sale",
       "action": {
         "type": "navigate",
         "deeplink": "app://plans/tr-10gb-30d"
-      }
+      },
+      "actionText": "Choose"
     },
     {
       "type": "plan_card",
@@ -52,11 +52,11 @@
         "14 days once it starts"
       ],
       "perUnitText": "$1.80 / GB",
-      "badgeText": "On sale",
       "action": {
         "type": "navigate",
         "deeplink": "app://plans/eu-5gb-14d"
-      }
+      },
+      "actionText": "Choose"
     },
     {
       "type": "plan_card",
@@ -68,7 +68,18 @@
         "30 days once it starts"
       ],
       "perUnitText": "$1.20 / GB",
+      "badgeText": "Sold out",
       "state": "sold_out"
+    },
+    {
+      "type": "banner",
+      "id": "plans-custom",
+      "text": "None of these quite right? Build a package with the data, minutes and messages you want.",
+      "actionText": "Build your own",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://custom-package"
+      }
     },
     {
       "type": "bottom_nav",

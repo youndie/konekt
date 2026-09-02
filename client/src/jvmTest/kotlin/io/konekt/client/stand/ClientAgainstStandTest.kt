@@ -232,7 +232,11 @@ class ClientAgainstStandTest {
 
             // The sold-out plan is SHOWN and marked, rather than omitted: a subscriber told about a
             // plan should find it rather than find nothing.
-            onNodeWithText("Sold out").assertIsDisplayed()
+            // SCROLLED TO, not assumed on screen: the sold-out card is the last of four, and since the
+            // cards carry a `Choose` pill (`B-114`) the list is taller than the test window's content
+            // area. What is being checked is that the tag is drawn and reachable, not that a
+            // particular window height happens to hold the whole catalogue.
+            onNodeWithText("Sold out").performScrollTo().assertIsDisplayed()
         }
     }
 

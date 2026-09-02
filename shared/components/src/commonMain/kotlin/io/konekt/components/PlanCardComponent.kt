@@ -48,4 +48,8 @@ data class PlanCardComponent(
     // something the server knows and the client cannot guess.
     val state: String = PlanStates.AVAILABLE,
     val action: KompotAction? = null,
+    // THE PILL'S WORD (`B-114`, block 4): `Choose` on the right of the card, pressing the same action
+    // the card does. Absent on a card that cannot be chosen, and ignored by a client that predates it
+    // — the card was the whole press target before, and still is.
+    val actionText: String? = null,
 ) : KompotComponent

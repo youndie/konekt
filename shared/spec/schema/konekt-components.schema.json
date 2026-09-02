@@ -379,6 +379,12 @@
               "type": "null"
             }
           ]
+        },
+        "actionText": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
