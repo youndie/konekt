@@ -82,34 +82,31 @@ of which a local test could have found.
 | logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS | same as iOS |
 | latency and errors (metrik) | **delivered** — latency per route | — | — | — |
 
-"Delivered" is a stronger word than "wired" on purpose: every row above was measured at the COLLECTOR
-after driving the product, not at the agent's configuration. That distinction is the whole reason for
-this table — all three of these libraries answer a missing key, a missing endpoint or an unreachable
-collector by doing nothing, so a deployment that meant to be observed and is silent looks exactly like
-one that is working, from inside.
+**"Delivered" means measured at the collector, not at the agent's configuration.** All three
+libraries answer a missing key, a wrong endpoint or an unreachable collector by doing nothing, so from
+inside, a deployment that meant to be observed and is silent looks exactly like one that works. Every
+row above was earned by driving the product and finding the result at the far end.
 
-Each row cost something different to reach. tracy published no Apple target until
-[tracy#16](https://github.com/youndie/tracy/issues/16); katcher published none until
-[katcher#25](https://github.com/youndie/katcher/issues/25); and the server's katcher was correctly
-configured and structurally unable to receive anything, because `StatusPages` catches every route
-exception before an uncaught-exception handler could run.
+**Four of the rows were red first, each for a different reason.** tracy published no Apple target until
+[tracy#16](https://github.com/youndie/tracy/issues/16), and katcher none until
+[katcher#25](https://github.com/youndie/katcher/issues/25). The server's katcher was configured
+correctly and could not receive anything, because `StatusPages` catches every route exception before an
+uncaught-exception handler runs — so the handler now reports from inside `StatusPages`. And Android
+lost its report at the last step: a deliberate crash on a Pixel 6a fired the hook and reached katcher's
+handler, but the multiplatform client had no android variant, the build resolved the JVM one, and its
+cache lived at `user.dir` — `/` on Android, unwritable, and a property the platform refuses to let an
+application change. Filed as [katcher#27](https://github.com/youndie/katcher/issues/27), closed in
+`client:0.6.41` with an android variant that caches in the application's own `cacheDir` and a `start`
+that refuses when it cannot store a report.
 
-The remaining blank is metrik on the client, which measures route latency and has no routes to
-measure there.
+**The Android fix was measured by the same harness that measured the failure**, and the harness had
+to learn one more thing on the way: katcher uploads on the *next* `start`, from a background worker,
+and a process that throws two milliseconds after starting is gone before the upload leaves. A crash
+proves storage; delivery is proved by a second launch that does not crash, which is why
+`CrashActivity` has a `KONEKT_CRASH=false` mode. Same device, same launch, and the report is on the
+collector under `android-katcher-0.6.41`.
 
-**Android's row was "not delivered" until 2026-09-02, and it was measured both ways.** A deliberate
-crash on a Pixel 6a fired the hook, reached katcher's own handler, and failed at the last step:
-katcher's multiplatform client published no android variant, so the build resolved the JVM one, whose
-report cache was fixed at `System.getProperty("user.dir")` — `/` on Android, unwritable, and a property
-Android refuses to let an application change. Filed as
-[katcher#27](https://github.com/youndie/katcher/issues/27); closed the same week in `client:0.6.41`,
-which publishes an android variant whose cache is the application's own `cacheDir` and whose `start`
-refuses when it cannot store a report. The crash harness that recorded the failure is what recorded
-the fix: the same launch on the same device, and the report is on the collector under
-`android-katcher-0.6.41`. One thing the harness had to learn on the way — a report is uploaded on
-the NEXT `start`, from a background worker, and a process that throws two milliseconds after
-starting is gone before the upload leaves. Delivery is proved by the second launch, the one that
-does not crash, which is why `CrashActivity` has a `KONEKT_CRASH=false` mode.
+The one blank left is metrik on the client, which measures route latency and has no routes there.
 
 ### 📏 What it costs, measured
 
