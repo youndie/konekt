@@ -228,6 +228,37 @@ spans and metrik's UDP samples are under the ten percent this stand can resolve 
 the report states the bound and not a number below it. A figure worth quoting would need ten
 rounds or a rate nearer the knee, and neither was worth the machine time against a bound this low.
 
+## 6. Cold start
+
+**What was measured.** On the stand, with the collectors on and no load: the server container
+stopped and started five times; the time from `docker start` to `/health` answering, then the first
+hundred home screens of a signed-in subscriber, one after another (`scripts/measure/coldstart.sh 5`).
+The first five restarts were thrown away — the script's clock had printed its format literally and
+the start-to-healthy column was nineteen-digit nonsense; the other columns of those runs agree
+with the five below.
+
+| restart | start → healthy | first request | p50 of the first 100 | p95 of the first 100 | max |
+|---|---|---|---|---|---|
+| 1 | 6.4 s | 382 ms | 16.1 ms | 77 ms | 382 ms |
+| 2 | 6.7 s | 855 ms | 14.3 ms | 58 ms | 855 ms |
+| 3 | 5.5 s | 456 ms | 13.8 ms | 69 ms | 456 ms |
+| 4 | 5.3 s | 821 ms | 13.9 ms | 51 ms | 821 ms |
+| 5 | 6.0 s | 344 ms | 13.2 ms | 74 ms | 344 ms |
+
+**What it says.** On one core the JVM is answering health in **five to seven seconds** from start
+(the log says the application itself starts in about three; the rest is the container, Hikari's
+pool and Flyway's check). The first request after that costs the subscriber **a third of a second
+to nearly a second** — the JIT compiling the whole request path on first use — and the next
+hundred are five times the warm figure at the median (14 ms against 2.5) and ten times at p95
+(50–77 ms against 7). Warm-up under real traffic is a few thousand requests, which at the test
+contour's rate is minutes; a rollout that switches traffic to a pod the moment it is healthy hands
+those minutes to whoever is first.
+
+**What it says about the chart.** The readiness probe's timing has to allow the seven seconds, and
+does; what it does not do is warm the pod, and this is the number that says whether a warm-up
+request in the probe would be worth it: it would take the first subscriber's 800 ms, not the next
+hundred's 14.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from

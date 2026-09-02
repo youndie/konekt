@@ -14,7 +14,9 @@ mkdir -p "$OUT"
 CSV="$OUT/coldstart.csv"
 echo "run,start_to_healthy_ms,first_ms,p50_first100_ms,p95_first100_ms,max_first100_ms" > "$CSV"
 
-now_ms() { date +%s%3N; }
+# Python rather than `date +%s%3N`: the box's `date` printed the format literally and the first
+# five restarts came back as nineteen-digit nonsense.
+now_ms() { python3 -c 'import time; print(int(time.time() * 1000))'; }
 
 # A signed-in subscriber, so the hundred requests are the home screen and not a 401: the dev OTP
 # route hands the code back, the same door the scenarios use.
