@@ -44,15 +44,16 @@ source: feature/esim-server-data/src/main/kotlin/io/konekt/feature/esim/server/d
 
 Four steps, in the order they are lived, from `EsimWizardSteps`: `check` → `confirm` → `activate` →
 `done`. The tree is always a `column` with id `esim-wizard`, and it always opens with a `step_meter`
-(id `esim-wizard-progress`) reading *n* of 4, labelled "Add an eSIM".
+(id `esim-wizard-progress`) reading *n* of 4 — after the `screen_header` (§4.4), and unlabelled since
+`B-115`: the header names the flow, and the meter draws the eyebrow `STEP n OF 4` itself.
 
 | Step | What is on it | Forward button |
 |---|---|---|
-| `check` (1 of 4) | one `text`, `esim-wizard-check` — what an eSIM is and how long it takes | "Continue" (`Next`) — and the header's cross leaves: there is no step to go back to |
-| `confirm` (2 of 4) | one `text`, `esim-wizard-confirm` — that a profile will be requested, and that the code does not expire | "Get my eSIM" (`Next`) |
-| `activate` (3 of 4) | `esim_qr` (`esim-wizard-qr`) plus a `text` telling the subscriber where to point the camera | "I have scanned it" (`Next`) |
+| `check` (1 of 4) | the heading *Before you start* (`esim-wizard-title`, `headline_medium`) and one `text`, `esim-wizard-check` — what an eSIM is and how long it takes | "Continue" (`Next`) — and the header's cross leaves: there is no step to go back to |
+| `confirm` (2 of 4) | the heading *Get your eSIM* and one `text`, `esim-wizard-confirm` — that a profile will be requested, and that the code does not expire | "Get my eSIM" (`Next`) |
+| `activate` (3 of 4) | `esim_qr` (`esim-wizard-qr`) in a `surface` card (`esim-wizard-qr-card`), plus a `text` telling the subscriber where to point the camera; no heading — the header already says *Scan or install* | "I have scanned it" (`Next`) |
 | `done` (4 of 4) | a `banner` "Your eSIM is ready.", an `esim_card` with the ICCID and a sentence for its status, **and the QR again** | "Done" (`Finish`) |
-| refused | the step it was refused on, unchanged, with a `banner` (`esim-wizard-refusal`, tone `error`) above the content | the same buttons |
+| refused | the step it was refused on, unchanged, with the refusal above the content as a `surface` card (`esim-wizard-refusal`) holding an amber `icon` and the sentence (`esim-wizard-refusal-text`) — the canvas's failed-check row, without the checklist (`B-115`) | the same controls |
 | unknown step id | one `text` — "This step is not available in this version of the app. Update to continue." | "Continue" |
 
 **The profile is issued on the way into `activate`**, not when the run starts, and exactly once.
@@ -82,7 +83,9 @@ holding a run it cannot find would be holding a button that does nothing.
 ### 4.1. Step meter
 
 - **Fields:** `current`, `total`, `label`. Both integers, because a "3 of 4" cannot be drawn from a
-  sentence.
+  sentence — and since `B-115` the renderer draws it: one equal segment per step across the width,
+  `primary` for done and `primary_container` for the rest, with `STEP n OF total` under them as the
+  eyebrow. The label, when sent, goes above; the wizard sends none.
 - **`EsimWizardSteps.indexOf` is one-based and never answers zero** — an unknown id answers 1. A
   meter is chrome, and chrome that crashes a screen is worse than chrome that is wrong.
 

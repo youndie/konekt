@@ -8,9 +8,9 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.github.youndie.kompot.wizard.core.WizardTransition
-import io.konekt.components.BannerComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.EsimStatuses
 import io.konekt.components.StepMeterComponent
@@ -228,7 +228,11 @@ class EsimWizardRoutingTest {
             // The meter has not moved —
             assertEquals(1, assertNotNull(refused.first<StepMeterComponent>()).current)
             // — the reason is on the screen rather than in a status code —
-            val banner = assertNotNull(refused.first<BannerComponent>(), "no refusal drawn")
+            val banner =
+                assertNotNull(
+                    refused.all<TextComponent>().firstOrNull { it.id == "esim-wizard-refusal-text" },
+                    "no refusal drawn",
+                )
             assertTrue("8 eSIM profiles" in banner.text, banner.text)
             // — and nothing was ordered.
             val issued =

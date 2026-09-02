@@ -8,7 +8,7 @@
       "title": "Install eSIM",
       "action": {
         "type": "esim_wizard_step",
-        "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+        "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
         "transition": {
           "type": "finish"
         }
@@ -19,8 +19,7 @@
       "type": "step_meter",
       "id": "esim-wizard-progress",
       "current": 4,
-      "total": 4,
-      "label": "Add an eSIM"
+      "total": 4
     },
     {
       "type": "banner",
@@ -29,18 +28,18 @@
     },
     {
       "type": "esim_card",
-      "id": "esim-bb3f6891-fefc-457c-86ae-9682a8e4755f",
+      "id": "esim-7ad4b3c3-651f-4dee-9421-83b3f315c85d",
       "label": "New line",
-      "iccid": "8944691712240882329",
+      "iccid": "8944746408273594395",
       "status": "ready",
       "statusText": "Installs as an eSIM by QR code. Your device supports it."
     },
     {
       "type": "esim_qr",
       "id": "esim-wizard-qr-again",
-      "payload": "LPA:1$rsp.konekt.io$84721BD9",
+      "payload": "LPA:1$rsp.konekt.io$DA4D5BB6",
       "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
-      "manualCodeText": "8472-1BD9"
+      "manualCodeText": "DA4D-5BB6"
     },
     {
       "type": "surface",
@@ -58,7 +57,7 @@
           "text": "Done",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+            "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
             "transition": {
               "type": "finish"
             }

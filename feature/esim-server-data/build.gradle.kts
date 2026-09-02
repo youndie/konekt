@@ -13,6 +13,8 @@ dependencies {
     implementation(platform(libs.kompot.bom))
     implementation(libs.kompot.core)
     implementation(libs.kompot.standard)
+    // The Material 3 token names a screen is written in — `M3Typography`, `M3Colors` (`B-115`).
+    implementation(libs.kompot.dsMaterial)
     implementation(project(":shared:components"))
     implementation(libs.kompot.ktor)
 

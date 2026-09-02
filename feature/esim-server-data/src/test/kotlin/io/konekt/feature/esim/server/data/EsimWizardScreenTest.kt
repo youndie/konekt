@@ -8,13 +8,14 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.github.youndie.kompot.wizard.core.WizardSession
 import io.github.youndie.kompot.wizard.core.WizardTransition
-import io.konekt.components.BannerComponent
 import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimQrComponent
 import io.konekt.components.EsimStatuses
+import io.konekt.components.IconComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.ScreenHeaderComponent
 import io.konekt.components.StepMeterComponent
@@ -134,8 +135,16 @@ class EsimWizardScreenTest {
                 ),
             )
 
-        val banner = assertNotNull(screen.first<BannerComponent>(), "no refusal on the screen")
-        assertEquals(MessageTones.ERROR, banner.tone)
+        val banner =
+            assertNotNull(
+                screen.all<TextComponent>().firstOrNull {
+                    it.id == "esim-wizard-refusal-text"
+                },
+                "no refusal on the screen",
+            )
+        // The amber mark beside it is what says "a failed check" rather than "the application
+        // failed" (`B-115`): the row's disc is in the `low` tone, not the error one.
+        assertEquals(MessageTones.LOW, screen.all<IconComponent>().single { it.id == "esim-wizard-refusal-mark" }.tone)
         assertTrue("Remove one" in banner.text)
 
         // The half a banner alone would not prove: nothing moved. A refusal drawn on step two would

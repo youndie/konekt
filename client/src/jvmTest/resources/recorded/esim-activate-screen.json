@@ -8,7 +8,7 @@
       "title": "Scan or install",
       "action": {
         "type": "esim_wizard_step",
-        "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+        "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
         "transition": {
           "type": "back"
         }
@@ -18,20 +18,27 @@
       "type": "step_meter",
       "id": "esim-wizard-progress",
       "current": 3,
-      "total": 4,
-      "label": "Add an eSIM"
+      "total": 4
     },
     {
-      "type": "esim_qr",
-      "id": "esim-wizard-qr",
-      "payload": "LPA:1$rsp.konekt.io$84721BD9",
-      "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
-      "manualCodeText": "8472-1BD9"
+      "type": "surface",
+      "id": "esim-wizard-qr-card",
+      "children": [
+        {
+          "type": "esim_qr",
+          "id": "esim-wizard-qr",
+          "payload": "LPA:1$rsp.konekt.io$DA4D5BB6",
+          "captionText": "Stay on Wi-Fi. This takes up to a minute and finishes on its own.",
+          "manualCodeText": "DA4D-5BB6"
+        }
+      ]
     },
     {
       "type": "text",
       "id": "esim-wizard-activate",
-      "text": "Open Settings, add an eSIM, and point the camera at this code. If the camera will not read it, type the code underneath instead."
+      "text": "Open Settings, add an eSIM, and point the camera at this code. If the camera will not read it, type the code underneath instead.",
+      "style": "body_large",
+      "color": "on_surface_variant"
     },
     {
       "type": "surface",
@@ -49,7 +56,7 @@
           "text": "I have scanned it",
           "action": {
             "type": "esim_wizard_step",
-            "wizardId": "bdf5cf23-60ad-42f1-bc03-472f31d77cdd",
+            "wizardId": "4ecb6b4e-365f-49c2-a693-fc8a2d8f672a",
             "transition": {
               "type": "next"
             }

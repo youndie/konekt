@@ -2,6 +2,7 @@ package io.konekt.client.render
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotSurfaceRoles
@@ -95,7 +97,13 @@ class StepMeterRenderer : KompotComponentRenderer<StepMeterComponent> {
     ) {
         val designSystem = LocalKompotDesignSystem.current
 
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // THE CANVAS'S METER (`B-115` W3): one segment per step, equal, across the full width, 8
+        // tall — done in `primary`, the rest in `primary_container` — and under it the eyebrow,
+        // `STEP 1 OF 4`, in the brand's colour, tracked. It was four dashes of 6×12 left under a
+        // label, which read as decoration rather than as a position. The eyebrow is composed here
+        // from `current` and `total`, which is why the component carries integers: a "3 of 4" cannot
+        // be drawn from a sentence. A label, when the server sends one, still goes above.
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             component.label?.let {
                 Text(
                     text = it,
@@ -104,25 +112,37 @@ class StepMeterRenderer : KompotComponentRenderer<StepMeterComponent> {
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                // ONE-BASED, the way it is spoken and the way the component documents itself. An
-                // off-by-one here is a wizard that says it is on step one while showing step two, and
-                // nothing about the screen looks wrong.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SEGMENT_GAP)) {
                 repeat(component.total.coerceAtLeast(0)) { index ->
                     val done = index < component.current
-                    Row(
+                    Box(
                         modifier =
                             Modifier
-                                .height(6.dp)
-                                .width(if (done) 24.dp else 12.dp)
-                                .clip(RoundedCornerShape(3.dp))
+                                .weight(1f)
+                                .height(SEGMENT_HEIGHT)
+                                .clip(RoundedCornerShape(SEGMENT_HEIGHT / 2))
                                 .background(
-                                    designSystem.resolveColor(if (done) M3Colors.Primary else M3Colors.Outline),
+                                    designSystem.resolveColor(
+                                        if (done) M3Colors.Primary else M3Colors.PrimaryContainer,
+                                    ),
                                 ),
-                    ) {}
+                    )
                 }
             }
+
+            if (component.total > 0) {
+                Text(
+                    text = "STEP ${component.current.coerceIn(1, component.total)} OF ${component.total}",
+                    style = designSystem.resolveTypography(M3Typography.LabelMedium).copy(letterSpacing = 1.2.sp),
+                    color = designSystem.resolveColor(M3Colors.Primary),
+                )
+            }
         }
+    }
+
+    private companion object {
+        val SEGMENT_HEIGHT = 8.dp
+        val SEGMENT_GAP = 8.dp
     }
 }
 

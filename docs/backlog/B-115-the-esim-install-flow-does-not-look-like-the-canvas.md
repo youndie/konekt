@@ -160,6 +160,15 @@ wizard sends it first on every step (`×` on `check`, `‹` with `Back` on the m
 `Finish` on `done`) and pins its one forward button full width. The `Back` pill is gone, and the
 tests that walked columns and rows for it now use the dictionary's walk, which descends a surface.
 
+### 3 — the meter, the headings, the cards (W3, W4, W6), done
+
+The meter is the canvas's: equal segments across the width with the `STEP n OF 4` eyebrow drawn
+from the integers the component already carried, and no label — the header names the flow. Each
+step opens with its heading (*Before you start*, *Get your eSIM*) over a body in `body_large`;
+`activate` opens on the QR card, since its header is the heading. The refusal is the canvas's
+failed-check row — an amber disc with the mark beside the sentence, in a card — without the
+checklist the server cannot honestly draw around it.
+
 ## Acceptance criteria
 
 - AC: every step has a golden at 393×852 in both themes, re-recorded from the server; the dark QR
