@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -109,7 +110,7 @@ class BackControlTest {
             waitUntil(timeoutMillis = 5_000) { onAllNodesWithText("press me").fetchSemanticsNodes().isNotEmpty() }
             onNodeWithText("press me").performClick()
             waitForIdle()
-            back = onAllNodesWithText("← Back").fetchSemanticsNodes().isNotEmpty()
+            back = onAllNodesWithContentDescription("Back").fetchSemanticsNodes().isNotEmpty()
         }
         return back
     }

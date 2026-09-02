@@ -72,7 +72,7 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
                     // block. A row that draws a surface has to keep its own distance.
                     .padding(bottom = 8.dp)
                     .clip(surface.shape ?: RoundedCornerShape(20.dp))
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                    .background(designSystem.resolveColor(M3Colors.Surface))
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -168,7 +168,7 @@ class EsimCardRenderer : KompotComponentRenderer<EsimCardComponent> {
                 Modifier
                     .fillMaxWidth()
                     .clip(shape)
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                    .background(designSystem.resolveColor(M3Colors.Surface))
                     .border(1.dp, designSystem.resolveColor(M3Colors.Outline), shape)
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)
                     .padding(CardGeometry.Tier.ITEM.inset),

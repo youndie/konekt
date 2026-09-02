@@ -51,7 +51,7 @@ class SurfaceRenderer : KompotComponentRenderer<SurfaceComponent> {
         val ground =
             when (component.tone) {
                 SurfaceTones.ACCENT -> M3Colors.PrimaryContainer
-                else -> M3Colors.SurfaceVariant
+                else -> M3Colors.Surface
             }
 
         Column(

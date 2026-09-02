@@ -204,6 +204,12 @@ kotlin {
             api(libs.compose.ui)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
+            // THE FONTS ARE RESOURCES (`B-114` G1). Manrope and Space Grotesk are compiled into the
+            // client on every target through Compose's resource library, which is the one way a
+            // font reaches iOS, Android and the desktop from a single declaration. It also makes
+            // the goldens platform-independent: with the platform's default face, the same screen
+            // rendered on a Mac and on the Linux CI runner differed by 4–8% of its pixels.
+            implementation(compose.components.resources)
 
             // THE TWO AGENTS, AND BOTH MOVED HERE FROM `iosMain`.
             //
@@ -391,6 +397,17 @@ viddik {
     // consulted by somebody who remembered to ask for them, which is the manual review this item
     // exists to replace.
     verifyOnCheck.set(true)
+
+    // PER-CHANNEL, NOT PER-FRAME, and the number is measured (`B-114` G1). With the canvas's own
+    // faces bundled — static, unhinted, metrics equalised — a frame recorded on a Mac and verified
+    // on the Linux runner still differs in 50–80 pixels: single glyphs of 12sp text whose sub-pixel
+    // position the two platforms round differently, so an edge lands one shade off. That is noise
+    // with the shape of anti-aliasing: a few pixels, low contrast, scattered along letter edges.
+    // A real change has neither property — a moved line is hundreds of pixels at full contrast —
+    // so widening the CHANNEL allowance from ±2 to ±24 admits the noise and still fails on any
+    // pixel that actually changed colour, while the per-frame 0.05% stays where it was. Widening
+    // the percentage instead would have let a one-pixel shift of a full-width rule through.
+    channelTolerance.set(24)
 }
 
 // viddik's generated case class is a JUnit 5 `@TestFactory`. In a module wired for JUnit 4 it

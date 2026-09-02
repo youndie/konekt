@@ -69,7 +69,9 @@ fun KonektTheme(
             theme?.let { RemoteThemeDesignSystem(it, konekt, darkModeOverride = darkMode) } ?: konekt
         }
 
-    MaterialTheme(colorScheme = scheme) {
+    // THE TYPE SCALE IS OURS, not Material's (`B-114`). kompot resolves every typography token from
+    // here, so this one argument is what puts the canvas's faces, sizes and weights on every screen.
+    MaterialTheme(colorScheme = scheme, typography = KonektTypography.material) {
         CompositionLocalProvider(
             LocalKompotDesignSystem provides designSystem,
             // THE SCALE ITSELF, beside the design system built from it (`B-112`).

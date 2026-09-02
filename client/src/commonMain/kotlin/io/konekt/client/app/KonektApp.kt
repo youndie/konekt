@@ -1,6 +1,7 @@
 package io.konekt.client.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,8 +30,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotComponent
@@ -44,7 +50,9 @@ import io.github.youndie.kompot.navigation.NavigationBackStack
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.theme.KompotTheme
+import io.konekt.client.render.VectorIconGlyph
 import io.konekt.client.theme.KonektTheme
+import io.konekt.components.VectorIcon
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -436,7 +444,12 @@ fun KonektApp(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(designSystem.resolveColor(M3Colors.Surface))
+                        // `background`, NOT `surface` (`B-114` G2). The kit has always carried both
+                        // — a mint-grey page and a near-white card — and this frame painted the page
+                        // in the card's colour while every card painted itself in the chip's. The
+                        // canvas is the other way round, and the inversion is why each screen read
+                        // as flat beside its reference even where the layout matched.
+                        .background(designSystem.resolveColor(M3Colors.Background))
                         // THE INSETS GO **UNDER** THE GROUND AND OVER THE CONTENT, and the order of
                         // these two lines is the whole of it: `background` paints the node's full
                         // size, `windowInsetsPadding` shrinks what is laid out inside it. So the
@@ -475,17 +488,29 @@ fun KonektApp(
                 // it. A TEXT ARROW rather than an icon: this client compiles in no icon set, and
                 // adding one for a single glyph is a dependency for a character.
                 if (stack.canGoBack) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    // A ROUND CHEVRON, not the words "← Back" (`B-114` G4). The canvas draws a
+                    // 44-point circle in `surface_variant` with a stroked chevron, beside the screen's
+                    // title. The title is the SERVER's — every screen draws its own — so the circle
+                    // sits alone on its line above it; putting the two on one line would mean this
+                    // frame reading a title out of a tree it is not supposed to know the shape of.
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(start = 20.dp, top = 12.dp)
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                                .clickable { stack = stack.pop() }
+                                // Named for a screen reader and for `BackControlTest`: a chevron
+                                // is a picture, and a picture has no text to find it by.
+                                .semantics { contentDescription = BACK },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        TextButton(onClick = { stack = stack.pop() }) {
-                            Text(
-                                text = "← Back",
-                                style = designSystem.resolveTypography(M3Typography.LabelLarge),
-                                color = designSystem.resolveColor(M3Colors.Primary),
-                            )
-                        }
+                        VectorIconGlyph(
+                            icon = BACK_CHEVRON,
+                            color = designSystem.resolveColor(M3Colors.OnSurface),
+                            size = 22.dp,
+                        )
                     }
                 }
 
@@ -716,3 +741,9 @@ private fun FetchFailed(onRetry: () -> Unit) {
 // Enough to read as "not the current screen" and not so much that the words become unreadable — a
 // subscriber must still be able to see what they are leaving.
 private const val STALE_ALPHA = 0.45f
+
+// The canvas's back chevron, the same shape its buttons use: a 24-grid stroked path, drawn by the
+// same glyph the tab icons are.
+private val BACK_CHEVRON = VectorIcon(paths = listOf("M15 18l-6-6 6-6"))
+
+private const val BACK = "Back"

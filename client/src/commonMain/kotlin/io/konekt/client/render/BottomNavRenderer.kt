@@ -2,10 +2,12 @@ package io.konekt.client.render
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -13,11 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponentRenderer
-import io.github.youndie.kompot.KompotSurfaceRoles
 import io.github.youndie.kompot.LocalKompotDesignSystem
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.material3.M3Colors
@@ -47,15 +51,25 @@ class BottomNavRenderer : KompotComponentRenderer<BottomNavComponent> {
         formController: FormController,
     ) {
         val designSystem = LocalKompotDesignSystem.current
-        val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
+        val rule = designSystem.resolveColor(M3Colors.OutlineVariant)
+        val pill = designSystem.resolveColor(M3Colors.PrimaryContainer)
 
+        // ON THE PAGE'S GROUND WITH A RULE ABOVE IT, edge to edge (`B-114` G3). It used to be a
+        // rounded tinted slab, which is a card's costume on the window's furniture; the canvas draws
+        // the bar in the page colour, separated by one hairline in `outline_variant`.
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(surface.shape ?: RoundedCornerShape(20.dp))
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
-                    .padding(vertical = 4.dp),
+                    .background(designSystem.resolveColor(M3Colors.Background))
+                    .drawBehind {
+                        drawLine(
+                            color = rule,
+                            start = Offset.Zero,
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }.padding(top = 8.dp, bottom = 6.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,7 +84,20 @@ class BottomNavRenderer : KompotComponentRenderer<BottomNavComponent> {
                                 if (item.selected) M3Colors.Primary else M3Colors.OnSurfaceVariant,
                             )
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            item.icon?.let { VectorIconGlyph(it, ink) }
+                            // THE CURRENT TAB SITS IN A TONAL PILL, which is how the canvas marks
+                            // it — colour and weight on the label stay, because a mark only a hue
+                            // carries is one a colour-blind subscriber does not get, but the pill
+                            // is what makes the bar read as a bar and not as four words.
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(width = 56.dp, height = 32.dp)
+                                        .clip(RoundedCornerShape(percent = 50))
+                                        .background(if (item.selected) pill else Color.Transparent),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                item.icon?.let { VectorIconGlyph(it, ink) }
+                            }
                             Text(
                                 text = item.label,
                                 style = designSystem.resolveTypography(M3Typography.LabelLarge),

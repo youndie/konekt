@@ -119,8 +119,16 @@ class BrandSwitchTest {
     ): ImageBitmap =
         capture {
             val base = lightColorScheme()
-            MaterialTheme(colorScheme = theme.toMaterialColorScheme(base, darkMode = false)) {
+            // THE SAME TYPE SCALE THE APPLICATION USES (`B-114`): this path is the reference the
+            // composition root is compared against pixel for pixel, so anything `KonektTheme`
+            // supplies that this does not shows up as a frame that "changed size" — four points
+            // taller, from titles that grew — and blames the brand switch for the type scale.
+            MaterialTheme(
+                colorScheme = theme.toMaterialColorScheme(base, darkMode = false),
+                typography = KonektTypography.material,
+            ) {
                 CompositionLocalProvider(
+                    LocalKonektShapeScale provides shapes,
                     LocalKompotDesignSystem provides
                         // `darkModeOverride = false`, pinned, and NOT the toolkit's
                         // `rememberKompotDesignSystem` convenience — that one leaves the override null

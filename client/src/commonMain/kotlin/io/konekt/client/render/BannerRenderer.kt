@@ -63,7 +63,7 @@ class BannerRenderer : KompotComponentRenderer<BannerComponent> {
                 Modifier
                     .fillMaxWidth()
                     .clip(CardGeometry.shapeOf(CardGeometry.Tier.NOTICE))
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                    .background(designSystem.resolveColor(M3Colors.Surface))
                     .border(1.dp, designSystem.resolveColor(accent), CardGeometry.shapeOf(CardGeometry.Tier.NOTICE))
                     .padding(CardGeometry.Tier.NOTICE.inset),
             verticalArrangement = Arrangement.spacedBy(4.dp),

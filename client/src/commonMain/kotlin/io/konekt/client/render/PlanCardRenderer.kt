@@ -53,7 +53,7 @@ class PlanCardRenderer : KompotComponentRenderer<PlanCardComponent> {
                 Modifier
                     .fillMaxWidth()
                     .clip(shape)
-                    .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                    .background(designSystem.resolveColor(M3Colors.Surface))
                     .border(1.dp, designSystem.resolveColor(M3Colors.Outline), shape)
                     // NOT CLICKABLE WHILE SOLD OUT OR STILL BEING PRICED, and the two are refused for
                     // different reasons: one cannot be bought and the other has no price yet. A card

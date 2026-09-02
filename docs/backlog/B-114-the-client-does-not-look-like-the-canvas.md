@@ -226,6 +226,32 @@ These are not per-screen defects; fix them once and every frame below moves.
 4. **Plans / travel**, **orders**, **profile**, **sign in / code**.
 5. The confirm sheet as a sheet, last.
 
+## Progress
+
+### Block 1 — the systemic seven, done
+
+| | What landed |
+|---|---|
+| **G1** | Manrope and Space Grotesk bundled as Compose resources, cut into **static, unhinted** instances per weight with vertical metrics equalised; `KonektTypography` is the one type scale and `KonektTheme` hands it to `MaterialTheme`, which is where kompot resolves every token from. `display*`/`headline*` are figures, everything else is text |
+| **G2** | the frame paints `background`, cards paint `surface`, chips keep `surface_variant`; brand A's `surface` is the canvas's `#FAFDFC`. The kit always carried both — the client used the wrong two tokens |
+| **G3** | the bar sits on the page with a hairline in `outline_variant`; the current tab in a `primary_container` pill |
+| **G4** | a 44-point circle in `surface_variant` with a stroked chevron, drawn by the same glyph the tab icons use. On its own line: the title is the server's and this frame does not read it |
+| **G5** | screen titles 26/700, `title_medium` 18/700, labels 600 — the canvas's numbers, mapped onto the tokens the server already sends |
+| **G6** | weight 700 on `label_large`; **the height is not ours** — buttons are kompot's renderer, so 56 needs either a konekt override of that registry entry or an upstream ask. Left open here |
+| **G7** | two-segment pill, five-point gap, no stop dot; the remainder tinted in the state's own container (peach on low, pink on exhausted) rather than one mint track |
+
+**What the fonts cost, measured.** With the platform face, a frame recorded on a Mac and verified on the
+Linux runner differed by 4–8% of its pixels. With the variable files bundled, 0.07–0.26%. With static
+instances, 0.07–0.08% — and dehinting changed not one pixel, so it was never hinting. What is left is
+single glyphs of 12sp text whose sub-pixel position the two platforms round differently, and it is
+admitted by widening viddik's **per-channel** allowance from ±2 to ±24 rather than the per-frame
+percentage: a one-point inset change still fails at 4–7.6%, measured by mutation, so the guard is not
+blind — it is deaf to the one thing that is noise.
+
+**Not touched in this block, on purpose:** the button height (kompot's), the state words under the bars
+(a decision for block 3), and the chevron sharing a line with the title (needs the frame to know the
+title).
+
 ## Acceptance criteria
 
 - AC: every screen above has a golden at 393×852 in **both** themes, re-recorded from the server after

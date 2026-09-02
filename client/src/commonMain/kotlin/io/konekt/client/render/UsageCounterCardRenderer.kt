@@ -62,7 +62,7 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                     Modifier
                         .fillMaxWidth()
                         .clip(CardGeometry.shapeOf(CardGeometry.Tier.CARD))
-                        .background(designSystem.resolveColor(M3Colors.SurfaceVariant))
+                        .background(designSystem.resolveColor(M3Colors.Surface))
                         .padding(CardGeometry.Tier.CARD.inset)
                 },
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -104,7 +104,16 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                     // which is the whole point of a counter that moves live.
                     progress = { fraction.coerceIn(0f, 1f) },
                     color = accent,
-                    trackColor = designSystem.resolveColor(M3Colors.Outline),
+                    // THE REMAINDER IS A TINT OF THE ACCENT, not the outline grey: the canvas draws
+                    // what is left in `primary_container`, and the low and exhausted rows tint their
+                    // remainder in their own accent's container. Outline read as a rule, not as a bar.
+                    trackColor = designSystem.resolveColor(component.state.trackToken()),
+                    // A GAP AND NO STOP DOT (`B-114` G7). Material's indicator draws a dot at the end
+                    // of the track and butts the two segments together; the canvas's bar is two
+                    // pills with five points of air between them. The dot was the single most visible
+                    // thing wrong on the home screen.
+                    gapSize = 5.dp,
+                    drawStopIndicator = {},
                     // TWELVE POINTS TALL WHEN IT IS A ROW, which is what the canvas draws and what the
                     // complaint was about: the default indicator is a hairline, and a hairline under a
                     // number reads as decoration rather than as the quantity it represents.
@@ -159,4 +168,36 @@ private fun String.accentToken(): ColorToken =
         // An unrecognised word draws the ORDINARY card. Not nothing, and not an error colour: a
         // state this build has never heard of is a state it must not editorialise about.
         else -> M3Colors.Primary
+    }
+
+// THE REMAINDER OF THE BAR IN THE STATE'S OWN CONTAINER (`B-114` G7). The canvas draws what is left
+// in `primary_container` on an ordinary row, in the peach container on a low one and in the pink on
+// an exhausted one — so the whole bar changes colour with the state, not only the filled part. One
+// mint track under a red figure is what a single track colour produced.
+fun String.trackToken(): ColorToken =
+    when (this) {
+        CounterStates.EXHAUSTED -> M3Colors.ErrorContainer
+
+        CounterStates.LOW -> M3Colors.SecondaryContainer
+
+        // BOUGHT AND NOT COUNTING, drawn in the MUTED role rather than the accent one.
+        //
+        // The bar is full and will still be full in a month, so drawing it in the primary colour
+        // says "running, plenty left" — which is the one thing a dormant package is not. Quiet is
+        // exactly the claim: nothing is happening here yet.
+        //
+        // `onSurfaceVariant` AND NOT `outline`, though outline is quieter. Outline is the design
+        // system's role for BORDERS, and this colour draws a number somebody has to read — reaching
+        // for a token because its default value looks right is how `sold_out` ended up labelling a
+        // subscriber's own tariff (`B-86`). A muted-content role is what this is.
+        //
+        // This branch is the whole of `B-88`'s second criterion. Before it, the server had said
+        // `dormant` since `B-19` and this `when` had no arm for it, so the state the roaming feature
+        // exists to show fell through to the ordinary card — correct degradation, and the wrong
+        // answer for the one word that was not a stranger.
+        CounterStates.DORMANT -> M3Colors.OnSurfaceVariant
+
+        // An unrecognised word draws the ORDINARY card. Not nothing, and not an error colour: a
+        // state this build has never heard of is a state it must not editorialise about.
+        else -> M3Colors.PrimaryContainer
     }
