@@ -85,14 +85,20 @@ class SurfaceSurvivesTheThemeTest {
     }
 
     @Test
-    fun `the field is still borderless once the theme has landed`() {
-        val (_, throughTheme) = surfacesUnderTheTheme()
+    fun `the field keeps its outline once the theme has landed`() {
+        val (own, throughTheme) = surfacesUnderTheTheme()
         val field = assertNotNull(throughTheme[KompotSurfaceRoles.Field.key])
 
-        // Transparent and not Unspecified, and the distinction is the whole assertion: Unspecified
-        // means "whatever the toolkit draws for this role", which for a field is a border. This is
-        // what the canvas asks for and what the defect used to take away.
-        assertEquals(Color.Transparent, field.outline)
+        // A NAMED COLOUR AND NOT UNSPECIFIED, and the distinction is the whole assertion: Unspecified
+        // means "whatever the toolkit draws for this role", which is what the defect used to leave
+        // behind. The field was borderless until `B-114` made it the canvas's outlined one; either
+        // way, what the design system decided is what has to come out the other side of the theme.
+        assertNotSame(Color.Unspecified, field.outline)
+        assertEquals(
+            own[KompotSurfaceRoles.Field.key]?.outline,
+            field.outline,
+            "the theme replaced the field's outline",
+        )
         assertNotNull(field.shape, "the field lost its corner radius")
     }
 

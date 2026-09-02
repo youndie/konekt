@@ -115,6 +115,12 @@ object ButtonEmphasis {
     // beside an outlined one (`B-114`). Same fallback as `quiet` — a client without the word draws
     // its ordinary button.
     const val TONAL = "tonal"
+
+    // A control that reads as text: `Send a new code` under the pill, a row in a settings card. No
+    // ground and no outline, the brand's colour — and `danger` is the same shape in the error colour,
+    // for the one row that leaves: `Sign out` (`B-114`). The fallback is the ordinary button again.
+    const val LINK = "link"
+    const val DANGER = "danger"
 }
 
 // Which ground a `surface` stands on, named as a ROLE rather than as a colour: the server says what
@@ -127,4 +133,9 @@ object SurfaceTones {
 
     // The ordinary card: a plan, an order, a roaming row.
     const val NEUTRAL = "neutral"
+
+    // The ground that says something went wrong — a refunded order's status chip (`B-114`). Drawn
+    // in `error_container`; a client without the word draws the neutral card, as with every open
+    // string here.
+    const val ALERT = "alert"
 }

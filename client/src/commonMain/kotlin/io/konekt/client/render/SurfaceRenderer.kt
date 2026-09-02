@@ -55,6 +55,8 @@ class SurfaceRenderer : KompotComponentRenderer<SurfaceComponent> {
             when {
                 component.tone == SurfaceTones.ACCENT -> M3Colors.PrimaryContainer
 
+                component.tone == SurfaceTones.ALERT -> M3Colors.ErrorContainer
+
                 // A chip stands on the tinted ground — the canvas draws its attribute pills in
                 // `surface_variant` on the hero card and on the page alike — and a card on the
                 // near-white one.

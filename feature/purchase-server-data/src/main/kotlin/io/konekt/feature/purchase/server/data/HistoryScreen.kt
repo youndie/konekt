@@ -127,7 +127,10 @@ object HistoryScreen {
                                 ORDERS_DEEPLINK +
                                     if (slice == HistoryFilter.ALL) "" else "?filter=${slice.wireName()}",
                             ),
-                        variant = if (slice == filter) ButtonEmphasis.PRIMARY else ButtonEmphasis.QUIET,
+                        // THE CHOSEN SLICE IS THE TONAL PILL and the rest are outlined (`B-114`, block 4): a
+                        // filled primary among outlines read as the screen's action rather than as
+                        // which list this is.
+                        variant = if (slice == filter) ButtonEmphasis.TONAL else ButtonEmphasis.QUIET,
                     )
                 },
         )

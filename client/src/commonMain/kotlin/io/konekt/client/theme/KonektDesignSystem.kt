@@ -57,6 +57,24 @@ class KonektDesignSystem(
                 )
             }
 
+            KompotSurfaceRoles.button(LINK) -> {
+                KompotSurface(
+                    shape = shapes.buttonShape,
+                    container = Color.Transparent,
+                    content = MaterialTheme.colorScheme.primary,
+                    outline = Color.Transparent,
+                )
+            }
+
+            KompotSurfaceRoles.button(DANGER) -> {
+                KompotSurface(
+                    shape = shapes.buttonShape,
+                    container = Color.Transparent,
+                    content = MaterialTheme.colorScheme.error,
+                    outline = Color.Transparent,
+                )
+            }
+
             KompotSurfaceRoles.button(QUIET) -> {
                 KompotSurface(
                     shape = shapes.buttonShape,
@@ -69,20 +87,17 @@ class KonektDesignSystem(
             // THE BORDERLESS FIELD. Transparent rather than unspecified, and the difference is the
             // whole point: unspecified means "the toolkit's default", which for an outlined field is a
             // border. Transparent is how a design that forbids borders says so.
+            // OUTLINED, NOT FILLED (`B-114`, block 4): the canvas draws a field as a hairline on the
+            // page with the label floating into it, and a tinted box was a chip's ground under text.
             KompotSurfaceRoles.Field -> {
                 KompotSurface(
                     shape = shapes.smallShape,
-                    container = MaterialTheme.colorScheme.surfaceVariant,
-                    // Set because the container is. A container without a content colour leaves
-                    // Material's own foreground on top of it, which is a trap laid for whoever sets
-                    // one half.
-                    content = MaterialTheme.colorScheme.onSurfaceVariant,
-                    outline = Color.Transparent,
+                    container = Color.Transparent,
+                    content = MaterialTheme.colorScheme.onSurface,
+                    outline = MaterialTheme.colorScheme.outline,
                 )
             }
 
-            // A value, not an input. Drawn as a filled field it says the opposite of what it is, so it
-            // keeps the shape and gives up both the fill and the border.
             KompotSurfaceRoles.ReadOnlyField -> {
                 KompotSurface(
                     shape = shapes.smallShape,
@@ -108,5 +123,7 @@ class KonektDesignSystem(
         const val PRIMARY = "primary"
         const val QUIET = "quiet"
         const val TONAL = "tonal"
+        const val LINK = "link"
+        const val DANGER = "danger"
     }
 }

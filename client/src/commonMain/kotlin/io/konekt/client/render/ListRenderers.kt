@@ -19,13 +19,18 @@ import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotSurfaceRoles
 import io.github.youndie.kompot.LocalKompotDesignSystem
+import io.github.youndie.kompot.LocalKompotRegistry
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.EsimCardComponent
 import io.konekt.components.EsimStatuses
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceDensities
+import io.konekt.components.SurfaceTones
 
 // One line of the operation history.
 //
@@ -41,41 +46,36 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
         formController: FormController,
     ) {
         val designSystem = LocalKompotDesignSystem.current
+        val registry = LocalKompotRegistry.current
         val action = component.action
 
-        // An open vocabulary, and an unknown word draws the neutral row. A history that refused to
-        // draw a status it had not met would hide the order rather than the word.
-        val accent =
+        // THE STATUS IS A CHIP ON THE RIGHT (`B-114`, block 4), in the ground the canvas gives each
+        // word: mint for a purchase that went through, red-tinted for money that came back, grey for
+        // everything else — and a word this build has never heard of gets the grey chip, not none.
+        val tone =
             when (component.status) {
-                OrderStatuses.COMPLETED -> M3Colors.Primary
-                OrderStatuses.REJECTED -> M3Colors.Error
-                OrderStatuses.AWAITING_CONFIRMATION, OrderStatuses.PENDING -> M3Colors.Secondary
+                OrderStatuses.COMPLETED -> SurfaceTones.ACCENT
+                OrderStatuses.COMPENSATED, OrderStatuses.REJECTED -> SurfaceTones.ALERT
+                else -> SurfaceTones.NEUTRAL
+            }
+        val wordColour =
+            when (tone) {
+                SurfaceTones.ACCENT -> M3Colors.OnPrimaryContainer
+                SurfaceTones.ALERT -> M3Colors.OnErrorContainer
                 else -> M3Colors.OnSurfaceVariant
             }
-
-        // A SURFACE, which this row did not have. The canvas draws every order as a card (section
-        // 05) and the screen drew four lines of text on nothing — which is also why no golden of it
-        // could clear `GoldenContentTest`: at 4% drawn a machine cannot tell it from a capture that
-        // failed, and it was right not to. `B-51`.
-        //
-        // The shape comes from the design system rather than a number here, so brand B's tighter
-        // radii reach it without a client release — which is the whole claim `B-22` makes.
         val surface = designSystem.resolveSurface(KompotSurfaceRoles.Container)
 
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    // OUTSIDE the card, and before the clip so it stays outside. A `paginated_list`
-                    // is a lazy column with no spacing of its own — the toolkit's, not ours — so
-                    // once these rows gained a background they touched, and four orders read as one
-                    // block. A row that draws a surface has to keep its own distance.
                     .padding(bottom = 8.dp)
                     .clip(surface.shape ?: RoundedCornerShape(20.dp))
                     .background(designSystem.resolveColor(M3Colors.Surface))
                     .then(if (action != null) Modifier.clickable { actionHandler.handle(action) } else Modifier)
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -84,29 +84,38 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
             ) {
                 Text(
                     text = component.title,
-                    style = designSystem.resolveTypography(M3Typography.BodyLarge),
+                    style = designSystem.resolveTypography(M3Typography.TitleMedium),
                     color = designSystem.resolveColor(M3Colors.OnSurface),
+                    modifier = Modifier.weight(1f, fill = false),
                 )
-                Text(
-                    text = component.amountText,
-                    style = designSystem.resolveTypography(M3Typography.BodyLarge),
-                    color = designSystem.resolveColor(M3Colors.OnSurface),
-                )
+                component.statusText?.let { word ->
+                    // Through the registry, so the chip is the chip every other screen draws.
+                    registry.RenderNode(
+                        component =
+                            SurfaceComponent(
+                                id = "${component.id}-status",
+                                tone = tone,
+                                density = SurfaceDensities.CHIP,
+                                children =
+                                    listOf(
+                                        TextComponent(
+                                            id = "${component.id}-status-text",
+                                            text = word,
+                                            style = M3Typography.LabelMedium,
+                                            color = wordColour,
+                                        ),
+                                    ),
+                            ),
+                        actionHandler = actionHandler,
+                        formController = formController,
+                    )
+                }
             }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                // THE REFERENCE BESIDE THE DATE — "8f21-4c90 · 12 Aug" on the canvas. It was on the
-                // component and drawn nowhere, which made it a field the server composed for nobody:
-                // it is the string a subscriber quotes to support, and the one thing on this row
-                // that connects it to anything outside the screen.
                 Text(
-                    // JOINED ONLY WHERE THERE ARE TWO. The purchase-result screen sends an order row
-                    // with an EMPTY `dateText` — the order just happened and the screen is about
-                    // that, not about when — and a separator written unconditionally drew
-                    // "a5906073 · " with nothing after it.
                     text =
                         listOf(
                             component.reference,
@@ -115,33 +124,26 @@ class OrderRowRenderer : KompotComponentRenderer<OrderRowComponent> {
                     style = designSystem.resolveTypography(M3Typography.LabelMedium),
                     color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
                 )
-                component.statusText?.let {
-                    Text(
-                        text = it,
-                        style = designSystem.resolveTypography(M3Typography.LabelMedium),
-                        color = designSystem.resolveColor(accent),
-                    )
-                }
+                // THE SIGNED AMOUNT stays — it is not in the canvas and it is useful — on the second
+                // line, where it reads as the ledger's figure rather than as the card's headline.
+                Text(
+                    text = component.amountText,
+                    style = designSystem.resolveTypography(M3Typography.LabelMedium),
+                    color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                )
             }
-
-            // The rollback's sentence, and it is the one a subscriber goes looking for: money that
-            // came back is the fact the compensated row exists to state.
             component.noteText?.let {
                 Text(
                     text = it,
                     style = designSystem.resolveTypography(M3Typography.BodySmall),
                     color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
     }
 }
 
-// An eSIM profile as a line the subscriber can act on.
-//
-// The ICCID is drawn as it arrives. This client does not group it, mask it or shorten it: those are
-// three decisions about somebody's identifier, and every one of them belongs on the side that knows
-// what an ICCID is.
 class EsimCardRenderer : KompotComponentRenderer<EsimCardComponent> {
     @Composable
     override fun Render(

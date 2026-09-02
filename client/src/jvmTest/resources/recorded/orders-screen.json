@@ -21,7 +21,7 @@
             "type": "navigate",
             "deeplink": "app://orders"
           },
-          "variant": "primary"
+          "variant": "tonal"
         },
         {
           "type": "button",
@@ -52,72 +52,72 @@
       "initialItems": [
         {
           "type": "order_row",
-          "id": "history-663829ea-9fb6-4c2b-b859-1e948cc6bdf9",
-          "reference": "663829ea",
+          "id": "history-bad1bfec-eb45-46f9-b93a-ceabf7019779",
+          "reference": "bad1bfec",
           "title": "Top-up",
-          "dateText": "28 Aug",
+          "dateText": "2 Sep",
           "amountText": "+$15",
           "status": "completed",
           "statusText": "Added",
           "action": {
             "type": "navigate",
-            "deeplink": "app://top-up/663829ea-9fb6-4c2b-b859-1e948cc6bdf9"
+            "deeplink": "app://top-up/bad1bfec-eb45-46f9-b93a-ceabf7019779"
           }
         },
         {
           "type": "order_row",
-          "id": "history-9d80f6be-ce0f-4963-9477-9eca4e829b56",
-          "reference": "9d80f6be",
+          "id": "history-4154eaa7-6542-4591-80c2-84d0d211a822",
+          "reference": "4154eaa7",
           "title": "Europe · 5 GB · 14 days",
-          "dateText": "28 Aug",
+          "dateText": "2 Sep",
           "amountText": "−$9",
           "status": "completed",
           "statusText": "Paid",
           "action": {
             "type": "navigate",
-            "deeplink": "app://order/9d80f6be-ce0f-4963-9477-9eca4e829b56"
+            "deeplink": "app://order/4154eaa7-6542-4591-80c2-84d0d211a822"
           }
         },
         {
           "type": "order_row",
-          "id": "history-5c6f9b9c-77f1-41ae-94b8-75f4bf6822d0",
-          "reference": "5c6f9b9c",
+          "id": "history-fe646d32-112b-4878-9bce-52219f94cf4c",
+          "reference": "fe646d32",
           "title": "Turkey · 10 GB · 30 days",
-          "dateText": "28 Aug",
+          "dateText": "2 Sep",
           "amountText": "−$12",
           "status": "completed",
           "statusText": "Paid",
           "action": {
             "type": "navigate",
-            "deeplink": "app://order/5c6f9b9c-77f1-41ae-94b8-75f4bf6822d0"
+            "deeplink": "app://order/fe646d32-112b-4878-9bce-52219f94cf4c"
           }
         },
         {
           "type": "order_row",
-          "id": "history-9f3995b2-8628-459f-abea-777c8f53c826",
-          "reference": "9f3995b2",
+          "id": "history-10ccf566-337e-46f8-afef-32ff9c37220c",
+          "reference": "10ccf566",
           "title": "Home · 20 GB · 30 days",
-          "dateText": "28 Aug",
+          "dateText": "2 Sep",
           "amountText": "−$15",
           "status": "completed",
           "statusText": "Paid",
           "action": {
             "type": "navigate",
-            "deeplink": "app://order/9f3995b2-8628-459f-abea-777c8f53c826"
+            "deeplink": "app://order/10ccf566-337e-46f8-afef-32ff9c37220c"
           }
         },
         {
           "type": "order_row",
-          "id": "history-614a5670-3234-4178-9a6f-f27c64b51a57",
-          "reference": "614a5670",
+          "id": "history-99ca1218-f6f1-4a9b-9ced-ee79b46ee982",
+          "reference": "99ca1218",
           "title": "Top-up",
-          "dateText": "28 Aug",
+          "dateText": "2 Sep",
           "amountText": "+$60",
           "status": "completed",
           "statusText": "Added",
           "action": {
             "type": "navigate",
-            "deeplink": "app://top-up/614a5670-3234-4178-9a6f-f27c64b51a57"
+            "deeplink": "app://top-up/99ca1218-f6f1-4a9b-9ced-ee79b46ee982"
           }
         }
       ],

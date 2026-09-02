@@ -301,6 +301,24 @@ state's colour. Shorter than the sentences, and nothing `B-60` chose is gone.
 Priced in [operator-boundaries](../services/operator-boundaries.md): a new emphasis word is a client
 release, and a client without it draws its ordinary button.
 
+### Block 4 — catalogue, orders, profile, sign in, done
+
+| Screen | What landed |
+|---|---|
+| **Plans / travel** | a card on the page ground with no outline, the price in the text colour; a tag chip on the left and a `Choose` pill on the right — both composed through the registry from the chip and the button every other screen draws. `On sale` under every card is gone: the tag speaks only for the sold-out card, which is the one without a pill. `plan_card.actionText` is the pill's word, priced in operator-boundaries; the travel screen shares the card |
+| **Orders** | the status as a chip on the right in the status's tone (`surface` gained `alert` for money that came back); the signed amount on the second line; the selected filter tonal, the rest outlined. The canvas's active-package card with a bar is a model question and was left |
+| **Profile** | the number as the header with its label above; what the line holds as a settings card with dividers; support as the mint card with a heading and no `Open chat`; `Sign out` as a red text row (`danger`) in its own card at the foot |
+| **Sign in / code** | fields outlined on the page (`KonektDesignSystem`'s `Field` surface — the theme test that pinned it borderless now pins it outlined); on the code step `Sign in` is the first and only pill, with `Send a new code` and `Use a different number` as `link` text under it |
+
+Two emphasis words were added for this block — `link` and `danger` — and a surface tone, `alert`;
+all three fall back the way every open word here does. Fixtures for the five screens were re-recorded
+from the stand; `profile-screen` keeps its installed-line sentence by hand, since installing an eSIM
+through the API is the wizard's business.
+
+**Left, on purpose:** the chevron on the `Sign out` row (a button cannot carry one), the resend
+countdown (no timer exists), the sign-out row's inset (a button inside a card is taller than the
+canvas's row — a list-row component would be the fix, and that is a dictionary decision).
+
 ## Acceptance criteria
 
 - AC: every screen above has a golden at 393×852 in **both** themes, re-recorded from the server after

@@ -5,9 +5,11 @@ import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
+import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
-import io.konekt.components.BannerComponent
-import io.konekt.components.MessageTones
+import io.konekt.components.ButtonEmphasis
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceTones
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.shell.shared.api.SignOutAction
 
@@ -56,10 +58,15 @@ object ProfileScreen {
                             color = M3Colors.OnSurface,
                         ),
                     )
+
+                    // THE HEADER IS THE NUMBER (`B-114`, block 4). The canvas draws an avatar, a name
+                    // and the number under it; there is no name and no initials to take (`B-55`), so
+                    // the honest header is the number as the title with its label above — set as a
+                    // header, not as a caption over a body-sized figure.
                     add(
                         TextComponent(
                             id = "profile-msisdn-label",
-                            text = "Number",
+                            text = "Your number",
                             style = M3Typography.LabelMedium,
                             color = M3Colors.OnSurfaceVariant,
                         ),
@@ -67,69 +74,92 @@ object ProfileScreen {
                     add(
                         TextComponent(
                             id = "profile-msisdn",
-                            // WITH THE PLUS PUT BACK ON. `Msisdn` stores digits and nothing else,
-                            // which is right for a key and wrong for a screen: "79990000777" reads
-                            // as a local number in one country and as a wrong one in every other.
-                            // The plus is what makes it E.164 to a reader.
-                            //
-                            // GROUPED IS WHAT THE CANVAS DRAWS — "+7 999 120-45-67" — and it is not
-                            // done here on purpose. Grouping is per country, konekt normalises
-                            // without keeping one, and a formatter that guessed would be wrong for
-                            // exactly the subscribers a white-label product is sold to. Formatting
-                            // belongs on this side (D15); this one needs a fact the domain does not
-                            // carry yet.
                             text = "+${view.msisdn}",
-                            style = M3Typography.TitleMedium,
+                            style = M3Typography.HeadlineMedium,
                             color = M3Colors.OnSurface,
                         ),
                     )
+
+                    // WHAT THE LINE HOLDS, as the settings list the canvas draws: a white card, a
+                    // label on the left, the value on the right. One row today; the card is the shape
+                    // the next row goes into.
                     add(
-                        TextComponent(
-                            id = "profile-esims",
-                            text = esimLine(view.esims),
-                            style = M3Typography.BodyMedium,
-                            color = M3Colors.OnSurfaceVariant,
+                        SurfaceComponent(
+                            id = "profile-line",
+                            dividers = true,
+                            spacing = 12,
+                            children =
+                                listOf(
+                                    RowComponent(
+                                        id = "profile-esims-row",
+                                        spacing = 12,
+                                        children =
+                                            listOf(
+                                                TextComponent(
+                                                    id = "profile-esims-label",
+                                                    text = "My eSIMs",
+                                                    style = M3Typography.TitleSmall,
+                                                    color = M3Colors.OnSurface,
+                                                    modifiers = TAKES_THE_SPACE,
+                                                ),
+                                                TextComponent(
+                                                    id = "profile-esims",
+                                                    text = esimLine(view.esims),
+                                                    style = M3Typography.BodyMedium,
+                                                    color = M3Colors.OnSurfaceVariant,
+                                                ),
+                                            ),
+                                    ),
+                                ),
                         ),
                     )
+
+                    // SUPPORT AS THE MINT CARD with a heading — the canvas's, without its `Open chat`:
+                    // there is no chat, and a button to nowhere is worse than no button.
                     add(
-                        BannerComponent(
+                        SurfaceComponent(
                             id = "profile-support",
-                            text = "Support answers around the clock. Have your order reference ready.",
-                            tone = MessageTones.INFO,
+                            tone = SurfaceTones.ACCENT,
+                            spacing = 6,
+                            children =
+                                listOf(
+                                    TextComponent(
+                                        id = "profile-support-title",
+                                        text = "Need a hand with an eSIM?",
+                                        style = M3Typography.TitleMedium,
+                                        color = M3Colors.OnPrimaryContainer,
+                                    ),
+                                    TextComponent(
+                                        id = "profile-support-text",
+                                        text = "Support answers around the clock. Have your order reference ready.",
+                                        style = M3Typography.BodyMedium,
+                                        color = M3Colors.OnPrimaryContainer,
+                                    ),
+                                ),
                         ),
                     )
+
+                    // THE WAY OUT IS A RED ROW at the foot of the list, not the most prominent control
+                    // on the screen — which a full-width primary pill for leaving was.
                     add(
-                        ButtonComponent(
-                            id = "profile-sign-out",
-                            text = "Sign out",
-                            // An ACTION and not a `navigate`: a session has to be given up on both
-                            // sides, and where the subscriber goes afterwards depends on that having
-                            // worked. A `navigate` to the login screen would leave a live session
-                            // behind a screen that says there is none.
-                            action = SignOutAction(),
-                            modifiers = FILLS_THE_ROW,
+                        SurfaceComponent(
+                            id = "profile-leave",
+                            spacing = 0,
+                            children =
+                                listOf(
+                                    ButtonComponent(
+                                        id = "profile-sign-out",
+                                        text = "Sign out",
+                                        action = SignOutAction(),
+                                        variant = ButtonEmphasis.DANGER,
+                                    ),
+                                ),
                         ),
                     )
-                    // THE SHELL, added last and hoisted by the client out of the tree it arrived
-                    // in. It is in the tree rather than fetched separately so that the SERVER decides
-                    // which tab is current — it is the only side that knows which screen it just
-                    // built, and a client comparing its address against an action's payload would be
-                    // a second opinion that disagrees the first time an address gains a query
-                    // parameter.
                     nav?.let(::add)
                 },
         )
 
-    // WHAT IS ON THIS LINE, and the word has to match the number.
-    //
-    // It said "installed" over a count of profiles HELD — a figure that exists for the device's slot
-    // limit and says nothing about whether anything was ever scanned. So a subscriber who had bought
-    // a profile and not installed it read "1 eSIM installed", on the one screen that exists to tell
-    // them what they have (`B-69`).
-    //
-    // Both numbers when both are non-zero, rather than a total: "2 eSIMs" would be true and would
-    // hide the one fact worth acting on. Singular and plural composed here like every other string on
-    // the wire — "1 eSIMs" is the sort of thing a reader stops trusting a product over.
     private fun esimLine(esims: EsimHoldings): String =
         when {
             esims.held == 0 -> "No eSIM on this line yet"

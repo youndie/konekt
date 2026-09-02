@@ -54,6 +54,21 @@
       },
       {
         "type": "button",
+        "id": "login-code-submit",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Sign in",
+        "action": {
+          "type": "submit_form",
+          "formId": "login-code"
+        }
+      },
+      {
+        "type": "button",
         "id": "login-code-resend",
         "modifiers": [
           {
@@ -66,7 +81,7 @@
           "type": "resend_code",
           "msisdn": "+79997770001"
         },
-        "variant": "quiet"
+        "variant": "link"
       },
       {
         "type": "button",
@@ -82,22 +97,7 @@
           "type": "navigate",
           "deeplink": "app://login"
         },
-        "variant": "quiet"
-      },
-      {
-        "type": "button",
-        "id": "login-code-submit",
-        "modifiers": [
-          {
-            "type": "size",
-            "width": "Fill"
-          }
-        ],
-        "text": "Sign in",
-        "action": {
-          "type": "submit_form",
-          "formId": "login-code"
-        }
+        "variant": "link"
       }
     ],
     "spacing": 16

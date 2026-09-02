@@ -345,7 +345,7 @@ class HistoryPagingTest {
             // none would be a screen that does not say what it is showing.
             assertEquals(
                 listOf("history-filter-active"),
-                chips.filter { it.variant == ButtonEmphasis.PRIMARY }.map { it.id },
+                chips.filter { it.variant == ButtonEmphasis.TONAL }.map { it.id },
             )
         }
 

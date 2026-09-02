@@ -229,38 +229,33 @@ object LoginScreens {
                             // already a field on THIS form, seeded and bound, so submitting these
                             // values under the first form's id posts exactly what step one posts. The
                             // client's `submits` map does the routing it already did.
-                            add(
-                                ButtonComponent(
-                                    id = "login-code-resend",
-                                    text = "Send a new code",
-                                    // A VERB AND NOT A FORM SUBMIT, and the form submit was the first
-                                    // attempt. The toolkit intercepts a `submit_form` only for the
-                                    // form the SCREEN holds, so a button carrying the number form's
-                                    // id from this screen fell through to the runner, which had no
-                                    // handler — it posted nothing, which is the shape of the defect
-                                    // it was added to fix. One OTP in the log where two were expected
-                                    // is what said so.
-                                    action = ResendCodeAction(msisdn),
-                                    variant = ButtonEmphasis.QUIET,
-                                    modifiers = FILLS_THE_ROW,
-                                ),
-                            )
-                            // AND A WAY BACK, for the other half of the same hole: a number typed
-                            // wrong cannot be corrected by asking the same number again.
-                            add(
-                                ButtonComponent(
-                                    id = "login-code-restart",
-                                    text = "Use a different number",
-                                    action = NavigateAction(LOGIN_DEEPLINK),
-                                    variant = ButtonEmphasis.QUIET,
-                                    modifiers = FILLS_THE_ROW,
-                                ),
-                            )
+                            // SIGN IN IS THE FIRST AND ONLY PILL (`B-114`, block 4). The way to a new
+                            // code and the way back to the number are text under it, not two outlined
+                            // buttons above it competing with the answer; the back control in the
+                            // frame is the other way back.
                             add(
                                 ButtonComponent(
                                     id = "login-code-submit",
                                     text = "Sign in",
                                     action = SubmitFormAction(CODE_FORM),
+                                    modifiers = FILLS_THE_ROW,
+                                ),
+                            )
+                            add(
+                                ButtonComponent(
+                                    id = "login-code-resend",
+                                    text = "Send a new code",
+                                    action = ResendCodeAction(msisdn),
+                                    variant = ButtonEmphasis.LINK,
+                                    modifiers = FILLS_THE_ROW,
+                                ),
+                            )
+                            add(
+                                ButtonComponent(
+                                    id = "login-code-restart",
+                                    text = "Use a different number",
+                                    action = NavigateAction(LOGIN_DEEPLINK),
+                                    variant = ButtonEmphasis.LINK,
                                     modifiers = FILLS_THE_ROW,
                                 ),
                             )

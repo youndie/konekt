@@ -1,1 +1,53 @@
-{"schema":{"formId":"login","fields":[{"type":"text_field","fieldId":"msisdn","rules":[{"type":"required","errorMessage":"Enter your number"}]}]},"screen":{"type":"column","id":"login","children":[{"type":"text","id":"login-title","text":"Sign in","style":"headline_small","color":"on_surface"},{"type":"text_input","id":"login-msisdn","fieldId":"msisdn","label":"Phone number","placeholder":"+7 999 120-45-67"},{"type":"button","id":"login-submit","modifiers":[{"type":"size","width":"Fill"}],"text":"Send me a code","action":{"type":"submit_form","formId":"login"}}],"spacing":16}}
+{
+  "schema": {
+    "formId": "login",
+    "fields": [
+      {
+        "type": "text_field",
+        "fieldId": "msisdn",
+        "rules": [
+          {
+            "type": "required",
+            "errorMessage": "Enter your number"
+          }
+        ]
+      }
+    ]
+  },
+  "screen": {
+    "type": "column",
+    "id": "login",
+    "children": [
+      {
+        "type": "text",
+        "id": "login-title",
+        "text": "Sign in",
+        "style": "headline_small",
+        "color": "on_surface"
+      },
+      {
+        "type": "text_input",
+        "id": "login-msisdn",
+        "fieldId": "msisdn",
+        "label": "Phone number",
+        "placeholder": "+7 999 120-45-67"
+      },
+      {
+        "type": "button",
+        "id": "login-submit",
+        "modifiers": [
+          {
+            "type": "size",
+            "width": "Fill"
+          }
+        ],
+        "text": "Send me a code",
+        "action": {
+          "type": "submit_form",
+          "formId": "login"
+        }
+      }
+    ],
+    "spacing": 16
+  }
+}
