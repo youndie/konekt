@@ -231,6 +231,14 @@ harness faults on the way, both caught by reading back what the machine actually
 observability switch left the collectors' keys in place and the server refused to start; the
 cold-start clock printed its format literally.
 
+### 4 and 8 — the fan-out and the broker, done; the load session is over
+
+A thousand SSE streams held; the consumer is the wall — about 500 usage events a second on one
+core, roughly 800 lines at the simulator's cadence — and a broker restart under load recovered
+within a tick on the producer and three on the consumer, counters climbing monotonically. The raw
+record of the session is in `docs/research/measurements-2026-09-02/`. What is left of this item is
+the soak's report in the morning and the README's cost paragraph.
+
 ## Acceptance criteria
 
 - AC: `scripts/measure/stand-up.sh` takes a fresh box to a running stand with the chart's limits and
