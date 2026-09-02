@@ -202,6 +202,32 @@ and the consumer that applies them is the same code either way. Fifty thousand l
 the broker's retention on one core. That is a number for the reference-scope: what a real MVNO's
 usage feed would ask of this consumer, and the point at which a single consumer stops being enough.
 
+## 5. The cost of being observed
+
+**What was measured.** The reading profile at 400 rps, held 90 s, three rounds, on the reset stand
+with the simulator verified off — first with tracy and metrik configured as on the test contour,
+then with both endpoints *and* keys blank (`scripts/measure/observe.sh off`; the server refuses an
+endpoint without its key, and the agents answer no endpoint by doing nothing), the server restarted
+between and warmed with 60 s at 200 rps each time. With the collectors off metrik cannot be the
+oracle, so the comparison is on k6's timings and the server's CPU from the sampler; the first round
+after each restart is the JVM warming and is shown but excluded.
+
+| | round | k6 p50 | k6 p95 | server CPU mean / max % |
+|---|---|---|---|---|
+| collectors on | 1 *(warm-up)* | 3.1 | 52.8 | 82 / 105 |
+| collectors on | 2 | 2.5 | 7.7 | 54 / 70 |
+| collectors on | 3 | 2.5 | 7.6 | 66 / 73 |
+| collectors off | 1 *(warm-up)* | 4.6 | 71.0 | 84 / 100 |
+| collectors off | 2 | 2.4 | 6.9 | 57 / 64 |
+| collectors off | 3 | 2.3 | 6.4 | 61 / 65 |
+
+**What it says.** Being observed costs this server **less than the spread between two warm rounds**:
+p50 differs by a tenth of a millisecond, p95 by about a millisecond, and the CPU means — 54 and 66
+with the collectors, 57 and 61 without — overlap. At 400 screens a second on one core, tracy's
+spans and metrik's UDP samples are under the ten percent this stand can resolve with three rounds;
+the report states the bound and not a number below it. A figure worth quoting would need ten
+rounds or a rate nearer the knee, and neither was worth the machine time against a bound this low.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from
