@@ -208,6 +208,20 @@ captures" and the database said "the harness is wrong": `POST /purchases` answer
 scenario had accepted only 200 and 201. Figures and captions in
 [research-measurements](../research/research-measurements.md).
 
+### 1 and 7 — the two profiles' knees, the wire; and a finding
+
+Reading: no knee to 400 rps, the knee at ~800 on the one core the chart allows, saturated at ~1 400
+— the server's CPU, with Postgres at 60%. Buying: flat to 40 a second, the knee between 80 and 160,
+and it is Postgres's. The wire: the heaviest screen under five kilobytes, under one gzipped. All
+in [research-measurements](../research/research-measurements.md), every figure with its window.
+
+**The finding:** the simulator ticks every subscriber every five seconds, the staircases had signed
+in 57 000 of them, and by the end the consumer had fallen behind the broker's retention — the later
+rounds' tails carry that weight, the report says which, and the remaining runs go on a reset stand
+with the simulator off (`reset.sh`, `SIMULATE_TRAFFIC`). The harness itself was wrong twice on the
+way — 202 read as an error, a minute for a setup of thousands — and both times the database or the
+point's own log said so before a number went into the report.
+
 ## Acceptance criteria
 
 - AC: `scripts/measure/stand-up.sh` takes a fresh box to a running stand with the chart's limits and
