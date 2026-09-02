@@ -12,7 +12,7 @@ import kotlin.time.Instant
 // The copy review, in the same place as the code.
 //
 // The canvas's rule for this card is that the LOW STATE CHANGES THE WORDS and not only the colour —
-// "Minutes run out in about two days at your current pace. A 100-minute add-on costs $4." Every part
+// "Running low · minutes run out in about two days · Add 100 min for $4" Every part
 // of that sentence is something somebody could later simplify away: the projection, the hedge in
 // "about", and the price that turns a warning into an offer.
 class UsageCounterCardsTest {
@@ -55,7 +55,7 @@ class UsageCounterCardsTest {
 
         assertEquals(CounterStates.LOW, card.state)
         assertEquals(
-            "Minutes run out in about two days at your current pace. A 100-minute add-on costs $4.",
+            "Running low · minutes run out in about two days · Add 100 min for $4",
             card.captionText,
         )
     }
@@ -66,7 +66,7 @@ class UsageCounterCardsTest {
 
         // "Data runs out", not "Data run out". A machine-written screen is what a backend-driven
         // product has to work hardest not to read like.
-        assertTrue(data.captionText!!.startsWith("Data runs out"), data.captionText!!)
+        assertTrue(data.captionText!!.startsWith("Running low · data runs out"), data.captionText!!)
     }
 
     @Test
@@ -75,7 +75,7 @@ class UsageCounterCardsTest {
 
         // Same instant it started: no elapsed time, so no rate. The card falls back to the fact.
         assertEquals(
-            "Running low — under a tenth of your minutes is left. A 100-minute add-on costs \$4.",
+            "Running low · Add 100 min for \$4",
             card.captionText,
         )
     }
@@ -86,7 +86,7 @@ class UsageCounterCardsTest {
 
         assertEquals(CounterStates.EXHAUSTED, card.state)
         assertEquals(
-            "You have used all of your messages. A 200-message add-on costs \$2.",
+            "Used up · Add 200 SMS for \$2",
             card.captionText,
         )
         assertEquals("0 SMS left", card.valueText)

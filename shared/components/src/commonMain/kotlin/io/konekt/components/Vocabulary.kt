@@ -110,6 +110,11 @@ object ButtonEmphasis {
     // the word draws its ordinary button, which is wrong but harmless — the reverse default, drawing
     // everything as primary, gives a screen two equal answers to one question.
     const val QUIET = "quiet"
+
+    // The one that matters but should not shout: `Buy a package` under the counters, a tinted pill
+    // beside an outlined one (`B-114`). Same fallback as `quiet` — a client without the word draws
+    // its ordinary button.
+    const val TONAL = "tonal"
 }
 
 // Which ground a `surface` stands on, named as a ROLE rather than as a colour: the server says what

@@ -144,6 +144,45 @@
           "valueText": "48 SMS left",
           "progress": 0.96,
           "inline": true
+        },
+        {
+          "type": "row",
+          "id": "allowance-actions",
+          "children": [
+            {
+              "type": "button",
+              "id": "home-buy",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Buy a package",
+              "action": {
+                "type": "navigate",
+                "deeplink": "app://plans"
+              },
+              "variant": "tonal"
+            },
+            {
+              "type": "button",
+              "id": "home-roaming",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Roaming",
+              "action": {
+                "type": "navigate",
+                "deeplink": "app://roaming"
+              },
+              "variant": "quiet"
+            }
+          ],
+          "spacing": 8
         }
       ],
       "spacing": 16
@@ -159,37 +198,12 @@
     },
     {
       "type": "banner",
-      "id": "home-roaming",
-      "text": "Going abroad? See what you have for each trip.",
-      "actionText": "Travel packages",
-      "action": {
-        "type": "navigate",
-        "deeplink": "app://roaming"
-      }
-    },
-    {
-      "type": "banner",
       "id": "home-install-esim",
       "text": "Your line has no eSIM yet. Install one to start using what you have bought.",
       "actionText": "Install eSIM",
       "action": {
         "type": "navigate",
         "deeplink": "app://esim-install"
-      }
-    },
-    {
-      "type": "button",
-      "id": "home-buy",
-      "modifiers": [
-        {
-          "type": "size",
-          "width": "Fill"
-        }
-      ],
-      "text": "Buy a package",
-      "action": {
-        "type": "navigate",
-        "deeplink": "app://plans"
       }
     },
     {

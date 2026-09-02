@@ -282,6 +282,25 @@ row of the table and the activation banner had been given the same id.
 **Not touched in this block, on purpose:** the confirm sheet (last, per the order above) and the
 button height (kompot#106).
 
+### Block 3 — home, done
+
+**The state words were a decision, and it went: the word AND the offer.** The canvas writes
+`Running low` / `Used up` under the bar and colours the figure; `B-60` had chosen a sentence with the
+projection and the add-on's price, and the canvas puts that offer on a plan-usage screen this build
+does not have. Dropping the offer would have removed the only place the price list is visible, so the
+caption is now the word first and the two clauses behind it — *"Running low · minutes run out in
+about two days · Add 100 min for $4"*, *"Used up · Add 200 SMS for $2"* — drawn by the client in the
+state's colour. Shorter than the sentences, and nothing `B-60` chose is gone.
+
+| | What landed |
+|---|---|
+| **The pair** | `Buy a package` (a new `tonal` emphasis — `primary_container`, named in `ButtonEmphasis` and drawn by `KonektDesignSystem`) and `Roaming` (`quiet`) in one row under the counters, inside the allowance card. They were a full-width primary at the foot of the page and a `Travel packages` banner — the same two doors in two other shapes. The pill opens the travel screen the banner did, always, which is what `B-88` learned from the reachability guard |
+| **The captions** | the word, the projection, the offer, as clauses; in the state's colour |
+| **The eSIM row** | left as a banner, deliberately (see the list at the top) — the canvas's compact row with `Install` is the card without the quota |
+
+Priced in [operator-boundaries](../services/operator-boundaries.md): a new emphasis word is a client
+release, and a client without it draws its ordinary button.
+
 ## Acceptance criteria
 
 - AC: every screen above has a golden at 393×852 in **both** themes, re-recorded from the server after

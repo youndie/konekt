@@ -48,6 +48,15 @@ class KonektDesignSystem(
             // correctly — Material leaves the content colour where it was, so a surface that names a
             // container and not a foreground is how "Cancel" becomes unreadable. Naming none was the
             // safe half of that; naming all three is the right whole.
+            KompotSurfaceRoles.button(TONAL) -> {
+                KompotSurface(
+                    shape = shapes.buttonShape,
+                    container = MaterialTheme.colorScheme.primaryContainer,
+                    content = MaterialTheme.colorScheme.onPrimaryContainer,
+                    outline = Color.Transparent,
+                )
+            }
+
             KompotSurfaceRoles.button(QUIET) -> {
                 KompotSurface(
                     shape = shapes.buttonShape,
@@ -98,5 +107,6 @@ class KonektDesignSystem(
     private companion object {
         const val PRIMARY = "primary"
         const val QUIET = "quiet"
+        const val TONAL = "tonal"
     }
 }

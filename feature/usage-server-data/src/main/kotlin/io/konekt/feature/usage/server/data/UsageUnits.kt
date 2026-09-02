@@ -16,6 +16,18 @@ object UsageUnits {
             UsageCounter.Kind.MESSAGES -> "${grouped(counter.remainingUnits)} SMS"
         }
 
+    // THE AMOUNT AS A NOUN — `100 min`, `200 SMS`, `1 GB` — for `Add 100 min for $4`; `size` below is
+    // the adjective, `100-minute`, and the two read wrong in each other's place.
+    fun amount(
+        kind: UsageCounter.Kind,
+        units: Long,
+    ): String =
+        when (kind) {
+            UsageCounter.Kind.DATA -> data(units)
+            UsageCounter.Kind.MINUTES -> "${grouped(units)} min"
+            UsageCounter.Kind.MESSAGES -> "${grouped(units)} SMS"
+        }
+
     fun size(
         kind: UsageCounter.Kind,
         units: Long,

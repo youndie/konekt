@@ -67,48 +67,39 @@ class UsageCounterCards(
                 },
         )
 
+    // THE CANVAS'S WORD FIRST (`B-114`, block 3): `Running low` / `Used up`, drawn in the state's
+    // colour, is what a glance reads. The projection and the offer `B-60` chose follow it as clauses
+    // — shorter than the sentences they were, and still there: a subscriber short of minutes is told
+    // when they run out and what fixes it, which a word alone does not do. Nothing in the ordinary
+    // state, for the reason the screen document gives: a caption that is always there is a caption
+    // nobody reads by the time it matters.
     private fun captionFor(
         counter: UsageCounter,
         at: Instant,
     ): String? {
-        // Nothing to say in the ordinary state, and saying something anyway is how a caption stops
-        // being read by the time it matters.
         if (!counter.isLow && !counter.isExhausted) return null
-
         val offer = offerFor(counter)
-
-        if (counter.isExhausted) {
-            return listOfNotNull("You have used all of your ${counter.kind.title().lowercase()}.", offer)
-                .joinToString(" ")
-        }
-
-        // The projection, when there is one. It is absent for an allowance nothing has been spent
-        // from yet and for one granted moments ago — and in those cases the card falls back to the
-        // fact rather than inventing a date, because "runs out today" is what a naive zero would say.
-        val running =
+        if (counter.isExhausted) return listOfNotNull("Used up", offer).joinToString(SEPARATOR)
+        val projection =
             counter
-                .daysRemaining(at)
-                ?.let { "${counter.kind.runsOut()} in ${UsageUnits.approximately(it)} at your current pace." }
-                ?: "Running low — under a tenth of your ${counter.kind.title().lowercase()} is left."
-
-        return listOfNotNull(running, offer).joinToString(" ")
+                .daysRemaining(
+                    at,
+                )?.let { "${counter.kind.runsOut()} in ${UsageUnits.approximately(it)}" }
+        return listOfNotNull("Running low", projection, offer).joinToString(SEPARATOR)
     }
 
-    // "A 100-minute add-on costs $4." Absent when nothing is sold for that counter, which leaves the
-    // card a warning rather than an offer — worse, and honest.
+    // THE OFFER, when the price list has one for this kind. Without a price there is no offer and the
+    // caption is a warning, which is the honest degradation.
     private fun offerFor(counter: UsageCounter): String? =
         addOns.forKind(counter.kind)?.let { addOn ->
-            "A ${UsageUnits.size(counter.kind, addOn.units)} add-on costs ${MoneyFormat.format(addOn.price)}."
+            "Add ${UsageUnits.amount(counter.kind, addOn.units)} for ${MoneyFormat.format(addOn.price)}"
         }
 
-    // "Data runs out", "Minutes run out". The verb follows the noun's number, and getting it wrong
-    // is the kind of thing that reads as a machine wrote the screen — which, on a backend-driven
-    // product, is exactly the impression the copy is there to avoid.
     private fun UsageCounter.Kind.runsOut(): String =
         when (this) {
-            UsageCounter.Kind.DATA -> "Data runs out"
-            UsageCounter.Kind.MINUTES -> "Minutes run out"
-            UsageCounter.Kind.MESSAGES -> "Messages run out"
+            UsageCounter.Kind.DATA -> "data runs out"
+            UsageCounter.Kind.MINUTES -> "minutes run out"
+            UsageCounter.Kind.MESSAGES -> "messages run out"
         }
 
     private fun UsageCounter.Kind.title(): String =
@@ -120,5 +111,8 @@ class UsageCounterCards(
 
     companion object {
         fun idOf(counter: UsageCounter): String = "counter-${counter.kind.wireName}"
+
+        // A middle dot between clauses, the way the canvas separates the word from what follows it.
+        const val SEPARATOR = " · "
     }
 }

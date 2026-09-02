@@ -124,11 +124,14 @@ class UsageCounterCardRenderer : KompotComponentRenderer<UsageCounterCardCompone
                 )
             }
 
+            // THE CAPTION IN THE STATE'S COLOUR: the canvas writes `Running low` in the amber the
+            // figure turned, and `Used up` in the red. The ordinary state carries no caption — the
+            // server sends none — so this is never the ordinary text colour by another route.
             component.captionText?.let { caption ->
                 Text(
                     text = caption,
                     style = designSystem.resolveTypography(M3Typography.BodySmall),
-                    color = designSystem.resolveColor(M3Colors.OnSurfaceVariant),
+                    color = accent,
                 )
             }
         }

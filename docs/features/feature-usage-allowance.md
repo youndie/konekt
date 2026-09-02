@@ -25,8 +25,9 @@ the subscriber is looking at it** — a frame arrives over SSE and one card is r
 
 Two things make the card worth more than a number. The **state** — normal, low, exhausted — is the
 server's judgement, because "low" depends on the subscriber's rate of use. And in the low state the
-copy is a projection and an offer: *"Minutes run out in about two days at your current pace. A
-100-minute add-on costs $4."*
+copy is the canvas's state word, then the projection, then the offer, as clauses: *"Running low ·
+minutes run out in about two days · Add 100 min for $4"* (`B-114`, block 3 — the word and the colour
+are what a glance reads; the two clauses `B-60` chose are still there behind it).
 
 ## 2. Business rules
 
@@ -103,20 +104,22 @@ subscribers' allowances.
 ### Scenario: the low state changes the copy and not only the colour
 * **Given:** a counter with under a tenth left, and an add-on on the price list
 * **When:** the card is built
-* **Then:** the caption projects when it runs out and states what the add-on costs
+* **Then:** the caption opens with `Running low`, projects when it runs out and states what the
+  add-on costs — *"Running low · minutes run out in about two days · Add 100 min for $4"*
 * **And:** an ordinary counter carries **no caption at all**
 * **Automated:** `HomeScreenTest`, `UsageCounterCardsTest`
 
 ### Scenario: a counter measured before any time has passed does not project
 * **Given:** an allowance granted this instant, or one nothing has been spent from
 * **When:** the caption is built
-* **Then:** it falls back to "Running low — under a tenth …" rather than inventing a date
+* **Then:** it is the word and the offer — *"Running low · Add 100 min for $4"* — rather than an
+  invented date
 * **Automated:** `UsageCounterCardsTest`, `UsageCounterTest`
 
 ### Scenario: an exhausted counter says so plainly and still offers the way out
 * **Given:** a counter at zero
 * **When:** the card is built
-* **Then:** "You have used all of your data." plus the add-on's price
+* **Then:** *"Used up · Add 1 GB for $6"* — the word, and the offer
 * **Automated:** `UsageCounterCardsTest`
 
 ### Scenario: low is a tenth, and the boundary is on the low side

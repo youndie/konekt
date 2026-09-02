@@ -103,70 +103,16 @@ class HomeScreen(
                         // in three weeks is context.
                         addAll(view.packages.map { roamingCards.of(it, view.at) })
 
-                        // AND THE WAY TO THE TRAVEL SCREEN, drawn ALWAYS — which is not what it was
-                        // and is what the reachability guard caught.
-                        //
-                        // `B-88` gave roaming a screen of its own, and this door was conditional on
-                        // the subscriber already having a package. So the screen's EMPTY state — "no
-                        // travel package on this line yet", with the way to the catalogue — could
-                        // never be reached by anybody: the only door to it was closed exactly when it
-                        // was the state you would see. `EveryScreenIsReachableTest` said so in one
-                        // line, *reachable from nowhere and not declared: app://roaming*, and it was
-                        // right about the product and not only about the graph.
-                        //
-                        // The CARDS stay conditional: a package bought for a trip must be visible on
-                        // the screen somebody opens, and a subscriber with none needs no empty list
-                        // here — that is what the screen behind this banner is for.
-                        add(
-                            BannerComponent(
-                                id = "home-roaming",
-                                text = "Going abroad? See what you have for each trip.",
-                                tone = MessageTones.INFO,
-                                action = NavigateAction(ROAMING_DEEPLINK),
-                                actionText = "Travel packages",
-                            ),
-                        )
-
-                        // SOMETHING BOUGHT AND NOT YET INSTALLED, offered here because this is the
-                        // screen a subscriber opens.
-                        //
-                        // Section 01 draws it as a row with `Install`, and until now the install flow
-                        // could be reached from exactly two places — the purchase result, and a
-                        // history row once one carried an action. Both are places somebody has to
-                        // think to go. An allowance that cannot be used until a profile is installed
-                        // is the one thing on this screen that is not about what they have but about
-                        // what they cannot yet use.
-                        //
-                        // Drawn on the HOLDINGS and not on the roaming packages: what makes an eSIM
-                        // installable has nothing to do with where the allowance works, and a home
-                        // bundle needs a profile exactly as much as a trip does. Tying it to roaming
-                        // would have been the canvas's example mistaken for the rule.
-                        //
-                        // TWO STATES, AND THE SECOND ONE USED TO HIDE THE DOOR. The condition was
-                        // `held == 0`, so the banner appeared only for a line with no profile at all —
-                        // and vanished the moment one was issued, which is precisely when there is
-                        // something to install and a subscriber who has paid for it. The heading above
-                        // this block already said "something bought and not yet installed"; the
-                        // condition said something else (`B-69`).
+                        // THE WAY TO THE TRAVEL SCREEN is the `Roaming` pill in the allowance card
+                        // (`B-114`, block 3), and it is drawn ALWAYS — which is what `B-88`'s banner
+                        // learned from the reachability guard: the door was conditional on the
+                        // subscriber already having a package, so the screen's EMPTY state — "no
+                        // travel package on this line yet", with the way to the catalogue — could be
+                        // reached by nobody. The CARDS stay conditional: a package bought for a trip
+                        // must be visible here, and a subscriber with none needs no empty list — that
+                        // is what the screen behind the pill is for.
                         installBanner(view.esims)?.let(::add)
-
-                        // AFTER what the subscriber already has, because that is the order the
-                        // question comes in: what have I got, then what else is there. The empty
-                        // case above already offers the catalogue in its banner, so this is the
-                        // other half of the same door rather than a second one.
-                        add(
-                            ButtonComponent(
-                                id = "home-buy",
-                                text = "Buy a package",
-                                action = NavigateAction(PLANS_DEEPLINK),
-                                modifiers = FILLS_THE_ROW,
-                            ),
-                        )
                     }
-
-                    // THE SHELL, added last and hoisted by the client out of the tree it arrived in.
-                    // In the tree rather than fetched separately so the SERVER decides which tab is
-                    // current: it is the only side that knows which screen it just built.
                     nav?.let(::add)
                 },
         )
@@ -338,6 +284,34 @@ class HomeScreen(
                         ),
                     )
                     addAll(view.counters.map { cards.of(it, view.at) })
+
+                    // THE PAIR UNDER THE COUNTERS (`B-114`, block 3): a tonal pill and an outlined one,
+                    // where the canvas draws them. They were a full-width primary at the foot of the
+                    // page and a banner with a link — two controls of two kinds for one row. The
+                    // catalogue is still one list; `Roaming` opens the travel screen the banner did.
+                    add(
+                        RowComponent(
+                            id = "allowance-actions",
+                            spacing = 8,
+                            children =
+                                listOf(
+                                    ButtonComponent(
+                                        id = "home-buy",
+                                        text = "Buy a package",
+                                        action = NavigateAction(PLANS_DEEPLINK),
+                                        variant = ButtonEmphasis.TONAL,
+                                        modifiers = TAKES_THE_SPACE,
+                                    ),
+                                    ButtonComponent(
+                                        id = "home-roaming",
+                                        text = "Roaming",
+                                        action = NavigateAction(ROAMING_DEEPLINK),
+                                        variant = ButtonEmphasis.QUIET,
+                                        modifiers = TAKES_THE_SPACE,
+                                    ),
+                                ),
+                        ),
+                    )
                 },
         )
 

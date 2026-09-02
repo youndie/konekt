@@ -85,7 +85,7 @@ fun CounterLow() {
                     // The canvas's own copy for this frame: a projection and what it costs to fix.
                     // Pre-formatted on the server, money included — a client that cannot format
                     // cannot format inconsistently.
-                    captionText = "Minutes run out in about two days at your pace. A 100-minute add-on costs \$1.49.",
+                    captionText = "Running low · minutes run out in about two days · Add 100 min for \$1.49",
                     progress = 0.9f,
                 ),
             ),
@@ -103,7 +103,7 @@ fun CounterExhausted() {
                     state = CounterStates.EXHAUSTED,
                     title = "Messages",
                     valueText = "0 left",
-                    captionText = "You have used every message in this plan. Buy an add-on to keep sending.",
+                    captionText = "Used up · Add 200 SMS for \$2",
                     progress = 1f,
                 ),
             ),

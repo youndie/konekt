@@ -105,12 +105,12 @@ request.
 - **States, and what the caption says in each:**
   - `normal` — **no caption at all.** Saying something anyway is how a caption stops being read by the
     time it matters.
-  - `low` (a tenth or less is left) — the projection and the offer:
-    *"Minutes run out in about two days at your current pace. A 100-minute add-on costs $4."*
+  - `low` (a tenth or less is left) — the canvas's word, the projection and the offer, as clauses
+    (`B-114`, block 3): *"Running low · minutes run out in about two days · Add 100 min for $4"*.
     When the projection cannot be computed — nothing spent yet, or an allowance granted moments ago —
-    it falls back to *"Running low — under a tenth of your minutes is left."* rather than inventing a
-    date.
-  - `exhausted` — *"You have used all of your data."* plus the same offer.
+    the clause is left out, *"Running low · Add 100 min for $4"*, rather than inventing a date.
+  - `exhausted` — *"Used up · Add 1 GB for $6"*: the word and the same offer.
+  - The client draws the caption in the state's colour — the amber the figure turned, or the red.
 - **`progress`:** `0..1`, and **null when there is no ceiling**. A bar cannot be drawn for an
   unlimited allowance, and drawing a full one would say the opposite of what is true.
 - **On tap:** nothing. `UsageCounterCardComponent.action` exists on the wire and the server sets none:

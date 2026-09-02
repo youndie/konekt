@@ -6,19 +6,25 @@ import io.github.youndie.kompot.encodeKompotComponent
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
+import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
 import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.BannerComponent
+import io.konekt.components.ButtonEmphasis
 import io.konekt.components.CounterStates
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
+import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.roaming.server.domain.RoamingPackage
+import io.konekt.feature.roaming.shared.api.ROAMING_DEEPLINK
 import io.konekt.feature.usage.server.data.StaticUsageAddOns
 import io.konekt.feature.usage.server.data.UsageCounterCards
 import io.konekt.feature.usage.server.domain.UsageCounter
@@ -52,15 +58,30 @@ class HomeScreenTest {
         counters: List<UsageCounter> = emptyList(),
         esims: EsimHoldings = EsimHoldings.none,
         msisdn: String? = null,
+        packages: List<RoamingPackage> = emptyList(),
     ) = HomeView(
         at = now,
         brandName = null,
         msisdn = msisdn,
         balance = balance,
         counters = counters,
-        packages = emptyList(),
+        packages = packages,
         esims = esims,
     )
+
+    private fun roamingPackage() =
+        RoamingPackage(
+            id = "pkg-1",
+            orderId = "order-1",
+            subscriberId = "sub-1",
+            zone = "TR",
+            limitMb = 10_240,
+            remainingMb = 10_240,
+            validForDays = 30,
+            purchasedAt = now,
+            activatedAt = null,
+            expiresAt = null,
+        )
 
     private val json =
         Json {
@@ -192,7 +213,7 @@ class HomeScreenTest {
         // The canvas's sentence, whole: when it runs out, and what it costs to fix. Both halves are
         // things a later edit could quietly drop.
         assertEquals(
-            "Minutes run out in about two days at your current pace. A 100-minute add-on costs \$4.",
+            "Running low · minutes run out in about two days · Add 100 min for \$4",
             card.captionText,
         )
     }
@@ -218,6 +239,39 @@ class HomeScreenTest {
         assertTrue(texts.none { it == "Balance" }, "a balance block was drawn for a balance we do not have: $texts")
         // The failure this prevents: a subscriber reading "$0" tops up money they already have.
         assertTrue(texts.none { it.startsWith("$") }, texts.toString())
+    }
+
+    // THE TWO DOORS ARE ONE ROW IN THE CARD (`B-114`, block 3), whatever the line holds: a tonal
+    // `Buy a package` and an outlined `Roaming`, under the counters. They were a full-width primary
+    // at the foot of the page and a banner — and the banner had once been conditional on a package
+    // already held, which is how the travel screen's empty state became unreachable (`B-88`).
+    @Test
+    fun `the catalogue and the travel screen are a pair inside the allowance card`() {
+        listOf(emptyList(), listOf(roamingPackage())).forEach { packages ->
+            val drawn =
+                home.build(
+                    homeView(
+                        balance = Money.ofMajor(38, Currency.DEFAULT),
+                        counters = listOf(counter(UsageCounter.Kind.DATA, 20_480, 18_000)),
+                        packages = packages,
+                    ),
+                )
+
+            val card = drawn.all<SurfaceComponent>().single { it.id == "allowance" }
+            val pair = card.children.filterIsInstance<RowComponent>().single { it.id == "allowance-actions" }
+            val buttons = pair.children.filterIsInstance<ButtonComponent>()
+            assertEquals(listOf("home-buy", "home-roaming"), buttons.map { it.id })
+            assertEquals(listOf(ButtonEmphasis.TONAL, ButtonEmphasis.QUIET), buttons.map { it.variant })
+            assertEquals(NavigateAction(PLANS_DEEPLINK), buttons[0].action)
+            assertEquals(NavigateAction(ROAMING_DEEPLINK), buttons[1].action)
+
+            // And nowhere else: the row is the only door, not one of three.
+            assertEquals(
+                2,
+                drawn.konektWalk().count { it.id == "home-buy" || it.id == "home-roaming" },
+                "the pair is drawn more than once, or a banner survived",
+            )
+        }
     }
 
     @Test
