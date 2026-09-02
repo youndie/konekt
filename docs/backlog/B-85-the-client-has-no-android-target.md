@@ -107,6 +107,28 @@ works except the last step, and `start` says *"Storage ready"* having checked no
 this took a device to find. The harness is **kept**, and `README.md`'s observability table carries the
 Android row as **not delivered** with the reason: a blank cell reads as "not tried".
 
+**AC4, met on 2026-09-02 — katcher#27 closed in `client:0.6.41`, and the harness above is what proved
+it.** The multiplatform `client` now publishes an android variant; an Android compilation resolves
+`client-android:0.6.41` (checked from the dependency report, on both build machines), its cache is
+`Context.cacheDir/katcher_cache` with the `Context` supplied by the library's own `ContentProvider`,
+and `start` refuses when the directory is not writable. The old `client-android` line stopped at
+`0.4.92` and its catalogue entry is gone. Same device, same launch:
+
+```
+I System.out : 📡 Katcher initialized. Storage ready.
+E AndroidRuntime: FATAL EXCEPTION: main … deliberate crash from the konekt Android build
+I System.out : 📡 Report saved to disk. Signal sent.
+```
+
+and the file is in `/data/user/0/io.konekt.android/cache/katcher_cache`. Storage is not delivery,
+though: the upload runs from a worker on the NEXT `start`, and a process that throws right after
+starting is gone before the upload leaves — so `CrashActivity` grew a `KONEKT_CRASH=false` launch
+that starts the reporter and stays alive. That launch emptied the cache, and the collector on the
+soak stand holds the reports under release `android-katcher-0.6.41`, environment `device-check`, with
+the device model, Android release and ABI in the context. One of three uploads timed out at the
+client's 7 s and was retried on the following launch, which is the retry path working rather than a
+finding. `README.md`'s row is **delivered**.
+
 ## What the item did not ask for and the work required
 
 - **The composition root existed twice and had drifted.** The desktop runner handled `SignOutAction`;
@@ -141,7 +163,9 @@ Android row as **not delivered** with the reason: a blank cell reads as "not tri
 The stores, signing, an icon and a launch screen — non-goals in
 [reference-scope](../services/reference-scope.md). `B-90`'s iOS device build is a separate item and
 untouched. katcher's Gradle plugin and its R8 mapping upload are pointless while no report arrives at
-all; they belong with whatever closes `katcher#27`.
+all; they belong with whatever closes `katcher#27` — which `client:0.6.41` did, and its `KATCHER_BUILD_UUID`
+from the consumer's `BuildConfig` is the hook the mapping upload would hang on. Still not wired: this
+build ships no R8 mapping to upload.
 
 ## Anchors
 

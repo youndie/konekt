@@ -323,6 +323,7 @@ first five: each one blocked or corrupted something that was being built at the 
 | U15 | kompot | `kompot-tck` follows a graph route's endpoint literally, so a parameterised destination cannot be in a `NavigationGraph` | not filed yet | konekt keeps that one deeplink in the client instead |
 | U16 | kompot | `amount_input` can only put the currency symbol AFTER the number, and two of five currencies put it first | [kompot#97](https://github.com/youndie/kompot/issues/97) | closed, released in `0.33.1.93` as a `currencyPrefix` beside the suffix; our label workaround deleted |
 | U17 | kompot | `amount_input` always spaces the symbol away from the number, and `$50` has no space | [kompot#99](https://github.com/youndie/kompot/issues/99) | open; konekt draws `$ 50` in the field beside `$10` in the text under it, and has no workaround — the gap is the field's, not the tree's |
+| U18 | katcher | a crash group's fingerprint takes the message as written, so an exception naming an object's identity hash — `JobCancellationException: … @7933cf30` — is a new group every time, and sixteen of them pushed the one real group off the first page | not filed yet | konekt stops reporting cancellations at all, which was the larger mistake; the fingerprint stays katcher's |
 
 **U10 is what a second implementation is for, in miniature.** `TckRunner.authenticate` posts a fixed
 `{formId, fieldId, values}` envelope to `TckConfig.loginPath`, which assumes the way into the server is
@@ -471,6 +472,19 @@ host-picked native target is gone, which was the second, smaller ask in the same
 build **can** report a crash, and `B-27` changes from "write the gap down" to "wire it up". The
 client and the server also now share one version line, so the three katcher entries in the version
 catalogue became two.
+
+**Three more closed on 2026-09-02, filed from backlog items rather than from this list, and each is
+recorded where it was found.** [katcher#27](https://github.com/youndie/katcher/issues/27), from
+`B-85`: the multiplatform client had no working Android path — no android variant, a duplicate class
+in the single-platform artefact, an unwritable cache — and `client:0.6.41` closes all three at once,
+with the android variant under the old `client-android` coordinate and a `start` that refuses an
+unwritable directory; the two katcher catalogue entries became one, and the Pixel that measured the
+loss measured the delivery. [kompot#106](https://github.com/youndie/kompot/issues/106), from `B-114`:
+a design system could shape a button and not size it, closed in `0.35.0.103` with `minHeight` and
+`contentPadding` on `KompotSurface`. [booblik#25](https://github.com/youndie/booblik/issues/25), from
+`B-107`: a smaller `segment.capacity.bytes` silently made everything past it unreachable in an
+existing mapped log, closed in `0.3.1` by refusing the smaller capacity outright — the stand and the
+chart pin `0.3.1` now.
 
 **U11 is katcher#25 again, in the other toolkit, and it was found the same way.** konekt's client
 records a degradation — the wire type of a component it could not draw — and the whole value of that

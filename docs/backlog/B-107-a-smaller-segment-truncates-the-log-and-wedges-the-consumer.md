@@ -158,6 +158,10 @@ recovered without help. A backoff would be kinder to the log and is not what thi
   mechanism read out of `LogSegment.open` rather than guessed: for a `MAPPED` segment the recovery
   limit is the CONFIGURED capacity rather than the file's size, so a segment written under a larger
   one is walked only as far as the new limit and `truncateTo` then plants a zero length prefix there.
+  **Closed upstream on 2026-09-01 in booblik `0.3.1`**, by refusing a capacity smaller than the log on
+  disk rather than warning about it — the reproduction in the fix is the issue's own: 200 records
+  at 1 MiB, reopened at 64 KiB, 63 came back. The compose stand and the chart pin `0.3.1` since
+  2026-09-02; the soak stand's broker still runs `0.3.0` until its next redeploy.
 
 ## Anchors
 

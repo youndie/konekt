@@ -78,7 +78,7 @@ of which a local test could have found.
 
 | | Server (JVM) | client (iOS) | client (Android) | client (desktop) |
 |---|---|---|---|---|
-| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | **not delivered**, and the reason is upstream — see below | breadcrumbs only |
+| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | **delivered** — a crash on a Pixel 6a arrives naming its release, since katcher `0.6.41` | breadcrumbs only |
 | logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS | same as iOS |
 | latency and errors (metrik) | **delivered** — latency per route | — | — | — |
 
@@ -97,14 +97,19 @@ exception before an uncaught-exception handler could run.
 The remaining blank is metrik on the client, which measures route latency and has no routes to
 measure there.
 
-**Android's row says "not delivered" rather than nothing, because it was tried and measured.** A
-deliberate crash on a Pixel 6a fires the hook, reaches katcher's own handler, and fails at the last
-step: katcher's multiplatform client publishes no android variant, so the build resolves the JVM one,
-whose report cache is fixed at `System.getProperty("user.dir")` — `/` on Android, unwritable, and a
-property Android refuses to let an application change. The other artefact, `client-android`, declares
-the same type in the same package and cannot share a classpath with the one the shared code compiles
-against. Filed as [katcher#27](https://github.com/youndie/katcher/issues/27); the crash harness is
-kept so the day it is fixed is a run rather than a rewrite.
+**Android's row was "not delivered" until 2026-09-02, and it was measured both ways.** A deliberate
+crash on a Pixel 6a fired the hook, reached katcher's own handler, and failed at the last step:
+katcher's multiplatform client published no android variant, so the build resolved the JVM one, whose
+report cache was fixed at `System.getProperty("user.dir")` — `/` on Android, unwritable, and a property
+Android refuses to let an application change. Filed as
+[katcher#27](https://github.com/youndie/katcher/issues/27); closed the same week in `client:0.6.41`,
+which publishes an android variant whose cache is the application's own `cacheDir` and whose `start`
+refuses when it cannot store a report. The crash harness that recorded the failure is what recorded
+the fix: the same launch on the same device, and the report is on the collector under
+`android-katcher-0.6.41`. One thing the harness had to learn on the way — a report is uploaded on
+the NEXT `start`, from a background worker, and a process that throws two milliseconds after
+starting is gone before the upload leaves. Delivery is proved by the second launch, the one that
+does not crash, which is why `CrashActivity` has a `KONEKT_CRASH=false` mode.
 
 ### 📏 What it costs, measured
 

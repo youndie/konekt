@@ -290,6 +290,17 @@ nothing. There is no workaround available to a consumer: one artefact cannot be 
 cannot be fixed from outside. Filed as
 [katcher#27](https://github.com/youndie/katcher/issues/27), with the device measurement.
 
+**Closed upstream on 2026-09-02, `client:0.6.41`, and re-measured on the same device.** All three
+rows above are now false: the multiplatform `client` declares an android target, so the consumer
+resolves `client-android:0.6.41` — the coordinate now names that variant, and the separate
+single-platform line that declared the duplicate `object Katcher` stopped at `0.4.92`; the android
+file system caches at `Context.cacheDir/katcher_cache`, the `Context` supplied by a `ContentProvider`
+in the library's manifest so common code keeps calling `Katcher.start { }`; and `start` refuses when
+the directory cannot be written, which is the fix that would have made the original finding ten
+seconds instead of a device. The report is stored, uploaded on the next `start`, and shown by the
+collector under its release. The observability row is green from inside after all — by the toolkit
+moving, which is what §1.9's filing was for. The catalogue's `katcherAndroid` line is gone with it.
+
 **The kompot row is the opposite result and worth the same weight.** kompot's README records an
 Android consumer silently resolving the DESKTOP variant; konekt is the second implementation able to
 check, and the `.aar` arrives. That is a gap closed and confirmed rather than assumed.
