@@ -84,20 +84,19 @@ ktlint = "1.8.0"
 # alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
 # through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
 # the whole time .77 was being published; the check is one loop over the coordinates below.
-kompot = "0.35.0.103"
+kompot = "0.36.1.112"
 
-petich = "0.1.0.8"
-booblik = "0.3.0"
+petich = "0.1.0.10"
+booblik = "0.3.1"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
 #   - the server image and the Kotlin client, which share the repository's own version. As of
 #     0.6.2 the client publishes all three iOS targets (youndie/katcher#25 closed it), so the
 #     host-picked `native` target is gone and an iOS build can report a crash;
-katcher = "0.6.2"
+katcher = "0.6.41"
 #   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
 #     still on their own line.
-katcherAndroid = "0.4.92"
 
 metrikAgent = "0.1.13"
 tracyAgent = "0.1.13"
@@ -281,7 +280,6 @@ booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.
 # --- observability -----------------------------------------------------------------------------
 
 katcher-client = { module = "ru.workinprogress.katcher:client", version.ref = "katcher" }
-katcher-clientAndroid = { module = "ru.workinprogress.katcher:client-android", version.ref = "katcherAndroid" }
 metrik-agent = { module = "ru.workinprogress.metrik:agent", version.ref = "metrikAgent" }
 tracy-agent = { module = "ru.workinprogress.tracy:agent", version.ref = "tracyAgent" }
 

@@ -94,7 +94,7 @@ postgres:
 broker:
   # Published for amd64 only. A cluster node of another architecture needs a second build rather
   # than a second tag, and the failure is `no matching manifest`, which reads like a broken tag.
-  image: ghcr.io/youndie/booblik:0.3.0
+  image: ghcr.io/youndie/booblik:0.3.1
   # THE TOPIC SET IS DECIDED AT STARTUP AND NOWHERE ELSE. booblik creates no topics on demand, on
   # purpose, so adding a fourth is a broker restart — which makes topic naming an architectural
   # decision rather than a runtime one. This list must agree with `EventTopics` in the server.

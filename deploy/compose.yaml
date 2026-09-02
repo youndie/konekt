@@ -33,7 +33,7 @@ services:
       - "${POSTGRES_PORT:-55432}:5432"
 
   broker:
-    image: ghcr.io/youndie/booblik:0.3.0
+    image: ghcr.io/youndie/booblik:0.3.1
     # Published for amd64 only. Named explicitly so an arm64 host emulates it with a warning rather
     # than failing with "no matching manifest", which reads like a broken tag.
     platform: ${BROKER_PLATFORM:-linux/amd64}

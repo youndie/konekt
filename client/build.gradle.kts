@@ -247,20 +247,13 @@ kotlin {
             // declares `Dispatchers.Main` and implements it nowhere; on Android the provider is this
             // artefact, and without it the first code that names `Main` throws rather than being slow.
             implementation(libs.kotlinx.coroutines.android)
-            // AND NOT `katcher:client-android`, which is the finding this target produced.
-            //
-            // katcher's multiplatform `client` publishes no android variant, so an Android consumer
-            // resolves `client-jvm`; `client-android` is a separate coordinate on a separate version
-            // line that declares `object Katcher` in the SAME package. The two on one classpath fail
-            // `checkDebugDuplicateClasses` outright — which is the loud version of the failure
-            // kompot's README records the quiet version of.
-            //
-            // So this build uses the multiplatform client on Android as everywhere else: one API and
-            // one call site, which is what the multiplatform claim is about. What it COSTS is that
-            // Android reports no crashes at all — the jvm variant's cache path is `/` there and
-            // Android refuses to let an application move it — and there is no workaround from this
-            // side. Measured on a device and written into `CrashActivity`; filed as
-            // youndie/katcher#27. Breadcrumbs, which are in memory, are unaffected.
+            // THE MULTIPLATFORM CLIENT, HERE TOO — and since katcher `0.6.41` it resolves to a real
+            // android variant. Before that it resolved `client-jvm`, whose report cache was fixed at
+            // `user.dir` — `/` on Android, unwritable — so a crash fired the hook and lost the report at
+            // the last step, measured on a device and filed as youndie/katcher#27. `client-android` on
+            // its own version line, which declared the same `object Katcher` in the same package and
+            // could not share a classpath with this one, is retired upstream: the coordinate now names
+            // the android variant of THIS client.
         }
 
         // The desktop runner's own needs: an engine to talk to the stand with, and Compose's desktop
