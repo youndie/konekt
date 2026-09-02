@@ -41,7 +41,9 @@ docker compose version >/dev/null
 # the host; on a rented box that host has a public address. The generator does not need any of
 # them — it runs on the compose network — and a person needs them only through an ssh tunnel.
 # Overridable one by one, because a box that already serves something on 8080 — the spare box did —
-# refuses the container and the stand comes up without its server.
+# refuses the container and the stand comes up without its server. `SIMULATE_TRAFFIC` is here too:
+# the simulator ticks EVERY subscriber every five seconds, and a load stand that signed in fifty
+# thousand of them is a stand whose simulator is the load (see the report).
 cat > "$ENV_FILE" <<ENV
 SERVER_IMAGE=$IMAGE
 POSTGRES_PORT=${POSTGRES_PORT:-127.0.0.1:55432}
@@ -51,6 +53,7 @@ METRIK_PORT=${METRIK_PORT:-127.0.0.1:8190}
 TRACY_PORT=${TRACY_PORT:-127.0.0.1:8191}
 KATCHER_PORT=${KATCHER_PORT:-127.0.0.1:8192}
 RELEASE=$IMAGE
+SIMULATE_TRAFFIC=${SIMULATE_TRAFFIC:-true}
 ENV
 
 "${COMPOSE[@]}" --env-file "$ENV_FILE" pull -q

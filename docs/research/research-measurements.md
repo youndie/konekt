@@ -155,6 +155,31 @@ exponential histogram buckets and carry up to 20% of bucket width (its own READM
 10 ms that is the whole of the gap. Neither column is wrong; the table keeps both and the report
 does not add them.
 
+## A finding beside the staircases: the simulator scales with the subscribers
+
+**What was seen.** After the two staircases the load stand held **57 463 subscribers and 88 665
+usage counters** — every point signs its own subscribers in, and a 160-a-second purchase point
+signs in 9 650. `TrafficSimulator` ticks every five seconds and, on each tick, sends three usage
+events for *every* subscriber holding counters: at the end of the session that is ~170 000 events
+per tick through booblik, the consumer and Postgres, on top of whatever k6 was sending. The server
+log confirms the consumer fell behind the broker's 128 MiB retention and skipped ahead — *"the
+broker no longer has offset 15643314 on partition 0 — retention passed this consumer, so 1 735 752
+usage events were skipped"* — which is the recovery [B-107](../backlog/B-107-a-smaller-segment-truncates-the-log-and-wedges-the-consumer.md)
+built, doing what it was built for, on a stand that never meant to ask for it.
+
+**What it does to the figures above.** The reading profile's p95 at 800 rps drifts across the
+rounds — 53, 68, 82 ms — and the buying profile's server CPU at 5 purchases a second is 30–90%
+where it should be near idle: the background grew with every point. The medians did not move, so
+the knees stand; the tails and the CPU columns of later rounds carry the simulator's weight, and
+this document says so rather than averaging it away. The remaining measurements ran on a **reset
+stand with the simulator off** (`scripts/measure/reset.sh`, `SIMULATE_TRAFFIC=false`).
+
+**What it says about the product.** The simulator is a mock, but its cost is the shape a real usage
+stream would have: three events per subscriber per five seconds is 36 events a minute per line,
+and the consumer that applies them is the same code either way. Fifty thousand lines put it past
+the broker's retention on one core. That is a number for the reference-scope: what a real MVNO's
+usage feed would ask of this consumer, and the point at which a single consumer stops being enough.
+
 ## 7. The cost of the wire
 
 **What was measured.** Every recorded screen the client's goldens are drawn from
