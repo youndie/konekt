@@ -349,11 +349,11 @@ circular dependency inside `:server` naming neither module.
   `Currency.DEFAULT` (USD). A currency added to the enum needs a row in `MoneyFormat`'s layout table
   or the screen cannot be built.
 - **Never write a migration by hand from the generator's output.** `scripts/generate-migration.sh`
-  drafts one; the draft breaks a rolling deploy by construction, and it overwrites its own files —
-  each is named from its first statement plus a version stamped to the second, so tables sharing a
-  parent collide and one is lost silently (JetBrains/Exposed#2897). Rewrite it as an expand/contract
+  drafts one; the draft breaks a rolling deploy by construction. Rewrite it as an expand/contract
   pair, renumber it, and let the tests decide: `MigrationFilesTest` on the names, `KonektSchemaTest`
-  on what they produce.
+  on what they produce. (Until Exposed `1.5.0` the generator also overwrote its own files when tables
+  shared a parent — JetBrains/Exposed#2897, fixed there; `KonektSchemaTest` is what would notice a
+  regression.)
 - **A BOM does not reach the KSP processor classpath.** That configuration needs its own
   `add("kspCommonMainMetadata", platform(libs.kompot.bom))`, or the coordinate resolves with no
   version and the error ends in a bare colon.

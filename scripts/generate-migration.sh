@@ -13,11 +13,10 @@
 # into an expand/contract pair is yours; see docs/backlog/B-36 for the table of what each kind of
 # change becomes.
 #
-# AND CHECK IT IS COMPLETE, AND RENUMBER IT. The generator names each file by a version stamped to
-# the second plus a description taken from its FIRST statement — which, for a table with a foreign
-# key, is the parent. So several tables produce one filename, the files overwrite each other, and a
-# table goes missing with exit code 0 (JetBrains/Exposed#2897). Even when nothing is lost the shared
-# version is a set Flyway refuses outright. Two gates catch this: MigrationFilesTest on the names,
+# AND RENUMBER IT. The generator stamps each file's version to the second, and several files from one
+# run share it — a set Flyway refuses outright. (Until Exposed `1.5.0` it also named each file from
+# its FIRST statement, so tables sharing a parent overwrote each other and one went missing with
+# exit code 0 — JetBrains/Exposed#2897, fixed there.) Two gates catch this: MigrationFilesTest on the names,
 # and KonektSchemaTest on what they produce. Run the tests before believing a draft.
 set -euo pipefail
 
@@ -48,7 +47,6 @@ cat >&2 <<'NOTE'
 
 Not a migration yet. Before anything goes into server/src/main/resources/db/migration:
   1. rewrite it as an expand/contract pair (B-36) — the generator's form breaks a rolling deploy;
-  2. check that every changed table is in it (JetBrains/Exposed#2897 drops one silently);
-  3. renumber it — the generator stamps versions to the second and collides with itself;
-  4. run the tests: KonektSchemaTest is what actually proves the schema is complete.
+  2. renumber it — the generator stamps versions to the second and collides with itself;
+  3. run the tests: KonektSchemaTest is what actually proves the schema is complete.
 NOTE

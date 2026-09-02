@@ -109,10 +109,10 @@ qrcode = "4.5.0"
 
 # exposed-core publishes no common metadata variant (only jvm), which is why every module that
 # touches it is kotlin("jvm") and not multiplatform. docs/research/research-stack.md §1.2.
-exposed = "1.4.0"
+exposed = "1.5.0"
 # The Gradle plugin shares Exposed's version line and lives on Maven Central rather than the Gradle
 # Plugin Portal — hence mavenCentral() in settings.gradle.kts's pluginManagement.
-exposedPlugin = "1.4.0"
+exposedPlugin = "1.5.0"
 # One version for flyway-core, flyway-database-postgresql and the Gradle plugin.
 flyway = "13.3.0"
 hikari = "7.1.0"
