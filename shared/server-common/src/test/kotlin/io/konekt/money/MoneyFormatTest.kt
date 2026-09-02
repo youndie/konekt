@@ -8,7 +8,10 @@ import kotlin.test.assertEquals
 // The strings a subscriber actually reads, so this test is the copy review as much as the code
 // review.
 class MoneyFormatTest {
-    private val nbsp = ' '
+    // SPELLED AS AN ESCAPE, not typed: a no-break space in a source file is indistinguishable from a
+    // space to every reader, and for a while both this constant and the formatter's were plain spaces
+    // agreeing with each other — a test that had never checked the one thing its name promised.
+    private val nbsp = '\u00A0'
     private val minus = '−'
 
     @Test

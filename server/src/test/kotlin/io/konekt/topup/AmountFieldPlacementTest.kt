@@ -5,6 +5,7 @@ import io.konekt.domain.Money
 import io.konekt.money.MoneyFormat
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -59,6 +60,16 @@ class AmountFieldPlacementTest {
                 )
             }
 
+            // AND THE GAP, the third thing `format` decides about a symbol. A formatted amount of ten
+            // carries whitespace — whichever no-break variant the formatter spells — exactly when
+            // this currency stands the symbol off; the field must say the same, and the toolkit's
+            // default of `true` is what drew `$ 50` above `$10` until it could be told otherwise
+            // (kompot#99).
+            assertEquals(
+                formatted.any { it.isWhitespace() },
+                field.currencySpaced,
+                "$currency is written as \"$formatted\" and the field spaces the symbol differently",
+            )
             // NEVER IN THE LABEL, on either branch. That was the workaround while the toolkit had one
             // side, and a label that kept saying "($)" beside a field that now draws it would be the
             // same defect wearing the other hat.
@@ -80,6 +91,7 @@ class AmountFieldPlacementTest {
 
         assertEquals("$", field.currencyPrefix)
         assertNull(field.currencySuffix)
+        assertFalse(field.currencySpaced, "the dollar is written \"$10\" everywhere else and the field draws \"$ 10\"")
         assertEquals("Amount", field.label)
     }
 }

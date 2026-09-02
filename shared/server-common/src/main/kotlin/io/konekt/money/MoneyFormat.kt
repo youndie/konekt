@@ -22,7 +22,7 @@ object MoneyFormat {
     // Non-breaking, where the design's HTML has a plain space. The rendered result is identical until
     // a line break falls between the thousands or before the symbol, and at that point "1" on one
     // line and "190 ₽" on the next is a number nobody can read.
-    private const val NBSP = ' '
+    private const val NBSP = '\u00A0'
 
     // The typographic minus, not the hyphen-minus of a keyboard: it is the width of a digit, so a
     // column of amounts stays aligned.
@@ -108,6 +108,13 @@ object MoneyFormat {
     fun leadingSymbol(currency: Currency): String? = layouts[currency]?.takeIf { it.symbolFirst }?.symbol
 
     fun trailingSymbol(currency: Currency): String? = layouts[currency]?.takeUnless { it.symbolFirst }?.symbol
+
+    // WHETHER THE SYMBOL STANDS OFF THE NUMBER, the third fact about a currency's symbol after which
+    // one and which side. `amount_input` takes it as `currencySpaced` since kompot `0.34.0.97`
+    // (kompot#99); before that the field always drew a gap, so `$ 50` sat six lines above `$10`
+    // written by this same table. Same answer as `format` gives, read from the same row.
+    fun symbolSpaced(currency: Currency): Boolean =
+        layouts[currency]?.spaceBeforeSymbol ?: error("no layout configured for $currency")
 
     // A PRICE PER UNIT, and the rounding is the whole of why this is a function rather than a
     // division at a call site.

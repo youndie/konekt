@@ -244,14 +244,19 @@ object TopUpScreens {
 
     private fun TopUpView.balanceText() = MoneyFormat.format(balance)
 
-    // THE FIELD, and where the currency symbol goes on it — asked of the table every other amount in
-    // this product is written from, never spelled here.
+    // THE FIELD, and how the currency symbol sits on it — which symbol, which side, and whether it
+    // stands off the number — asked of the table every other amount in this product is written
+    // from, never spelled here.
     //
     // `amount_input` took only a `currencySuffix` until `0.33.1.93` (kompot#97), and filling it
     // whatever the currency is what drew "50 $" six lines above this screen's own "Between $10 and
     // $50,000": one screen writing one currency two ways, in one response (`B-70`). The workaround
     // put the symbol in the LABEL for a symbol-first currency; it is deleted, because the field now
-    // takes both sides and at most one is set.
+    // takes both sides and at most one is set. The gap came last — the field always drew `$ 50`
+    // until `0.34.0.97` (kompot#99) — and it is the one fact that had no workaround, because it
+    // belongs to the field's own layout and appears in no tree. `currencySpaced` defaults to `true`
+    // upstream for the sake of every payload written before it existed, so it is set explicitly
+    // here for every currency rather than only for the ones that want no gap.
     internal fun amountField(currency: Currency): AmountInputComponent =
         AmountInputComponent(
             id = "top-up-amount",
@@ -259,6 +264,7 @@ object TopUpScreens {
             label = "Amount",
             currencyPrefix = MoneyFormat.leadingSymbol(currency),
             currencySuffix = MoneyFormat.trailingSymbol(currency),
+            currencySpaced = MoneyFormat.symbolSpaced(currency),
         )
 
     private fun limitsLine(): String {
