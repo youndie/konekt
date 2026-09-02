@@ -237,7 +237,7 @@ These are not per-screen defects; fix them once and every frame below moves.
 | **G3** | the bar sits on the page with a hairline in `outline_variant`; the current tab in a `primary_container` pill |
 | **G4** | a 44-point circle in `surface_variant` with a stroked chevron, drawn by the same glyph the tab icons use. On its own line: the title is the server's and this frame does not read it |
 | **G5** | screen titles 26/700, `title_medium` 18/700, labels 600 — the canvas's numbers, mapped onto the tokens the server already sends |
-| **G6** | weight 700 on `label_large`; **the height is not ours** — buttons are kompot's renderer, so 56 needs either a konekt override of that registry entry or an upstream ask. Left open here |
+| **G6** | weight 700 on `label_large`; the height was not ours — buttons are kompot's renderer — until [youndie/kompot#106](https://github.com/youndie/kompot/issues/106) closed in `0.35.0.103`: `KompotSurface` carries `minHeight`, and `KonektDesignSystem` now says 56 for every pill and field and 44 for a control that reads as text. The theme test asserts the served kit does not drop it |
 | **G7** | two-segment pill, five-point gap, no stop dot; the remainder tinted in the state's own container (peach on low, pink on exhausted) rather than one mint track |
 
 **What the fonts cost, measured.** With the platform face, a frame recorded on a Mac and verified on the
@@ -252,10 +252,12 @@ A golden photographs the layout, not the typeface; the face is checked against t
 per-channel tolerance that was widened to admit the drift went back to its default once nothing needed
 admitting, and a one-point inset change fails at 4–7.6%, measured by mutation.
 
-**G6 is upstream.** `KompotSurface` carries shape, colours and a text style and nothing about size, so
-a design system can make a button a pill and cannot make it 56 tall — filed as
-[youndie/kompot#106](https://github.com/youndie/kompot/issues/106) with the smallest contract change
-that keeps appearance off the wire.
+**G6 went upstream and came back.** `KompotSurface` carried shape, colours and a text style and
+nothing about size, so a design system could make a button a pill and could not make it 56 tall —
+filed as [youndie/kompot#106](https://github.com/youndie/kompot/issues/106) with the smallest contract
+change that keeps appearance off the wire, and closed the same day in `0.35.0.103` with `minHeight` and
+`contentPadding` on the surface. konekt pins that build; the heights are the design system's three
+constants, and every golden moved with them.
 
 **Not touched in this block, on purpose:** the state words under the bars (a decision for block 3) and
 the chevron sharing a line with the title (needs the frame to know the title).

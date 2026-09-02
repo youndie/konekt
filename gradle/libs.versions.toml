@@ -84,7 +84,7 @@ ktlint = "1.8.0"
 # alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
 # through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
 # the whole time .77 was being published; the check is one loop over the coordinates below.
-kompot = "0.33.1.93"
+kompot = "0.35.0.103"
 
 petich = "0.1.0.8"
 booblik = "0.3.0"

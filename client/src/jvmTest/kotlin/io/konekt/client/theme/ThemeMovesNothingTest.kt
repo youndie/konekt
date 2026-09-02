@@ -182,10 +182,16 @@ class ThemeMovesNothingTest {
         // The second positive control, and the one that makes the first assertion mean something. A
         // pixel comparison that reports "nothing moved" is only evidence if it would report movement
         // when a surface genuinely goes missing — and this is the exact way it used to go missing.
-        val difference = compareFrames(render(theme = null), render(theme = brandB, dropSurfaces = true))
+        val before = render(theme = null)
+        val after = render(theme = brandB, dropSurfaces = true)
 
+        // A FRAME THAT CHANGED SIZE IS GEOMETRY THAT MOVED, in the strongest form: since kompot#106
+        // a surface carries the control's height, so dropping every surface shortens the pills and
+        // the whole frame with them — which `compareFrames` refuses to compare pixel by pixel. That
+        // refusal is the defect being seen, not the comparison going blind.
+        val resized = before.width != after.width || before.height != after.height
         assertTrue(
-            difference.moved > 0,
+            resized || compareFrames(before, after).moved > 0,
             "an overlay that drops every surface changed no geometry — the comparison is blind",
         )
     }

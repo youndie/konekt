@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.ColorToken
 import io.github.youndie.kompot.KompotDesignSystem
 import io.github.youndie.kompot.KompotSurface
@@ -33,7 +34,7 @@ class KonektDesignSystem(
     override fun resolveSurface(role: SurfaceRole): KompotSurface =
         when (role) {
             KompotSurfaceRoles.Button, KompotSurfaceRoles.button(PRIMARY) -> {
-                KompotSurface(shape = shapes.buttonShape)
+                KompotSurface(shape = shapes.buttonShape, minHeight = PILL_HEIGHT)
             }
 
             // A CANVAS FRAME NOW SAYS OTHERWISE, which is what the comment here used to be waiting
@@ -50,6 +51,7 @@ class KonektDesignSystem(
             // safe half of that; naming all three is the right whole.
             KompotSurfaceRoles.button(TONAL) -> {
                 KompotSurface(
+                    minHeight = PILL_HEIGHT,
                     shape = shapes.buttonShape,
                     container = MaterialTheme.colorScheme.primaryContainer,
                     content = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -59,6 +61,7 @@ class KonektDesignSystem(
 
             KompotSurfaceRoles.button(LINK) -> {
                 KompotSurface(
+                    minHeight = ROW_HEIGHT,
                     shape = shapes.buttonShape,
                     container = Color.Transparent,
                     content = MaterialTheme.colorScheme.primary,
@@ -68,6 +71,7 @@ class KonektDesignSystem(
 
             KompotSurfaceRoles.button(DANGER) -> {
                 KompotSurface(
+                    minHeight = ROW_HEIGHT,
                     shape = shapes.buttonShape,
                     container = Color.Transparent,
                     content = MaterialTheme.colorScheme.error,
@@ -77,6 +81,7 @@ class KonektDesignSystem(
 
             KompotSurfaceRoles.button(QUIET) -> {
                 KompotSurface(
+                    minHeight = PILL_HEIGHT,
                     shape = shapes.buttonShape,
                     container = Color.Transparent,
                     content = MaterialTheme.colorScheme.primary,
@@ -91,6 +96,7 @@ class KonektDesignSystem(
             // page with the label floating into it, and a tinted box was a chip's ground under text.
             KompotSurfaceRoles.Field -> {
                 KompotSurface(
+                    minHeight = FIELD_HEIGHT,
                     shape = shapes.smallShape,
                     container = Color.Transparent,
                     content = MaterialTheme.colorScheme.onSurface,
@@ -119,11 +125,17 @@ class KonektDesignSystem(
             }
         }
 
-    private companion object {
+    internal companion object {
         const val PRIMARY = "primary"
         const val QUIET = "quiet"
         const val TONAL = "tonal"
         const val LINK = "link"
         const val DANGER = "danger"
+
+        // THE CANVAS'S HEIGHTS (`B-114` G6), which a design system could not say until kompot#106:
+        // a pill is 56 tall, a field is 56, and a control that reads as text is a 44 row.
+        val PILL_HEIGHT = 56.dp
+        val FIELD_HEIGHT = 56.dp
+        val ROW_HEIGHT = 44.dp
     }
 }

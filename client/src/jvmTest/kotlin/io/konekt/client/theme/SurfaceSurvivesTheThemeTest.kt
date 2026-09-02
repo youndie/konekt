@@ -110,6 +110,12 @@ class SurfaceSurvivesTheThemeTest {
         assertNotNull(button.shape, "the button fell back to Material's own shape")
         assertEquals(own[KompotSurfaceRoles.Button.key]?.shape, button.shape)
 
+        // AND AS TALL AS THE DESIGN SYSTEM SAYS. kompot#106 let a surface carry a height; a theme
+        // that answered for colours and quietly dropped it would give the canvas's 56-point pill back
+        // its toolkit height, and nothing on a screenshot of a single button would say why.
+        assertEquals(KonektDesignSystem.PILL_HEIGHT, button.minHeight, "the theme dropped the button's height")
+        assertEquals(own[KompotSurfaceRoles.Button.key]?.minHeight, button.minHeight)
+
         // The quiet variant too, because a role composed from a variant is a different key and a
         // forwarding that covers one need not cover the other.
         assertTrue(throughTheme.containsKey(KompotSurfaceRoles.button("quiet").key))
