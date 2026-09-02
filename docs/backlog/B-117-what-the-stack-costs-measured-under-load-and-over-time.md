@@ -222,6 +222,15 @@ with the simulator off (`reset.sh`, `SIMULATE_TRAFFIC`). The harness itself was 
 way — 202 read as an error, a minute for a setup of thousands — and both times the database or the
 point's own log said so before a number went into the report.
 
+### 5 and 6 — observed, and cold, done
+
+Being observed costs less than the spread between two warm rounds at 400 rps — the report states
+the bound, not a number under it. Cold: five to seven seconds to health on one core, the first
+request a third of a second to nearly one, the next hundred at five times the warm median. Two
+harness faults on the way, both caught by reading back what the machine actually had: the
+observability switch left the collectors' keys in place and the server refused to start; the
+cold-start clock printed its format literally.
+
 ## Acceptance criteria
 
 - AC: `scripts/measure/stand-up.sh` takes a fresh box to a running stand with the chart's limits and
