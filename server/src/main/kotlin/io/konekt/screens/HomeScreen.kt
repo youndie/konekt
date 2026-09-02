@@ -337,7 +337,7 @@ class HomeScreen(
                                 ),
                         ),
                     )
-                    addAll(view.counters.map { cards.of(it, view.at, inline = true) })
+                    addAll(view.counters.map { cards.of(it, view.at) })
                 },
         )
 

@@ -24,15 +24,24 @@ import kotlin.time.Instant
 class UsageCounterCards(
     private val addOns: UsageAddOns,
 ) {
+    // ALWAYS A ROW, NEVER A CARD, and it stopped being a parameter the moment one caller forgot it.
+    //
+    // `B-105` grouped the three counters into one allowance block, so a counter from THIS factory is a
+    // row inside that block. The shape was a parameter defaulting to `false`, and the home screen
+    // passed `true` while the live-update path took the default — so the moment a counter moved, SSE
+    // replaced a row with a full card, background, corners and all, INSIDE the card it lived in. The
+    // screen was right until it changed, which is the worst kind of right.
+    //
+    // A default is what made it possible: the caller that forgot the argument got the shape nothing
+    // uses. Removing the choice is what makes the two paths unable to disagree — the travel screen
+    // asks `RoamingPackageCards`, which is a different factory with a different answer, so nothing
+    // here needed the flexibility at all.
     fun of(
         counter: UsageCounter,
         at: Instant,
-        // A ROW IN A GROUPED CARD RATHER THAN A CARD, for the home screen's one allowance block. The
-        // travel screen still asks for cards, so this is a parameter and not a change of default.
-        inline: Boolean = false,
     ): UsageCounterCardComponent =
         UsageCounterCardComponent(
-            inline = inline,
+            inline = true,
             id = idOf(counter),
             title = counter.kind.title(),
             valueText = "${UsageUnits.remaining(counter)} left",

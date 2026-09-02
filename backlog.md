@@ -47,7 +47,7 @@ so re-prioritising must never move a file.
 
 No open tasks.
 
-## Closed (112)
+## Closed (113)
 
 **The wire and the shell**
 
@@ -170,6 +170,7 @@ No open tasks.
 - [B-110](docs/backlog/B-110-the-tabs-have-no-icons.md) `[x]` - The four tabs are words with no icons, because kompot has no icon vocabulary
 - [B-111](docs/backlog/B-111-navigation-blanks-the-screen-before-the-tree-arrives.md) `[x]` - Every navigation blanks the whole window until the next tree arrives
 - [B-112](docs/backlog/B-112-the-cards-do-not-use-the-canvas-geometry.md) `[x]` - Every card in the build is a radius and an inset the canvas does not pair
+- [B-113](docs/backlog/B-113-a-live-update-replaces-a-row-with-a-card.md) `[x]` - An SSE update replaced a row inside the allowance card with a card of its own
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

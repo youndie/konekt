@@ -222,6 +222,11 @@ circular dependency inside `:server` naming neither module.
 - **A live update names the node it replaces.** The component id in an `UpdateComponentMessage` must
   be the id the screen already has — derive it from the subject (`counter-data`), never generate one.
   A random id is a frame that arrives and changes nothing, silently.
+  **And it must be the same NODE, not just the same id.** The counter cards are rows inside one
+  allowance card and the live-update path built them as standalone cards, because the shape was a
+  parameter with a default and only the screen passed the non-default — so every update replaced a row
+  with a card nested inside the card it lived in (`B-113`). Whatever builds a node for a screen is the
+  only thing that builds its replacement; a default argument is what lets the second caller be wrong.
   **It does not actually replace the node, and the difference is a defect rather than pedantry.**
   kompot collects updates into a `Map<String, KompotComponent>` behind `LocalKompotRealtimeUpdates`,
   and `KompotRegistry.RenderNode` draws `updates[node.id] ?: node` — an overlay above whatever tree is

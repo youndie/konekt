@@ -33,7 +33,7 @@ data class KonektShapeScale(
     //
     // What was here said so as a fact: `largeShape` was read by `buttonShape` alone and only when
     // pills were off, so brand A stated a 36 that nothing rendered — measured, by setting it to 8 and
-    // watching no golden move. `InertRadiusIsDeclaredTest` held that in both directions and told the
+    // watching no golden move. A guard held that in both directions and told the
     // next reader what to do if it ever stopped being true: reinstate `B-28`'s second acceptance
     // criterion rather than relax the line.
     //

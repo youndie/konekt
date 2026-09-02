@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 // EVERY NUMBER IN THE SCALE REACHES A SCREEN, which is the mirror of the test this replaces.
 //
-// `InertRadiusIsDeclaredTest` held the opposite as a fact: `large` was read by `buttonShape` alone and
+// The guard this replaces held the opposite as a fact (named in `B-112`, and deleted with it): `large` was read by `buttonShape` alone and
 // only when pills were off, so brand A stated a 36 that nothing drew. It said what to do if that ever
 // changed — reinstate `B-28`'s second acceptance criterion rather than relax the line — and `B-112` is
 // what changed it: the canvas pairs its headline blocks with `lg`, so `CardGeometry.Tier.CARD` takes
