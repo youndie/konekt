@@ -1,53 +1,149 @@
 {
-    "type": "column",
-    "id": "purchase-result",
-    "children": [
+  "type": "column",
+  "id": "purchase-result",
+  "children": [
+    {
+      "type": "icon",
+      "id": "purchase-mark",
+      "icon": {
+        "paths": [
+          "M5 12l5 5L20 7"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "id": "purchase-headline",
+      "text": "Paid. eSIM is ready to install.",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "purchase-completed",
+      "text": "Home · 20 GB · 30 days. Install now or later from Orders — the plan starts counting on first connection, not now.",
+      "style": "body_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "surface",
+      "id": "purchase-receipt",
+      "children": [
         {
-            "type": "banner",
-            "id": "purchase-completed",
-            "text": "Home \u00b7 20 GB \u00b7 30 days is active."
-        },
-        {
-            "type": "order_row",
-            "id": "order-9f3995b2-8628-459f-abea-777c8f53c826",
-            "reference": "9f3995b2",
-            "title": "Home \u00b7 20 GB \u00b7 30 days",
-            "dateText": "",
-            "amountText": "$15",
-            "status": "completed",
-            "statusText": "Paid"
-        },
-        {
-            "type": "button",
-            "id": "purchase-install",
-            "modifiers": [
+          "type": "row",
+          "id": "purchase-receipt-order",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-receipt-order-label",
+              "modifiers": [
                 {
-                    "type": "size",
-                    "width": "Fill"
+                  "type": "weight",
+                  "value": 1.0
                 }
-            ],
-            "text": "Install eSIM",
-            "action": {
-                "type": "navigate",
-                "deeplink": "app://esim-install"
-            }
-        },
-        {
-            "type": "button",
-            "id": "purchase-done",
-            "modifiers": [
-                {
-                    "type": "size",
-                    "width": "Fill"
-                }
-            ],
-            "text": "Done",
-            "action": {
-                "type": "navigate",
-                "deeplink": "app://home"
+              ],
+              "text": "Order",
+              "style": "body_medium",
+              "color": "on_surface_variant"
             },
-            "variant": "quiet"
+            {
+              "type": "text",
+              "id": "purchase-receipt-order-value",
+              "text": "ad784f88",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "row",
+          "id": "purchase-receipt-charged",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-receipt-charged-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Charged",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-receipt-charged-value",
+              "text": "$15 from balance",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "row",
+          "id": "purchase-receipt-balance-left",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-receipt-balance-left-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Balance left",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-receipt-balance-left-value",
+              "text": "$5",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         }
-    ],
-    "spacing": 16
+      ],
+      "dividers": true
+    },
+    {
+      "type": "button",
+      "id": "purchase-install",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Install eSIM",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://esim-install"
+      }
+    },
+    {
+      "type": "button",
+      "id": "purchase-done",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Done",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://home"
+      },
+      "variant": "quiet"
+    }
+  ],
+  "spacing": 16
 }

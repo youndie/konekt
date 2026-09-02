@@ -260,6 +260,28 @@ that keeps appearance off the wire.
 **Not touched in this block, on purpose:** the state words under the bars (a decision for block 3) and
 the chevron sharing a line with the title (needs the frame to know the title).
 
+### Block 2 — plan detail and the purchase outcome, done
+
+Three things went on the wire, priced in [operator-boundaries](../services/operator-boundaries.md):
+`surface` grew `density` (`card`/`chip`), `dividers` and `pinned`; the dictionary grew `icon` — a
+`VectorIcon` in a disc, coloured by tone. Everything else is the client's: the chip's 11-point corner
+(`CardGeometry.Tier.CHIP`), the hairline between rows, and where a pinned surface sits —
+`withoutShell()` pulls it out of the tree the way it pulls the bar, and `KonektApp` draws it above
+the bar outside the scroll. Written after a frame showed the footer in place: the shell pulled the
+bar and nothing pulled the footer, and `PinnedFooterLeavesTheScrollTest` is the seam that says so.
+
+| Screen | What landed |
+|---|---|
+| **Plan detail** | title; a hero in the `accent` tone — label and price on the head row, the quota as the `headline_medium` figure, validity and zone as chips; a white table of what is included; the activation note; `Charged once` with the price and the buy button pinned above the bar. The sold-out plan keeps its banner and gets no footer |
+| **Purchase outcome** | a check or a cross in a disc, `Paid.` / `Payment failed.` as the headline, one paragraph, and a receipt table. The refusal keeps its five sentences — each still ends in "nothing was charged", and the tests that read them now read the paragraph rather than a banner |
+
+The three fixtures (`plan-detail-screen`, `order-screen`, `order-refused-screen`) were re-recorded
+from the stand through the API, and the conformance walk caught the first draft: the `Activation`
+row of the table and the activation banner had been given the same id.
+
+**Not touched in this block, on purpose:** the confirm sheet (last, per the order above) and the
+button height (kompot#106).
+
 ## Acceptance criteria
 
 - AC: every screen above has a golden at 393×852 in **both** themes, re-recorded from the server after

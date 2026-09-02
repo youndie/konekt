@@ -542,13 +542,31 @@ fun KonektApp(
                         // destination the subscriber has left, so it is not what to leave them
                         // looking at: a stale screen wearing the address of the one they asked for
                         // is a screen pretending to be something else.
-                        failure != null -> FetchFailed { reloads++ }
+                        failure != null -> {
+                            FetchFailed { reloads++ }
+                        }
 
                         // The tree with its bar taken out. Rendered through the source like any
                         // other, so nothing about the shell reaches the renderers.
-                        shell?.nav != null -> Stale(loading) { screens.render(Screen.Tree(shell.content), handle) }
+                        shell?.nav != null || shell?.footer != null -> {
+                            Stale(
+                                loading,
+                            ) { screens.render(Screen.Tree(shell.content), handle) }
+                        }
 
-                        else -> screen?.let { shown -> Stale(loading) { screens.render(shown, handle) } }
+                        else -> {
+                            screen?.let { shown -> Stale(loading) { screens.render(shown, handle) } }
+                        }
+                    }
+                }
+
+                // THE PINNED SURFACE, above the bar and outside the scroll (`B-114`): a plan's buy
+                // button with `Charged once` over it, the way the canvas draws it. Drawn on the page
+                // ground with the content's own side inset, so it reads as the screen's last row
+                // held still rather than as a card that stopped moving.
+                shell?.footer?.let { footer ->
+                    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+                        screens.renderNode(footer.copy(pinned = false), handle)
                     }
                 }
 

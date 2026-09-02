@@ -5,6 +5,7 @@ import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.PaginatedListComponent
 import io.github.youndie.kompot.standard.RowComponent
 import io.konekt.components.BottomNavComponent
+import io.konekt.components.SurfaceComponent
 
 // TAKING THE BAR OUT OF THE TREE IT ARRIVED IN.
 //
@@ -23,22 +24,29 @@ import io.konekt.components.BottomNavComponent
 data class ScreenAndShell(
     val content: KompotComponent,
     val nav: BottomNavComponent?,
+    // A `surface` the server marked `pinned` (`B-114`): kept at the bottom above the bar, outside
+    // the scroll, the way the canvas pins a plan's buy button. One at most — a second stays in
+    // the content and is drawn in place, which is how a frame with two footers gets noticed.
+    val footer: SurfaceComponent? = null,
 )
 
 fun KompotComponent.withoutShell(): ScreenAndShell {
     val root = this as? ColumnComponent ?: return ScreenAndShell(this, null)
     val nav = root.children.filterIsInstance<BottomNavComponent>()
+    val pinned = root.children.filterIsInstance<SurfaceComponent>().filter { it.pinned }
 
-    return when {
-        nav.isEmpty() -> ScreenAndShell(this, null)
+    // ONE OF EACH OR NONE: two bars is a tree this build does not understand, and the honest answer
+    // is to draw it as sent. The same for two pinned surfaces — a frame with two footers is a
+    // server mistake that should be visible, not one this code quietly picks a winner from.
+    val bar = nav.singleOrNull()
+    val footer = pinned.singleOrNull()
+    if (bar == null && footer == null) return ScreenAndShell(this, null)
 
-        // MORE THAN ONE IS A SERVER MISTAKE AND IS LEFT ALONE. Hoisting the first and dropping the
-        // rest would hide it; drawing them where they are makes it visible on the screen it happened
-        // on, which is the only place anybody can act on it.
-        nav.size > 1 -> ScreenAndShell(this, null)
-
-        else -> ScreenAndShell(root.copy(children = root.children - nav.first()), nav.first())
-    }
+    return ScreenAndShell(
+        content = root.copy(children = root.children - listOfNotNull(bar, footer).toSet()),
+        nav = bar,
+        footer = footer,
+    )
 }
 
 // WHETHER THE FRAME MAY SCROLL THE SCREEN FOR IT.

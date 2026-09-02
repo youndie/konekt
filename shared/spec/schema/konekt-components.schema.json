@@ -10,6 +10,7 @@
       "bottom_nav": "#/$defs/KompotComponentBottomNav",
       "esim_card": "#/$defs/KompotComponentEsimCard",
       "esim_qr": "#/$defs/KompotComponentEsimQr",
+      "icon": "#/$defs/KompotComponentIcon",
       "order_row": "#/$defs/KompotComponentOrderRow",
       "plan_card": "#/$defs/KompotComponentPlanCard",
       "skeleton": "#/$defs/KompotComponentSkeleton",
@@ -216,6 +217,40 @@
         "type",
         "id",
         "payload"
+      ],
+      "additionalProperties": true
+    },
+    "KompotComponentIcon": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "icon",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "icon"
+        },
+        "id": {
+          "type": "string"
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "kompot-core.schema.json#/$defs/KompotModifierNode"
+          }
+        },
+        "icon": {
+          "$ref": "#/$defs/VectorIcon"
+        },
+        "tone": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "icon"
       ],
       "additionalProperties": true
     },
@@ -542,6 +577,15 @@
         },
         "spacing": {
           "type": "integer"
+        },
+        "density": {
+          "type": "string"
+        },
+        "dividers": {
+          "type": "boolean"
+        },
+        "pinned": {
+          "type": "boolean"
         }
       },
       "required": [

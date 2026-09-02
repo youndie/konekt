@@ -60,6 +60,11 @@ internal object CardGeometry {
         // radius and two points tighter, which is the difference between something you read and
         // something you choose from.
         NOTICE(inset = 16.dp),
+
+        // ATTRIBUTE CHIPS: `30 days`, `Hotspot allowed`, a tag on a plan card. `sm`, and the canvas
+        // draws them at 20/11 — an inset that would be wrong on anything a person reads a paragraph
+        // in, and right on a word or two.
+        CHIP(inset = 11.dp),
     }
 
     // The tier's shape, taken from whichever brand is in force. A composable because the brand is,
@@ -71,6 +76,7 @@ internal object CardGeometry {
         return when (tier) {
             Tier.CARD -> scale.largeShape
             Tier.ITEM, Tier.NOTICE -> scale.mediumShape
+            Tier.CHIP -> scale.smallShape
         }
     }
 }

@@ -12,6 +12,7 @@ import io.github.youndie.kompot.forms.SubmitFormAction
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.components.SliderInputComponent
@@ -284,7 +285,12 @@ class CustomPackageScenarioTest {
                             .bodyAsText(),
                     )
 
-                val banner = screen.konektWalk().filterIsInstance<BannerComponent>().singleOrNull()
+                val banner =
+                    screen
+                        .konektWalk()
+                        .filterIsInstance<TextComponent>()
+                        .filter { it.id == "purchase-rejected" }
+                        .singleOrNull()
                 assertNotNull(banner, "the refusal screen states nothing")
                 assertTrue(
                     "nothing was charged" in banner.text.lowercase(),

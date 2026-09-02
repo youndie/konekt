@@ -6,6 +6,7 @@ import io.github.youndie.kompot.encodeKompotComponent
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
+import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
@@ -13,9 +14,11 @@ import io.github.youndie.kompot.standard.TextComponent
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.konekt.components.BannerComponent
 import io.konekt.components.ButtonEmphasis
+import io.konekt.components.IconComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.SurfaceComponent
 import io.konekt.components.konektWalk
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
@@ -216,9 +219,7 @@ class PurchaseResultScreenTest {
             codes.associateWith { code ->
                 PurchaseResultScreen
                     .build(rejected(code), reversal = null, balance = Money.ofMajor(3, Currency.DEFAULT))
-                    .konektWalk()
-                    .filterIsInstance<BannerComponent>()
-                    .single()
+                    .refusal()
                     .text
             }
 
@@ -240,9 +241,7 @@ class PurchaseResultScreenTest {
             generic,
             PurchaseResultScreen
                 .build(rejected(declineReason = null), reversal = null, balance = null)
-                .konektWalk()
-                .filterIsInstance<BannerComponent>()
-                .single()
+                .refusal()
                 .text,
             "an unrecorded refusal claimed to know which one it was",
         )
@@ -266,7 +265,7 @@ class PurchaseResultScreenTest {
                 balance = Money.ofMajor(3, Currency.DEFAULT),
             )
 
-        val banner = screen.konektWalk().filterIsInstance<BannerComponent>().single()
+        val banner = screen.refusal()
         assertTrue("$12" in banner.text, "the price is not on the screen: ${banner.text}")
         // The BALANCE too, because "you do not have enough" is a sentence somebody has to do
         // arithmetic on before they know what to type into the top-up field.
@@ -290,9 +289,7 @@ class PurchaseResultScreenTest {
         val banner =
             PurchaseResultScreen
                 .build(rejected(PurchaseRefusals.INSUFFICIENT_FUNDS), reversal = null, balance = null)
-                .konektWalk()
-                .filterIsInstance<BannerComponent>()
-                .single()
+                .refusal()
 
         assertTrue("$12" in banner.text, "the price went missing with the balance: ${banner.text}")
         assertTrue("$0" !in banner.text, "a balance that could not be read was drawn as zero: ${banner.text}")
@@ -503,9 +500,82 @@ class PurchaseResultScreenTest {
 
         assertEquals(
             "This purchase could not be started, and nothing was charged.",
-            screen.find<BannerComponent>().text,
+            screen.refusal().text,
         )
         assertTrue(screen.findAll<OrderRowComponent>().isEmpty(), "a rejected purchase drew a reversal row")
+    }
+
+    // THE CANVAS'S OUTCOME (`B-114`): a mark, a headline, a paragraph, a receipt — the same shape on
+    // both sides of the answer, so `Paid.` and `Payment failed.` are one screen in two states rather
+    // than two screens. The receipt is a table, which on this wire is a surface with dividers.
+    @Test
+    fun `both outcomes open with a mark and a headline, and end in a receipt`() {
+        val paid =
+            PurchaseResultScreen.build(
+                order = compensated(null).copy(status = OrderStatus.COMPLETED),
+                reversal = null,
+                balance = Money.ofMajor(38, Currency.DEFAULT),
+            )
+        val refused =
+            PurchaseResultScreen.build(
+                rejected(PurchaseRefusals.INSUFFICIENT_FUNDS),
+                reversal = null,
+                balance = Money.ofMajor(3, Currency.DEFAULT),
+            )
+
+        listOf(paid to MessageTones.INFO, refused to MessageTones.ERROR).forEach { (screen, tone) ->
+            val mark = screen.konektWalk().filterIsInstance<IconComponent>().single()
+            assertEquals(tone, mark.tone, "the mark does not say which outcome this is")
+            assertEquals(
+                M3Typography.HeadlineSmall,
+                screen
+                    .konektWalk()
+                    .filterIsInstance<TextComponent>()
+                    .single { it.id == "purchase-headline" }
+                    .style,
+                "the outcome has no headline",
+            )
+            val receipt = screen.konektWalk().filterIsInstance<SurfaceComponent>().single()
+            assertTrue(receipt.dividers, "the receipt is a card, not a table")
+            assertTrue(
+                receipt.children.size >= 2,
+                "a receipt with one row is a sentence: ${receipt.children.map { it.id }}",
+            )
+        }
+
+        assertTrue(
+            paid
+                .konektWalk()
+                .filterIsInstance<TextComponent>()
+                .single { it.id == "purchase-headline" }
+                .text
+                .startsWith("Paid."),
+            "the paid outcome does not open with the word",
+        )
+        assertEquals(
+            "Payment failed.",
+            refused
+                .konektWalk()
+                .filterIsInstance<TextComponent>()
+                .single { it.id == "purchase-headline" }
+                .text,
+        )
+        // A row whose value the screen was not given is left out, not drawn blank.
+        val blind =
+            PurchaseResultScreen.build(
+                rejected(PurchaseRefusals.INSUFFICIENT_FUNDS),
+                reversal = null,
+                balance = null,
+            )
+        assertEquals(
+            listOf("purchase-refusal-reference"),
+            blind
+                .konektWalk()
+                .filterIsInstance<SurfaceComponent>()
+                .single()
+                .children
+                .map { it.id },
+        )
     }
 
     @Test
@@ -522,6 +592,12 @@ class PurchaseResultScreenTest {
 
         assertEquals(screen, json.decodeKompotComponent(json.encodeKompotComponent(screen)))
     }
+
+    // THE REFUSAL SENTENCE is the paragraph under the headline (`B-114`), not a banner: a banner is
+    // the shape of a system message about somebody else, and this screen is the answer to the
+    // subscriber's own question.
+    private fun KompotComponent.refusal(): TextComponent =
+        konektWalk().filterIsInstance<TextComponent>().single { it.id == "purchase-rejected" }
 
     private inline fun <reified T : KompotComponent> KompotComponent.find(): T =
         findAll<T>().firstOrNull() ?: error("no ${T::class.simpleName} on the screen")

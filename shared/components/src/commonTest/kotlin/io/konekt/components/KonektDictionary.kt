@@ -126,6 +126,12 @@ val konektDictionary: List<Pair<String, KompotComponent>> =
                 steps = listOf("0", "1", "5", "10", "20", "50"),
                 unit = "GB",
             ),
+        "icon" to
+            IconComponent(
+                id = "purchase-mark",
+                icon = VectorIcon(paths = listOf("M5 12l5 5L20 7")),
+                tone = MessageTones.INFO,
+            ),
     )
 
 // The application's own Json: the toolkit's core and standard sets plus this dictionary. Assembled

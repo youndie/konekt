@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,6 +18,7 @@ import io.github.youndie.kompot.LocalKompotRegistry
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.material3.M3Colors
 import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceDensities
 import io.konekt.components.SurfaceTones
 
 // THE ONLY CONTAINER KONEKT DRAWS, and it draws its children through the registry rather than
@@ -43,36 +45,53 @@ class SurfaceRenderer : KompotComponentRenderer<SurfaceComponent> {
         //
         // The fallback is the same one `PlanCardRenderer` uses, and it is reached when the served kit
         // carries no surface — a deployment in the default palette is a coherent thing to be.
-        val shape = CardGeometry.shapeOf(CardGeometry.Tier.CARD)
 
         // AN UNKNOWN TONE DRAWS THE NEUTRAL CARD rather than nothing, which is the rule every open
         // string in this dictionary follows: a server one release ahead may name a ground this build
         // has never heard of, and the card is still the right card with the wrong fill.
+        val chip = component.density == SurfaceDensities.CHIP
+        val tier = if (chip) CardGeometry.Tier.CHIP else CardGeometry.Tier.CARD
         val ground =
-            when (component.tone) {
-                SurfaceTones.ACCENT -> M3Colors.PrimaryContainer
+            when {
+                component.tone == SurfaceTones.ACCENT -> M3Colors.PrimaryContainer
+
+                // A chip stands on the tinted ground — the canvas draws its attribute pills in
+                // `surface_variant` on the hero card and on the page alike — and a card on the
+                // near-white one.
+                chip -> M3Colors.SurfaceVariant
+
                 else -> M3Colors.Surface
             }
 
         Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
+                    // A chip wraps its word; a card takes the row.
+                    .then(if (chip) Modifier else Modifier.fillMaxWidth())
                     // CLIP BEFORE BACKGROUND. The other way round paints a rectangle and then clips
                     // the layout, leaving square corners of ground behind rounded content — which is
                     // exactly what `KompotModifierNode.Background` does today, and the reason this
                     // component exists at all (U14).
-                    .clip(shape)
+                    .clip(CardGeometry.shapeOf(tier))
                     .background(designSystem.resolveColor(ground))
-                    .padding(CardGeometry.Tier.CARD.inset),
+                    .padding(horizontal = tier.inset, vertical = if (chip) 6.dp else tier.inset),
             verticalArrangement = Arrangement.spacedBy(component.spacing.dp),
         ) {
-            component.children.forEach { child ->
+            component.children.forEachIndexed { index, child ->
                 registry.RenderNode(
                     component = child,
                     actionHandler = actionHandler,
                     formController = formController,
                 )
+                // A HAIRLINE BETWEEN ROWS, which is what turns a column of label/value pairs into
+                // the table the canvas draws. Between, never after: a rule under the last row is a
+                // rule under nothing.
+                if (component.dividers && index < component.children.lastIndex) {
+                    HorizontalDivider(
+                        thickness = 1.dp,
+                        color = designSystem.resolveColor(M3Colors.OutlineVariant),
+                    )
+                }
             }
         }
     }

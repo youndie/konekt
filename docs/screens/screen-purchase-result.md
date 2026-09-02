@@ -45,11 +45,16 @@ The root is a `column` with id `purchase-result`, and the branch is `order.statu
 
 - [x] **`compensated`** — a `banner` (`purchase-reversed`, tone `error`), an `order_row`
   (`order-<orderId>`), and a `text` (`balance-now`).
-- [x] **`completed`** — a `banner` (`purchase-completed`, tone `info`) — "*<plan> is active.*" — and an
-  `order_row` with status `completed`, statusText "Paid".
-- [x] **`rejected`** — a single `banner` (`purchase-rejected`, tone `error`): "This purchase could not
-  be started, and nothing was charged." **No order row and no money**, because nothing was held: that
-  absence is the difference between this state and the one above it.
+- [x] **`completed`** — the canvas's outcome (`B-114`, block 2): an `icon` (`purchase-mark`, tone
+  `info`, a check), a `headline_small` text (`purchase-headline`) — "*Paid.*", or "*Paid. eSIM is ready
+  to install.*" while the line still needs one — a paragraph (`purchase-completed`) saying what
+  happens next, and a receipt: a `surface` with `dividers` (`purchase-receipt`) of label/value rows —
+  Order, Charged, Balance left. A row whose value the screen was not given is left out, not drawn blank.
+- [x] **`rejected`** — the same shape with the other mark: an `icon` (`purchase-mark`, tone `error`, a
+  cross), the headline "*Payment failed.*", the refusal sentence as the paragraph (`purchase-rejected`
+  — one of five, each ending in "nothing was charged"), and a receipt (`purchase-refusal`) of
+  Reference and Balance. **No order row and no money moved**, because nothing was held: the sentence
+  says so, and the receipt shows the balance it did not touch.
 - [x] **In flight** (`pending`, `awaiting_confirmation`, `compensating`) — a `banner`
   (`purchase-in-flight`, tone `info`): "Confirming with the payment provider. Keep the app open —
   this usually takes under 15 seconds."

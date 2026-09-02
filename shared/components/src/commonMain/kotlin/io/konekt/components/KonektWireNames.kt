@@ -26,4 +26,6 @@ val konektWireNames: List<String> =
         // A quantity along a range. The toolkit has no slider and this build wanted one — see
         // `SliderInputComponent` for why that is a dictionary entry rather than a workaround.
         "slider_input",
+        // A shape in a circle: the outcome mark over a purchase result (`B-114`).
+        "icon",
     )

@@ -12,9 +12,12 @@ import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.ButtonEmphasis
+import io.konekt.components.IconComponent
 import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.VectorIcon
 import io.konekt.domain.Money
 import io.konekt.feature.esim.server.domain.EsimHoldings
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
@@ -64,7 +67,7 @@ object PurchaseResultScreen {
                 when (order.status) {
                     OrderStatus.COMPENSATED -> reversed(order, reversal, balance)
 
-                    OrderStatus.COMPLETED -> completed(order, esims)
+                    OrderStatus.COMPLETED -> completed(order, balance, esims)
 
                     OrderStatus.REJECTED -> rejected(order, balance)
 
@@ -183,43 +186,44 @@ object PurchaseResultScreen {
             )
     }
 
+    // THE CANVAS'S OUTCOME (`B-114`, block 2): a check in a primary disc, `Paid.` as the headline,
+    // one paragraph saying what happens next, and a receipt — order, charged, balance left — as a
+    // table with hairlines. It was a banner and an order row, which read as a system message about
+    // something that had happened to somebody else.
     private fun completed(
         order: OrderView,
+        balance: Money?,
         esims: EsimHoldings,
     ): List<KompotComponent> =
         listOf(
-            BannerComponent(
+            IconComponent(id = "purchase-mark", icon = CHECK, tone = MessageTones.INFO),
+            TextComponent(
+                id = "purchase-headline",
+                text = if (esims.needsInstalling) "Paid. eSIM is ready to install." else "Paid.",
+                style = M3Typography.HeadlineSmall,
+                color = M3Colors.OnSurface,
+            ),
+            TextComponent(
                 id = "purchase-completed",
-                text = "${order.payload.planTitle} is active.",
-                tone = MessageTones.INFO,
+                text =
+                    if (esims.needsInstalling) {
+                        "${order.payload.planTitle}. Install now or later from Orders — the plan starts " +
+                            "counting on first connection, not now."
+                    } else {
+                        "${order.payload.planTitle} is on your line and counting."
+                    },
+                style = M3Typography.BodyMedium,
+                color = M3Colors.OnSurfaceVariant,
             ),
-            OrderRowComponent(
-                id = "order-${order.orderId}",
-                reference = order.orderId.take(8),
-                title = order.payload.planTitle,
-                dateText = "",
-                amountText = MoneyFormat.format(order.payload.price),
-                status = OrderStatuses.COMPLETED,
-                statusText = "Paid",
+            receipt(
+                "purchase-receipt",
+                "Order" to order.orderId.take(8),
+                "Charged" to "${MoneyFormat.format(order.payload.price)} from balance",
+                "Balance left" to balance?.let(MoneyFormat::format),
             ),
-            // THE DOOR TO THE INSTALL FLOW, and until it existed the flow had none anywhere.
-            //
-            // The wizard's routes, its step machine and its QR renderer all shipped and no served
-            // tree pointed at any of them, so a subscriber who paid could not install what they had
-            // bought (`B-54`). Section 03 of the canvas puts the control exactly here — "Paid. eSIM
-            // is ready to install", then `Install eSIM` — and here rather than on the profile is the
-            // point: nobody opens an account screen after paying.
             *controls(
                 "purchase-done",
-                // The canvas's second control is "Later, show receipt" — and the receipt is the
-                // screen this already is, so the honest version of it is the way out.
                 "Done",
-                // ONLY WHILE THE LINE STILL NEEDS ONE. This was unconditional, so a subscriber who
-                // had already installed their eSIM was invited to do it again by every package they
-                // bought — and the wizard obliged, minting another profile each time (`B-78`). One
-                // account, one device, one eSIM: a second package spends the same line.
-                //
-                // The same property the home screen's banner asks, so the two cannot drift.
                 esims.needsInstalling.takeIf { it }?.let {
                     ButtonComponent(
                         id = "purchase-install",
@@ -231,31 +235,75 @@ object PurchaseResultScreen {
             ).toTypedArray(),
         )
 
-    // REFUSED BEFORE ANYTHING HAPPENED, and the screen now says which refusal it was.
-    //
-    // It used to say one sentence for all five — "This purchase could not be started, and nothing was
-    // charged" — which is true of every one of them and useful for none (`B-68`). Worse on the money
-    // branch than on the others: `KonektException.InsufficientFunds` exists as its own case with the
-    // stated reason that *"it is the one refusal a subscriber can act on and the screen offers them a
-    // top-up"*, and the screen offered a **Back** button.
-    //
-    // The reason arrives as a CODE and the sentence is composed here, like every other string in this
-    // product. What the code cannot supply — the balance, the price — comes from the same view the
-    // rest of the screen is built from, so the money branch states the two numbers a person needs to
-    // work out how much to add.
+    // A RECEIPT: label left, value right, a hairline between rows. A row whose value is not known —
+    // a balance the screen was not given — is left out rather than drawn blank.
+    private fun receipt(
+        id: String,
+        vararg rows: Pair<String, String?>,
+    ): KompotComponent =
+        SurfaceComponent(
+            id = id,
+            dividers = true,
+            spacing = 12,
+            children =
+                rows.mapNotNull { (label, value) ->
+                    value?.let {
+                        RowComponent(
+                            id = "$id-${label.lowercase().replace(' ', '-')}",
+                            spacing = 12,
+                            children =
+                                listOf(
+                                    TextComponent(
+                                        id = "$id-${label.lowercase().replace(' ', '-')}-label",
+                                        text = label,
+                                        style = M3Typography.BodyMedium,
+                                        color = M3Colors.OnSurfaceVariant,
+                                        modifiers = listOf(KompotModifierNode.Weight(1f)),
+                                    ),
+                                    TextComponent(
+                                        id = "$id-${label.lowercase().replace(' ', '-')}-value",
+                                        text = it,
+                                        style = M3Typography.TitleSmall,
+                                        color = M3Colors.OnSurface,
+                                    ),
+                                ),
+                        )
+                    }
+                },
+        )
+
     private fun rejected(
         order: OrderView,
         balance: Money?,
     ): List<KompotComponent> =
         buildList {
+            // THE SAME SHAPE AS THE PAID SCREEN with the other mark, so the two outcomes read as two
+            // answers to one question rather than a receipt and a system message.
+            add(IconComponent(id = "purchase-mark", icon = CROSS, tone = MessageTones.ERROR))
             add(
-                BannerComponent(
+                TextComponent(
+                    id = "purchase-headline",
+                    text = "Payment failed.",
+                    style = M3Typography.HeadlineSmall,
+                    color = M3Colors.OnSurface,
+                ),
+            )
+            add(
+                TextComponent(
                     id = "purchase-rejected",
                     // Nothing was held, so there is nothing to reverse and nothing to state in money.
                     // Saying so is the difference between this screen and the one above, and every
                     // sentence below keeps it.
                     text = refusalText(order, balance),
-                    tone = MessageTones.ERROR,
+                    style = M3Typography.BodyMedium,
+                    color = M3Colors.OnSurfaceVariant,
+                ),
+            )
+            add(
+                receipt(
+                    "purchase-refusal",
+                    "Reference" to order.orderId.take(8),
+                    "Balance" to balance?.let(MoneyFormat::format),
                 ),
             )
 
@@ -455,3 +503,7 @@ object PurchaseResultScreen {
             *controls("purchase-in-flight-back", "Back").toTypedArray(),
         )
 }
+
+// The canvas's outcome marks, on the 24-grid every icon in this build is drawn on.
+private val CHECK = VectorIcon(paths = listOf("M5 12l5 5L20 7"))
+private val CROSS = VectorIcon(paths = listOf("M6 6l12 12M18 6L6 18"))

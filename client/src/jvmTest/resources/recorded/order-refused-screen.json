@@ -1,44 +1,123 @@
 {
-    "type": "column",
-    "id": "purchase-result",
-    "children": [
+  "type": "column",
+  "id": "purchase-result",
+  "children": [
+    {
+      "type": "icon",
+      "id": "purchase-mark",
+      "icon": {
+        "paths": [
+          "M6 6l12 12M18 6L6 18"
+        ]
+      },
+      "tone": "error"
+    },
+    {
+      "type": "text",
+      "id": "purchase-headline",
+      "text": "Payment failed.",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "text",
+      "id": "purchase-rejected",
+      "text": "$12 is more than the $0 on your balance. Nothing was charged.",
+      "style": "body_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "surface",
+      "id": "purchase-refusal",
+      "children": [
         {
-            "type": "banner",
-            "id": "purchase-rejected",
-            "text": "$12 is more than the $0 on your balance. Nothing was charged.",
-            "tone": "error"
-        },
-        {
-            "type": "button",
-            "id": "purchase-rejected-top-up",
-            "modifiers": [
+          "type": "row",
+          "id": "purchase-refusal-reference",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-refusal-reference-label",
+              "modifiers": [
                 {
-                    "type": "size",
-                    "width": "Fill"
+                  "type": "weight",
+                  "value": 1.0
                 }
-            ],
-            "text": "Top up",
-            "action": {
-                "type": "navigate",
-                "deeplink": "app://top-up"
-            }
-        },
-        {
-            "type": "button",
-            "id": "purchase-rejected-back",
-            "modifiers": [
-                {
-                    "type": "size",
-                    "width": "Fill"
-                }
-            ],
-            "text": "Back",
-            "action": {
-                "type": "navigate",
-                "deeplink": "app://home"
+              ],
+              "text": "Reference",
+              "style": "body_medium",
+              "color": "on_surface_variant"
             },
-            "variant": "quiet"
+            {
+              "type": "text",
+              "id": "purchase-refusal-reference-value",
+              "text": "8ac04bce",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "row",
+          "id": "purchase-refusal-balance",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-refusal-balance-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Balance",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-refusal-balance-value",
+              "text": "$0",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         }
-    ],
-    "spacing": 16
+      ],
+      "dividers": true
+    },
+    {
+      "type": "button",
+      "id": "purchase-rejected-top-up",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Top up",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://top-up"
+      }
+    },
+    {
+      "type": "button",
+      "id": "purchase-rejected-back",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Back",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://home"
+      },
+      "variant": "quiet"
+    }
+  ],
+  "spacing": 16
 }

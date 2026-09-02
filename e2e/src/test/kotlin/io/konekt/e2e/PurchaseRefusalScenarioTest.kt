@@ -4,7 +4,7 @@ import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.NavigateAction
-import io.konekt.components.BannerComponent
+import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.components.konektWalk
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
@@ -63,7 +63,8 @@ class PurchaseRefusalScenarioTest {
                 val banner =
                     screen
                         .konektWalk()
-                        .filterIsInstance<BannerComponent>()
+                        .filterIsInstance<TextComponent>()
+                        .filter { it.id == "purchase-rejected" }
                         .singleOrNull()
                 assertNotNull(banner, "the refusal screen states nothing")
 
@@ -125,7 +126,8 @@ class PurchaseRefusalScenarioTest {
                 val text =
                     screen
                         .konektWalk()
-                        .filterIsInstance<BannerComponent>()
+                        .filterIsInstance<TextComponent>()
+                        .filter { it.id == "purchase-rejected" }
                         .single()
                         .text
                 assertTrue(

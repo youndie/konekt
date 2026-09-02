@@ -9,9 +9,13 @@ import io.github.youndie.kompot.standard.RowComponent
 import io.github.youndie.kompot.standard.TextComponent
 import io.konekt.components.BannerComponent
 import io.konekt.components.MessageTones
+import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceDensities
+import io.konekt.components.SurfaceTones
 import io.konekt.feature.purchase.server.domain.Plan
 import io.konekt.feature.purchase.shared.api.BuyPlanAction
 import io.konekt.feature.roaming.server.domain.Zones
+import io.konekt.feature.usage.server.data.UsageUnits
 import io.konekt.money.MoneyFormat
 import io.konekt.roaming.RoamingZoneNames
 
@@ -27,6 +31,9 @@ import io.konekt.roaming.RoamingZoneNames
 // radio generation and no device check in the domain — and a row that states one would be a mockup
 // wearing a product's clothes. What is here is what the catalogue actually carries.
 object PlanDetailScreen {
+    // THE CANVAS'S PLAN DETAIL (`B-114`, block 2): a mint hero with the quota as the figure, the
+    // attributes as chips, a white table of what is included, the activation note, and the buy
+    // control PINNED to the bottom with `Charged once` over it. It was a title, a price and a list.
     fun build(
         plan: Plan,
         nav: KompotComponent? = null,
@@ -44,21 +51,8 @@ object PlanDetailScreen {
                             color = M3Colors.OnSurface,
                         ),
                     )
-                    add(
-                        TextComponent(
-                            id = "plan-detail-price",
-                            text = MoneyFormat.format(plan.price),
-                            style = M3Typography.DisplaySmall,
-                            color = M3Colors.OnSurface,
-                        ),
-                    )
-
-                    addAll(includes(plan))
-
-                    // WHEN IT STARTS COUNTING, and this is the fact worth a whole line. A roaming
-                    // package is provisioned DORMANT — bought at home, counting nothing until the
-                    // trip — and a subscriber who does not know that is a subscriber who thinks they
-                    // are being charged for a holiday that has not happened.
+                    add(hero(plan))
+                    add(includes(plan))
                     add(
                         BannerComponent(
                             id = "plan-detail-activation",
@@ -72,22 +66,10 @@ object PlanDetailScreen {
                             tone = MessageTones.INFO,
                         ),
                     )
-
                     add(
                         if (plan.onSale) {
-                            ButtonComponent(
-                                id = "plan-detail-buy",
-                                // The price in the label, as the canvas has it. A button that says
-                                // only "Buy" asks somebody to remember a number from further up the
-                                // screen at the moment they commit to it.
-                                text = "Buy for ${MoneyFormat.format(plan.price)}",
-                                action = BuyPlanAction(plan.id),
-                                modifiers = FILLS_THE_ROW,
-                            )
+                            footer(plan)
                         } else {
-                            // NO ACTION AT ALL rather than a disabled-looking button with one. The
-                            // catalogue already marks it sold out; here the absence is the answer,
-                            // and the server refuses the purchase besides.
                             BannerComponent(
                                 id = "plan-detail-sold-out",
                                 text = "This plan is not on sale right now.",
@@ -95,46 +77,145 @@ object PlanDetailScreen {
                             )
                         },
                     )
-
                     nav?.let(::add)
                 },
         )
 
-    // What the plan is made of, one row per thing it includes. Rows rather than a sentence because
-    // the canvas draws a table and because a list is what a person compares two plans with.
-    private fun includes(plan: Plan): List<KompotComponent> =
-        buildList {
-            add(
-                TextComponent(
-                    id = "plan-detail-includes",
-                    text = "What is included",
-                    style = M3Typography.LabelMedium,
-                    color = M3Colors.OnSurfaceVariant,
-                ),
-            )
-            if (plan.dataMb > 0) {
-                add(
-                    row(
-                        "data",
-                        "Data",
-                        io.konekt.feature.usage.server.data.UsageUnits
-                            .megabytes(plan.dataMb),
-                    ),
-                )
-            }
-            // STATED AS "NOT INCLUDED" rather than left out, and the canvas is explicit about this:
-            // its detail frame carries a "Calls & SMS — not included" row. An absent row answers
-            // nothing; a subscriber comparing a home bundle with a travel package is asking exactly
-            // this question.
-            add(row("minutes", "Calls", if (plan.minutes > 0) "${plan.minutes} minutes" else "Not included"))
-            add(row("messages", "SMS", if (plan.messages > 0) "${plan.messages} messages" else "Not included"))
-            if (plan.validForDays > 0) {
-                add(row("validity", "Runs for", "${plan.validForDays} days once it starts"))
-            }
-            if (plan.zone != Zones.HOME) {
-                add(row("zone", "Works in", RoamingZoneNames.of(plan.zone)))
-            }
+    // THE HERO. The quota is the figure — `headline_medium`, the grotesk — because a plan IS its
+    // allowance and the price is what it costs, in that order of importance; the canvas draws the
+    // price top-right in the title face and the quota at 44 underneath the label.
+    private fun hero(plan: Plan): KompotComponent =
+        SurfaceComponent(
+            id = "plan-detail-hero",
+            tone = SurfaceTones.ACCENT,
+            spacing = 12,
+            children =
+                buildList {
+                    add(
+                        RowComponent(
+                            id = "plan-detail-hero-head",
+                            spacing = 12,
+                            children =
+                                listOf(
+                                    TextComponent(
+                                        id = "plan-detail-hero-label",
+                                        text = if (plan.zone == Zones.HOME) "Plan" else "Data plan",
+                                        style = M3Typography.LabelMedium,
+                                        color = M3Colors.OnPrimaryContainer,
+                                        modifiers = TAKES_THE_SPACE,
+                                    ),
+                                    TextComponent(
+                                        id = "plan-detail-price",
+                                        text = MoneyFormat.format(plan.price),
+                                        style = M3Typography.TitleMedium,
+                                        color = M3Colors.OnPrimaryContainer,
+                                    ),
+                                ),
+                        ),
+                    )
+                    add(
+                        TextComponent(
+                            id = "plan-detail-quota",
+                            text = headline(plan),
+                            style = M3Typography.HeadlineMedium,
+                            color = M3Colors.OnPrimaryContainer,
+                        ),
+                    )
+                    chips(
+                        plan,
+                    ).takeIf { it.isNotEmpty() }?.let {
+                        add(
+                            RowComponent(id = "plan-detail-chips", spacing = 8, children = it),
+                        )
+                    }
+                },
+        )
+
+    // What the hero says in one figure: the data when there is data, the minutes otherwise — a
+    // plan with neither is not sold here.
+    private fun headline(plan: Plan): String =
+        when {
+            plan.dataMb > 0 -> UsageUnits.megabytes(plan.dataMb)
+            plan.minutes > 0 -> "${plan.minutes} min"
+            else -> "${plan.messages} SMS"
         }
+
+    // THE ATTRIBUTES AS CHIPS, and only the ones this plan has a fact for. The canvas draws
+    // `30 days`, `5G where available`, `Hotspot allowed`; this build knows validity and zone and
+    // nothing about the radio, so a chip it cannot vouch for is not drawn.
+    private fun chips(plan: Plan): List<KompotComponent> =
+        buildList {
+            if (plan.validForDays > 0) add(chip("validity", "${plan.validForDays} days"))
+            if (plan.zone != Zones.HOME) add(chip("zone", RoamingZoneNames.of(plan.zone)))
+        }
+
+    private fun chip(
+        id: String,
+        text: String,
+    ): KompotComponent =
+        SurfaceComponent(
+            id = "plan-detail-chip-$id",
+            density = SurfaceDensities.CHIP,
+            children =
+                listOf(
+                    TextComponent(
+                        id = "plan-detail-chip-$id-text",
+                        text = text,
+                        style = M3Typography.LabelMedium,
+                        color = M3Colors.OnSurface,
+                    ),
+                ),
+        )
+
+    // THE TABLE: a white card of label/value rows with a hairline between them. The rows are what
+    // the plan can answer — `Calls & SMS` says "Not included" rather than vanishing, because a
+    // travel plan that omits the line looks like a screen that forgot to mention it.
+    private fun includes(plan: Plan): KompotComponent =
+        SurfaceComponent(
+            id = "plan-detail-includes",
+            dividers = true,
+            spacing = 12,
+            children =
+                buildList {
+                    if (plan.dataMb > 0) add(row("data", "Data", UsageUnits.megabytes(plan.dataMb)))
+                    add(
+                        row(
+                            "calls",
+                            "Calls & SMS",
+                            when {
+                                plan.minutes > 0 && plan.messages > 0 -> {
+                                    "${plan.minutes} minutes · ${plan.messages} messages"
+                                }
+
+                                plan.minutes > 0 -> {
+                                    "${plan.minutes} minutes"
+                                }
+
+                                plan.messages > 0 -> {
+                                    "${plan.messages} messages"
+                                }
+
+                                else -> {
+                                    "Not included"
+                                }
+                            },
+                        ),
+                    )
+                    add(
+                        row(
+                            "activates",
+                            "Activation",
+                            if (plan.zone == Zones.HOME) "When the purchase completes" else "On first connection",
+                        ),
+                    )
+                    if (plan.validForDays >
+                        0
+                    ) {
+                        add(row("validity", "Runs for", "${plan.validForDays} days once it starts"))
+                    }
+                    if (plan.zone != Zones.HOME) add(row("zone", "Works in", RoamingZoneNames.of(plan.zone)))
+                },
+        )
 
     private fun row(
         id: String,
@@ -143,7 +224,7 @@ object PlanDetailScreen {
     ): KompotComponent =
         RowComponent(
             id = "plan-detail-$id",
-            spacing = 8,
+            spacing = 12,
             children =
                 listOf(
                     TextComponent(
@@ -151,12 +232,52 @@ object PlanDetailScreen {
                         text = label,
                         style = M3Typography.BodyMedium,
                         color = M3Colors.OnSurfaceVariant,
+                        modifiers = TAKES_THE_SPACE,
                     ),
                     TextComponent(
                         id = "plan-detail-$id-value",
                         text = value,
-                        style = M3Typography.BodyMedium,
+                        style = M3Typography.TitleSmall,
                         color = M3Colors.OnSurface,
+                    ),
+                ),
+        )
+
+    // PINNED, so a screen that scrolls never scrolls its one action away; `Charged once` and the
+    // price on the line above it, which is the canvas's answer to "is this a subscription" asked
+    // at the moment of paying.
+    private fun footer(plan: Plan): KompotComponent =
+        SurfaceComponent(
+            id = "plan-detail-footer",
+            pinned = true,
+            spacing = 10,
+            children =
+                listOf(
+                    RowComponent(
+                        id = "plan-detail-charged",
+                        spacing = 12,
+                        children =
+                            listOf(
+                                TextComponent(
+                                    id = "plan-detail-charged-label",
+                                    text = "Charged once",
+                                    style = M3Typography.BodyMedium,
+                                    color = M3Colors.OnSurfaceVariant,
+                                    modifiers = TAKES_THE_SPACE,
+                                ),
+                                TextComponent(
+                                    id = "plan-detail-charged-price",
+                                    text = MoneyFormat.format(plan.price),
+                                    style = M3Typography.TitleMedium,
+                                    color = M3Colors.OnSurface,
+                                ),
+                            ),
+                    ),
+                    ButtonComponent(
+                        id = "plan-detail-buy",
+                        text = "Buy for ${MoneyFormat.format(plan.price)}",
+                        action = BuyPlanAction(plan.id),
+                        modifiers = FILLS_THE_ROW,
                     ),
                 ),
         )

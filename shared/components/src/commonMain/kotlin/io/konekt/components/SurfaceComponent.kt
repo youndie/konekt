@@ -41,4 +41,27 @@ data class SurfaceComponent(
     // served brand kit's to decide — which is the whole claim this product is for.
     val tone: String = SurfaceTones.NEUTRAL,
     val spacing: Int = 12,
+    // THREE MORE FACTS ABOUT A GROUP ON A GROUND, added by `B-114` for the plan detail and the
+    // purchase result, and each is a property of the CONTAINER rather than a new kind of thing:
+    //
+    //   `density` — `card` is the headline block the canvas draws at `lg`; `chip` is the small
+    //   pill it draws attributes in (`30 days`, `Hotspot allowed`): `sm` radius, tight inset,
+    //   wraps its content. One type, because a chip is a card that is small, not a different noun.
+    //
+    //   `dividers` — a hairline between children. What turns a column of label/value rows into the
+    //   spec table the canvas draws, and the receipt under a paid order.
+    //
+    //   `pinned` — the frame keeps this one at the bottom, above the bar and outside the scroll.
+    //   The buy button on a plan lives there in the canvas with `Charged once` on the line above
+    //   it; a screen that scrolls must not scroll its one action away. One per screen; a second is
+    //   drawn in place like any other surface, because a frame with two footers is a frame with a
+    //   bug, and drawing the second is how somebody notices.
+    val density: String = SurfaceDensities.CARD,
+    val dividers: Boolean = false,
+    val pinned: Boolean = false,
 ) : KompotComponent
+
+object SurfaceDensities {
+    const val CARD = "card"
+    const val CHIP = "chip"
+}

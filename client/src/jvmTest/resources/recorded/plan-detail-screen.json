@@ -10,123 +10,222 @@
       "color": "on_surface"
     },
     {
-      "type": "text",
-      "id": "plan-detail-price",
-      "text": "$12",
-      "style": "display_small",
-      "color": "on_surface"
-    },
-    {
-      "type": "text",
-      "id": "plan-detail-includes",
-      "text": "What is included",
-      "style": "label_medium",
-      "color": "on_surface_variant"
-    },
-    {
-      "type": "row",
-      "id": "plan-detail-data",
+      "type": "surface",
+      "id": "plan-detail-hero",
       "children": [
         {
-          "type": "text",
-          "id": "plan-detail-data-label",
-          "text": "Data",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "type": "row",
+          "id": "plan-detail-hero-head",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-hero-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Data plan",
+              "style": "label_medium",
+              "color": "on_primary_container"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-price",
+              "text": "$12",
+              "style": "title_medium",
+              "color": "on_primary_container"
+            }
+          ],
+          "spacing": 12
         },
         {
           "type": "text",
-          "id": "plan-detail-data-value",
+          "id": "plan-detail-quota",
           "text": "10 GB",
-          "style": "body_medium",
-          "color": "on_surface"
-        }
-      ],
-      "spacing": 8
-    },
-    {
-      "type": "row",
-      "id": "plan-detail-minutes",
-      "children": [
-        {
-          "type": "text",
-          "id": "plan-detail-minutes-label",
-          "text": "Calls",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "style": "headline_medium",
+          "color": "on_primary_container"
         },
         {
-          "type": "text",
-          "id": "plan-detail-minutes-value",
-          "text": "Not included",
-          "style": "body_medium",
-          "color": "on_surface"
+          "type": "row",
+          "id": "plan-detail-chips",
+          "children": [
+            {
+              "type": "surface",
+              "id": "plan-detail-chip-validity",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "plan-detail-chip-validity-text",
+                  "text": "30 days",
+                  "style": "label_medium",
+                  "color": "on_surface"
+                }
+              ],
+              "density": "chip"
+            },
+            {
+              "type": "surface",
+              "id": "plan-detail-chip-zone",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "plan-detail-chip-zone-text",
+                  "text": "Turkey",
+                  "style": "label_medium",
+                  "color": "on_surface"
+                }
+              ],
+              "density": "chip"
+            }
+          ],
+          "spacing": 8
         }
       ],
-      "spacing": 8
+      "tone": "accent"
     },
     {
-      "type": "row",
-      "id": "plan-detail-messages",
+      "type": "surface",
+      "id": "plan-detail-includes",
       "children": [
         {
-          "type": "text",
-          "id": "plan-detail-messages-label",
-          "text": "SMS",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "type": "row",
+          "id": "plan-detail-data",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-data-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Data",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-data-value",
+              "text": "10 GB",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         },
         {
-          "type": "text",
-          "id": "plan-detail-messages-value",
-          "text": "Not included",
-          "style": "body_medium",
-          "color": "on_surface"
-        }
-      ],
-      "spacing": 8
-    },
-    {
-      "type": "row",
-      "id": "plan-detail-validity",
-      "children": [
-        {
-          "type": "text",
-          "id": "plan-detail-validity-label",
-          "text": "Runs for",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "type": "row",
+          "id": "plan-detail-calls",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-calls-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Calls & SMS",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-calls-value",
+              "text": "Not included",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         },
         {
-          "type": "text",
-          "id": "plan-detail-validity-value",
-          "text": "30 days once it starts",
-          "style": "body_medium",
-          "color": "on_surface"
-        }
-      ],
-      "spacing": 8
-    },
-    {
-      "type": "row",
-      "id": "plan-detail-zone",
-      "children": [
-        {
-          "type": "text",
-          "id": "plan-detail-zone-label",
-          "text": "Works in",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "type": "row",
+          "id": "plan-detail-activates",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-activates-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Activation",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-activates-value",
+              "text": "On first connection",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         },
         {
-          "type": "text",
-          "id": "plan-detail-zone-value",
-          "text": "Turkey",
-          "style": "body_medium",
-          "color": "on_surface"
+          "type": "row",
+          "id": "plan-detail-validity",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-validity-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Runs for",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-validity-value",
+              "text": "30 days once it starts",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "row",
+          "id": "plan-detail-zone",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-zone-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Works in",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-zone-value",
+              "text": "Turkey",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         }
       ],
-      "spacing": 8
+      "dividers": true
     },
     {
       "type": "banner",
@@ -134,19 +233,54 @@
       "text": "Starts counting when you first connect in Turkey, not when you buy it."
     },
     {
-      "type": "button",
-      "id": "plan-detail-buy",
-      "modifiers": [
+      "type": "surface",
+      "id": "plan-detail-footer",
+      "children": [
         {
-          "type": "size",
-          "width": "Fill"
+          "type": "row",
+          "id": "plan-detail-charged",
+          "children": [
+            {
+              "type": "text",
+              "id": "plan-detail-charged-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Charged once",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "plan-detail-charged-price",
+              "text": "$12",
+              "style": "title_medium",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "button",
+          "id": "plan-detail-buy",
+          "modifiers": [
+            {
+              "type": "size",
+              "width": "Fill"
+            }
+          ],
+          "text": "Buy for $12",
+          "action": {
+            "type": "buy_plan",
+            "planId": "tr-10gb-30d"
+          }
         }
       ],
-      "text": "Buy for $12",
-      "action": {
-        "type": "buy_plan",
-        "planId": "tr-10gb-30d"
-      }
+      "spacing": 10,
+      "pinned": true
     },
     {
       "type": "bottom_nav",

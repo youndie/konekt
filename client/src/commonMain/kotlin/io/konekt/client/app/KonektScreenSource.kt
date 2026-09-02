@@ -1,12 +1,14 @@
 package io.konekt.client.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotRegistry
 import io.github.youndie.kompot.KompotScreen
+import io.github.youndie.kompot.LocalKompotRegistry
 import io.github.youndie.kompot.decodeKompotAction
 import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.form.FormController
@@ -262,11 +264,18 @@ class KonektScreenSource(
         component: KompotComponent,
         onAction: (KompotAction) -> Unit,
     ) {
-        registry.RenderNode(
-            component = component,
-            actionHandler = KompotActionHandler { action -> onAction(action) },
-            formController = FormController(FormSchema(formId = "konekt-shell", fields = emptyList())),
-        )
+        // THE REGISTRY GOES IN AS A LOCAL, the way `KompotScreen` puts it in for a tree: a shell
+        // node used to be a leaf — the bar — and a leaf never asks for it. The pinned footer is a
+        // `surface`, and a surface draws its children through `LocalKompotRegistry`; on the stand
+        // the first plan page threw `LocalKompotRegistry not provided` from above the bar, while
+        // the screenshot harness, which provides one around everything, had shown it drawn.
+        CompositionLocalProvider(LocalKompotRegistry provides registry) {
+            registry.RenderNode(
+                component = component,
+                actionHandler = KompotActionHandler { action -> onAction(action) },
+                formController = FormController(FormSchema(formId = "konekt-shell", fields = emptyList())),
+            )
+        }
     }
 
     @Composable

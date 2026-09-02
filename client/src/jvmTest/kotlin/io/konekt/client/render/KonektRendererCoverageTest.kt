@@ -62,6 +62,7 @@ class KonektRendererCoverageTest {
             // drawing: undrawn it would not be a degraded card either — it would be a form field a
             // subscriber cannot move, which is a screen that cannot be completed.
             "slider_input",
+            "icon",
             // `surface` joined the same way `bottom_nav` did, and had to: a container the server
             // sends and the client cannot draw is not a degraded card, it is a screen with its
             // contents missing — the children would go nowhere at all.
