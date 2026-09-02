@@ -55,7 +55,13 @@ The root is a `column` with id `purchase-result`, and the branch is `order.statu
   — one of five, each ending in "nothing was charged"), and a receipt (`purchase-refusal`) of
   Reference and Balance. **No order row and no money moved**, because nothing was held: the sentence
   says so, and the receipt shows the balance it did not touch.
-- [x] **In flight** (`pending`, `awaiting_confirmation`, `compensating`) — a `banner`
+- [x] **`awaiting_confirmation`** — the confirmation (`B-114`, block 5): a `headline_small` title
+  "*Confirm purchase*", the plan and the price as a `surface` table with `dividers`
+  (`purchase-facts`), `Pay from` over the one source drawn as the chosen option — a `surface` in the
+  `accent` tone with a filled check (`purchase-source`, present only when the balance could be
+  read) — the `Pay $X` button, the hold sentence under it as text (`purchase-awaiting`), and
+  `Not now` as a `link`.
+- [x] **In flight** (`pending`, `compensating`) — a `banner`
   (`purchase-in-flight`, tone `info`): "Confirming with the payment provider. Keep the app open —
   this usually takes under 15 seconds."
 - [ ] **Loading / error:** not built. The route either answers a tree or a `KonektException` mapped by

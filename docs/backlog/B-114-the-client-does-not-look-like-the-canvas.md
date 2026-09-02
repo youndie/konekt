@@ -319,6 +319,20 @@ through the API is the wizard's business.
 countdown (no timer exists), the sign-out row's inset (a button inside a card is taller than the
 canvas's row — a list-row component would be the fix, and that is a dictionary decision).
 
+### Block 5 — the confirmation, done as content
+
+The sheet's content on the screen the product already has: a title, the plan and the price as a
+table, `Pay from` over the one source there is — drawn as a chosen option, a tinted card with the
+check filled, since there is nothing to choose between (`B-40`) — the pay button with the amount, the
+hold sentence under it rather than as the first thing on the screen, and `Not now` as a link. The
+hold sentence is kept because its fact is true and the first live run of this screen is what made
+it precise; the consent checkbox is not drawn because there are no terms to accept.
+
+**Left, on purpose:** the sheet itself. Presenting the confirmation over the plan page is a change
+to how the client navigates — a modal layer over a screen that stays mounted — and not to what the
+server sends; it is the last item of the audit's order and the one with the least on the wire, so
+it stays open here rather than being half-done inside this item.
+
 ## Acceptance criteria
 
 - AC: every screen above has a golden at 393×852 in **both** themes, re-recorded from the server after

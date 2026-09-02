@@ -17,6 +17,7 @@ import io.konekt.components.MessageTones
 import io.konekt.components.OrderRowComponent
 import io.konekt.components.OrderStatuses
 import io.konekt.components.SurfaceComponent
+import io.konekt.components.SurfaceTones
 import io.konekt.components.VectorIcon
 import io.konekt.domain.Money
 import io.konekt.feature.esim.server.domain.EsimHoldings
@@ -402,65 +403,130 @@ object PurchaseResultScreen {
         balance: Money?,
     ): List<KompotComponent> =
         buildList {
-            // "HELD" AND NOT "NOTHING HAS HAPPENED", and the first live run of this screen is what
-            // forced the distinction. The banner said "nothing has been charged yet" beside a balance
-            // that had ALREADY dropped by the price — `hold` decrements the account in the same
-            // statement it checks it against, so at this point the money has left the available
-            // balance and simply has not been captured.
-            //
-            // Both sentences were true and together they read as a contradiction, which is what a
-            // subscriber would report. The old banner got away with it only because it showed no
-            // balance to contradict.
+            // THE CANVAS'S CONFIRMATION (`B-114`, block 5): a title, the plan and the price as a
+            // two-row table, `Pay from` over the one source there is drawn as a chosen option, the
+            // pay button with the amount on it, and the hold sentence UNDER the button rather than as
+            // the first thing on the screen. The canvas presents all of this as a sheet over the plan
+            // page; that is the client's presentation, and this is the content either way.
             add(
-                BannerComponent(
+                TextComponent(
+                    id = "purchase-confirm-title",
+                    text = "Confirm purchase",
+                    style = M3Typography.HeadlineSmall,
+                    color = M3Colors.OnSurface,
+                ),
+            )
+            add(
+                receipt(
+                    "purchase-facts",
+                    "Plan" to order.payload.planTitle,
+                    "Price" to MoneyFormat.format(order.payload.price),
+                ),
+            )
+
+            // WHERE THE MONEY COMES FROM, which is the one thing a confirmation is for. The canvas
+            // draws a choice — balance or a card — and there is no choice to draw: this product has
+            // no payment methods (`B-40`), and offering a card it cannot charge would be worse than
+            // offering none. So the one source is drawn as the chosen option — a tinted card with the
+            // check filled — rather than asked for.
+            //
+            // "LEFT AFTER THIS" rather than a bare balance, because the number is ALREADY net of the
+            // hold: `hold` decrements the account in the same statement it checks it against, so this
+            // figure is what remains either way. Printing it as "Balance · $35" beside a price of $15
+            // invites the subscriber to subtract twice. Omitted when the balance could not be read,
+            // for the reason the home screen gives about the same number.
+            balance?.let {
+                add(
+                    TextComponent(
+                        id = "purchase-source-label",
+                        text = "Pay from",
+                        style = M3Typography.LabelMedium,
+                        color = M3Colors.OnSurfaceVariant,
+                    ),
+                )
+                add(
+                    SurfaceComponent(
+                        id = "purchase-source",
+                        tone = SurfaceTones.ACCENT,
+                        children =
+                            listOf(
+                                RowComponent(
+                                    id = "purchase-source-row",
+                                    spacing = 12,
+                                    children =
+                                        listOf(
+                                            IconComponent(
+                                                id = "purchase-source-mark",
+                                                icon = CHECK,
+                                                tone = MessageTones.INFO,
+                                                size = 28,
+                                            ),
+                                            ColumnComponent(
+                                                id = "purchase-source-text",
+                                                spacing = 2,
+                                                children =
+                                                    listOf(
+                                                        TextComponent(
+                                                            id = "purchase-source-title",
+                                                            text = "Balance — ${MoneyFormat.format(
+                                                                it,
+                                                            )} left after this",
+                                                            style = M3Typography.TitleSmall,
+                                                            color = M3Colors.OnPrimaryContainer,
+                                                        ),
+                                                        TextComponent(
+                                                            id = "purchase-source-note",
+                                                            text = "Instant, no fee",
+                                                            style = M3Typography.BodySmall,
+                                                            color = M3Colors.OnPrimaryContainer,
+                                                        ),
+                                                    ),
+                                            ),
+                                        ),
+                                ),
+                            ),
+                    ),
+                )
+            }
+
+            add(
+                ButtonComponent(
+                    id = "purchase-confirm",
+                    // THE AMOUNT ON THE BUTTON, like the plan detail's `Buy for $X`. A subscriber
+                    // who reads only the control they are about to press still reads the price.
+                    text = "Pay ${MoneyFormat.format(order.payload.price)}",
+                    action = ConfirmPurchaseAction(order.orderId),
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+                ),
+            )
+
+            // "HELD" AND NOT "NOTHING HAS HAPPENED", and the first live run of this screen is what
+            // forced the distinction: the sentence said "nothing has been charged yet" beside a
+            // balance that had ALREADY dropped by the price. Both were true and together they read as
+            // a contradiction. It sits under the button now — the fact is worth keeping, and it is
+            // not the first thing a subscriber came here to read.
+            add(
+                TextComponent(
                     id = "purchase-awaiting",
                     text =
                         "${MoneyFormat.format(order.payload.price)} is on hold and has not been charged. " +
                             "Let the window pass and it is released.",
-                    tone = MessageTones.INFO,
+                    style = M3Typography.BodySmall,
+                    color = M3Colors.OnSurfaceVariant,
                 ),
             )
-
-            add(fact("purchase-plan", "Plan", order.payload.planTitle))
-            add(fact("purchase-price", "Price", MoneyFormat.format(order.payload.price)))
-
-            // WHERE THE MONEY COMES FROM, which is the one thing a confirmation is for and the one
-            // the banner never said. The canvas draws a choice — balance or a card — and there is no
-            // choice to draw: this product has no payment methods, and offering a card it cannot
-            // charge would be worse than offering none. So it states the source rather than asking
-            // for one.
-            //
-            // "LEFT AFTER THIS" rather than a bare balance, because the number is ALREADY net of the
-            // hold: confirming captures a sum that has gone, so this figure is what remains either
-            // way. Printing it as "Balance · $35" beside a price of $15 invites the subscriber to
-            // subtract twice.
-            //
-            // Omitted when the balance could not be read, for the reason the home screen gives about
-            // the same number: zero is a fact about an account and "we could not tell" is not.
-            balance?.let {
-                add(
-                    fact("purchase-source", "Pay from", "Balance — ${MoneyFormat.format(it)} left after this"),
-                )
-            }
 
             // LEAVING WITHOUT CONFIRMING IS A PATH, not an escape hatch. The order keeps its
             // deadline and rolls itself back when it passes — which is the compensated branch this
             // product exists to demonstrate, reached the way a subscriber would actually reach it.
-            //
-            // `Not now` comes back quiet without this branch saying so: `Pay` is beside it, and that
-            // is the whole of the rule.
-            addAll(
-                controls(
-                    "purchase-not-now",
-                    "Not now",
-                    ButtonComponent(
-                        id = "purchase-confirm",
-                        // THE AMOUNT ON THE BUTTON, like the plan detail's `Buy for $X`. A subscriber
-                        // who reads only the control they are about to press still reads the price.
-                        text = "Pay ${MoneyFormat.format(order.payload.price)}",
-                        action = ConfirmPurchaseAction(order.orderId),
-                        modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-                    ),
+            // A text link, not a pill the size of `Pay`.
+            add(
+                ButtonComponent(
+                    id = "purchase-not-now",
+                    text = "Not now",
+                    action = NavigateAction(HOME_DEEPLINK),
+                    variant = ButtonEmphasis.LINK,
+                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
                 ),
             )
         }

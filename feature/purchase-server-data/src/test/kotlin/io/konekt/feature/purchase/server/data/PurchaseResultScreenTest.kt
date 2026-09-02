@@ -163,7 +163,9 @@ class PurchaseResultScreenTest {
                     ).konektWalk()
                     .filterIsInstance<ButtonComponent>()
 
-            val primaries = buttons.filter { it.variant != ButtonEmphasis.QUIET }
+            // FULL WEIGHT IS THE FILLED PILL. `quiet` is the outlined one and `link` (`B-114`) is
+            // text; neither competes with the answer, which is what the rule is about.
+            val primaries = buttons.filter { it.variant != ButtonEmphasis.QUIET && it.variant != ButtonEmphasis.LINK }
             assertEquals(
                 1,
                 primaries.size,
@@ -341,12 +343,14 @@ class PurchaseResultScreenTest {
         // The banner, read as a `banner` rather than swept up with the texts: it is konekt's own
         // component and carries its own field, and a `filterIsInstance<TextComponent>` walks straight
         // past it. That is how this assertion failed the first time it was written.
+        // THE HOLD SENTENCE sits under the pay button since `B-114`, as text rather than a banner;
+        // what it says is what this asserts.
         val banner =
             PurchaseResultScreen
                 .build(awaiting(), reversal = null, balance = Money.ofMajor(50, Currency.DEFAULT))
                 .konektWalk()
-                .filterIsInstance<BannerComponent>()
-                .single()
+                .filterIsInstance<TextComponent>()
+                .single { it.id == "purchase-awaiting" }
         assertTrue(
             "on hold and has not been charged" in banner.text,
             "the screen claimed nothing had happened, beside a balance that has already moved: ${banner.text}",

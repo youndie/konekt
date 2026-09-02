@@ -3,72 +3,124 @@
   "id": "purchase-result",
   "children": [
     {
-      "type": "banner",
-      "id": "purchase-awaiting",
-      "text": "$15 is on hold and has not been charged. Let the window pass and it is released."
+      "type": "text",
+      "id": "purchase-confirm-title",
+      "text": "Confirm purchase",
+      "style": "headline_small",
+      "color": "on_surface"
     },
     {
-      "type": "row",
-      "id": "purchase-plan",
+      "type": "surface",
+      "id": "purchase-facts",
       "children": [
         {
-          "type": "text",
-          "id": "purchase-plan-label",
-          "text": "Plan",
-          "style": "body_medium",
-          "color": "on_surface_variant"
+          "type": "row",
+          "id": "purchase-facts-plan",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-facts-plan-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Plan",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-facts-plan-value",
+              "text": "Home · 20 GB · 30 days",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         },
         {
-          "type": "text",
-          "id": "purchase-plan-value",
-          "text": "Home · 20 GB · 30 days",
-          "style": "body_medium",
-          "color": "on_surface"
+          "type": "row",
+          "id": "purchase-facts-price",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-facts-price-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Price",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-facts-price-value",
+              "text": "$15",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
         }
       ],
-      "spacing": 8
+      "dividers": true
     },
     {
-      "type": "row",
-      "id": "purchase-price",
-      "children": [
-        {
-          "type": "text",
-          "id": "purchase-price-label",
-          "text": "Price",
-          "style": "body_medium",
-          "color": "on_surface_variant"
-        },
-        {
-          "type": "text",
-          "id": "purchase-price-value",
-          "text": "$15",
-          "style": "body_medium",
-          "color": "on_surface"
-        }
-      ],
-      "spacing": 8
+      "type": "text",
+      "id": "purchase-source-label",
+      "text": "Pay from",
+      "style": "label_medium",
+      "color": "on_surface_variant"
     },
     {
-      "type": "row",
+      "type": "surface",
       "id": "purchase-source",
       "children": [
         {
-          "type": "text",
-          "id": "purchase-source-label",
-          "text": "Pay from",
-          "style": "body_medium",
-          "color": "on_surface_variant"
-        },
-        {
-          "type": "text",
-          "id": "purchase-source-value",
-          "text": "Balance — $35 left after this",
-          "style": "body_medium",
-          "color": "on_surface"
+          "type": "row",
+          "id": "purchase-source-row",
+          "children": [
+            {
+              "type": "icon",
+              "id": "purchase-source-mark",
+              "icon": {
+                "paths": [
+                  "M5 12l5 5L20 7"
+                ]
+              },
+              "size": 28
+            },
+            {
+              "type": "column",
+              "id": "purchase-source-text",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "purchase-source-title",
+                  "text": "Balance — $21 left after this",
+                  "style": "title_small",
+                  "color": "on_primary_container"
+                },
+                {
+                  "type": "text",
+                  "id": "purchase-source-note",
+                  "text": "Instant, no fee",
+                  "style": "body_small",
+                  "color": "on_primary_container"
+                }
+              ],
+              "spacing": 2
+            }
+          ],
+          "spacing": 12
         }
       ],
-      "spacing": 8
+      "tone": "accent"
     },
     {
       "type": "button",
@@ -82,8 +134,15 @@
       "text": "Pay $15",
       "action": {
         "type": "confirm_purchase",
-        "orderId": "3568140e-2e98-45c1-8191-e91615a16b87"
+        "orderId": "3e0586c1-e8c6-4d67-a508-dfe851eae13b"
       }
+    },
+    {
+      "type": "text",
+      "id": "purchase-awaiting",
+      "text": "$15 is on hold and has not been charged. Let the window pass and it is released.",
+      "style": "body_small",
+      "color": "on_surface_variant"
     },
     {
       "type": "button",
@@ -99,7 +158,7 @@
         "type": "navigate",
         "deeplink": "app://home"
       },
-      "variant": "quiet"
+      "variant": "link"
     }
   ],
   "spacing": 16
