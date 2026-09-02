@@ -20,8 +20,8 @@ val konektWireNames: List<String> =
         "step_meter",
         "skeleton",
         "bottom_nav",
-        // The one container among them, and the one that is meant to be deleted — see
-        // `SurfaceComponent` and U14.
+        // The one container among them. Written to be deleted when U14 closed; U14 closed and it
+        // stayed, for the words kompot has none of — see `SurfaceComponent`.
         "surface",
         // A quantity along a range. The toolkit has no slider and this build wanted one — see
         // `SliderInputComponent` for why that is a dictionary entry rather than a workaround.

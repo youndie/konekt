@@ -270,7 +270,9 @@ Three tables with no foreign keys between them lose nothing — their descriptio
 share one version, which is the same flaw in a case where Flyway catches it instead.
 
 Reported as [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897), rewritten
-after this check, and still open.
+after this check; fixed by [#2898](https://github.com/JetBrains/Exposed/pull/2898) and released in
+Exposed `1.5.0` on 2026-08-26, which this build takes since 2026-09-02. The version collision within
+one run stays — the generator still stamps to the second — so a draft is still renumbered by hand.
 
 *Amended 2026-08-25.* The index half of this — petich declaring none of the indexes its comments
 asked for — closed in petich `0.1.0.8`, so `KonektSchemaTest` no longer exempts `DROP INDEX` and

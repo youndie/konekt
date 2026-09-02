@@ -6,29 +6,30 @@ import io.github.youndie.kompot.registry.KompotComponentMarker
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// A GROUP ON A GROUND, and it is the eleventh name here for one missing property rather than for a
-// product concept.
+// A GROUP ON A GROUND — a card, a chip, a table, a footer — said as words on one container rather
+// than as four nouns.
 //
-// The canvas draws three of these — the balance block, the plan card the counters sit inside, and the
-// roaming row — as filled, rounded containers. What the served tree had instead was four siblings in
-// the screen's own column: not a card drawn wrongly, no card at all.
+// The canvas draws the balance block, the plan card the counters sit inside, and the roaming row as
+// filled, rounded containers. What the served tree had at first was four siblings in the screen's
+// own column: not a card drawn wrongly, no card at all.
 //
-// WHAT THE TOOLKIT ALREADY HAS, because the first version of this item was wrong about it.
-// `KompotModifierNode` carries `Background(color)`, `Padding`, `Size`, `Weight` and `Gradient`, and
-// the client resolves a `Background` through the design system — so the server CAN already say "this
-// column stands on primary_container", and a brand already repaints it. Read in
-// `kompot-core:0.33.1.91` and in `KompotClientKt`'s modifier chain, not inferred.
+// WHAT THE TOOLKIT HAS. `KompotModifierNode` carries `Background(color)`, `Padding`, `Size`,
+// `Weight` and `Gradient`, and the client resolves a `Background` through the design system — so
+// the server could always say "this column stands on primary_container", and a brand repaints it.
+// What it could not say until kompot `0.34` was the CORNER: the chain applied
+// `Modifier.background(color, shape = null)`, a rectangle, and there is no shape on the wire on
+// purpose — radii are a client build constant (research §1.2, D2), which is what lets brand B change
+// `lg` 36→22 without a server release. This type began as the one place a client could choose that
+// shape: a workaround with a name, filed as U14 (kompot#95).
 //
-// WHAT IS MISSING IS THE CORNER, and only that. The chain applies
-// `Modifier.background(color, shape = null)` — a rectangle — and there is no shape modifier on the
-// wire, deliberately: radii are a client build constant (research §1.2, D2), which is what lets
-// brand B change `lg` 36→22 without a server release. So the shape has to be chosen by the CLIENT,
-// and a component is the only place this build can put that choice.
-//
-// SO THIS IS A WORKAROUND WITH A NAME. `U14` asks kompot to round a `Background` from the design
-// system's own surface shape, which would make this type deletable: a `column` with a `Background`
-// would then be exactly what this is. Until then, `konekt.surface` — and the day U14 lands, this file
-// and its renderer go, and the server sends a column.
+// U14 CLOSED IN kompot#96, and the corner is the toolkit's now: `background` takes an optional
+// `role`, and a column whose background names `container` is clipped and painted to the design
+// system's shape for that role. So the reason this type was written is gone. The type is not,
+// because by then it had become the container the canvas actually needs — `B-114` gave it a
+// `density` (a chip is a card that is small), `dividers` (what makes a column of rows a table) and
+// `pinned` (the frame keeps it above the bar, outside the scroll) — and kompot `0.36` has no word
+// for any of the three: no divider, no chip, no footer slot. Those are konekt's words, priced in
+// operator-boundaries; the corner alone would today be a `column` with a `background(role)`.
 @Serializable
 @SerialName("surface")
 @KompotComponentMarker

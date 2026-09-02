@@ -313,13 +313,13 @@ first five: each one blocked or corrupted something that was being built at the 
 |---|---|---|---|---|
 | U6 | petich | the Exposed repositories are in the **default package**, so no packaged Kotlin can reference them | [petich#8](https://github.com/youndie/petich/issues/8) | closed, packaged in `0.1.0.8`; our reflective bridge deleted |
 | U7 | petich | two tables ask for an index in a comment and declare none, so the migration generator proposes dropping it | [petich#9](https://github.com/youndie/petich/issues/9) | closed, all three declared in `0.1.0.8` under the same names; our `DROP INDEX` exemption deleted |
-| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | open; fix proposed in [#2898](https://github.com/JetBrains/Exposed/pull/2898) and verified here |
+| U8 | Exposed | `generateMigrations` overwrites its own files, so a table is lost silently | [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897) | closed; [#2898](https://github.com/JetBrains/Exposed/pull/2898), verified here, released in `1.5.0` (2026-08-26) and taken 2026-09-02 |
 | U9 | kompot | the Compose half publishes no iOS target, so a Compose client stops at Android and desktop | [kompot#84](https://github.com/youndie/kompot/issues/84) | closed, released in `0.31.0.76`; `:client` builds for iOS |
 | U10 | kompot | `kompot-tck` assumes the login endpoint is a form, and offers no way to hand it a token | [kompot#85](https://github.com/youndie/kompot/issues/85) | closed, released in `0.32.0.77`; our transport decorator deleted |
 | U11 | tracy | the agent publishes no Apple target, so an iOS client cannot log through tracy | [tracy#16](https://github.com/youndie/tracy/issues/16) | closed, released in `0.1.13`; `agent` declares `ios_arm64`, `ios_simulator_arm64` and `ios_x64` in its module metadata and `:client` compiles for both of ours |
 | U12 | kompot | a form patch cannot reach a non-editable field, so a server-computed value is editable or stale | [kompot#89](https://github.com/youndie/kompot/issues/89) | closed, released in `0.33.0.86` as an optional `fieldId` on `read_only_field`; B-20's first acceptance criterion met and the form's refetch deleted |
 | U13 | kompot | `kompot-tck` knows four endpoint kinds and a form patch is none of them, so nothing checks that a patch names declared fields | [kompot#93](https://github.com/youndie/kompot/issues/93) | closed, released in `0.33.1.91` as a fifth kind `patch`, a `TckConfig.patchEndpoints` pairing and the check that reads it; our unit-test stand-in is now a protocol check, proved by mutation |
-| U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | open; konekt carries a `surface` component whose only job is the corner |
+| U14 | kompot | a `Background` modifier paints a rectangle, so a server cannot compose a card | [kompot#95](https://github.com/youndie/kompot/issues/95) | closed 2026-08-27 in kompot#96, `0.34`: `background` takes a `role` and the corner is the toolkit's. konekt's `surface` stays for the words kompot has none of — chip, dividers, footer — not for the corner |
 | U15 | kompot | `kompot-tck` follows a graph route's endpoint literally, so a parameterised destination cannot be in a `NavigationGraph` | not filed yet | konekt keeps that one deeplink in the client instead |
 | U16 | kompot | `amount_input` can only put the currency symbol AFTER the number, and two of five currencies put it first | [kompot#97](https://github.com/youndie/kompot/issues/97) | closed, released in `0.33.1.93` as a `currencyPrefix` beside the suffix; our label workaround deleted |
 | U17 | kompot | `amount_input` always spaces the symbol away from the number, and `$50` has no space | [kompot#99](https://github.com/youndie/kompot/issues/99) | open; konekt draws `$ 50` in the field beside `$10` in the text under it, and has no workaround — the gap is the field's, not the tree's |
@@ -363,8 +363,9 @@ is written with the separator's own character, Flyway reads the version up to th
 `Found more than one migration with version …` comes back. Reported in the issue as a measurement.
 **Not reviewed as a patch** — the code is not ours, and the line between "you asked us to run it, here
 is what we measured" and "here is how to write it" is where an upstream report stops being welcome.
-The recipe is [`probes/exposed-2897/verify-a-patch.sh`](../../probes/exposed-2897/verify-a-patch.sh),
-committed because the next fix will want it too.
+The recipe was `probes/exposed-2897/verify-a-patch.sh`, committed so the next candidate could be run
+the same way; removed on 2026-09-02 with the fix released in `1.5.0` and taken, since a probe for a
+closed defect is a fixture nobody re-runs.
 
 **U9 has no workaround and that is the finding.** The renderers are the toolkit's, so there is
 nothing to work around locally: `:client` is a JVM-only module until it closes, and the brief's
@@ -416,10 +417,10 @@ The reply carries one shape that is **not** in the issue body — an independent
 parent and its two children. Four tables in, two files out, three tables' DDL, and those two files
 also share a version, so it is the only shape that trips both defects at once. It is there because a
 regression test written over filenames would pass while a table was still missing; what holds is the
-union of `CREATE TABLE` statements across every generated file. The probe is
-[`probes/exposed-2897/`](../../probes/exposed-2897/README.md), committed because the first copy was
-built on the Linux box and did not survive, and because the reply offers to run a candidate fix
-through it.
+union of `CREATE TABLE` statements across every generated file. The probe was
+`probes/exposed-2897/`, committed because the first copy was built on the Linux box and did not
+survive, and because the reply offered to run a candidate fix through it — which it did (below);
+it went with the fix.
 
 What stays ours whatever the generator learns to do is `scripts/generate-migration.sh` and
 `MigrationFilesTest`: a draft is renumbered by hand and checked.
@@ -533,6 +534,21 @@ What is actually missing is one argument — the `Shape` passed to `Modifier.bac
 `null`. That is a much smaller ask than the one that would have been filed, and it is only visible to
 somebody who opened the artefact. The premise of a task can be wrong, and a task whose premise is
 wrong produces an upstream request that is wrong in the same direction.
+
+**U14 closed the way the correction said it should, and the component it was filed to delete is
+still here — for a different reason.** kompot#96 gives `background` an optional `role`; a column
+naming `container` is clipped and painted to the design system's shape for that role, the colour
+stays the node's own token, and a tree naming no role keeps its square corner, so nothing already
+released moved. That is exactly the one argument U14 said was missing. What changed in between is
+`B-114`: `surface` grew `density`, `dividers` and `pinned`, and kompot `0.36` has no divider, no
+chip and no footer slot. So the type stays as the container those words sit on, priced as such in
+operator-boundaries, and its header says which half of its reason is gone. Had it stayed the
+corner-only type, it would be a `column` with a `background(role)` today.
+
+**U17 closed in `0.34.0.97` as `amount_input.currencySpaced`**, one flag defaulting to `true` for
+the sake of every payload written before it; konekt sets it from `MoneyFormat`'s own row for every
+currency, and the placement test asserts the field's gap against the formatted amount's — which
+found that the formatter's "no-break space" had been a plain space all along.
 
 **U17 is what was left over when U16 closed, and it is worth separating from it.** The side is now
 right and the SPACING is not: the field draws `$ 50` and the limits line under it draws `$10`, from

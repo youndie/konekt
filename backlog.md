@@ -43,12 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-117](docs/backlog/B-117-what-the-stack-costs-measured-under-load-and-over-time.md) `[ ]` | What the stack costs, measured: load by RPS, a soak, and six things a green build does not show | P1 | L | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
+| [B-118](docs/backlog/B-118-the-migration-generator-cannot-see-a-table-in-a-jar.md) `[ ]` | The migration generator cannot see a table that lives in a jar, so the draft script has produced nothing since the tables moved into feature modules | P3 | S | - |
 
 ## Closed (115)
 

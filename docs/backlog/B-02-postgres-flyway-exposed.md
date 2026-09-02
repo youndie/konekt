@@ -74,7 +74,8 @@ constructor again.
 parent, one of them is simply not emitted — [JetBrains/Exposed#2897](https://github.com/JetBrains/Exposed/issues/2897).
 Its filenames also collide, being stamped to the second, and Flyway refuses a set with duplicate
 versions. So `generateMigrations` produces a draft in two senses, and `KonektSchemaTest` is what
-makes the draft safe to use.
+makes the draft safe to use. The omission closed upstream in Exposed `1.5.0` (2026-08-26, taken here
+2026-09-02); the shared version is still the generator's, and the renumbering step stays.
 
 **`generateMigrations` can run on neither machine alone.** It needs Docker, which exists only on the
 Linux box, and it writes files, which the one-way mutagen replica reverts. `scripts/generate-migration.sh`
