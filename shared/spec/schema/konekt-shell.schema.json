@@ -6,10 +6,29 @@
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
   "x-kompot-contributes": {
     "KompotAction": {
+      "copy": "#/$defs/KompotActionCopy",
       "sign_out": "#/$defs/KompotActionSignOut"
     }
   },
   "$defs": {
+    "KompotActionCopy": {
+      "x-kompot-kind": "variant",
+      "x-kompot-wire-type": "copy",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "copy"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "additionalProperties": true
+    },
     "KompotActionSignOut": {
       "x-kompot-kind": "variant",
       "x-kompot-wire-type": "sign_out",
