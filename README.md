@@ -106,6 +106,31 @@ the same type in the same package and cannot share a classpath with the one the 
 against. Filed as [katcher#27](https://github.com/youndie/katcher/issues/27); the crash harness is
 kept so the day it is fixed is a run rather than a rewrite.
 
+### 📏 What it costs, measured
+
+Measured on 2026-09-02 on a rented stand, not estimated: the server in its chart's limits —
+**one CPU, 1 GiB** — on a 2 vCPU / 3.8 GiB Hetzner box (Ubuntu 26.04) beside Postgres 18, booblik
+and the three collectors; k6 on a second identical box over a private link (RTT ≈ 0.9 ms); three
+rounds per point, warm-up excluded, the collector on the stand as the oracle with the generator's
+own timings beside it. Every figure below has its window, its spread and its caveats in
+[research-measurements](docs/research/research-measurements.md); the raw record sits beside it.
+
+| | on one core |
+|---|---|
+| a screen (`home`, `plans`, plan detail) | p50 2–4 ms, p95 under 7 ms up to **400 requests a second**; the knee at **≈800**, where the server's CPU is the limit |
+| a purchase (the saga end to end) | p50 9 ms to start, 13 ms to confirm, p95 ≈20 ms, flat to **40 a second**; the knee between **80 and 160**, where Postgres is the limit — one purchase costs about ten screens |
+| fifty concurrent purchases on one account | the twenty the money allowed, the rest refused; **no balance below zero, no double capture** — at a quarter of a second each, the price of the row lock |
+| the usage consumer (broker → counter → push) | **≈500 events a second**; the SSE channel held 1 000 streams, the consumer was the wall past ~800 lines at three events per line per five seconds |
+| a broker restart under load | the producer back in a second, the consumer in three ticks, counters monotonic |
+| being observed (tracy + metrik) | **under the noise** — less than the spread between two warm rounds at 400 rps |
+| a cold start | 5–7 s to health; the first request 0.3–0.9 s; the next hundred five times the warm median |
+| the wire | the heaviest screen 4.3 KB plain, under 1 KB gzipped |
+| six hours at a steady rate | *the soak is running; its slopes land here when it ends* |
+
+What the session also found, and the report keeps: the traffic simulator ticks every subscriber
+every five seconds, so a stand that signs in fifty thousand of them is a stand whose simulator is
+the load — the later rounds' tails carry it, and the report says which.
+
 ### 🎨 The rebrand, as a demonstrated property
 
 A second brand's palette ships from the server and the client applies it without a rebuild — that
