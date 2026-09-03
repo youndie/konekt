@@ -41,10 +41,13 @@ gate:
 # bdd_report counts scenarios; demanding a percentage is meaningless while acceptance is done by
 # hand. code_anchors goes stale because of a refactor in somebody else's repository rather than
 # because of an edit here, and while there is no code in this one it reports every anchor as
-# missing — which is correct and is why it does not block. Both are read by a person.
+# missing — which is correct and is why it does not block. upstream_state asks those repositories
+# what state their issues are actually in, which needs the network and an authenticated `gh` —
+# a gate that fails on a flight is a gate somebody turns off. All three are read by a person.
 report:
 	$(PY) scripts/bdd_report.py --docs $(DOCS) --repos $(REPOS)
 	$(PY) scripts/code_anchors.py --docs $(DOCS) --repos $(REPOS)
+	$(PY) scripts/upstream_state.py --docs $(DOCS)
 
 fix:
 	$(PY) scripts/backlog_index.py --docs $(DOCS) --backlog $(BACKLOG)
