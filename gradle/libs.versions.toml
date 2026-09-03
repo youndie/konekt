@@ -84,11 +84,7 @@ ktlint = "1.8.0"
 # alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
 # through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
 # the whole time .77 was being published; the check is one loop over the coordinates below.
-# TEMPORARY, for the studio pilot (kompot B-14): a LOCAL build of the toolkit's studio branch, taken
-# from mavenLocal (see settings.gradle.kts). `kompot-studio-desktop` does not exist in the snapshot
-# repository yet — the toolkit publishes on a push to main. Put this back on a CI version, and delete
-# the mavenLocal block, when that branch lands.
-kompot = "0.36.1.9260"
+kompot = "0.36.2.118"
 
 petich = "0.1.0.10"
 booblik = "0.3.1"

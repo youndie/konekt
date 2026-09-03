@@ -15,19 +15,13 @@ pluginManagement {
         mavenCentral()
         google()
 
-        // viddik's Gradle plugin is published here and nowhere else. Filtered like every
-        // third-party repository in this file: an unfiltered one takes part in resolving EVERY
-        // plugin, and when it is unreachable Gradle disables it and fails plugins it never served.
+        // viddik's Gradle plugin is published here and nowhere else, and so is kompot's studio
+        // plugin. Filtered like every third-party repository in this file: an unfiltered one takes
+        // part in resolving EVERY plugin, and when it is unreachable Gradle disables it and fails
+        // plugins it never served.
         maven("https://reposilite.kotlin.website/snapshots") {
             name = "wip-snapshots"
-            content { includeGroupByRegex("ru\\.workinprogress.*") }
-        }
-
-        // TEMPORARY, with the block below (kompot B-14, B-20): the studio's gradle plugin is not
-        // published yet either, so its marker is resolved from the local build too. Filtered for the
-        // reason every repository in this file is.
-        mavenLocal {
-            content { includeGroupByRegex("io\\.github\\.youndie.*") }
+            content { includeGroupByRegex("(ru\\.workinprogress|io\\.github\\.youndie).*") }
         }
     }
 }
@@ -46,26 +40,10 @@ plugins {
 
 dependencyResolutionManagement {
     repositories {
-        // TEMPORARY, AND ONLY FOR THE STUDIO PILOT (kompot B-14).
-        //
-        // `kompot-studio-desktop` is not published to the snapshot repository yet — it exists on a
-        // branch of the toolkit, and the toolkit publishes on a push to main. Until that lands, the
-        // pilot resolves the whole kompot platform from a local build, which is why `kompot` in the
-        // catalogue names a version with a five-digit tail nobody's CI produced.
-        //
-        // Filtered to the toolkit's group, and that is not tidiness: an unfiltered mavenLocal takes
-        // part in resolving EVERY dependency and answers from whatever anybody ever published on this
-        // machine — a build that then succeeds here and nowhere else.
-        //
-        // Remove this block and put `kompot` back on a published version the moment the toolkit's
-        // branch is merged.
-        mavenLocal {
-            content { includeGroup("io.github.youndie") }
-        }
-
         // The pictures behind Jewel's icon keys, which the studio draws its chrome with. Jewel is on
         // Maven Central; the SVG bundle is published only here, and the studio's POM asks for it.
-        // Filtered to the one group it serves — the same reason as the block above.
+        // Filtered to the one group it serves: an unfiltered repository takes part in resolving
+        // EVERY dependency, and when it is unreachable Gradle disables it and fails the rest.
         maven("https://www.jetbrains.com/intellij-repository/releases") {
             name = "IntelliJ platform"
             content { includeGroup("com.jetbrains.intellij.platform") }
