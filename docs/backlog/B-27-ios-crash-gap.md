@@ -143,6 +143,14 @@ request — and **ATS exempts localhost**, which is why this was invisible: agai
 `http://127.0.0.1:8092` the harness always worked, and against any collector on another host it
 never could. The bundle now carries `NSAllowsArbitraryLoads`, with the reason written beside it.
 
+**And the sibling script had both fixes all along.** `scripts/ios-home-app.sh`, written the day after
+this one, uses `homeDebugExecutable` and declares `NSAppTransportSecurity`. The two scripts assemble
+the same kind of hand-written bundle, and this one's own plist carries a comment saying a launch
+screen and a scene manifest are in it "so the two hand-written bundles do not differ in a way
+somebody has to rediscover" — while they differed in the path to the binary and in whether the app
+could talk to anything. The lesson was learned while writing the second and never carried back to
+the first, which is what a pair of hand-maintained files does when only one of them is run.
+
 **What the collector holds now**, on a stand on another host, app `konekt-client`:
 
 | report | release | environment |
