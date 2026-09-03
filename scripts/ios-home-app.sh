@@ -53,7 +53,7 @@ cat > "$APP/Info.plist" <<PLIST
        it in a compatibility canvas: black bands above and below, rounded corners, and a window
        smaller than the display. The brand's ground then reaches the edges of that canvas and not the
        edges of the screen — two strips of every screen a served kit cannot repaint, which is the one
-       thing this product's white-label claim is about (`B-94`).
+       thing this product's white-label claim is about (\`B-94\`).
        It took three measurements to find. The bands survived turning the frame's inset padding on and
        off, and painting the UIWindow magenta did not tint them — because they are drawn by the SYSTEM
        outside the app's window, not by the app.
@@ -63,18 +63,18 @@ cat > "$APP/Info.plist" <<PLIST
   <!-- THE SCENE MANIFEST, and it is why this bundle has a status bar at all.
        Without it the app runs on the legacy app-delegate lifecycle, and SpringBoard composites no
        status bar for it: no clock, no signal, no battery, on every screen. Nothing about the app says
-       so — instrumenting the delegate answered `windowScene=true`, `connectedScenes=1`,
-       `appStatusBarHidden=false`, `vcPrefersHidden=false`. The app believed it had a visible bar and
+       so — instrumenting the delegate answered \`windowScene=true\`, \`connectedScenes=1\`,
+       \`appStatusBarHidden=false\`, \`vcPrefersHidden=false\`. The app believed it had a visible bar and
        the system drew none, which is why four other fixes were tried first and none of them was it
-       (`B-95`): the plist's `UIStatusBarStyle` is read through a property modern iOS ignores, and a
-       container view controller answering `preferredStatusBarStyle` changed nothing either.
+       (\`B-95\`): the plist's \`UIStatusBarStyle\` is read through a property modern iOS ignores, and a
+       container view controller answering \`preferredStatusBarStyle\` changed nothing either.
        NO SCENE DELEGATE AND NO CONFIGURATIONS. Declaring the manifest is the whole of it: UIKit
        creates a default scene, the delegate's own window is adopted, and the entry point is
        unchanged. A delegate class would have to be named here as a string, which means pinning
        Kotlin/Native's Objective-C name for it in a plist — a coupling worth avoiding for nothing.
-       THE BAR'S CONTENT FOLLOWS THE SYSTEM APPEARANCE, not the served kit: `default` resolves to dark
+       THE BAR'S CONTENT FOLLOWS THE SYSTEM APPEARANCE, not the served kit: \`default\` resolves to dark
        content in light mode and light in dark. This build's palette is a client setting
-       (`KONEKT_DARK`) and the two can therefore disagree — a real limitation, and not one worth a
+       (\`KONEKT_DARK\`) and the two can therefore disagree — a real limitation, and not one worth a
        static override, which is what was already tried and removed. -->
   <key>UIApplicationSceneManifest</key>
   <dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
