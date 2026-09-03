@@ -43,7 +43,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (5)
+## Open (6)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -52,6 +52,7 @@ so re-prioritising must never move a file.
 | [B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md) `[ ]` | The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked | P2 | S | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 | [B-121](docs/backlog/B-121-nothing-asserts-the-android-build-resolves-android-variants.md) `[ ]` | Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution | P3 | S | - |
+| [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[ ]` | The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence | P3 | S | - |
 
 ## Closed (116)
 
