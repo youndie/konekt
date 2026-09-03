@@ -37,6 +37,27 @@ plugins {
     id("ru.workinprogress.sborka.settings") version "0.1.0.18"
 }
 
+dependencyResolutionManagement {
+    repositories {
+        // TEMPORARY, AND ONLY FOR THE STUDIO PILOT (kompot B-14).
+        //
+        // `kompot-studio-desktop` is not published to the snapshot repository yet — it exists on a
+        // branch of the toolkit, and the toolkit publishes on a push to main. Until that lands, the
+        // pilot resolves the whole kompot platform from a local build, which is why `kompot` in the
+        // catalogue names a version with a five-digit tail nobody's CI produced.
+        //
+        // Filtered to the toolkit's group, and that is not tidiness: an unfiltered mavenLocal takes
+        // part in resolving EVERY dependency and answers from whatever anybody ever published on this
+        // machine — a build that then succeeds here and nowhere else.
+        //
+        // Remove this block and put `kompot` back on a published version the moment the toolkit's
+        // branch is merged.
+        mavenLocal {
+            content { includeGroup("io.github.youndie") }
+        }
+    }
+}
+
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,
 // and nothing else. JVM, Android, and the two iOS targets Compose publishes. Android joined in
 // `B-85`, the item that first needed an `.aar` — the multiplatform claim is that ONE registry draws

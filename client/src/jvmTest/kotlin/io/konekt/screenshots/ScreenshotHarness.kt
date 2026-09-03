@@ -69,11 +69,17 @@ fun BrandFrame(
 @Composable
 fun Tree(children: List<KompotComponent>) {
     ColumnRenderer().Render(
-        component = ColumnComponent(id = "frame", spacing = 12, children = children),
+        component = treeComponent(children),
         actionHandler = KompotActionHandler { },
         formController = FormController(FormSchema(formId = "screenshots", fields = emptyList())),
     )
 }
+
+// The component `Tree` draws, as a value. Extracted so that the studio pilot can be handed the SAME
+// tree as a wire body: a second copy of it here would agree with itself while the fixture drifted,
+// which is the failure this whole package is careful about one level down.
+fun treeComponent(children: List<KompotComponent>): ColumnComponent =
+    ColumnComponent(id = "frame", spacing = 12, children = children)
 
 // The brand the counter frames are drawn in. They exist to photograph COPY and COLOUR ROLE per state,
 // so they hold the brand constant; the brand pair is the other file.

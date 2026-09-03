@@ -1,6 +1,7 @@
 package io.konekt.screenshots
 
 import androidx.compose.runtime.Composable
+import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.SizeType
 import io.github.youndie.kompot.material3.M3Colors
@@ -40,34 +41,38 @@ private const val TOUCH_TARGET_DP = 48
 @Composable
 private fun BrandShowcase(brand: String) {
     BrandFrame(brand) {
-        Tree(
-            listOf(
-                TextComponent(id = "title", text = "Your plan", color = M3Colors.OnBackground),
-                UsageCounterCardComponent(
-                    id = "counter",
-                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
-                    title = "Data",
-                    valueText = "15.8 GB left",
-                    progress = 0.38f,
-                    state = CounterStates.NORMAL,
-                ),
-                ButtonComponent(
-                    id = "buy",
-                    text = "Add data",
-                    action = CloseAction,
-                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill, heightDp = TOUCH_TARGET_DP)),
-                ),
-                ButtonComponent(
-                    id = "back",
-                    text = "Not now",
-                    action = CloseAction,
-                    variant = "quiet",
-                    modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill, heightDp = TOUCH_TARGET_DP)),
-                ),
-            ),
-        )
+        Tree(brandShowcaseComponents())
     }
 }
+
+// The markup itself, as values rather than inline in the composable. The studio pilot renders the
+// same list through the toolkit's dispatch from a wire body, and comparing its frame with these
+// goldens only means anything if both sides draw one list.
+fun brandShowcaseComponents(): List<KompotComponent> =
+    listOf(
+        TextComponent(id = "title", text = "Your plan", color = M3Colors.OnBackground),
+        UsageCounterCardComponent(
+            id = "counter",
+            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill)),
+            title = "Data",
+            valueText = "15.8 GB left",
+            progress = 0.38f,
+            state = CounterStates.NORMAL,
+        ),
+        ButtonComponent(
+            id = "buy",
+            text = "Add data",
+            action = CloseAction,
+            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill, heightDp = TOUCH_TARGET_DP)),
+        ),
+        ButtonComponent(
+            id = "back",
+            text = "Not now",
+            action = CloseAction,
+            variant = "quiet",
+            modifiers = listOf(KompotModifierNode.Size(width = SizeType.Fill, heightDp = TOUCH_TARGET_DP)),
+        ),
+    )
 
 @Composable
 @ViddikScreenshot(

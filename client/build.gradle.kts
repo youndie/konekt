@@ -301,6 +301,21 @@ kotlin {
             implementation(libs.ktor.server.sse)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.compose.uiTest)
+            // THE SCREEN EDITOR, on the test classpath and not on the client's. Everything it is
+            // configured with already lives here — `BrandFrame`, the recorded responses, the goldens
+            // it compares against — and a tool on the shipped classpath would be a tool in the app.
+            implementation(libs.kompot.studio)
+            // THIS BUILD'S OWN VOCABULARY, so the studio lints against the fourteen types konekt
+            // ships rather than against the toolkit's seven. Without it every konekt node reads as
+            // "a type outside the profile", which is true of the toolkit and false of this client.
+            implementation(project(":shared:spec"))
+            // AND kompot-spec BESIDE IT, which should not be necessary and is: `:shared:spec` takes
+            // kompot-spec as `implementation` while `KonektSpec.generateAll()` hands out a
+            // `GeneratedSchema` — a type from it — in its return. A consumer that cannot name the type
+            // cannot call the function, and the build stays green either way until somebody tries.
+            // The toolkit has a name for this shape (youndie/kompot#70) and an audit against it;
+            // konekt has neither yet.
+            implementation(libs.kompot.spec)
         }
     }
 }
@@ -492,4 +507,30 @@ tasks.named<Test>("viddikVerify") {
             "viddikVerify executed no screenshot cases. The task is green and photographed nothing."
         }
     }
+}
+
+// THE STUDIO, RUN FROM THIS BUILD (kompot B-14).
+//
+// Off the TEST runtime classpath, which is where the pieces it needs are: `BrandFrame` is a fixture,
+// the recorded responses are test resources, and the goldens are `src/jvmTest/snapshots`. A main
+// source set could not reach any of them without a second copy of the brand composition — the exact
+// thing `BrandFrame` exists to prevent.
+tasks.register<JavaExec>("studio") {
+    group = "application"
+    description = "Open the kompot studio on this client's renderers, brands and recordings"
+
+    val jvmTest = kotlin.targets.getByName("jvm").compilations.getByName("test")
+    // `files(...)` rather than `+`: the compilation's runtime files are a nullable FileCollection,
+    // and the operator refuses one.
+    classpath = files(jvmTest.output.allOutputs, jvmTest.runtimeDependencyFiles, jvmTest.compileDependencyFiles)
+    mainClass = "io.konekt.screenshots.StudioKt"
+
+    // Jewel 0.40 ships class file 69, and its DecoratedWindow refuses to open on anything but a
+    // JetBrains Runtime — both measured in the toolkit rather than assumed. This build's toolchain is
+    // 25 already, so only the vendor has to be asked for.
+    javaLauncher =
+        javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(25)
+            vendor = JvmVendorSpec.JETBRAINS
+        }
 }
