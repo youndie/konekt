@@ -35,6 +35,11 @@ gate:
 	# tree: the question is whether the shape moved since the number did, which no snapshot of
 	# the files can answer.
 	$(PY) scripts/chart_version.py
+	# A SERVICE DOCUMENT STATING A VERSION THE CATALOGUE NO LONGER PINS. Blocking for the same
+	# reason as the two above: a bump moves `libs.versions.toml` and leaves the two lines a reader
+	# trusts for "what this deployment is" behind, and no build reads prose. Only those two lines —
+	# every other version in these documents is history and is supposed to stay put.
+	$(PY) scripts/stated_versions.py --docs $(DOCS)
 
 # Non-blocking, on purpose.
 #

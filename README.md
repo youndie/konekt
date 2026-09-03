@@ -110,9 +110,10 @@ The one blank left is metrik on the client, which measures route latency and has
 
 ### 📏 What it costs, measured
 
-Measured on 2026-09-02 on a rented stand, not estimated: the server in its chart's limits —
-**one CPU, 1 GiB** — on a 2 vCPU / 3.8 GiB Hetzner box (Ubuntu 26.04) beside Postgres 18, booblik
-and the three collectors; k6 on a second identical box over a private link (RTT ≈ 0.9 ms); three
+Measured on 2026-09-02 on a rented stand, not estimated, against
+`ghcr.io/youndie/konekt-server:v0.1.40` — the tag names the commit, and every figure here is that
+binary's rather than this tree's: the server in its chart's limits — **one CPU, 1 GiB** — on a
+2 vCPU / 3.8 GiB Hetzner box (Ubuntu 26.04) beside Postgres 18, booblik and the three collectors; k6 on a second identical box over a private link (RTT ≈ 0.9 ms); three
 rounds per point, warm-up excluded, the collector on the stand as the oracle with the generator's
 own timings beside it. Every figure below has its window, its spread and its caveats in
 [research-measurements](docs/research/research-measurements.md); the raw record sits beside it.
@@ -127,7 +128,7 @@ own timings beside it. Every figure below has its window, its spread and its cav
 | being observed (tracy + metrik) | **under the noise** — less than the spread between two warm rounds at 400 rps |
 | a cold start | 5–7 s to health; the first request 0.3–0.9 s; the next hundred five times the warm median |
 | the wire | the heaviest screen 4.3 KB plain, under 1 KB gzipped |
-| six hours at a steady rate | *the soak is running; its slopes land here when it ends* |
+| twelve hours at a steady rate | *running since 2026-09-03; its slopes land here when it ends. The first attempt is void and says why: it held one fifteen-minute token for twelve hours and measured the 401 path — [the record](docs/research/measurements-2026-09-02/soak/README.md)* |
 
 What the session also found, and the report keeps: the traffic simulator ticks every subscriber
 every five seconds, so a stand that signs in fifty thousand of them is a stand whose simulator is

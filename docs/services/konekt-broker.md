@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: deploy/compose.yaml
-tech_stack: [booblik 0.3.0, container image ghcr.io/youndie/booblik, plaintext TCP]
+tech_stack: [booblik 0.3.1, container image ghcr.io/youndie/booblik, plaintext TCP]
 owner: unassigned
 depends_on:
   - konekt-server (the only producer and the only consumer)
@@ -17,7 +17,7 @@ publishes:
 
 # booblik broker
 
-> A service konekt runs but does not write: the image is `ghcr.io/youndie/booblik:0.3.0`. What is
+> A service konekt runs but does not write: the image is `ghcr.io/youndie/booblik:0.3.1`. What is
 > documented here is **konekt's side of it** — how it is configured, what talks to it, and the three
 > properties that catch people out. Everything below was read out of `deploy/compose.yaml` and the
 > files in §2a on 2026-08-25; nothing was read out of booblik's own sources, and where a claim would
@@ -76,7 +76,7 @@ redelivery from a second purchase.
 
 ## 5. Infrastructure and deploy
 
-- **Image:** `ghcr.io/youndie/booblik:0.3.0`, pinned to `linux/amd64` by
+- **Image:** `ghcr.io/youndie/booblik:0.3.1`, pinned to `linux/amd64` by
   `platform: ${BROKER_PLATFORM:-linux/amd64}` so an arm64 host emulates it with a warning rather than
   failing with "no matching manifest", which reads like a broken tag.
 - **Ports:** none, deliberately. See §8.
@@ -110,6 +110,19 @@ and a bound of any size deletes nothing until one closes. At 32 MiB the busy par
 every two hours. The two numbers must be set in both `charts/konekt/values.yaml` and
 `deploy/compose.yaml`, and `ComposeStandTest` refuses files that disagree — or a bound that is
 smaller than a segment, which is a pair of plausible numbers that does nothing.
+
+**AND `0.3.1` REFUSES A CAPACITY SMALLER THAN THE LOG ALREADY ON DISK**, which is worth knowing
+before an upgrade rather than during one. `B-107` found the earlier behaviour: opening an existing
+MAPPED log under a capacity smaller than it was written with silently made everything past the new
+limit unreachable — nothing freed, nothing readable — and `truncateTo` then made it permanent.
+[booblik#25](https://github.com/youndie/booblik/issues/25) closed it by refusing, released in
+`0.3.1`, which this deployment pins.
+
+So the upgrade turns a silent loss into a **refused start** on exactly one shape of volume: one whose
+segments were written under a larger capacity than the deployment now sets. This product went the
+other way — `B-100` cut the capacity from booblik's 512 MiB default to 32 MiB — so a broker volume
+predating that change is precisely that shape, and the honest fix is an empty volume rather than a
+larger number, since what the old segments hold is usage nobody replays.
 
 **Retention costs this product nothing**, and that is what makes six hours safe: the usage consumer
 starts from the END of the log, so no record here is ever read a second time. See §8.

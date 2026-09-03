@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: server
-tech_stack: [Kotlin/JVM 25, Ktor 3.5.2 CIO, Koin 4.2.2, Exposed 1.4.0, PostgreSQL 18, Flyway, petich, booblik, kompot]
+tech_stack: [Kotlin/JVM 25, Ktor 3.5.2 CIO, Koin 4.2.2, Exposed 1.5.0, PostgreSQL 18, Flyway, petich, booblik, kompot]
 owner: unassigned
 depends_on:
   - PostgreSQL 18
