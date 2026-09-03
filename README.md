@@ -49,16 +49,27 @@ conformance kit passing vacuously, an Apple target nobody published.
 ### 🚧 Status
 
 **Built.** The server, the saga, the broker bridge, the realtime channel and the eSIM wizard are in
-and driven end to end by a docker-compose stand; a tagged image deploys to a test contour by Helm
-and is checked there after every release. The Compose client runs on the desktop, on an Android
-device and in the iOS simulator, and draws every screen the way the canvas draws it — matched screen
-by screen against the real frames, with the differences kept on purpose written down
-([B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md),
-[B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md)). What remains
-open is presentation, not product: the purchase confirmation as a sheet over the plan page
-([B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md)). Everything else is in
-[backlog.md](backlog.md), item by item, with the reason attached to each — and the ones stopped on a
-stated cause say what the cause is rather than sitting in a list of the unfinished.
+and driven end to end by a docker-compose stand, and every published tag is pulled back by CI, stood
+up and driven again — so the image that exists is the image that was walked. The Compose client runs
+on the desktop, on an Android device and in the iOS simulator, and draws every screen the way the
+canvas draws it — matched screen by screen against the real frames, with the differences kept on
+purpose written down ([B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md),
+[B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md)).
+
+**Deploying is a command somebody types.** The Helm chart is real and refuses five ways, `make deploy`
+uses `--reset-then-reuse-values` and runs its own check against the cluster afterwards — and nothing
+automatic does either: no workflow deploys, no contour is running this build today, and the one check
+that stands two versions side by side is run by nobody
+([B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md)).
+
+**What is open.** Of the product, presentation only: the purchase confirmation as a sheet over the
+plan page ([B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md)). Of what this
+repository is *for* — knowing what the stack costs — the soak and the cost paragraph below
+([B-117](docs/backlog/B-117-what-the-stack-costs-measured-under-load-and-over-time.md)), plus two
+guards that do not guard ([B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md),
+[B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md)). Everything else is
+in [backlog.md](backlog.md), item by item, with the reason attached to each — and the ones stopped on
+a stated cause say what the cause is rather than sitting in a list of the unfinished.
 
 - [docs/research/research-architecture.md](docs/research/research-architecture.md) — what was read in
   the six toolkits, each fact with the artefact it was read in, and the decisions and deviations that
