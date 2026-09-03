@@ -50,10 +50,15 @@ never asked the question (`B-117`'s soak, `B-119`'s rolling check).
 
 ## What it does not mean
 
-The scenarios are not fabricated: `RoamingScenarioTest` and `RoamingPackageTest` both exist, and
-spot-checking the `e2e` names finds them. The defect is that **nothing would notice** a rename — the
-class of rot `code_anchors` and `stale_citations` exist to prevent, in the one report that claims
-coverage.
+The scenarios are not fabricated, and this was settled rather than assumed: every backticked entry
+on every `**Automated:**` line in `docs/features/` — the bulleted majority as well as the fourteen
+repository-qualified ones — yields **35 distinct test names, and `git grep -w` finds all 35 in the
+code**, markdown excluded so a document cannot vouch for itself. So the coverage this repository
+claims is real today.
+
+The defect is that **nothing would notice if it stopped being real** — the class of rot
+`code_anchors` and `stale_citations` exist to prevent, in the one report that claims coverage. That
+is why this is a P2 and not a P1: no figure in the documentation is currently false.
 
 ## Ways out
 
