@@ -23,6 +23,18 @@ check: gate report
 
 # Blocking. Any of these failing means the documentation is internally inconsistent, which is a
 # defect in the documentation and not a matter of opinion.
+#
+# EVERY ONE OF THEM WAS PROVED BY MUTATION on 2026-09-04, because a guard is only worth its line in
+# this file if it fails when it should: a title changed in the index and a status changed under it
+# (`backlog_index`), a dead internal link (`docs_check`), a map entry deleted (`coverage_map`), a
+# sentence saying a done item "is not built yet" (`stale_citations`), a value added to the chart
+# without moving its version (`chart_version`), a service document put back to the version before
+# the bump (`stated_versions`). All six refused. So did `code_anchors` and `upstream_state` among
+# the reports.
+#
+# `bdd_report` did not, and that is what `B-120` is: a named test replaced with one that cannot
+# exist changes its output by nothing, because a first token naming a MODULE rather than a sibling
+# repository means "not checked" and the summary counts it as covered anyway.
 gate:
 	$(PY) scripts/backlog_index.py --check --docs $(DOCS) --backlog $(BACKLOG)
 	$(PY) scripts/docs_check.py --docs $(DOCS) --backlog $(BACKLOG)
