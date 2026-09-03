@@ -242,7 +242,7 @@ services:
   # dependency on the observability trio in either direction: an agent that cannot reach its collector
   # must not stop the product from serving. `make stand-up` runs it as an explicit step instead.
   katcher-seed:
-    image: alpine:3.20
+    image: alpine:3.24
     profiles: ["seed"]
     depends_on:
       # `service_started` and not `service_healthy`: the katcher image declares no healthcheck, and
