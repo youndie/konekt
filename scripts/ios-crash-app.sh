@@ -26,7 +26,13 @@ KONEKT_RELEASE="${KONEKT_RELEASE:-ios-dev}"
 # build rules name.
 LOCAL=1 ./gradlew :client:linkCrashDebugExecutableIosSimulatorArm64 -q
 
-BIN="client/build/bin/iosSimulatorArm64/debugExecutable/KonektCrash.kexe"
+# `crashDebugExecutable`, not `debugExecutable`: the directory is named after the BINARY, and this
+# target declares two of them. The path here said `debugExecutable` from the day the script was
+# written until 2026-09-04, and was correct for exactly one day — `e6570db` added the second
+# executable, moved the output, updated `ios-home-app.sh` (written in that same commit, with the
+# right path) and left this one behind. The script linked, found nothing, and said so to nobody,
+# because nothing runs it.
+BIN="client/build/bin/iosSimulatorArm64/crashDebugExecutable/KonektCrash.kexe"
 [ -f "$BIN" ] || { echo "no executable at $BIN"; exit 1; }
 
 APP="$(mktemp -d)/Konekt.app"
@@ -54,6 +60,17 @@ cat > "$APP/Info.plist" <<PLIST
        app letterboxed, in a compatibility canvas smaller than the screen. This one draws nothing and
        crashes on purpose, so the canvas does not matter to what it proves — it is here so the two
        hand-written bundles do not differ in a way somebody has to rediscover. -->
+  <!-- APP TRANSPORT SECURITY, OFF, AND ONLY HERE. iOS refuses a cleartext `http://` request from an
+       app whose bundle does not say otherwise, and the refusal arrives as
+       `NSURLErrorDomain Code=-1022` inside katcher's own `catch` — which prints "Transmission
+       failed" and keeps the report on disk, so the harness looks like it works and delivers
+       nothing. It went unnoticed because ATS exempts localhost: against the default
+       `http://127.0.0.1:8092` this bundle was always fine, and every collector that is not on this
+       machine was always unreachable. Found on 2026-09-04 against a stand on another host, with a
+       month-old undelivered report still in the container from `B-27`'s run.
+       This is a crash harness that draws nothing and exists to reach a development collector; it is
+       not the product, and the product ships no such bundle. -->
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoads</key><true/></dict>
   <key>UILaunchScreen</key><dict/>
   <!-- The scene manifest, for the same reason the home bundle carries it: without it the system
        composites no status bar. This one crashes on purpose and nobody looks at its screen, and it is

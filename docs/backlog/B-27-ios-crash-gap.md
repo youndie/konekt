@@ -117,6 +117,44 @@ while printing `Worker woke up. Checking disk...` to say it had looked. Two runs
 reports and delivered neither. `install` over an existing bundle replaces the binary and keeps the
 container.
 
+## Re-run on 2026-09-04, and the harness had two defects of its own
+
+Re-verifying this item after katcher moved `0.6.2` → `0.6.41` found that the script could not run at
+all, and then that it had never been able to deliver anywhere but this machine.
+
+**It had been dead for a month, by one path.** `scripts/ios-crash-app.sh` looked for
+`bin/iosSimulatorArm64/debugExecutable/KonektCrash.kexe`. A NAMED executable puts its output in
+`crashDebugExecutable/`, and `e6570db` — the commit that added the second binary the day after this
+item closed — moved it, wrote `ios-home-app.sh` with the right path, and left this one behind. The
+script linked successfully, failed to find its own output and said so to nobody, because nothing runs
+it. That is the shape `B-119` and `B-120` also have: a guard that cannot fail because it never runs.
+
+**And ATS had been refusing every upload that was not to this machine.** With the path fixed the
+crash fires and the report is stored, and nothing arrives. `KONEKT_UPLOAD_WAIT_MS=25000` is what
+showed why — the window is long enough for katcher's own message:
+
+```
+📡 Transmission failed: Exception in http request: Error Domain=NSURLErrorDomain Code=-1022
+   "The resource could not be loaded because the App Transport Security policy ..."
+```
+
+The hand-written `Info.plist` declares no ATS exception, so iOS refuses a cleartext `http://`
+request — and **ATS exempts localhost**, which is why this was invisible: against the default
+`http://127.0.0.1:8092` the harness always worked, and against any collector on another host it
+never could. The bundle now carries `NSAllowsArbitraryLoads`, with the reason written beside it.
+
+**What the collector holds now**, on a stand on another host, app `konekt-client`:
+
+| report | release | environment |
+|---|---|---|
+| 4, 3, 2 | `ios-katcher-0.6.41` | `simulator` |
+| 1 | `ios-b27` | `simulator` |
+
+Report 1 is **this item's own crash, from 2026-08-26**, which had been sitting in the simulator's
+container undelivered for a month and went up on the first launch that was allowed to send. The
+backlog of one is the evidence that the leg had never worked remotely. AC met again, on the bumped
+client, and this time against a collector that is not on the machine that produced the crash.
+
 ## Still not covered
 
 - **Symbolication of an iOS crash.** Android has the Gradle plugin uploading its R8 mapping; the

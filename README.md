@@ -89,7 +89,7 @@ of which a local test could have found.
 
 | | Server (JVM) | client (iOS) | client (Android) | client (desktop) |
 |---|---|---|---|---|
-| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release | **delivered** — a crash on a Pixel 6a arrives naming its release, since katcher `0.6.41` | breadcrumbs only |
+| crashes (katcher) | **delivered** — a route that throws is reported and shows in katcher | **delivered** — a simulator crash arrives naming its release, on a collector that is not this machine | **delivered** — a crash on a Pixel 6a arrives naming its release, since katcher `0.6.41` | breadcrumbs only |
 | logs and traces (tracy) | **delivered** — a purchase is findable by `orderId` | **delivered** — a screen the client cannot draw is findable by wire type | same as iOS | same as iOS |
 | latency and errors (metrik) | **delivered** — latency per route | — | — | — |
 
