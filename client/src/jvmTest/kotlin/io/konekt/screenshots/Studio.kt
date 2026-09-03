@@ -1,6 +1,8 @@
 package io.konekt.screenshots
 
 import androidx.compose.runtime.CompositionLocalProvider
+import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.encodeKompotComponent
 import io.github.youndie.kompot.spec.KompotProtocol
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
@@ -11,6 +13,9 @@ import io.konekt.client.net.konektClientJson
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.theme.BrandKits
 import io.konekt.spec.KonektSpec
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import ru.workinprogress.viddik.LocalViddikDarkTheme
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
@@ -60,10 +65,23 @@ fun studioConfig(): KompotStudioConfig {
                     params: Map<String, String>,
                 ): KompotPageResponse = KompotPageResponse(items = emptyList())
             },
+        // The showcase list doubles as the palette's samples: a type dropped in from the palette
+        // arrives as the same instance the brand goldens photograph, so what a person drags is what
+        // the screenshots already agreed looks right. The wire type is read back off the encoding
+        // rather than typed beside each component — a second copy of the name would be one to drift.
+        samples = brandShowcaseComponents().map { wireTypeOf(it) to it },
         snapshotsDirectory = repositoryRoot().resolve("client/src/jvmTest/snapshots"),
         goldenName = ::konektGoldenName,
     )
 }
+
+private fun wireTypeOf(component: KompotComponent): String =
+    Json
+        .parseToJsonElement(konektClientJson.encodeKompotComponent(component))
+        .jsonObject
+        .getValue("type")
+        .jsonPrimitive
+        .content
 
 // `brand-a` becomes `Brand_A`, which is what viddik wrote when `@ViddikScreenshot(name = "A",
 // group = "Brand")` produced these files. Nothing in the toolkit could have guessed that mapping,
