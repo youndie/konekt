@@ -363,9 +363,9 @@ is written with the separator's own character, Flyway reads the version up to th
 `Found more than one migration with version …` comes back. Reported in the issue as a measurement.
 **Not reviewed as a patch** — the code is not ours, and the line between "you asked us to run it, here
 is what we measured" and "here is how to write it" is where an upstream report stops being welcome.
-The recipe was `probes/exposed-2897/verify-a-patch.sh`, committed so the next candidate could be run
-the same way; removed on 2026-09-02 with the fix released in `1.5.0` and taken, since a probe for a
-closed defect is a fixture nobody re-runs.
+The recipe lived under `probes/` and was committed so the next candidate could be run the same way;
+it went in `2d0286c` with the fix released in `1.5.0` and taken, since a probe for a closed defect is
+a fixture nobody re-runs.
 
 **U9 has no workaround and that is the finding.** The renderers are the toolkit's, so there is
 nothing to work around locally: `:client` is a JVM-only module until it closes, and the brief's
@@ -417,10 +417,10 @@ The reply carries one shape that is **not** in the issue body — an independent
 parent and its two children. Four tables in, two files out, three tables' DDL, and those two files
 also share a version, so it is the only shape that trips both defects at once. It is there because a
 regression test written over filenames would pass while a table was still missing; what holds is the
-union of `CREATE TABLE` statements across every generated file. The probe was
-`probes/exposed-2897/`, committed because the first copy was built on the Linux box and did not
-survive, and because the reply offered to run a candidate fix through it — which it did (below);
-it went with the fix.
+union of `CREATE TABLE` statements across every generated file. The probe lived under `probes/`,
+committed because the first copy was built on the Linux box and did not survive, and because the
+reply offered to run a candidate fix through it — which it did (below); it went in `2d0286c` with
+the fix.
 
 What stays ours whatever the generator learns to do is `scripts/generate-migration.sh` and
 `MigrationFilesTest`: a draft is renumbered by hand and checked.

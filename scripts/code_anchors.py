@@ -182,6 +182,9 @@ def load_trees(repos_root, skip=()):
     return trees
 
 
+DEPRECATED = re.compile(r"^status:\s*deprecated\s*$", re.M)
+
+
 def collect_anchors(root):
     """The anchors of every document, with a guess at the service from the table row."""
     anchors = []
@@ -195,6 +198,13 @@ def collect_anchors(root):
             doc = "{0}/{1}".format(folder, name)
             with open(os.path.join(path, name), encoding="utf-8") as fh:
                 text = fh.read()
+            # A DEPRECATED DOCUMENT'S ANCHORS NAME WHERE SOMETHING WAS, and are supposed to point at
+            # nothing. `screen-tariffs` is the shape: `status: deprecated`, a table headed "What
+            # went, exactly | Where it was", and two paths B-102 deleted — reported as rot for as
+            # long as the document survives the code, which is the point of keeping it. A report
+            # whose entries are correct is a report that gets skimmed, so they are skipped here.
+            if DEPRECATED.search(text):
+                continue
             # The tables first: they are the only place with a service column.
             in_table = {}
             for cells in TABLE_ROW.findall(text):
