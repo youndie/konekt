@@ -43,7 +43,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (5)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -51,6 +51,7 @@ so re-prioritising must never move a file.
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md) `[ ]` | The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked | P2 | S | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
+| [B-121](docs/backlog/B-121-nothing-asserts-the-android-build-resolves-android-variants.md) `[ ]` | Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution | P3 | S | - |
 
 ## Closed (116)
 
