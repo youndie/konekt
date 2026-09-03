@@ -1,0 +1,20 @@
+import io.github.youndie.kompot.ColorToken
+import io.github.youndie.kompot.KompotComponent
+import io.github.youndie.kompot.KompotModifierNode
+import io.github.youndie.kompot.TypographyToken
+import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.kompotScreen
+import io.github.youndie.kompot.standard.text
+
+// Drafted from a JSON body by kompot-studio. Names marked TODO are guesses: the
+// schema carries wire types, and what a class is called in Kotlin is not on the wire.
+public fun homeScreen(): KompotComponent =
+    kompotScreen {
+        spacing(16)
+        text("Konekt", style = TypographyToken("headline_small"), color = ColorToken("on_surface"), id = "home-brand")
+        addComponent(SurfaceComponent(id = "balance", children = listOf(RowComponent(id = "balance-head", children = listOf(ColumnComponent(id = "balance-figure", modifiers = listOf(KompotModifierNode.Weight(value = 1.0f)), children = listOf(TextComponent(id = "balance-label", text = "Balance", style = TypographyToken("label_medium"), color = ColorToken("on_primary_container")), TextComponent(id = "balance-amount", text = "\$63", style = TypographyToken("display_small"), color = ColorToken("on_primary_container"))), spacing = 2), TextComponent(id = "balance-msisdn", text = "+15559990001", style = TypographyToken("body_medium"), color = ColorToken("on_primary_container"))), spacing = 12), RowComponent(id = "balance-actions", children = listOf(ButtonComponent(id = "balance-top-up", modifiers = listOf(KompotModifierNode.Weight(value = 1.0f)), text = "Top up", action = NavigateAction(deeplink = "app://top-up")), ButtonComponent(id = "balance-history", text = "History", action = NavigateAction(deeplink = "app://orders"), variant = "quiet")), spacing = 8)), tone = "accent", spacing = 4)) /* TODO: check this name */
+        addComponent(SurfaceComponent(id = "allowance", children = listOf(RowComponent(id = "allowance-head", children = listOf(TextComponent(id = "allowance-title", modifiers = listOf(KompotModifierNode.Weight(value = 1.0f)), text = "Your allowance", style = TypographyToken("title_medium"), color = ColorToken("on_surface")), TextComponent(id = "allowance-since", text = "since 31 Aug", style = TypographyToken("body_small"), color = ColorToken("on_surface_variant"))), spacing = 12), UsageCounterCardComponent(id = "counter-data", title = "Data", valueText = "20 GB left", progress = 0.9975586f, inline = true) /* TODO: check this name */, UsageCounterCardComponent(id = "counter-minutes", title = "Minutes", valueText = "298 min left", progress = 0.99333334f, inline = true) /* TODO: check this name */, UsageCounterCardComponent(id = "counter-messages", title = "Messages", valueText = "48 SMS left", progress = 0.96f, inline = true) /* TODO: check this name */, RowComponent(id = "allowance-actions", children = listOf(ButtonComponent(id = "home-buy", modifiers = listOf(KompotModifierNode.Weight(value = 1.0f)), text = "Buy a package", action = NavigateAction(deeplink = "app://plans"), variant = "tonal"), ButtonComponent(id = "home-roaming", modifiers = listOf(KompotModifierNode.Weight(value = 1.0f)), text = "Roaming", action = NavigateAction(deeplink = "app://roaming"), variant = "quiet")), spacing = 8)), spacing = 16)) /* TODO: check this name */
+        addComponent(UsageCounterCardComponent(id = "roaming-d79a9108-def3-4415-aa9e-ee33978c3148", title = "Turkey data", valueText = "10 GB ready", captionText = "Starts when you first connect in Turkey, then runs for 30 days.", progress = 1.0f, state = "dormant")) /* TODO: check this name */
+        addComponent(BannerComponent(id = "home-install-esim", text = "Your line has no eSIM yet. Install one to start using what you have bought.", actionText = "Install eSIM", action = NavigateAction(deeplink = "app://esim-install"))) /* TODO: check this name */
+        addComponent(BottomNavComponent(id = "shell-nav", items = listOf(TODO("items"), TODO("items"), TODO("items"), TODO("items")))) /* TODO: check this name */
+    }

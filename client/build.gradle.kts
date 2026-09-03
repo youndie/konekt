@@ -14,7 +14,7 @@ plugins {
     alias(libs.plugins.viddik)
     // The studio's own task (kompot B-20), so that "open the studio" is one command rather than a run
     // configuration each of us keeps in their IDE.
-    id("io.github.youndie.kompot.studio") version "0.36.1.9240"
+    id("io.github.youndie.kompot.studio") version "0.36.1.9250"
 }
 
 // The studio runs off the TEST classpath: `BrandFrame`, the recorded responses and the goldens it

@@ -88,7 +88,7 @@ ktlint = "1.8.0"
 # from mavenLocal (see settings.gradle.kts). `kompot-studio-desktop` does not exist in the snapshot
 # repository yet — the toolkit publishes on a push to main. Put this back on a CI version, and delete
 # the mavenLocal block, when that branch lands.
-kompot = "0.36.1.9240"
+kompot = "0.36.1.9250"
 
 petich = "0.1.0.10"
 booblik = "0.3.1"
