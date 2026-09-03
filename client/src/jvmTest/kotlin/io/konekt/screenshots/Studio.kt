@@ -6,7 +6,6 @@ import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.spec.KompotSpec
 import io.github.youndie.kompot.studio.KompotStudioConfig
-import io.github.youndie.kompot.studio.kompotStudio
 import io.github.youndie.kompot.studio.source.ScreenSource
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.render.konektRegistry
@@ -91,7 +90,3 @@ fun repositoryRoot(): java.nio.file.Path {
 
 fun recordingsDirectory(): java.nio.file.Path =
     repositoryRoot().resolve("client/src/jvmTest/resources/recorded")
-
-fun main() {
-    kompotStudio(studioConfig(), title = "kompot studio — konekt")
-}

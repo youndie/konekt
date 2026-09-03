@@ -12,6 +12,17 @@ plugins {
     // from `@ViddikScreenshot` and the plugin fails the build outright if the processor is absent.
     alias(libs.plugins.ksp)
     alias(libs.plugins.viddik)
+    // The studio's own task (kompot B-20), so that "open the studio" is one command rather than a run
+    // configuration each of us keeps in their IDE.
+    id("io.github.youndie.kompot.studio") version "0.36.1.9141"
+}
+
+// The studio runs off the TEST classpath: `BrandFrame`, the recorded responses and the goldens it
+// compares against all live there, and a main source set could reach none of them without a second
+// copy of the brand composition.
+kompotStudio {
+    target = "jvm"
+    compilation = "test"
 }
 
 // NOT `konekt.multiplatform`, and it is still right rather than lazy — for the second reason now
@@ -507,30 +518,4 @@ tasks.named<Test>("viddikVerify") {
             "viddikVerify executed no screenshot cases. The task is green and photographed nothing."
         }
     }
-}
-
-// THE STUDIO, RUN FROM THIS BUILD (kompot B-14).
-//
-// Off the TEST runtime classpath, which is where the pieces it needs are: `BrandFrame` is a fixture,
-// the recorded responses are test resources, and the goldens are `src/jvmTest/snapshots`. A main
-// source set could not reach any of them without a second copy of the brand composition — the exact
-// thing `BrandFrame` exists to prevent.
-tasks.register<JavaExec>("studio") {
-    group = "application"
-    description = "Open the kompot studio on this client's renderers, brands and recordings"
-
-    val jvmTest = kotlin.targets.getByName("jvm").compilations.getByName("test")
-    // `files(...)` rather than `+`: the compilation's runtime files are a nullable FileCollection,
-    // and the operator refuses one.
-    classpath = files(jvmTest.output.allOutputs, jvmTest.runtimeDependencyFiles, jvmTest.compileDependencyFiles)
-    mainClass = "io.konekt.screenshots.StudioKt"
-
-    // Jewel 0.40 ships class file 69, and its DecoratedWindow refuses to open on anything but a
-    // JetBrains Runtime — both measured in the toolkit rather than assumed. This build's toolchain is
-    // 25 already, so only the vendor has to be asked for.
-    javaLauncher =
-        javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(25)
-            vendor = JvmVendorSpec.JETBRAINS
-        }
 }

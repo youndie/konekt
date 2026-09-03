@@ -22,6 +22,13 @@ pluginManagement {
             name = "wip-snapshots"
             content { includeGroupByRegex("ru\\.workinprogress.*") }
         }
+
+        // TEMPORARY, with the block below (kompot B-14, B-20): the studio's gradle plugin is not
+        // published yet either, so its marker is resolved from the local build too. Filtered for the
+        // reason every repository in this file is.
+        mavenLocal {
+            content { includeGroupByRegex("io\\.github\\.youndie.*") }
+        }
     }
 }
 
