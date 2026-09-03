@@ -301,6 +301,20 @@ seconds instead of a device. The report is stored, uploaded on the next `start`,
 collector under its release. The observability row is green from inside after all — by the toolkit
 moving, which is what §1.9's filing was for. The catalogue's `katcherAndroid` line is gone with it.
 
+**And the whole family was re-checked on 2026-09-04, from the published metadata rather than from a
+build.** Three of this repository's upstream issues — katcher#25, kompot#84, tracy#16 — were one
+defect wearing three names: a toolkit that publishes no Apple target, which a consumer discovers by
+building rather than by resolving, because Gradle substitutes a variant instead of failing. After a
+week of bumps the question is worth asking again, and it costs nothing: every `.module` in the Gradle
+cache names its variants' `org.jetbrains.kotlin.native.target`.
+
+At `kompot 0.36.1.112`, `katcher 0.6.41`, `tracy agent 0.1.13` and `petich 0.1.0.10`, every
+coordinate this client compiles against publishes `ios_arm64` and `ios_simulator_arm64` **and** an
+android variant — `kompot-client`, `-core`, `-standard`, `-forms-client`, `-theme-client`,
+`-navigation`, `-ds-material-compose`, `-auth`, `-realtime`, `wizard-core`, `form-core`,
+`form-standard`, and katcher's `client`. petich is jvm-only, which is right: it is the server's.
+Nothing regressed, and the check that says so is a `python3` over the cache rather than a device.
+
 **The kompot row is the opposite result and worth the same weight.** kompot's README records an
 Android consumer silently resolving the DESKTOP variant; konekt is the second implementation able to
 check, and the `.aar` arrives. That is a gap closed and confirmed rather than assumed.
