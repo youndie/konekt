@@ -37,6 +37,30 @@ export function signIn(msisdn) {
   return { msisdn: number, token };
 }
 
+// A TOKEN THAT OUTLIVES THE RUN, which the first soak did not have and nobody noticed for twelve
+// hours. `signIn` hands back an access token and `JwtSessions.accessTtl` is FIFTEEN MINUTES; a
+// scenario that signs in once in `setup` and holds the string measures the product for fifteen
+// minutes and the 401 path for the rest. The first 12h soak did exactly that: 2 696 successful
+// screen reads at 3/s is 15.0 minutes, and the other 128 000 checks failed.
+//
+// So a token is asked for by SUBSCRIBER, not held. Signing in again with the same msisdn returns a
+// fresh token for the same subscriber — same balance, same history, which is what a soak is
+// watching grow — and the cache is module scope, so it is per VU, which is where the token is used.
+// Twelve minutes rather than fifteen: a token that expires mid-request is the same failure, quieter.
+// Twelve minutes by default; `REISSUE_AFTER_S` shortens it, which is how the refresh itself is
+// proved without waiting a quarter of an hour to watch one happen.
+const REISSUE_AFTER_MS = (parseInt(__ENV.REISSUE_AFTER_S || '720', 10)) * 1000;
+const heldTokens = {};
+
+export function tokenFor(msisdn) {
+  const held = heldTokens[msisdn];
+  const now = Date.now();
+  if (held && now - held.at < REISSUE_AFTER_MS) return held.token;
+  const token = signIn(msisdn).token;
+  heldTokens[msisdn] = { token, at: now };
+  return token;
+}
+
 export function topUp(token, amountMinor) {
   const r = http.post(`${BASE}/api/v1/top-ups`, JSON.stringify({ amountMinor }), bearer(token, { name: 'top-up' }));
   check(r, { 'top-up 201': (x) => x.status === 201 || x.status === 200 });

@@ -189,14 +189,32 @@ Four scenarios ran end to end on the build box — `screens`, `purchase`, `conte
 every check green and the invariants at zero. Those numbers are thrown away: the box is shared and
 the point was the pipeline.
 
-### 2 — the soak, running
+### 2 — the soak: the first run is void, the second is running
 
-Started **2026-09-02 14:26 UTC** on the spare box, image `ghcr.io/youndie/konekt-server:v0.1.40`
-under the chart's limits, `SIMULATE_TRAFFIC` on, `DURATION=12h READ_RATE=3 BUY_PER_MINUTE=2
-SUBSCRIBERS=20`, the sampler every 60 s; both under `systemd-run`. The box carries a light booblik
-soak of its own at the same time (its broker holds ~660 MiB and a few percent of CPU), which the
-report names as noise. The first sample after the setup burst: the server at 143 MiB of its 1 GiB,
-155 descriptors, 11 Postgres connections.
+**The first ran its twelve hours and measured fifteen minutes.** Started 2026-09-02T14:26Z with
+`DURATION=12h READ_RATE=3 BUY_PER_MINUTE=2 SUBSCRIBERS=20`, it ended `success` with **98% of its
+checks failing**: `setup()` signed twenty subscribers in and returned their ACCESS TOKENS as setup
+data, which k6 freezes for the run, and `JwtSessions.accessTtl` is fifteen minutes. 2 696 successful
+screen reads at 3/s is 15.0 minutes; the other 128 000 checks are the 401 path. The record and the
+arithmetic are in
+[`measurements-2026-09-02/soak/`](../research/measurements-2026-09-02/soak/README.md).
+
+**Three things that look like a verdict said it passed.** k6's `reading ✓ [100%]` is the scenario
+reaching its duration, not its checks; `soak.js` declared no thresholds, so k6 exited 0 —
+`screens.js` has had `checks: ['rate>0.95']` all along and the scenario that runs for half a day did
+not; and `--collect` had removed the unit, so `systemctl show` answered from a fresh object and said
+`success`. Only `k6-summary.json` ever said otherwise.
+
+**Fixed in the harness, both halves.** `lib.js` gains `tokenFor(msisdn)`: a token is asked for by
+subscriber and re-issued at twelve minutes, by signing the SAME number in again — same balance, same
+history, which is what a soak watches grow — cached in module scope, which is per VU. `soak.js`
+gains the threshold. The refresh is proved by a three-minute run with `REISSUE_AFTER_S=30`: 567 of
+567 checks, 0 of 1 890 requests failed. The threshold is proved by mutation: made impossible, k6
+exits 99 and names the crossed metric.
+
+**The second run started 2026-09-03T21:25:38Z**, twelve hours on a stand reset to an empty database
+and an empty broker, same image and limits, the sampler beside it — and the sampler is the current
+one now, so its samples carry Postgres and broker CPU and a GC pause that is a pause.
 
 ### 3 — the saga under contention, done: no defect
 
@@ -237,7 +255,7 @@ A thousand SSE streams held; the consumer is the wall — about 500 usage events
 core, roughly 800 lines at the simulator's cadence — and a broker restart under load recovered
 within a tick on the producer and three on the consumer, counters climbing monotonically. The raw
 record of the session is in `docs/research/measurements-2026-09-02/`. What is left of this item is
-the soak's report in the morning and the README's cost paragraph.
+the second soak's report and the README's cost paragraph.
 
 ## Acceptance criteria
 
