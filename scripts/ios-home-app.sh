@@ -29,6 +29,24 @@ APP="$(mktemp -d)/KonektHome.app"
 mkdir -p "$APP"
 cp "$BIN" "$APP/KonektHome"
 
+# THE FONTS, AND WITHOUT THEM THE APP DIES IN COMPOSITION. Compose resources are read from inside the
+# bundle at `compose-resources/composeResources/<package>/…`, and an Xcode build assembles that
+# directory — which is exactly the step this script exists to do without. Since the product's four
+# faces became Compose resources the app has thrown
+# `MissingResourceException: … /compose-resources/composeResources/…/font/manrope_400.ttf` on its
+# first frame, and nothing said so, because nothing runs this script.
+#
+# The package is READ rather than spelled: the generated `Res.kt` sits under a directory named after
+# it, so a rename cannot leave this line pointing at the old name.
+PREPARED=client/build/generated/compose/resourceGenerator/preparedResources/commonMain/composeResources
+RES_PKG=$(find client/build/generated/compose/resourceGenerator/kotlin/commonResClass -name Res.kt 2>/dev/null \
+    | head -1 | sed 's#.*/kotlin/commonResClass/##; s#/Res\.kt$##' | tr '/' '.')
+[ -n "$RES_PKG" ] || { echo "no generated Res.kt — the resource package cannot be derived"; exit 1; }
+[ -d "$PREPARED" ] || { echo "no prepared compose resources at $PREPARED"; exit 1; }
+mkdir -p "$APP/compose-resources/composeResources/$RES_PKG"
+cp -R "$PREPARED/." "$APP/compose-resources/composeResources/$RES_PKG/"
+echo "bundled $(find "$APP/compose-resources" -type f | wc -l | tr -d ' ') resource file(s) as $RES_PKG"
+
 cat > "$APP/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

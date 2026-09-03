@@ -143,6 +143,17 @@ request — and **ATS exempts localhost**, which is why this was invisible: agai
 `http://127.0.0.1:8092` the harness always worked, and against any collector on another host it
 never could. The bundle now carries `NSAllowsArbitraryLoads`, with the reason written beside it.
 
+**The home harness was broken too, differently, and by this repository rather than by a rename.**
+`scripts/ios-home-app.sh` builds, installs and launches, and the app died on its first frame with
+`MissingResourceException: …/compose-resources/composeResources/io.konekt.client.generated.resources/font/manrope_400.ttf`.
+Compose reads its resources from inside the bundle, and an Xcode build is what assembles that
+directory — the step this pair of scripts exists to do without. So since the product's four faces
+became Compose resources the iOS app has drawn nothing, and the launch still exited 0. The script now
+copies `preparedResources` into the bundle, reading the package out of the generated `Res.kt`'s own
+path so a rename cannot leave it pointing at the old name. With that, the client draws the server's
+sign-in screen in the simulator against a stand on another host — verified by screenshot on
+2026-09-04, on `kompot 0.36.1.112`.
+
 **And the sibling script had both fixes all along.** `scripts/ios-home-app.sh`, written the day after
 this one, uses `homeDebugExecutable` and declares `NSAppTransportSecurity`. The two scripts assemble
 the same kind of hand-written bundle, and this one's own plist carries a comment saying a launch
