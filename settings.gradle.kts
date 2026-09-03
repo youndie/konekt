@@ -62,6 +62,14 @@ dependencyResolutionManagement {
         mavenLocal {
             content { includeGroup("io.github.youndie") }
         }
+
+        // The pictures behind Jewel's icon keys, which the studio draws its chrome with. Jewel is on
+        // Maven Central; the SVG bundle is published only here, and the studio's POM asks for it.
+        // Filtered to the one group it serves — the same reason as the block above.
+        maven("https://www.jetbrains.com/intellij-repository/releases") {
+            name = "IntelliJ platform"
+            content { includeGroup("com.jetbrains.intellij.platform") }
+        }
     }
 }
 
