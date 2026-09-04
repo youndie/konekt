@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import ru.workinprogress.katcher.Katcher
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -94,8 +95,33 @@ class SseRealtimeSource(
                     // loop outlives the screen that started it.
                     throw cancellation
                 } catch (failure: Exception) {
-                    // Everything else is the network: a closed laptop, a proxy timing out, a server
-                    // rolling. Reconnecting is the whole point of this class.
+                    // Everything else is retried, and the retry is the whole point of this class: a
+                    // closed laptop, a proxy timing out, a server rolling. What is NOT true is that
+                    // those are the only things that land here — an expired token, a 400 the server
+                    // will answer identically for ever, and a TLS failure retry on the same backoff
+                    // and for as long as the screen is open. Whether some of them should stop the
+                    // loop is a real question and a larger one than this line.
+                    //
+                    // THIS LINE IS THE SMALLER HALF: whatever it was, it is named once per attempt.
+                    // A breadcrumb rather than a log, for the reason `KonektClientObservability`
+                    // gives for putting the breadcrumb first — it is an in-memory append that
+                    // katcher attaches to the NEXT crash, it needs no agent to be configured and no
+                    // dependency this class does not already have, and a stream that reconnected
+                    // forty times before something else fell over is exactly the context a crash
+                    // report cannot reconstruct afterwards.
+                    Katcher.addBreadcrumb(
+                        message = "realtime stream failed: ${failure::class.simpleName}",
+                        type = "realtime",
+                        data =
+                            mapOf(
+                                "attempt" to attempt.toString(),
+                                "everConnected" to everConnected.toString(),
+                                // The message and not the stack: a breadcrumb is a line in a list a
+                                // person reads beside a crash, and a Kotlin/Native stack in it would
+                                // push the other breadcrumbs off the screen.
+                                "failure" to (failure.message ?: failure::class.simpleName ?: "unknown"),
+                            ),
+                    )
                 }
 
                 delay(backoff.after(attempt))

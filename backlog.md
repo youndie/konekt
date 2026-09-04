@@ -43,7 +43,7 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (6)
+## Open (5)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
@@ -52,9 +52,8 @@ so re-prioritising must never move a file.
 | [B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md) `[ ]` | The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked | P2 | S | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 | [B-121](docs/backlog/B-121-nothing-asserts-the-android-build-resolves-android-variants.md) `[ ]` | Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution | P3 | S | - |
-| [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[ ]` | The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence | P3 | S | - |
 
-## Closed (116)
+## Closed (117)
 
 **The wire and the shell**
 
@@ -181,6 +180,7 @@ so re-prioritising must never move a file.
 - [B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md) `[x]` - Screen by screen, the client does not look like the canvas — the audit and the fix list
 - [B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md) `[x]` - The eSIM install flow does not look like the canvas — the audit and the fix list
 - [B-118](docs/backlog/B-118-the-migration-generator-cannot-see-a-table-in-a-jar.md) `[x]` - The migration generator cannot see a table that lives in a jar, so the draft script has produced nothing since the tables moved into :shared:db
+- [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[x]` - The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

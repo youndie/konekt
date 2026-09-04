@@ -1,7 +1,7 @@
 ---
 id: B-122
 title: "The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence"
-status: open
+status: done
 priority: P3
 size: S
 stage: stage-m7-completeness
@@ -51,10 +51,32 @@ is a second question and a bigger one; this item is the log.
 ## Acceptance criteria
 
 - AC: a failure that ends a stream is named once per attempt, wherever this build sends client
-  observability, with the attempt number.
+  observability, with the attempt number. **Held by the breadcrumb**, which carries the exception's
+  simple name, its message, the attempt and whether the stream had ever connected.
 - AC: `:client:ktlintCommonMainSourceSetCheck` passes under sborka `0.2.0.28`, which unblocks PR #7.
+  **Met**, and it was the only violation in the module.
 - AC: the comment says which failures this loop expects to retry for ever and which it does not,
-  rather than calling all of them "the network".
+  rather than calling all of them "the network". **Met as far as naming goes**; deciding which ones
+  should end the loop is left open on purpose and is not this item.
+
+## What was done
+
+**A breadcrumb, once per attempt, naming the exception and the attempt number.** Not a tracy log:
+`SseRealtimeSource` is constructed in ten places, nine of them tests, and taking an agent in its
+constructor to write one line would have been machinery. `Katcher.addBreadcrumb` needs nothing this
+class did not already have, works on every platform, and — the reason `KonektClientObservability`
+puts the breadcrumb before its own log — it is an in-memory append that attaches to the NEXT crash.
+A stream that reconnected forty times before something else fell over is exactly the context a crash
+report cannot reconstruct afterwards.
+
+The comment beside it now says what the old one did not: that an expired token, a permanent 400 and a
+TLS failure land here too and retry on the same backoff, and that whether some of them should stop
+the loop is a larger question than this line.
+
+**Verified both ways, on the rule that found it.** With `sborka 0.2.0.28` in a worktree,
+`:client:ktlintCommonMainSourceSetCheck` failed at `SseRealtimeSource.kt:96` before the change and
+passes after it — the only violation in the module, so **PR #7 is unblocked by this alone**. The
+client's own suite still runs: every `@Test` in 29 classes.
 
 ## Anchors
 
