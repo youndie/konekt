@@ -47,12 +47,41 @@ its checks failed (`B-117`): a green thing that never asked the question.
   release checklist step and a line in the workflow that says so — not two comments that mention the
   check while nothing calls it. A guard nobody runs should at least not read as one that runs.
 
+## The half that was taken, and why the other could not be
+
+**Done: the workflow says what it does not do.** Both mentions of `rolling-check` there were prose —
+"an image called after a branch is one no `rolling-check` can ever point at", "`rolling-check`
+compares a release against itself without knowing" — and that is how it read as machinery. They now
+say `make rolling-check`, and a paragraph at the top states outright that nothing in the file runs
+it, that it is typed by a person, and that **a green release means the published image was stood up
+and walked alone**. A reader of the workflow can no longer conclude otherwise.
+
+**Not done: running it, because it cannot be proved today.** AC3 asks for a mutation — a deliberate
+incompatibility between two versions failing the release — and a release is a pushed git tag: there
+is no local target a release passes through (`make release-image` only builds the same image
+outside CI, and says publishing "is a tag, not a push"). Proving the automation therefore means
+cutting a tag, which is the owner's decision and not a thing to do inside a re-verification pass.
+The build box that could rehearse it is held by another session.
+
+**Three shapes, and the third was not in the original list:**
+
+- the `verify` job, which already has Docker, a stand and the published image, plus the previous tag
+  from `git describe --abbrev=0 --tags HEAD^`;
+- a weekly run against the newest tag, beside the anchors job that already has a `schedule` in
+  `check.yaml` — it costs minutes once a week, needs no release to happen, and can be rehearsed with
+  `workflow_dispatch` before anyone relies on it;
+- keeping it manual and saying so, which is the half now done and which the item still does not
+  treat as lesser.
+
+The second is the cheapest to prove and the only one that runs without waiting for a release. This
+item stays **open on that decision alone**.
+
 ## Acceptance criteria
 
-- AC: either the release workflow runs `rolling-check` against the previous tag, or the workflow says
-  in one line that it does not and where the check happens instead.
-- AC: whichever is chosen, no comment in that workflow refers to `rolling-check` in a way that
-  implies CI performs it.
+- AC **met**: either the release workflow runs `rolling-check` against the previous tag, or the
+  workflow says in one line that it does not and where the check happens instead.
+- AC **met**: whichever is chosen, no comment in that workflow refers to `rolling-check` in a way
+  that implies CI performs it.
 - AC: if it is automated, it is proved by mutation — a deliberate incompatibility between the two
   versions fails the release.
 

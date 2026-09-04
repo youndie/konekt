@@ -8,8 +8,17 @@ name: publish image
 # because this is where the right to publish lives. `B-47`.
 #
 # A TAG, ALWAYS. The version is read from the ref rather than from an input, so the image cannot be
-# named after something that is not a release: an image called after a branch is one no
-# `rolling-check` can ever point at, and one nobody can map back to a commit afterwards.
+# named after something that is not a release: an image called after a branch is one `make
+# rolling-check` can never point at, and one nobody can map back to a commit afterwards.
+#
+# NOTHING HERE RUNS THE ROLLING CHECK, and it is worth saying because two of the sentences in this
+# file used to mention it as if something did. `scripts/rolling-check.sh` stands the previous
+# release beside this one and drives both — the state a rolling deploy actually passes through, and
+# the reason every migration is an expand/contract pair. It is run by a person typing
+# `make rolling-check`, on no schedule and by no job, and `B-119` is the open question of where it
+# should live: this workflow's `verify` job, which already has Docker and a stand, or a weekly run
+# against the newest tag. Until that closes, a green release here means the published image was
+# stood up and walked ALONE.
 on:
   push:
     tags: ["v*"]
@@ -54,7 +63,8 @@ jobs:
 
       # Refused rather than overwritten. An image republished under one tag changes no rendered
       # spec, so nothing downstream restarts — a cluster keeps running the previous binary behind a
-      # green deploy, and `rolling-check` compares a release against itself without knowing.
+      # green deploy, and a later `make rolling-check` would compare a release against itself
+      # without knowing.
       - name: Refuse a tag that is already published
         run: |
           if docker manifest inspect "ghcr.io/youndie/konekt-server:${VERSION}" >/dev/null 2>&1; then
