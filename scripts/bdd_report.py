@@ -51,10 +51,18 @@ SCENARIO = re.compile(r"^###\s+Scenario:\s*(.+?)\s*$", re.M)
 # for a repository name has no slash in it - and therefore reads as the test, which is right.
 # Requiring the pair was how a whole documentation tree could carry a link on every scenario and
 # be reported as having none.
-AUTOMATED = re.compile(
-    r"\*\*Automated:\*\*\s*"
-    r"(?:`?([A-Za-z0-9][A-Za-z0-9._-]*)`?[ \t]+)?"
-    r"`?([A-Za-z0-9_][A-Za-z0-9_./:#-]*)`?"
+AUTOMATED = re.compile(r"\*\*Automated:\*\*(.*)$", re.M)
+# ONE ENTRY PER COMMA-SEPARATED REFERENCE. The line is taken whole and split, because a scenario
+# that names two tests writes them as a list:
+#
+#     **Automated:** `e2e RoamingScenarioTest`, `feature/roaming-server-data RoamingPackageTest`
+#
+# A pattern anchored on the marker matches once, so the second reference used to be dropped
+# entirely — and the first was reported for a repository nobody could find. Splitting first is what
+# makes both of them a pair.
+ENTRY = re.compile(
+    r"^`?(?:([A-Za-z0-9][A-Za-z0-9._/-]*)[ \t]+)?"
+    r"([A-Za-z0-9_][A-Za-z0-9_./:#-]*)`?"
 )
 
 
@@ -92,6 +100,49 @@ def _utf8_stdout():
                 pass
 
 
+def _entries(line):
+    """The references on one `**Automated:**` line, as dicts.
+
+    BACKTICKS FIRST, and that is not cosmetic. A line is prose as often as it is a list:
+
+        **Automated:** `PurchaseSagaTest`, and against a moved clock `SuspendedSagaExpiryTest`
+
+    Splitting that on commas and reading the first two words of each piece yields `and against`,
+    which is not a test and never was. Every reference in a tree written to this format is
+    backticked, so when a line has backticks the spans between them ARE the references — and only
+    when it has none does the old reading, of a whole line as one reference, apply.
+
+    Inside a span, an optional repository comes first and may be a MODULE PATH —
+    `feature/roaming-server-data` — because a repository of many modules is the ordinary shape;
+    `verify` knows how to look one up inside a checkout as well as beside it.
+    """
+    spans = re.findall(r"`([^`]+)`", line)
+    pieces = spans if spans else [line.strip()]
+    out = []
+    for piece in pieces:
+        piece = piece.strip()
+        if not piece:
+            continue
+        # A REFERENCE IS ONE TOKEN OR TWO, and a backticked span that is longer is prose. The
+        # format quotes the case a test covers as well as the test:
+        #
+        #     **Automated:** `PurchaseScenarioTest` — the case `a purchase that is confirmed
+        #     completes, and the allowance lands`
+        #
+        # Reading that second span as a reference produced `a purchase` — a repository called "a"
+        # and a test called "purchase", looked for and, of course, not found.
+        if len(piece.split()) > 2:
+            continue
+        m = ENTRY.match(piece)
+        if not m:
+            continue
+        repo, test = m.group(1) or "", m.group(2)
+        # A lone token is the test, never the repository: `**Automated:** PurchaseSagaTest` is the
+        # commonest shape in a single-repository tree.
+        out.append({"repo": repo, "test": test, "needle": test_needle(test)})
+    return out
+
+
 def collect(root):
     out = []
     for folder in FOLDERS:
@@ -106,8 +157,13 @@ def collect(root):
             out.append({
                 "document": name[:-3],
                 "scenarios": SCENARIO.findall(text),
-                "automated": [{"repo": r, "test": tn, "needle": test_needle(tn)}
-                              for r, tn in AUTOMATED.findall(text)],
+                # TWO COUNTS, AND THEY ARE DIFFERENT QUESTIONS. `automated` is one per LINE —
+                # the scenario is automated or it is not, which is what the percentage means — and
+                # `references` is every test named on those lines, which is what gets looked for.
+                # Folding them together made the table read 119%.
+                "automated": AUTOMATED.findall(text),
+                "references": [entry for line in AUTOMATED.findall(text)
+                               for entry in _entries(line)],
             })
     return out
 
@@ -173,12 +229,20 @@ def find_test(repo, name):
 
 def verify(items, repos_root):
     for item in items:
-        for a in item["automated"]:
+        for a in item["references"]:
             # No repository named means "somewhere in what was given", which is the normal case for
             # a project documented in its own repository.
-            candidates = ([os.path.join(repos_root, a["repo"])] if a["repo"]
-                          else [os.path.join(repos_root, n) for n in sorted(os.listdir(repos_root))
-                                if os.path.isdir(os.path.join(repos_root, n))])
+            everything = [os.path.join(repos_root, n) for n in sorted(os.listdir(repos_root))
+                          if os.path.isdir(os.path.join(repos_root, n))]
+            if a["repo"]:
+                # A REPOSITORY BESIDE THE OTHERS, OR A MODULE INSIDE ONE. `e2e`, `server`, `client`
+                # and `feature/roaming-server-data` are modules of a single checkout, and looking
+                # for them only as siblings is how eleven of fourteen references here resolved to
+                # nothing and were silently not checked at all.
+                candidates = [os.path.join(repos_root, a["repo"])]
+                candidates += [os.path.join(root, a["repo"]) for root in everything]
+            else:
+                candidates = everything
             candidates = [c for c in candidates if os.path.isdir(c)]
             if not candidates:
                 a["found"] = None          # the repository is not here - nothing was checked
@@ -223,14 +287,21 @@ def main():
 
     total = sum(len(i["scenarios"]) for i in items)
     auto = sum(len(i["automated"]) for i in items)
-    missing = [(i["document"], a) for i in items for a in i["automated"]
+    missing = [(i["document"], a) for i in items for a in i["references"]
                if a.get("found") is False]
+    # NOT LOOKED FOR IS NOT A PASS. `found is None` means the repository or module named could not
+    # be located, so nothing was searched — and for as long as that was invisible the percentage
+    # counted those references as covered. A named test that is never looked for is exactly the
+    # rot this report exists to catch, so it is said out loud.
+    unchecked = [(i["document"], a) for i in items for a in i["references"]
+                 if a.get("found") is None and args.repos]
 
     if args.json:
         print(json.dumps({
             "total": total, "automated": auto,
             "documents": items,
             "tests_not_found": [dict(document=d, **a) for d, a in missing],
+            "tests_not_looked_for": [dict(document=d, **a) for d, a in unchecked],
         }, ensure_ascii=False, indent=2))
         return 1 if (missing and args.check) else 0
 
@@ -255,6 +326,11 @@ def main():
         print("\nA test is named that the repository does not contain:")
         for d, a in missing:
             print("  {0}: {1} {2}".format(d, a["repo"], a["test"]))
+    if unchecked:
+        print("\n{0} named test(s) were NOT looked for — the repository or module could not be "
+              "found, so nothing was searched:".format(len(unchecked)))
+        for d, a in unchecked:
+            print("  {0}: {1} {2}".format(d, a["repo"] or "(no repository named)", a["test"]))
     if not args.repos:
         print("\nThe existence of the tests was NOT checked: --repos was not given. "
               "That is not the same as \"they are all there\".")

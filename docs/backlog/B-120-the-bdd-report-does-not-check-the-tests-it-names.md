@@ -1,7 +1,7 @@
 ---
 id: B-120
 title: "The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -76,10 +76,39 @@ is why this is a P2 and not a P1: no figure in the documentation is currently fa
 
 ## Acceptance criteria
 
-- AC: renaming a test named by an `**Automated:**` line makes `make report` say so.
-- AC: `feature-roaming`'s three complaints are gone because the tests are found, not because the
-  check was loosened.
-- AC: the summary distinguishes automated-and-verified from automated-and-not-looked-for.
+- AC **met**: renaming a test named by an `**Automated:**` line makes `make report` say so.
+- AC **met**: `feature-roaming`'s three complaints are gone because the tests are found, not because
+  the check was loosened.
+- AC **met**: the summary distinguishes automated-and-verified from automated-and-not-looked-for.
+
+## What was done
+
+**Three changes, and the third is the one that makes the other two provable.**
+
+1. **A reference may name a module.** `verify` looks for the named repository beside the others AND
+   inside each of them, so `e2e`, `server`, `client` and `feature/roaming-server-data` — modules of
+   one checkout — resolve. That is eleven of the fourteen repository-qualified references, none of
+   which had ever been searched.
+2. **A line yields one reference per backticked span.** Splitting on commas alone read prose:
+   `**Automated:** \`PurchaseSagaTest\`, and against a moved clock \`SuspendedSagaExpiryTest\`` gave
+   a repository called `and`. Backticked spans ARE the references in a tree written to this format,
+   and a span longer than two tokens is the case a test covers rather than a test — the format
+   quotes both.
+3. **"Not looked for" is printed and is not a pass.** `found is None` now has its own paragraph and
+   its own JSON key, with the count first. The percentage still counts LINES, because "is this
+   scenario automated" is a different question from "was this test found" — folding them together
+   is what briefly made the table read 119% while this was being written.
+
+**Proved by mutation, both halves.** Replacing `\`e2e RoamingScenarioTest\`` with a test that cannot
+exist — the experiment that changed nothing at all before — now prints *"A test is named that the
+repository does not contain"*. Pointing a reference at `feature/no-such-module` prints *"5 named
+tests were NOT looked for"*. Restored, the report is 66 scenarios, 61 automated, **no complaints and
+nothing unchecked**: the three `feature-roaming` entries went away because `RoamingPackageTest` is
+now found, not because the check was loosened.
+
+**Upstream is still open.** The tool comes from the documentation format's own kit, so this fix
+lives in one consumer and the same defect is in every other. Filing it there is a question for the
+person who owns that repository, and the rule this repository keeps is to ask first.
 
 ## Anchors
 
