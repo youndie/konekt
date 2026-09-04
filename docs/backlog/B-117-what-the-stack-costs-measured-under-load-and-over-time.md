@@ -1,7 +1,7 @@
 ---
 id: B-117
 title: "What the stack costs, measured: load by RPS, a soak, and six things a green build does not show"
-status: open
+status: done
 priority: P1
 size: L
 stage: stage-m7-completeness
@@ -212,9 +212,21 @@ gains the threshold. The refresh is proved by a three-minute run with `REISSUE_A
 567 checks, 0 of 1 890 requests failed. The threshold is proved by mutation: made impossible, k6
 exits 99 and names the crossed metric.
 
-**The second run started 2026-09-03T21:25:38Z**, twelve hours on a stand reset to an empty database
-and an empty broker, same image and limits, the sampler beside it — and the sampler is the current
-one now, so its samples carry Postgres and broker CPU and a GC pause that is a pause.
+**The second run started 2026-09-03T21:25:38Z and ended twelve hours later, clean.** 131 061 checks
+and **zero** failures, 0 of 170 083 requests failed, 1 440 purchases completed — two a minute for
+seven hundred and twenty minutes — median 4.1 ms and p95 9.9 ms across the whole run. The threshold
+was not crossed. Both runs produced the same 131 041 iterations, which is what makes them comparable
+and the first one worthless.
+
+Descriptors moved by three and Postgres connections not at all. Three series rose without levelling
+off: server memory **+3.9 MiB/h** (186 → 248 of 1 024), which twelve hours cannot separate from a
+heap settling and which is written down as a question rather than answered; broker disk +5.9 MiB/h,
+which the retention arithmetic explains; and the outbox at **+240 rows/h**, which nothing prunes,
+because petich's relay marks rows rather than removing them. `usage_counter` turned out to be a row
+per subscriber and therefore uninformative as a count — kept as measured and named as such.
+
+The record is in [`measurements-2026-09-02/soak2/`](../research/measurements-2026-09-02/soak2/README.md);
+the report's §2 carries the reading, and the README's cost table its last row.
 
 ### 3 — the saga under contention, done: no defect
 
@@ -265,9 +277,9 @@ the second soak's report and the README's cost paragraph.
   and the number of runs, and carries its spread.
 - AC: measurement 3 is done before 1, and its result — a defect or a clean bill — is stated in the
   report either way.
-- AC: the soak runs at least six hours and the report shows the per-hour slope of each sampled
+- AC **met**: the soak runs at least six hours and the report shows the per-hour slope of each sampled
   quantity, including the ones that were flat.
-- AC: the README's "what each toolkit costs" paragraph cites the report for every number it states.
+- AC **met**: the README's "what each toolkit costs" paragraph cites the report for every number it states.
 
 ## Anchors
 

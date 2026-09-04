@@ -43,17 +43,16 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (5)
+## Open (4)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-117](docs/backlog/B-117-what-the-stack-costs-measured-under-load-and-over-time.md) `[ ]` | What the stack costs, measured: load by RPS, a soak, and six things a green build does not show | P1 | L | - |
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md) `[ ]` | The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked | P2 | S | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 | [B-121](docs/backlog/B-121-nothing-asserts-the-android-build-resolves-android-variants.md) `[ ]` | Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution | P3 | S | - |
 
-## Closed (117)
+## Closed (118)
 
 **The wire and the shell**
 
@@ -179,6 +178,7 @@ so re-prioritising must never move a file.
 - [B-113](docs/backlog/B-113-a-live-update-replaces-a-row-with-a-card.md) `[x]` - An SSE update replaced a row inside the allowance card with a card of its own
 - [B-114](docs/backlog/B-114-the-client-does-not-look-like-the-canvas.md) `[x]` - Screen by screen, the client does not look like the canvas — the audit and the fix list
 - [B-115](docs/backlog/B-115-the-esim-install-flow-does-not-look-like-the-canvas.md) `[x]` - The eSIM install flow does not look like the canvas — the audit and the fix list
+- [B-117](docs/backlog/B-117-what-the-stack-costs-measured-under-load-and-over-time.md) `[x]` - What the stack costs, measured: load by RPS, a soak, and six things a green build does not show
 - [B-118](docs/backlog/B-118-the-migration-generator-cannot-see-a-table-in-a-jar.md) `[x]` - The migration generator cannot see a table that lives in a jar, so the draft script has produced nothing since the tables moved into :shared:db
 - [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[x]` - The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all

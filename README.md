@@ -139,7 +139,7 @@ own timings beside it. Every figure below has its window, its spread and its cav
 | being observed (tracy + metrik) | **under the noise** — less than the spread between two warm rounds at 400 rps |
 | a cold start | 5–7 s to health; the first request 0.3–0.9 s; the next hundred five times the warm median |
 | the wire | the heaviest screen 4.3 KB plain, under 1 KB gzipped |
-| twelve hours at a steady rate | *running since 2026-09-03; its slopes land here when it ends. The first attempt is void and says why: it held one fifteen-minute token for twelve hours and measured the 401 path — [the record](docs/research/measurements-2026-09-02/soak/README.md)* |
+| twelve hours at a steady rate | **131 061 checks, none failed**; 1 440 purchases, none refused; p95 9.9 ms across the run. Descriptors and connections flat; server memory **+3.9 MiB/h** and not levelling off, which twelve hours cannot call a leak or a settling heap; the outbox grows 240 rows an hour and nothing prunes it |
 
 What the session also found, and the report keeps: the traffic simulator ticks every subscriber
 every five seconds, so a stand that signs in fifty thousand of them is a stand whose simulator is

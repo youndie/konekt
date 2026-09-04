@@ -361,3 +361,44 @@ bytes.
 test through the real `KonektScreenSource` at 393×852 with the clock read at the frame, and that
 harness is not written; the number is absent rather than estimated.
 
+
+## 2. Twelve hours at a steady rate
+
+Twelve hours, 2026-09-03T21:25:38Z → 2026-09-04T09:25:38Z, on the spare box named in §The stands,
+same image and limits, `DURATION=12h READ_RATE=3 BUY_PER_MINUTE=2 SUBSCRIBERS=20`, the sampler every
+60 s, on a stand reset to an empty database and an empty broker. The raw record and the full table of
+slopes are in [`measurements-2026-09-02/soak2/`](measurements-2026-09-02/soak2/README.md).
+
+**It passed, and what that sentence is worth is the reason it can be said.** 131 061 checks, **zero
+failures**; 0 of 170 083 requests failed; 1 440 purchases completed, which is exactly two a minute
+for seven hundred and twenty minutes; median 4.1 ms, p95 9.9 ms across the whole run rather than
+across its first hour.
+
+**The run before it produced the same 131 041 iterations and was worthless**, which is the finding
+this measurement is really about. Its `setup()` returned access tokens as setup data — frozen by k6
+for the whole run — and `accessTtl` is fifteen minutes, so it measured fifteen minutes of the product
+and eleven hours forty-five of the 401 path, and ended `success`: no threshold on the scenario, a
+progress bar that reports duration rather than checks, and a `--collect`ed unit whose `systemctl
+show` answers from a fresh object. Only `k6-summary.json` ever disagreed. `soak.js` now declares
+`checks: ['rate>0.95']`, `lib.js` re-issues a token per subscriber at twelve minutes, and both were
+proved before this run: 567 of 567 checks with a thirty-second reissue, and an impossible threshold
+exiting 99. See [`measurements-2026-09-02/soak/`](measurements-2026-09-02/soak/README.md).
+
+**Nothing leaked that a soak can see in twelve hours.** File descriptors moved by three, Postgres
+connections not at all, server CPU held a 2% median.
+
+**Three series rose and did not level off**, and the honest reading differs for each:
+
+| | per hour | over the run | what it is |
+|---|---|---|---|
+| server memory | +3.9 MiB | 186 → 248 of 1 024 | **unresolved** — twelve hours cannot separate a heap settling toward its ceiling from a slow leak, and the GC pause grew with it (2.4 ms median, 16 ms max) |
+| broker disk | +5.9 MiB | 1 → 69 MiB | by design, and the arithmetic agrees: 32 MiB segments, first close near hour five, the 128 MiB bound not reached before hour twenty-one |
+| outbox rows | +240 | 114 → 2 986 | petich's relay marks rows and removes none, so the table grows for ever — 2.1M rows a year at this load |
+
+The first of those wants a longer run or a heap dump; it is written down as a question rather than
+answered with a bolder sentence. The third is a property of the library's shape rather than a defect
+of this build, and it is a decision somebody should take deliberately.
+
+**One metric turned out to be uninformative and is kept as such.** `usage_counter` rows sat at 135
+for twelve hours because the table holds a row per subscriber, not per event: the count cannot say
+whether usage was applied. A soak that wants that answer must sample a SUM.
