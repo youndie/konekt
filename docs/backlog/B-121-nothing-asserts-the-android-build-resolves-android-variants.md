@@ -1,7 +1,7 @@
 ---
 id: B-121
 title: "Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution"
-status: open
+status: done
 priority: P3
 size: S
 stage: stage-m7-completeness
@@ -41,11 +41,41 @@ question `./gradlew :client:dependencyInsight` answers by hand. The list is shor
 The alternative shape — reading the published `.module` metadata — is weaker: it proves a variant was
 published, not that this build resolved it, and the defect is about what arrives on the classpath.
 
+## What was done
+
+**`:client:checkAndroidVariants`, hooked to `check`, so it runs where the Android build already
+runs** — CI's `build` job and any `./gradlew check` on a machine with the SDK. It walks
+`androidRuntimeClasspath`'s resolution RESULT rather than its artefacts: asking AGP for artefacts
+demands one packaging of each and fails on a project dependency that offers several, while the graph
+answers the question this check actually has — which variant of each module was chosen — and
+`rootComponent` is a provider the configuration cache accepts.
+
+Seven modules are named, and the list is explicit on purpose: these are the ones whose android
+variant carries behaviour rather than only bytecode — a context, a cache directory, a manifest entry
+— so taking the JVM one is wrong in a way no test here would notice. A module that **leaves** the
+classpath fails the check too, which is what keeps the list from rotting quietly.
+
+**Proved by mutation, both branches, and the first mutation is a real one.** Adding
+`ru.workinprogress.katcher:shared` to the list fails with `platform.type=jvm`, because that module
+genuinely does resolve its JVM variant here. A coordinate that is not on the classpath fails the
+other branch by name. Restored, the task reports seven and `:client:check` is green.
+
+## And a finding the mutation turned up: katcher's `shared` has no android variant
+
+`client:0.6.41` publishes `androidApiElements-published`, `androidRuntimeElements-published` and
+`androidSourcesElements-published`; **`shared:0.6.41` publishes twenty-nine variants and none of them
+is android**, so an Android consumer of the client takes `shared-jvm`. That is the same silent
+substitution `katcher#27` closed for `client`, still open one module down.
+
+It is not currently doing harm — `shared` is the protocol, the Android crash path was measured
+end to end on 2026-09-04 and delivers — which is exactly why it is worth saying: this is the shape
+that hides. Not filed: the rule here is to ask before filing against a repository that is not ours.
+
 ## Acceptance criteria
 
-- AC: a check fails when a dependency on the Android classpath resolves to a non-android variant.
-- AC: it is proved by mutation — forcing one coordinate to its JVM variant makes it fail.
-- AC: it runs where the Android build already runs, so it costs no new job.
+- AC **met**: a check fails when a dependency on the Android classpath resolves to a non-android variant.
+- AC **met**: it is proved by mutation — and by a coordinate that really does resolve its JVM variant, rather than a forced one.
+- AC **met**: it runs where the Android build already runs, so it costs no new job.
 
 ## Anchors
 

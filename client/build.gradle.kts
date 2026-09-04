@@ -493,3 +493,91 @@ tasks.named<Test>("viddikVerify") {
         }
     }
 }
+
+// ── the Android classpath resolves ANDROID variants ─────────────────────────────────────────────
+//
+// `B-85` read this out of a dependency report once, by hand, and it was right. Nothing repeated it,
+// and the defect it guards against does not fail a build: Gradle picks the best MATCHING variant, so
+// a toolkit that stops publishing an android one is not a resolution error — the consumer quietly
+// gets the JVM variant and compiles. That is not a hypothesis, it is what `katcher#27` was: a green
+// build, a running app, and a crash report that never arrived because the JVM variant's cache path
+// was `/`, found on a device rather than here.
+//
+// iOS does not have this problem — there is no jvm variant for a native compilation to fall back on,
+// so a missing Apple target fails loudly at resolution. **Android is the platform where absence is
+// silent**, which is why this check exists here and nowhere else (`B-121`).
+//
+// THE LIST IS EXPLICIT AND THAT IS THE POINT. These are the modules whose android variant carries
+// behaviour rather than only bytecode — a context, a cache directory, a manifest entry — so taking
+// the JVM one is wrong in a way no test in this repository would notice. A module that leaves the
+// classpath fails this check too, which is how the list is kept honest rather than left to rot.
+val androidVariantExpected =
+    listOf(
+        "io.github.youndie:kompot-client",
+        "io.github.youndie:kompot-core",
+        "io.github.youndie:kompot-standard",
+        "io.github.youndie:kompot-forms-client",
+        "io.github.youndie:kompot-theme-client",
+        "io.github.youndie:kompot-navigation",
+        "ru.workinprogress.katcher:client",
+    )
+
+// THE GRAPH RATHER THAN THE ARTEFACTS. Resolving `androidRuntimeClasspath`'s artifacts asks AGP for
+// one packaging of each and fails on a project dependency that offers several; the resolution RESULT
+// answers the question this check actually has — which variant of each module was chosen — and
+// `rootComponent` is a provider the configuration cache accepts, which the artifact collection is
+// not.
+val androidGraph =
+    configurations
+        .named("androidRuntimeClasspath")
+        .flatMap { configuration -> configuration.incoming.resolutionResult.rootComponent }
+
+val checkAndroidVariants by tasks.registering {
+    description = "Fails when a toolkit on the Android classpath resolved to a non-android variant"
+    group = "verification"
+    val expected = androidVariantExpected
+    val root = androidGraph
+    outputs.upToDateWhen { false }
+    doLast {
+        val platformType = Attribute.of("org.jetbrains.kotlin.platform.type", String::class.java)
+        val resolved = mutableMapOf<String, String>()
+        val seen = mutableSetOf<ResolvedComponentResult>()
+
+        fun walk(component: ResolvedComponentResult) {
+            if (!seen.add(component)) return
+            component.dependencies.filterIsInstance<ResolvedDependencyResult>().forEach { dependency ->
+                val id = dependency.selected.id
+                if (id is ModuleComponentIdentifier) {
+                    // The coordinate WITHOUT the variant suffix: an android variant of
+                    // `kompot-client` is published as `kompot-client-android`, and the question is
+                    // which variant of the multiplatform module was chosen rather than what the
+                    // artefact ended up called.
+                    val base = id.module.removeSuffix("-android").removeSuffix("-jvm")
+                    val type = dependency.resolvedVariant.attributes.getAttribute(platformType) ?: "none"
+                    val key = "${id.group}:$base"
+                    // The first non-`none` answer wins: a module appears in the graph once per
+                    // requester, and a `-published` metadata variant carries no platform type.
+                    if (resolved[key] == null || resolved[key] == "none") resolved[key] = type
+                }
+                walk(dependency.selected)
+            }
+        }
+        walk(root.get())
+
+        val absent = expected.filterNot { it in resolved }
+        val wrong = expected.filter { resolved[it] != null && resolved[it] != "androidJvm" }
+
+        check(absent.isEmpty()) {
+            "these are named here and are not on the Android classpath at all — renamed, dropped, " +
+                "or the list has rotted:\n" + absent.joinToString("\n") { "  $it" }
+        }
+        check(wrong.isEmpty()) {
+            "the Android build resolved a NON-android variant, which compiles and is wrong the way " +
+                "katcher#27 was:\n" +
+                wrong.joinToString("\n") { module -> "  $module -> platform.type=${resolved[module]}" }
+        }
+        logger.lifecycle("checkAndroidVariants: ${expected.size} module(s) resolved their android variant")
+    }
+}
+
+tasks.named("check") { dependsOn(checkAndroidVariants) }
