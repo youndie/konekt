@@ -14,7 +14,7 @@ kotlin = "2.4.10"
 ksp = "2.3.11"
 # The Kotlin Multiplatform Android plugin (com.android.kotlin.multiplatform.library), not the old
 # `com.android.library`. See docs/research/research-stack.md §1.1.
-agp = "9.3.1"
+agp = "9.4.0"
 
 # WHAT THE ANDROID HALF COMPILES AND RUNS AGAINST. `compileSdk` is the API the code is compiled
 # against and `minSdk` the floor a device must meet; they are separate numbers because raising the
