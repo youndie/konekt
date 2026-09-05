@@ -34,7 +34,7 @@ plugins {
     //
     // It also checks that this repository's `.editorconfig` is the one the rest of the portfolio
     // uses, which is the other half of pinning the formatter's version.
-    id("ru.workinprogress.sborka.settings") version "0.1.0.18"
+    id("ru.workinprogress.sborka.settings") version "0.2.0.30"
 }
 
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,
