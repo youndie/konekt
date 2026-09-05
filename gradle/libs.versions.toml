@@ -86,7 +86,7 @@ ktlint = "1.8.0"
 # the whole time .77 was being published; the check is one loop over the coordinates below.
 kompot = "0.36.1.112"
 
-petich = "0.1.0.10"
+petich = "0.1.0.14"
 booblik = "0.3.1"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
