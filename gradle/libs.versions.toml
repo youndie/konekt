@@ -94,12 +94,12 @@ booblik = "0.3.1"
 #   - the server image and the Kotlin client, which share the repository's own version. As of
 #     0.6.2 the client publishes all three iOS targets (youndie/katcher#25 closed it), so the
 #     host-picked `native` target is gone and an iOS build can report a crash;
-katcher = "0.6.41"
+katcher = "0.7.42"
 #   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
 #     still on their own line.
 
-metrikAgent = "0.1.13"
-tracyAgent = "0.1.13"
+metrikAgent = "0.2.16"
+tracyAgent = "0.2.14"
 viddik = "0.1.2.13"
 
 # The QR encoder behind esim_qr. See the coordinate below for why an encoder rather than a widget.
@@ -279,9 +279,9 @@ booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.
 
 # --- observability -----------------------------------------------------------------------------
 
-katcher-client = { module = "ru.workinprogress.katcher:client", version.ref = "katcher" }
-metrik-agent = { module = "ru.workinprogress.metrik:agent", version.ref = "metrikAgent" }
-tracy-agent = { module = "ru.workinprogress.tracy:agent", version.ref = "tracyAgent" }
+katcher-client = { module = "io.github.youndie.katcher:client", version.ref = "katcher" }
+metrik-agent = { module = "io.github.youndie.metrik:agent", version.ref = "metrikAgent" }
+tracy-agent = { module = "io.github.youndie.tracy:agent", version.ref = "tracyAgent" }
 
 # --- persistence -------------------------------------------------------------------------------
 
