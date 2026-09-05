@@ -519,7 +519,7 @@ val androidVariantExpected =
         "io.github.youndie:kompot-forms-client",
         "io.github.youndie:kompot-theme-client",
         "io.github.youndie:kompot-navigation",
-        "ru.workinprogress.katcher:client",
+        "io.github.youndie.katcher:client",
     )
 
 // THE GRAPH RATHER THAN THE ARTEFACTS. Resolving `androidRuntimeClasspath`'s artifacts asks AGP for
