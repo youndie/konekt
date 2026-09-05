@@ -345,7 +345,7 @@ tasks
 // the second half, turning it off in the first would have left this module's iOS sources with no
 // `-Werror` at all, which is how a narrow suppression quietly becomes a wide one.
 //
-// AN ELEVENTH COLLISION WAS OURS. `:client` and `ru.workinprogress.katcher:client` both answered to
+// AN ELEVENTH COLLISION WAS OURS. `:client` and `io.github.youndie.katcher:client` both answered to
 // `unique_name=client_commonMain`, because a klib takes its unique name from the module and "client"
 // is the most generic name there is — it went unnoticed until a dependency happened to share it.
 // `-module-name` on the COMMON metadata compilation is what renames ours; on any other compilation it
