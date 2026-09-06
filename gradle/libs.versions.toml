@@ -59,7 +59,7 @@ datetime = "0.8.0"
 jvmToolchain = "25"
 # The shared build conventions: the coordinate, the toolchain, the style, the test platform and the
 # guard that every declared @Test ran. Bumping this changes how every module is built.
-sborka = "0.1.0.18"
+sborka = "0.2.0.30"
 
 # --- style -------------------------------------------------------------------------------------
 
