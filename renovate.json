@@ -1,6 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+  "description": [
+    "The portfolio's Renovate configuration lives in sborka and is extended by name. What was here before was `config:recommended` and nothing else, which is why this repository has been taking one sborka release as two pull requests — #5 (`plugin ru.workinprogress.sborka.settings`) and #7 (`sborka`), both 0.2.0.30, neither mentioning the other. The version is named in two places, settings.gradle.kts and the catalog, and only a grouping rule makes them one change.",
+    "The preset also refuses `kotlinx-datetime:*-0.6.x-compat`, which is 0.8.0 built against the OLD 0.6.x API. #8 is offering exactly that right now.",
+    "Automerge is a separate preset (`github>youndie/sborka:automerge-harness`) and is deliberately NOT extended here yet: this repository merges nothing automatically today, and adopting a schedule and adopting automerge in one change would make it harder to tell which of them did what. check.yaml does run on `pull_request`, so the precondition holds whenever that is wanted."
+  ],
+  "extends": ["github>youndie/sborka"]
 }
