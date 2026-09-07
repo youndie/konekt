@@ -302,7 +302,7 @@ object Stand {
         return buildString {
             appendLine("  the stand right now:")
             lines.forEach { appendLine("    $it") }
-            simulatedSubscribers()?.let { appendLine("    the traffic simulator is publishing for $it subscribers") }
+            simulatedSubscribers()?.let { appendLine("    $it") }
             counterTableBloat()?.let { appendLine("    $it") }
             if (down.isNotEmpty()) {
                 appendLine()
@@ -349,22 +349,28 @@ object Stand {
                     }
             }
         } catch (unavailable: Exception) {
-            null
+            "usage_counter could not be asked: ${unavailable.message}"
         }
 
     // Null rather than a guess when the database cannot be asked: this line is context beside a
     // failure, and a failure message that invents a number is worse than one that omits it.
-    private fun simulatedSubscribers(): Int? =
+    private fun simulatedSubscribers(): String? =
         try {
             connection().use { connection ->
                 connection
                     .prepareStatement("SELECT count(DISTINCT subscriber_id) FROM usage_counter")
                     .use { statement ->
-                        statement.executeQuery().use { rows -> if (rows.next()) rows.getInt(1) else null }
+                        statement.executeQuery().use { rows ->
+                            if (rows.next()) {
+                                "the traffic simulator is publishing for ${rows.getInt(1)} subscribers"
+                            } else {
+                                null
+                            }
+                        }
                     }
             }
         } catch (unavailable: Exception) {
-            null
+            "the traffic simulator could not be asked: ${unavailable.message}"
         }
 
     // A PORT THE STAND PUBLISHES AND SOMEBODY ELSE ANSWERS ON.
@@ -405,7 +411,10 @@ object Stand {
                         .drop(1)
                         .filter { it.isNotBlank() }
                 } catch (unavailable: Exception) {
-                    return emptyList()
+                    // NOT `emptyList()`. That is the answer "nothing else holds these ports", and it
+                    // would be given by a stand that was never asked -- a failure reading as a clean
+                    // result is the one shape this whole block exists to catch.
+                    return listOf("could not be asked who holds the published ports: ${unavailable.message}")
                 }
 
             // Docker itself is the expected holder. Anything else on the same port is the finding —
