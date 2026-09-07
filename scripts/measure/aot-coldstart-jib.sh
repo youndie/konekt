@@ -9,6 +9,9 @@
 #
 # The image without the cache is tagged `konekt-server-jib:nocache` before the second Jib build
 # retags `latest`, so both are named and the alternation can switch between them.
+#
+# `--no-configuration-cache` on every Jib invocation: Jib 3.5.4 reads `Task.project` at execution
+# time, which the configuration cache this build has on refuses. Only these three invocations.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 RUNS=${1:-5}
@@ -23,17 +26,17 @@ AOT_DOCKER="--network ${PROJECT}_default -e DB_URL=jdbc:postgresql://postgres:54
 rm -rf "$OUT" server/build/zavarnik/jib; mkdir -p "$OUT"
 
 echo "== the Jib image without a cache, and the stand on it"
-./gradlew :server:jibDockerBuild -q --console=plain
+./gradlew :server:jibDockerBuild -q --console=plain --no-configuration-cache
 docker tag konekt-server-jib:latest konekt-server-jib:nocache
 SERVER_IMAGE=konekt-server-jib:nocache "${COMPOSE[@]}" up -d --no-build --wait
 
 echo "== jibAotTrain: training inside konekt-server-jib on the stand's network"
-./gradlew :server:jibAotTrain -q --console=plain "-Pkonekt.aotDocker=$AOT_DOCKER"
+./gradlew :server:jibAotTrain -q --console=plain --no-configuration-cache "-Pkonekt.aotDocker=$AOT_DOCKER"
 cp server/build/zavarnik/jib/* "$OUT/" 2>/dev/null || true
 ls -l server/build/zavarnik/jib/
 
 echo "== jibAotVerify: the Jib build with the cache, verified inside it"
-./gradlew :server:jibAotVerify -q --console=plain "-Pkonekt.aotDocker=$AOT_DOCKER" | tee "$OUT/verify.txt"
+./gradlew :server:jibAotVerify -q --console=plain --no-configuration-cache "-Pkonekt.aotDocker=$AOT_DOCKER" | tee "$OUT/verify.txt"
 docker inspect konekt-server-jib:latest --format '  entrypoint {{json .Config.Entrypoint}}'
 docker image ls konekt-server-jib --format '  {{.Repository}}:{{.Tag}} {{.Size}}'
 
