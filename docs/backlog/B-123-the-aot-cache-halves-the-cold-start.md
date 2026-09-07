@@ -93,3 +93,12 @@ measurement has to wait for `/health` itself.
 - Anchors: `server/build.gradle.kts` (the `zavarnik { }` block), `scripts/aot-image.sh`,
   `.github/workflows/publish-image.yaml`, `scripts/measure/aot-coldstart.sh`,
   `docs/research/measurements-2026-09-07/aot/`, `charts/konekt/templates/server.yaml` (the probes).
+
+**Rolled out 2026-09-08.** `v0.1.41` reached the cluster and the JVM refused its cache — the
+start script's `lib/*` expands in the filesystem's order, and the k0s node's containerd ordered
+it differently from the CI runner's overlay2, so the cache recorded one classpath string and the
+node presented another. Rolled back; the script now lists the jars (`5c6e89e`), zavarnik refuses
+a wildcard (its `B-31`), and `v0.1.42` (revision 48, chart `0.2.4`) runs with the cache: the pod
+was Ready 3 s after its container started against 11 s for `v0.1.40` under the old probes, the
+log shows no `[aot]` line, `deploy-check` agrees on 34 values. The same deploy hit the broker's
+segment size (`B-124`), which the release now overrides.
