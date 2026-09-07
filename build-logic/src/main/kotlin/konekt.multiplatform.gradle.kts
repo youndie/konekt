@@ -13,7 +13,7 @@ plugins {
     id("konekt.base")
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.kotlin.multiplatform.library")
-    id("ru.workinprogress.sborka.kmp")
+    id("io.github.youndie.sborka.kmp")
 }
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")

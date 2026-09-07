@@ -59,7 +59,7 @@ datetime = "0.8.0"
 jvmToolchain = "25"
 # The shared build conventions: the coordinate, the toolchain, the style, the test platform and the
 # guard that every declared @Test ran. Bumping this changes how every module is built.
-sborka = "0.1.0.18"
+sborka = "0.3.0.41"
 
 # --- style -------------------------------------------------------------------------------------
 
@@ -346,11 +346,11 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 # tests in it. Published to reposilite, which is why pluginManagement names that repository too.
 viddik = { id = "ru.workinprogress.viddik", version.ref = "viddik" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
-sborkaBase = { id = "ru.workinprogress.sborka.base", version.ref = "sborka" }
-sborkaJvm = { id = "ru.workinprogress.sborka.jvm", version.ref = "sborka" }
-sborkaKmp = { id = "ru.workinprogress.sborka.kmp", version.ref = "sborka" }
-sborkaLint = { id = "ru.workinprogress.sborka.lint", version.ref = "sborka" }
-sborkaTest = { id = "ru.workinprogress.sborka.test", version.ref = "sborka" }
+sborkaBase = { id = "io.github.youndie.sborka.base", version.ref = "sborka" }
+sborkaJvm = { id = "io.github.youndie.sborka.jvm", version.ref = "sborka" }
+sborkaKmp = { id = "io.github.youndie.sborka.kmp", version.ref = "sborka" }
+sborkaLint = { id = "io.github.youndie.sborka.lint", version.ref = "sborka" }
+sborkaTest = { id = "io.github.youndie.sborka.test", version.ref = "sborka" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }
 # Published to Maven Central, not to the Gradle Plugin Portal.
 exposedMigrations = { id = "org.jetbrains.exposed.plugin", version.ref = "exposedPlugin" }

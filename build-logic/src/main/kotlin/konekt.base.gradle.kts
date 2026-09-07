@@ -1,6 +1,6 @@
 // What every module has regardless of its platform: a coordinate, a version, and one style.
 //
-// All of it comes from `ru.workinprogress.sborka` now, and the two plugins below are the whole file.
+// All of it comes from `io.github.youndie.sborka` now, and the two plugins below are the whole file.
 // What was here before — the group and the version read from a property, the ktlint plugin with its
 // tool version pinned from the catalogue and generated sources excluded, and the check that every
 // declared `@Test` actually ran — is in the shared conventions, several paragraphs of it word for
@@ -14,11 +14,11 @@
 // from the main build's `plugins { }` block, the same plugin id arrives through two classloaders.
 
 plugins {
-    id("ru.workinprogress.sborka.base")
+    id("io.github.youndie.sborka.base")
     // The test half is here rather than in `konekt.jvm` and `konekt.multiplatform` alone, because
     // `:client` and `:androidApp` take only this plugin — and `:client` is where the guard has most
     // to catch: its screenshot fixtures are generated, so a run that executed none of them looks
     // exactly like a run that passed them all.
-    id("ru.workinprogress.sborka.test")
-    id("ru.workinprogress.sborka.lint")
+    id("io.github.youndie.sborka.test")
+    id("io.github.youndie.sborka.lint")
 }

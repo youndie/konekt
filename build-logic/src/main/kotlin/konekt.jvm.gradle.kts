@@ -5,13 +5,13 @@
 // friction against it for nothing. See docs/research/research-stack.md §1.2.
 //
 // The toolchain, `allWarningsAsErrors`, the JUnit platform and `kotlin("test")` used to be spelled
-// out here; they come from `ru.workinprogress.sborka.jvm`, with the numbers in `gradle.properties`.
+// out here; they come from `io.github.youndie.sborka.jvm`, with the numbers in `gradle.properties`.
 // What is left below is what is konekt's.
 
 plugins {
     id("konekt.base")
     id("org.jetbrains.kotlin.jvm")
-    id("ru.workinprogress.sborka.jvm")
+    id("io.github.youndie.sborka.jvm")
 }
 
 kotlin {
