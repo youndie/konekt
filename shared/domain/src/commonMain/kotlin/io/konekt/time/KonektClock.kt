@@ -24,6 +24,10 @@ fun interface KonektClock {
 
 // The one implementation that reads the machine. Named here so the source guard has exactly one place
 // to allow.
+@Suppress(
+    "ktlint:kapkan:wall-clock",
+    "единственная реализация порта: ровно то место, где часы машины и должны читаться",
+)
 object SystemClock : KonektClock {
     override fun now(): Instant = Clock.System.now()
 }
