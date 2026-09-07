@@ -31,6 +31,10 @@ zavarnik {
     training {
         // Inside the container the runner starts the script and asks the same process.
         readyWhen.url("http://127.0.0.1:8080/health")
+        // Neither `check` nor `assemble` trains: the application does not start without Postgres and
+        // the broker, so `build` on a laptop or in CI would fail in aotTrain rather than build. The
+        // cache is trained where the application runs — scripts/aot-image.sh, in the release image.
+        onAssemble = false
         // The hot path of the k6 `screens` scenario, signed in the way the scenarios sign in: the
         // dev OTP readback (DEV_REVEAL_OTP) hands the code back, verify hands the token back.
         // Twenty passes over the three screens, because the cache also holds method profiles and
