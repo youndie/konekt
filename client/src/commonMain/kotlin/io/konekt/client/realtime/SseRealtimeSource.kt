@@ -1,5 +1,6 @@
 package io.konekt.client.realtime
 
+import io.github.youndie.katcher.Katcher
 import io.github.youndie.kompot.realtime.KompotRealtimeSource
 import io.github.youndie.kompot.realtime.UpdateComponentMessage
 import io.konekt.feature.realtime.shared.api.RealtimeStream
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import ru.workinprogress.katcher.Katcher
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

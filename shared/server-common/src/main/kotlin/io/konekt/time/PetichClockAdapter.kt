@@ -1,6 +1,6 @@
 package io.konekt.time
 
-import ru.workinprogress.petich.PetichClock
+import io.github.youndie.petich.PetichClock
 
 // petich takes its own one-method clock, in epoch millis, because a deadline is compared across rows
 // in a database and survives a process restart — a monotonic mark would mean nothing there. Adapting

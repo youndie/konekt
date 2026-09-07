@@ -7,9 +7,9 @@ import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.CloseAction
 import io.github.youndie.kompot.standard.TextComponent
+import io.github.youndie.viddik.annotations.ViddikScreenshot
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
-import ru.workinprogress.viddik.annotations.ViddikScreenshot
 
 // The same markup in both brands, which is section 08 of the canvas and the assertion it exists for:
 // nothing in the layout depends on the shape scale, so a brand's radii can be a client build constant

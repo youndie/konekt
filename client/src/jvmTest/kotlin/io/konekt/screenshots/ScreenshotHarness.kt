@@ -10,12 +10,12 @@ import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.form.FormSchema
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.theme.KompotTheme
+import io.github.youndie.viddik.LocalViddikDarkTheme
+import io.github.youndie.viddik.core.viddikTypography
 import io.konekt.client.render.konektRegistry
 import io.konekt.client.theme.BrandKits
 import io.konekt.client.theme.KonektTheme
 import io.konekt.client.theme.KonektTypography
-import ru.workinprogress.viddik.LocalViddikDarkTheme
-import ru.workinprogress.viddik.core.viddikTypography
 
 // What every golden in this package is a photograph OF, in one place.
 //

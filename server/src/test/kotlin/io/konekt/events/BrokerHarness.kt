@@ -1,5 +1,6 @@
 package io.konekt.events
 
+import io.github.youndie.booblik.net.client.BooblikConnection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -7,7 +8,6 @@ import kotlinx.coroutines.cancel
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
-import ru.workinprogress.booblik.net.client.BooblikConnection
 import java.net.InetSocketAddress
 
 // A real broker, from the published image, with the topics the deployment declares.

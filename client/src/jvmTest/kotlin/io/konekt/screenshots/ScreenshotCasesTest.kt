@@ -1,7 +1,7 @@
 package io.konekt.screenshots
 
+import io.github.youndie.viddik.generated.GeneratedViddikRegistry
 import io.konekt.components.CounterStates
-import ru.workinprogress.viddik.generated.GeneratedViddikRegistry
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.absolute

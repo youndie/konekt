@@ -86,21 +86,21 @@ ktlint = "1.8.0"
 # the whole time .77 was being published; the check is one loop over the coordinates below.
 kompot = "0.36.1.112"
 
-petich = "0.1.0.10"
-booblik = "0.3.1"
+petich = "0.1.0.18"
+booblik = "0.3.4"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
 #   - the server image and the Kotlin client, which share the repository's own version. As of
 #     0.6.2 the client publishes all three iOS targets (youndie/katcher#25 closed it), so the
 #     host-picked `native` target is gone and an iOS build can report a crash;
-katcher = "0.7.42"
+katcher = "0.7.44"
 #   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
 #     still on their own line.
 
-metrikAgent = "0.2.16"
-tracyAgent = "0.2.14"
-viddik = "0.1.2.13"
+metrikAgent = "0.2.18"
+tracyAgent = "0.2.15"
+viddik = "0.4.0"
 
 # The QR encoder behind esim_qr. See the coordinate below for why an encoder rather than a widget.
 qrcode = "4.5.0"
@@ -258,8 +258,8 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 # The screenshot tester. `viddik-annotations` and `viddik-testing-core` are added by its Gradle
 # plugin, so these entries exist only for the day a module opts out of that with
 # `addDependencies = false`; the plugin's own version is the one that decides what it pulls.
-viddik-annotations = { module = "ru.workinprogress:viddik-annotations", version.ref = "viddik" }
-viddik-testingCore = { module = "ru.workinprogress:viddik-testing-core", version.ref = "viddik" }
+viddik-annotations = { module = "io.github.youndie.viddik:viddik-annotations", version.ref = "viddik" }
+viddik-testingCore = { module = "io.github.youndie.viddik:viddik-testing-core", version.ref = "viddik" }
 kompot-clientTck = { module = "io.github.youndie:kompot-client-tck" }
 
 # --- petich ------------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 # hand-written: the right KSP configuration and snapshot directory depend on how the target is
 # declared, and getting one wrong makes KSP report SKIPPED while the screenshot task passes with no
 # tests in it. Published to reposilite, which is why pluginManagement names that repository too.
-viddik = { id = "ru.workinprogress.viddik", version.ref = "viddik" }
+viddik = { id = "io.github.youndie.viddik", version.ref = "viddik" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 sborkaBase = { id = "io.github.youndie.sborka.base", version.ref = "sborka" }
 sborkaJvm = { id = "io.github.youndie.sborka.jvm", version.ref = "sborka" }

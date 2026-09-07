@@ -1,14 +1,14 @@
 package io.konekt.observability
 
+import io.github.youndie.katcher.Katcher
+import io.github.youndie.metrik.agent.Metrik
+import io.github.youndie.tracy.agent.AgentConfig
+import io.github.youndie.tracy.agent.Tracy
+import io.github.youndie.tracy.agent.TracyAgent
+import io.github.youndie.tracy.agent.TracyDelivery
 import io.konekt.time.KonektClock
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import ru.workinprogress.katcher.Katcher
-import ru.workinprogress.metrik.agent.Metrik
-import ru.workinprogress.tracy.agent.AgentConfig
-import ru.workinprogress.tracy.agent.Tracy
-import ru.workinprogress.tracy.agent.TracyAgent
-import ru.workinprogress.tracy.agent.TracyDelivery
 
 // THE THREE AGENTS, INSTALLED IN ONE PLACE, and the reason they are together is that they answer
 // three halves of one question. metrik says a route got slow; tracy says which order it was and what

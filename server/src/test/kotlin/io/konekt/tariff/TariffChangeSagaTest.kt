@@ -1,5 +1,16 @@
 package io.konekt.tariff
 
+import io.github.youndie.petich.EnrichedPayload
+import io.github.youndie.petich.ExpiringPetichRepository
+import io.github.youndie.petich.PetichEngine
+import io.github.youndie.petich.PetichEngineConfig
+import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.ResumePayload
+import io.github.youndie.petich.SimpleEnrichedPayload
+import io.github.youndie.petich.SuspendedPetichSweeper
+import io.github.youndie.petich.postgres.ExposedPetichRepository
+import io.github.youndie.petich.postgres.OutboxEventsTable
+import io.github.youndie.petich.postgres.PetichTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.testing.PostgresHarness
@@ -12,17 +23,6 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import ru.workinprogress.petich.EnrichedPayload
-import ru.workinprogress.petich.ExpiringPetichRepository
-import ru.workinprogress.petich.PetichEngine
-import ru.workinprogress.petich.PetichEngineConfig
-import ru.workinprogress.petich.PetichPayload
-import ru.workinprogress.petich.ResumePayload
-import ru.workinprogress.petich.SimpleEnrichedPayload
-import ru.workinprogress.petich.SuspendedPetichSweeper
-import ru.workinprogress.petich.postgres.ExposedPetichRepository
-import ru.workinprogress.petich.postgres.OutboxEventsTable
-import ru.workinprogress.petich.postgres.PetichTable
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
