@@ -13,6 +13,9 @@ plugins {
     // start without Postgres and the broker, so training happens on the stand, inside the image,
     // through the runner the plugin ships in `lib/` — see scripts/measure/aot-coldstart.sh.
     alias(libs.plugins.zavarnik)
+    // Jib, for the AOT experiment's second image path (B-123): the same server as a Jib image, with
+    // the cache trained inside it through zavarnik's Jib mode. The Dockerfile stays the release path.
+    alias(libs.plugins.jib)
     // The conformance declarations are shared by two consumers that cannot see each other's test
     // sources: :server's own coverage gate, which needs no stand, and :e2e's walk, which needs one.
     // A fixture rather than a copy — two copies of "what this deployment offers a conformance kit"
@@ -47,6 +50,27 @@ zavarnik {
     }
     // `check` has no database; the verification runs on the stand, inside the image (the script above).
     verify { onCheck = false }
+    // The Jib training container has to reach the stand's Postgres and broker: the measurement
+    // script hands the network and the environment in through one property, space-separated.
+    jib {
+        dockerRunArgs.addAll(
+            providers.gradleProperty("konekt.aotDocker").map { it.split(" ").filter(String::isNotEmpty) }.orElse(emptyList()),
+        )
+    }
+}
+
+// THE SAME SERVER AS A JIB IMAGE (B-123). What deploy/Dockerfile does by hand — the JRE base, a
+// non-root user, the port — Jib does here; what it does not do is the healthcheck and the working
+// directory, neither of which the measurement needs. `packaged`, because Jib's default puts two
+// directories on the classpath and the JVM writes no AOT cache for that; zavarnik refuses it.
+jib {
+    from { image = "eclipse-temurin:25-jre" }
+    to { image = "konekt-server-jib" }
+    containerizingMode = "packaged"
+    container {
+        ports = listOf("8080")
+        user = "10001"
+    }
 }
 
 // TWO DIFFERENT JARS WANT THE SAME FILE NAME IN `lib/`, and the distribution cannot hold both.
