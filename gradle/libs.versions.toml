@@ -117,7 +117,7 @@ exposed = "1.5.0"
 # Plugin Portal — hence mavenCentral() in settings.gradle.kts's pluginManagement.
 exposedPlugin = "1.5.0"
 # zavarnik: the Leyden AOT cache trained and verified through the start script (B-123, an experiment).
-zavarnik = "0.1.0.17"
+zavarnik = "0.1.0.18"
 # Jib, for the image the AOT experiment trains in (B-123); the Dockerfile path stays the release path.
 jib = "3.5.4"
 # One version for flyway-core, flyway-database-postgresql and the Gradle plugin.

@@ -42,7 +42,11 @@ zavarnik {
         workload {
             post("http://127.0.0.1:8080/api/v1/auth/otp/request", "application/json", """{"msisdn":"+15559990001"}""")
             get("http://127.0.0.1:8080/api/v1/dev/otp?msisdn=%2B15559990001") { capture("code", "code") }
-            post("http://127.0.0.1:8080/api/v1/auth/otp/verify", "application/json", """{"msisdn":"+15559990001","code":"{{code}}"}""") {
+            post(
+                "http://127.0.0.1:8080/api/v1/auth/otp/verify",
+                "application/json",
+                """{"msisdn":"+15559990001","code":"{{code}}"}""",
+            ) {
                 capture("token", "accessToken")
             }
             repeat(20) {
@@ -58,7 +62,11 @@ zavarnik {
     // script hands the network and the environment in through one property, space-separated.
     jib {
         dockerRunArgs.addAll(
-            providers.gradleProperty("konekt.aotDocker").map { it.split(" ").filter(String::isNotEmpty) }.orElse(emptyList()),
+            providers
+                .gradleProperty(
+                    "konekt.aotDocker",
+                ).map { it.split(" ").filter(String::isNotEmpty) }
+                .orElse(emptyList()),
         )
     }
 }
