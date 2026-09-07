@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: deploy/compose.yaml
-tech_stack: [booblik 0.3.1, container image ghcr.io/youndie/booblik, plaintext TCP]
+tech_stack: [booblik 0.3.4, container image ghcr.io/youndie/booblik, plaintext TCP]
 owner: unassigned
 depends_on:
   - konekt-server (the only producer and the only consumer)
@@ -17,7 +17,7 @@ publishes:
 
 # booblik broker
 
-> A service konekt runs but does not write: the image is `ghcr.io/youndie/booblik:0.3.1`. What is
+> A service konekt runs but does not write: the image is `ghcr.io/youndie/booblik:0.3.4`. What is
 > documented here is **konekt's side of it** — how it is configured, what talks to it, and the three
 > properties that catch people out. Everything below was read out of `deploy/compose.yaml` and the
 > files in §2a on 2026-08-25; nothing was read out of booblik's own sources, and where a claim would
@@ -76,7 +76,7 @@ redelivery from a second purchase.
 
 ## 5. Infrastructure and deploy
 
-- **Image:** `ghcr.io/youndie/booblik:0.3.1`, pinned to `linux/amd64` by
+- **Image:** `ghcr.io/youndie/booblik:0.3.4`, pinned to `linux/amd64` by
   `platform: ${BROKER_PLATFORM:-linux/amd64}` so an arm64 host emulates it with a warning rather than
   failing with "no matching manifest", which reads like a broken tag.
 - **Ports:** none, deliberately. See §8.
