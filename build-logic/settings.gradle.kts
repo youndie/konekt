@@ -13,7 +13,14 @@ dependencyResolutionManagement {
         // unreachable Gradle disables it and fails artefacts it never served.
         maven("https://reposilite.kotlin.website/snapshots") {
             name = "wip-snapshots"
-            mavenContent { includeGroupByRegex("ru\\.workinprogress.*") }
+            mavenContent {
+                // Both groups on purpose. The portfolio is moving to `io.github.youndie` and
+                // sborka is already there — the plugin marker and the jar behind it are under the
+                // new one. The old one is held by the library versions published before the move:
+                // they are still on the server and resolve as before.
+                includeGroupByRegex("io\\.github\\.youndie.*")
+                includeGroupByRegex("ru\\.workinprogress.*")
+            }
         }
     }
 

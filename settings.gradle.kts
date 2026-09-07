@@ -20,7 +20,14 @@ pluginManagement {
         // plugin, and when it is unreachable Gradle disables it and fails plugins it never served.
         maven("https://reposilite.kotlin.website/snapshots") {
             name = "wip-snapshots"
-            content { includeGroupByRegex("ru\\.workinprogress.*") }
+            content {
+                // Both groups on purpose. The portfolio is moving to `io.github.youndie` and
+                // sborka is already there — the plugin marker and the jar behind it are under the
+                // new one. The old one is held by the library versions published before the move:
+                // they are still on the server and resolve as before.
+                includeGroupByRegex("io\\.github\\.youndie.*")
+                includeGroupByRegex("ru\\.workinprogress.*")
+            }
         }
     }
 }
@@ -34,7 +41,7 @@ plugins {
     //
     // It also checks that this repository's `.editorconfig` is the one the rest of the portfolio
     // uses, which is the other half of pinning the formatter's version.
-    id("ru.workinprogress.sborka.settings") version "0.1.0.18"
+    id("io.github.youndie.sborka.settings") version "0.3.0.41"
 }
 
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,

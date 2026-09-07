@@ -21,7 +21,7 @@ dependencies {
     implementation(libs.androidGradlePlugin)
     // THE SHARED CONVENTIONS, named the same way. What used to be `konekt.base` — the coordinate,
     // the style, the JUnit platform and the guard that every declared @Test ran — lives in
-    // `ru.workinprogress.sborka` now, and the three plugins below are what the conventions in this
+    // `io.github.youndie.sborka` now, and the three plugins below are what the conventions in this
     // build are written on top of.
     implementation(libs.plugins.sborkaBase.marker())
     implementation(libs.plugins.sborkaJvm.marker())
