@@ -86,7 +86,10 @@ ktlint = "1.8.0"
 # the whole time .77 was being published; the check is one loop over the coordinates below.
 kompot = "0.36.1.112"
 
-petich = "0.1.0.18"
+# A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
+# `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
+# would have gone stale in place rather than by failing.
+petich = "0.1.0"
 booblik = "0.3.4"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
@@ -264,12 +267,12 @@ kompot-clientTck = { module = "io.github.youndie:kompot-client-tck" }
 
 # --- petich ------------------------------------------------------------------------------------
 
-petich-core = { module = "io.github.youndie:petich-core", version.ref = "petich" }
-petich-ktor = { module = "io.github.youndie:petich-ktor", version.ref = "petich" }
-petich-postgres = { module = "io.github.youndie:petich-postgres", version.ref = "petich" }
-petich-outboxCore = { module = "io.github.youndie:petich-outbox-core", version.ref = "petich" }
-petich-idempotency = { module = "io.github.youndie:petich-idempotency", version.ref = "petich" }
-petich-scheduler = { module = "io.github.youndie:petich-scheduler", version.ref = "petich" }
+petich-core = { module = "io.github.youndie.petich:petich-core", version.ref = "petich" }
+petich-ktor = { module = "io.github.youndie.petich:petich-ktor", version.ref = "petich" }
+petich-postgres = { module = "io.github.youndie.petich:petich-postgres", version.ref = "petich" }
+petich-outboxCore = { module = "io.github.youndie.petich:petich-outbox-core", version.ref = "petich" }
+petich-idempotency = { module = "io.github.youndie.petich:petich-idempotency", version.ref = "petich" }
+petich-scheduler = { module = "io.github.youndie.petich:petich-scheduler", version.ref = "petich" }
 
 # --- booblik -----------------------------------------------------------------------------------
 #
