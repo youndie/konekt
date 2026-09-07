@@ -1,0 +1,37 @@
+== distribution, pinned jar mtimes, stand image
+== training inside konekt-server:local, on the stand's network
+zavarnik: application ready after 5306 ms
+zavarnik: workload took 3022 ms
+zavarnik: cache app.aot is 64692 KiB; manifest app.aot.jars lists 128 jars
+== konekt-server:local-aot = the same image plus the cache
+== verify under -XX:AOTMode=on inside konekt-server:local-aot
+zavarnik: 5329 of 5332 application classes (99.9%) came from app.aot; 8571 of 8607 loaded classes overall
+== round 1: konekt-server:local, 5 restarts
+  image konekt-server:local
+1,4186,406.2,9.2,82.0,406.2
+2,5628,608.3,15.7,97.4,608.3
+3,5877,826.7,20.0,95.5,826.7
+4,4683,414.4,8.2,85.2,414.4
+5,4233,633.4,9.3,96.8,633.4
+== round 1: konekt-server:local-aot, 5 restarts
+  image konekt-server:local-aot
+1,2062,280.1,8.2,95.2,280.1
+2,2021,205.3,8.8,92.3,205.3
+3,4128,195.3,8.8,95.2,195.3
+4,2227,194.5,9.1,98.5,194.5
+5,2170,195.3,7.3,99.0,195.3
+== round 2: konekt-server:local, 5 restarts
+  image konekt-server:local
+1,4247,623.5,10.0,83.4,623.5
+2,4379,510.5,9.3,92.4,510.5
+3,4381,510.1,9.7,91.0,510.1
+4,4229,407.0,9.1,84.6,407.0
+5,4541,327.0,8.5,87.8,327.0
+== round 2: konekt-server:local-aot, 5 restarts
+  image konekt-server:local-aot
+1,2015,274.3,10.1,96.9,274.3
+2,1988,196.7,10.1,93.2,196.7
+3,1963,396.2,7.4,98.2,396.2
+4,2067,289.3,9.0,98.5,289.3
+5,1915,284.5,8.3,97.4,284.5
+== summary (medians over all rounds; every row is in /home/youndie/.local/state/konekt-measure/aot/coldstart-*.csv)

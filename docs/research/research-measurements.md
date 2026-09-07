@@ -265,6 +265,41 @@ does; what it does not do is warm the pod, and this is the number that says whet
 request in the probe would be worth it: it would take the first subscriber's 800 ms, not the next
 hundred's 14.
 
+### 6a. The same restart with a Leyden AOT cache (2026-09-07, `B-123`)
+
+**What was measured.** On the build box rather than the load stand — Ubuntu 24.04 in WSL2, Core
+Ultra 7 255HX, Docker 29.1.3 — but the same compose files and the chart's limits. Two images that
+differ by one layer: `konekt-server:local` from this branch, and `konekt-server:local-aot`, the
+same image plus `lib/app.aot`, a cache trained inside a container of the first image on the
+stand's network by the runner zavarnik ships in `lib/` (sign-in through the dev OTP readback,
+twenty passes over the three `screens` routes), and verified in the second image under
+`-XX:AOTMode=on`: 5 329 of 5 332 application classes came from it. `coldstart.sh 5` against each
+image, in alternation, twice; the record is in
+[`measurements-2026-09-07/aot/`](measurements-2026-09-07/aot/README.md) and the script is
+`scripts/measure/aot-coldstart.sh`.
+
+| | without the cache | with the cache |
+|---|---|---|
+| `docker start` → `/health`, median of 10 | 4 380 ms | **2 042 ms** |
+| the same, range | 4 186–5 877 ms | 1 915–2 227 ms, one restart at 4 128 |
+| first home screen, median | 510 ms | **240 ms** |
+| p50 of the next hundred | 9.3 ms | 8.8 ms |
+| p95 of the next hundred | 89 ms | 97 ms |
+| cache / image | — | 65 MiB / 685 MB against 602 |
+
+**What it says.** Readiness halves, and so does the first request — that half of the "first
+subscriber pays" cost was class loading and linking, which the cache does at build time. The
+hundred requests after it do not move at all: the cache carries classes, heap objects and method
+profiles, not compiled code, so the JIT compiles the request path exactly as before, only from a
+warm profile. The baseline here is faster than the load stand's (4.4 s against 5–7 s) because the
+box is a twenty-core laptop rather than a 2 vCPU rental; the comparison is between the two images
+on one box in one session, not between this table and the one above.
+
+**What it says about the chart.** The readiness probe starts asking at five seconds; a pod ready
+at two is marked ready at five either way, so the gain reaches a rollout only once the probe is
+retuned — and the cache reaches the image only once the release trains it, which today it has
+nowhere to do (`B-119`, `B-123`).
+
 ## 4. Realtime fan-out
 
 **What was measured.** N subscribers, each with a plan and an open SSE stream from the generator

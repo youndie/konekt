@@ -8,6 +8,11 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.exposedMigrations)
     application
+    // THE AOT CACHE (B-123, an experiment). Trains a Leyden cache through the start script and
+    // verifies that the JVM would accept it. Neither task runs on `check`: the application does not
+    // start without Postgres and the broker, so training happens on the stand, inside the image,
+    // through the runner the plugin ships in `lib/` — see scripts/measure/aot-coldstart.sh.
+    alias(libs.plugins.zavarnik)
     // The conformance declarations are shared by two consumers that cannot see each other's test
     // sources: :server's own coverage gate, which needs no stand, and :e2e's walk, which needs one.
     // A fixture rather than a copy — two copies of "what this deployment offers a conformance kit"
@@ -17,6 +22,31 @@ plugins {
 
 application {
     mainClass.set("io.konekt.ApplicationKt")
+}
+
+zavarnik {
+    training {
+        // Inside the container the runner starts the script and asks the same process.
+        readyWhen.url("http://127.0.0.1:8080/health")
+        // The hot path of the k6 `screens` scenario, signed in the way the scenarios sign in: the
+        // dev OTP readback (DEV_REVEAL_OTP) hands the code back, verify hands the token back.
+        // Twenty passes over the three screens, because the cache also holds method profiles and
+        // one pass is not a profile.
+        workload {
+            post("http://127.0.0.1:8080/api/v1/auth/otp/request", "application/json", """{"msisdn":"+15559990001"}""")
+            get("http://127.0.0.1:8080/api/v1/dev/otp?msisdn=%2B15559990001") { capture("code", "code") }
+            post("http://127.0.0.1:8080/api/v1/auth/otp/verify", "application/json", """{"msisdn":"+15559990001","code":"{{code}}"}""") {
+                capture("token", "accessToken")
+            }
+            repeat(20) {
+                for (screen in listOf("home", "plans", "plans/tr-10gb-30d")) {
+                    get("http://127.0.0.1:8080/api/v1/screens/$screen") { header("Authorization", "Bearer {{token}}") }
+                }
+            }
+        }
+    }
+    // `check` has no database; the verification runs on the stand, inside the image (the script above).
+    verify { onCheck = false }
 }
 
 // TWO DIFFERENT JARS WANT THE SAME FILE NAME IN `lib/`, and the distribution cannot hold both.

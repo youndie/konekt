@@ -1,0 +1,1 @@
+zavarnik: 5329 of 5332 application classes (99.9%) came from app.aot; 8571 of 8607 loaded classes overall
