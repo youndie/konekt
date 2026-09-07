@@ -148,6 +148,24 @@ is the profile a coroutine-per-connection engine is shaped for. See
   a Makefile target because the right to write to the registry is what CI has and a laptop does not
   — `B-47`. The same workflow then PULLS the tag back and drives the whole e2e suite through it,
   which is the only check here whose subject is an artefact rather than a working tree.
+- **The image carries a Leyden AOT cache, trained inside it** (`B-123`). `lib/app.aot` halves
+  the time to `/health` on one core (4.4 s → 2.0 s) and the first request (510 → 240 ms), and
+  leaves the next hundred alone — the JIT still compiles the request path. A cache is good only for
+  the JDK build that trained it, so `scripts/aot-image.sh` trains it in a container of the image
+  that ships, on the image's own JVM, with Postgres, the broker and the migrations from
+  `deploy/compose.yaml` beside it (the application does not start without them, which is why this
+  is not a Dockerfile stage), lays it over the image as one layer, and verifies it there under
+  `-XX:AOTMode=on` — the mode in which a rejected cache is a failed step rather than three lines on
+  stderr and a normal start. The publish workflow runs it before the push and the `verify` job runs
+  the same verification against the pulled image; `make release-image` runs it on a laptop. The
+  plugin behind it is [zavarnik](https://github.com/youndie/zavarnik): `server/build.gradle.kts`
+  declares the readiness URL and the signed-in workload, and `installDist` carries the runner and
+  its configuration in `lib/`. Measured in `research-measurements.md` §6a.
+- **Probes:** a startup probe on `/health` every second for up to a minute, readiness every two
+  seconds with no initial delay, liveness every twenty once startup has passed. The readiness probe
+  used to wait five seconds before its first question, which made a pod ready at five whether the
+  process answered at two or at four — the cache changed nothing a rollout could see until the
+  probe was retuned (`B-123`).
 - **The chart's version moves when the chart's shape moves**, and `scripts/chart_version.py` in the
   gate refuses a change under `templates/` or in `values.yaml` that leaves `version:` where it was.
   The number is what a deployment would pin, and while it stands still there is nothing to pin: a

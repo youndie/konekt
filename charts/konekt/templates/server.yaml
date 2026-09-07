@@ -94,18 +94,28 @@ spec:
           # the half of the routing tree that needs neither. A probe that read the store would
           # restart the pod for a slow query, and one that authenticated would report the state of
           # the session machinery rather than of this process.
+          # THE START IS ASKED ABOUT EVERY SECOND, and readiness has no initial delay (`B-123`).
+          # With the AOT cache the process answers /health about two seconds after it starts; a
+          # readiness probe that waited five before its first question marked the pod ready at five
+          # either way, and the cache changed nothing a rollout could see. The startup probe owns
+          # the first minute — liveness stays out until it passes — and readiness follows it at
+          # its own pace.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 1
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 20
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 2
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
 ---

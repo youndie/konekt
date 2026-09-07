@@ -295,10 +295,11 @@ warm profile. The baseline here is faster than the load stand's (4.4 s against 5
 box is a twenty-core laptop rather than a 2 vCPU rental; the comparison is between the two images
 on one box in one session, not between this table and the one above.
 
-**What it says about the chart.** The readiness probe starts asking at five seconds; a pod ready
-at two is marked ready at five either way, so the gain reaches a rollout only once the probe is
-retuned — and the cache reaches the image only once the release trains it, which today it has
-nowhere to do (`B-119`, `B-123`).
+**What it says about the chart.** The readiness probe started asking at five seconds; a pod ready
+at two was marked ready at five either way, so the gain reached a rollout only once the probe was
+retuned — chart `0.2.4`: a startup probe every second, readiness every two with no initial delay —
+and the cache reaches the image only because the release trains it: `scripts/aot-image.sh`, run
+by `publish-image.yaml` before the push (`B-123`, shipped the same day).
 
 **The same restart on a Jib image** (the same day, `scripts/measure/aot-coldstart-jib.sh`; record in
 [`measurements-2026-09-07/aot-jib/`](measurements-2026-09-07/aot-jib/README.md)). The server as a

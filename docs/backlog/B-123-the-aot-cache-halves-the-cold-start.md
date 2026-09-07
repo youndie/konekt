@@ -1,7 +1,7 @@
 ---
 id: B-123
 title: "A Leyden AOT cache trained inside the image halves the cold start; whether to ship it"
-status: open
+status: done
 priority: P2
 size: M
 stage: stage-m7-completeness
@@ -82,6 +82,14 @@ measurement has to wait for `/health` itself.
 - 83 MB more image per release, pulled by every node.
 
 - AC (done): the experiment script, the plugin applied, and the numbers above with their record.
-- AC (open): a decision — ship (then the three items above become tasks) or record and stop.
-- Anchors: `server/build.gradle.kts` (the `zavarnik { }` block), `scripts/measure/aot-coldstart.sh`,
+- AC (done): the decision — **ship**, taken by the owner on 2026-09-07 — and the three items:
+  `scripts/aot-image.sh` trains and verifies the cache inside the release image, run by
+  `publish-image.yaml` before the push and by `make release-image`; the `verify` job verifies the
+  cache in the pulled image; the chart (`0.2.4`) gained a startup probe every second and lost the
+  readiness probe's initial delay. What is deliberately not shipped: the Jib path — the Dockerfile
+  stays the release image, Jib is the second image the measurement used.
+- Not covered: the 83 MB the cache adds to every release is accepted, not reduced; a warm-up
+  request in the probe (the first subscriber's 240 ms) is still an open idea, not a task.
+- Anchors: `server/build.gradle.kts` (the `zavarnik { }` block), `scripts/aot-image.sh`,
+  `.github/workflows/publish-image.yaml`, `scripts/measure/aot-coldstart.sh`,
   `docs/research/measurements-2026-09-07/aot/`, `charts/konekt/templates/server.yaml` (the probes).

@@ -23,7 +23,10 @@ type: application
 # 0.2.1 -> 0.2.2: the three broker numbers are quoted. They rendered as floats in scientific
 # notation and the broker refused to start on them, so the shape did move — a chart that cannot be
 # deployed and one that can are not the same shape.
-version: 0.2.3
+# 0.2.3 -> 0.2.4: `B-123` gave the server a startup probe and took the initial delay off readiness,
+# so a pod that answers /health in two seconds is ready in two rather than five. A values file
+# written for 0.2.3 renders under this without a change; the shape moved, additively — PATCH.
+version: 0.2.4
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

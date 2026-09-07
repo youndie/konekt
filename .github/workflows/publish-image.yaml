@@ -11,6 +11,11 @@ name: publish image
 # named after something that is not a release: an image called after a branch is one `make
 # rolling-check` can never point at, and one nobody can map back to a commit afterwards.
 #
+# THE AOT CACHE IS TRAINED HERE TOO (`B-123`): a Leyden cache is only good for the JDK build that
+# trained it, so it is trained inside the image that ships, by the image's own JVM, after the stand's
+# Postgres and broker are up — see scripts/aot-image.sh. `make release-image` does the same on a
+# laptop, so a locally built release image is the same shape as a published one.
+#
 # NOTHING HERE RUNS THE ROLLING CHECK, and it is worth saying because two of the sentences in this
 # file used to mention it as if something did. `scripts/rolling-check.sh` stands the previous
 # release beside this one and drives both — the state a rolling deploy actually passes through, and
@@ -72,16 +77,23 @@ jobs:
             exit 1
           fi
 
-      # amd64 only: that is what the cluster runs. A second platform is a second build rather than a
-      # second line here, and an arm64 manifest nobody deploys is a doubled build time for nothing.
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./deploy/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ghcr.io/youndie/konekt-server:${{ env.VERSION }}
+      # amd64 only: that is what the cluster runs, and the only CPU this runner has — the AOT cache
+      # below is trained on this JVM and this architecture. Built into the local daemon, not pushed:
+      # what gets pushed is this image plus one layer.
+      - name: Build the image the distribution goes into
+        run: docker build -f deploy/Dockerfile -t konekt-server:release .
+
+      # THE CACHE IS TRAINED IN THE IMAGE THAT SHIPS (`B-123`). The script brings up Postgres, the
+      # broker and the migrations from deploy/compose.yaml, trains a Leyden AOT cache inside a
+      # container of the image just built — the application does not start without them, so this
+      # cannot be a Dockerfile stage — lays the cache over the image as a layer, and verifies it
+      # there under -XX:AOTMode=on, where a cache the JVM would reject is a failed step rather
+      # than three lines on stderr and exit code 0 in production.
+      - name: Train and verify the AOT cache inside the image
+        run: scripts/aot-image.sh konekt-server:release "ghcr.io/youndie/konekt-server:${VERSION}"
+
+      - name: Push
+        run: docker push "ghcr.io/youndie/konekt-server:${VERSION}"
 
   # THE REGISTRY ROUND TRIP, which is the one thing `B-47` could not prove and the reason this job
   # is not merely a nicety. Running an image the previous job left in the local daemon proves the
@@ -132,6 +144,16 @@ jobs:
         env:
           SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
         run: make e2e
+
+      # The cache, asked of the PULLED image rather than of the one the previous job trained in: the
+      # runner starts the application under -XX:AOTMode=on against the manifest the training wrote,
+      # inside a container of what was published, on the stand's network.
+      - name: The published image carries a cache its own JVM accepts
+        env:
+          SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+        run: |
+          docker compose -f deploy/compose.yaml run --rm --no-deps --entrypoint bash server -c \
+            "java -cp /opt/konekt/lib/zavarnik-runner.jar io.github.youndie.zavarnik.runner.Main verify /opt/konekt --out /tmp"
 
       - name: The stand's logs
         if: always()

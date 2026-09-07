@@ -43,15 +43,14 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (2)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
-| [B-123](docs/backlog/B-123-the-aot-cache-halves-the-cold-start.md) `[ ]` | A Leyden AOT cache trained inside the image halves the cold start; whether to ship it | P2 | M | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 
-## Closed (120)
+## Closed (121)
 
 **The wire and the shell**
 
@@ -182,6 +181,7 @@ so re-prioritising must never move a file.
 - [B-120](docs/backlog/B-120-the-bdd-report-does-not-check-the-tests-it-names.md) `[x]` - The BDD report says 92% automated and verifies almost none of it: a test in a module it cannot resolve is silently not checked
 - [B-121](docs/backlog/B-121-nothing-asserts-the-android-build-resolves-android-variants.md) `[x]` - Nothing asserts that the Android build resolves android variants, and the one defect that ever mattered here was a silent substitution
 - [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[x]` - The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence
+- [B-123](docs/backlog/B-123-the-aot-cache-halves-the-cold-start.md) `[x]` - A Leyden AOT cache trained inside the image halves the cold start; whether to ship it
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it

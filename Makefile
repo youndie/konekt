@@ -219,7 +219,10 @@ release-image:
 		echo "    make release-image VERSION=\$$(git describe --tags --abbrev=0)"; \
 		exit 2; }
 	./gradlew :server:installDist
-	docker build -f deploy/Dockerfile -t ghcr.io/youndie/konekt-server:$(VERSION) .
+	docker build -f deploy/Dockerfile -t konekt-server:release .
+	# The AOT cache, trained inside the image just built and verified there — the same step the
+	# publish workflow runs, so the image this produces is the shape of the one that ships (B-123).
+	scripts/aot-image.sh konekt-server:release ghcr.io/youndie/konekt-server:$(VERSION)
 	@echo "built ghcr.io/youndie/konekt-server:$(VERSION) — publishing it is a tag, not a push:"
 	@echo "    git tag -a $(VERSION) && git push origin $(VERSION)"
 
