@@ -10,10 +10,10 @@
 # Alternation rather than five of one and five of the other: the box's clock and caches drift over
 # minutes, and a variant measured entirely after the other is measured on a different machine.
 #
-# The jar mtimes are pinned on the host BEFORE the image is built, to the constant the runner pins
-# them to during training. The JVM compares jar mtimes with the cache; the runner pins them inside
-# its own container, which the image never sees, so the pinning has to happen where the image is
-# built from. Docker COPY keeps them.
+# The JVM compares jar mtimes with the cache, and the runner pins them inside its own container,
+# which the image never sees — so the plugin pins them in `installDist` itself (zavarnik B-28), the
+# image is built from that, and Docker COPY keeps them. The first version of this script did it
+# here with `touch -d @86400`; the constant belongs to the plugin, not to this script.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 RUNS=${1:-5}
@@ -26,10 +26,9 @@ RUNNER="java -cp /opt/konekt/lib/zavarnik-runner.jar io.github.youndie.zavarnik.
 COMPOSE=(docker compose -p "$PROJECT" -f deploy/compose.yaml -f deploy/compose.measure.yaml)
 rm -rf "$OUT"; mkdir -p "$OUT"; chmod 777 "$OUT"   # the image's user (uid 10001) writes here
 
-echo "== distribution, pinned jar mtimes, stand image"
+echo "== distribution (jar mtimes pinned by the plugin), stand image"
 ./gradlew :server:installDist -q --console=plain
-find server/build/install/server/lib -name '*.jar' -exec touch -d @86400 {} +
-ls -l --time-style=+%s server/build/install/server/lib/zavarnik-runner.jar | awk '{print "  runner jar mtime " $6}'
+ls -l --time-style=+%s server/build/install/server/lib/zavarnik-runner.jar | awk '{print "  runner jar mtime " $6 " (expected 86400)"}'
 SERVER_IMAGE=konekt-server:local "${COMPOSE[@]}" up -d --build --wait
 
 echo "== training inside konekt-server:local, on the stand's network"
@@ -65,6 +64,9 @@ out = sys.argv[1]
 for variant in ("local", "local-aot"):
     rows = [r for f in sorted(glob.glob(f"{out}/coldstart-{variant}-[0-9]*.csv")) for r in csv.DictReader(open(f))]
     cols = ("start_to_healthy_ms", "first_ms", "p50_first100_ms", "p95_first100_ms")
+    if not rows:
+        print(f"  {variant:10s} no rounds")
+        continue
     med = {c: statistics.median(float(r[c]) for r in rows) for c in cols}
     healthy = " ".join(sorted((r["start_to_healthy_ms"] for r in rows), key=float))
     print(f"  {variant:10s} n={len(rows):2d}  " + "  ".join(f"{c}={med[c]:.0f}" for c in cols) + "  healthy: " + healthy)

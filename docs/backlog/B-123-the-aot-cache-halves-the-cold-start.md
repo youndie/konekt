@@ -22,10 +22,11 @@ over three screens). The application does not start without Postgres and the bro
 cannot happen in `docker build`: `scripts/measure/aot-coldstart.sh` trains inside a container of
 the stand image on the stand's network through the runner the plugin ships in `lib/`, lays the
 cache over the image as one more layer (`konekt-server:local-aot`), has the runner verify it there
-under `-XX:AOTMode=on`, and runs `coldstart.sh` against both images in alternation. Jar mtimes
-are pinned on the host before the image is built, to the constant the runner pins them to, because
-the JVM compares them with the cache and the runner's own pinning happens in a container the image
-never sees.
+under `-XX:AOTMode=on`, and runs `coldstart.sh` against both images in alternation. The JVM
+compares jar mtimes with the cache, and the runner's own pinning happens in a container the image
+never sees; the first run pinned them on the host before `docker build`, and the plugin now does it
+in `installDist` itself (zavarnik `B-28`, `0.1.0.11`) — re-run on that version with no host-side
+step, the verification in the second image loaded 5 217 of 5 220 application classes from the cache.
 
 **What came out** (2026-09-07, build box, chart limits; the raw record is
 [`measurements-2026-09-07/aot/`](../research/measurements-2026-09-07/aot/README.md)):
