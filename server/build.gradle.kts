@@ -119,11 +119,21 @@ val collidingLibNames: Provider<Map<String, String>> =
                 }.toMap()
         }
 
-// A WILDCARD CLASSPATH, so the start script does not name each jar. The generated script normally
-// lists every file, which would have to be renamed in step with the copy below — two places holding
-// one mapping, and the second is discovered by a container that starts and cannot find a class.
+// A LISTED CLASSPATH, IN THE RENAMED NAMES — and it was a wildcard until the first AOT cache reached
+// the cluster (`B-123`). `lib/*` spared the script from naming files that are renamed below, but the
+// JVM expands a wildcard in whatever order the filesystem answers, and the order differed between
+// Docker's overlay2 on the CI runner that trained the cache and the k0s node's containerd that ran
+// it: the JVM compared the two classpath strings, refused the cache — "The name of app classpath [1]
+// does not match" — and started without it, silently. The same map that renames the files names
+// them here, so the script and the directory cannot drift apart, and the string is the same on
+// every filesystem.
 tasks.named<CreateStartScripts>("startScripts") {
-    classpath = files("lib/*")
+    val runtime = configurations.runtimeClasspath.flatMap { it.incoming.artifacts.resolvedArtifacts }
+    val named =
+        runtime.zip(collidingLibNames) { artifacts, renames ->
+            artifacts.map { File("lib", renames[it.file.absolutePath] ?: it.file.name) }
+        }
+    classpath = files(tasks.jar) + files(named)
 }
 
 distributions {
