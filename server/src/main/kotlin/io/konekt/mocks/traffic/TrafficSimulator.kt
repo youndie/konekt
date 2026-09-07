@@ -1,5 +1,7 @@
 package io.konekt.mocks.traffic
 
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.TopicHandle
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.Travelling
@@ -15,8 +17,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
-import io.github.youndie.booblik.TopicName
-import io.github.youndie.booblik.net.client.TopicHandle
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant

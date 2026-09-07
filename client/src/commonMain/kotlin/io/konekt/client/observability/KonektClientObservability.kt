@@ -1,13 +1,13 @@
 package io.konekt.client.observability
 
-import io.konekt.client.app.KonektDegradation
-import io.konekt.time.KonektClock
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import io.github.youndie.katcher.Katcher
 import io.github.youndie.tracy.agent.AgentConfig
 import io.github.youndie.tracy.agent.TracyAgent
 import io.github.youndie.tracy.agent.TracyDelivery
+import io.konekt.client.app.KonektDegradation
+import io.konekt.time.KonektClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 // WHERE A CLIENT-SIDE DEGRADATION GOES, which until now was nowhere on any platform and could not go
 // anywhere on one of them.

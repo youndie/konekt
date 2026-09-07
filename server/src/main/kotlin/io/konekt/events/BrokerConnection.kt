@@ -1,13 +1,13 @@
 package io.konekt.events
 
+import io.github.youndie.booblik.net.client.BooblikConnection
+import io.github.youndie.booblik.net.client.Producer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import org.slf4j.LoggerFactory
-import io.github.youndie.booblik.net.client.BooblikConnection
-import io.github.youndie.booblik.net.client.Producer
 import java.io.Closeable
 import java.io.IOException
 import java.net.InetSocketAddress

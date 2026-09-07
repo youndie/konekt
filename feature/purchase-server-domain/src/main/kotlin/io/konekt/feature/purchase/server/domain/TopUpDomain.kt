@@ -1,10 +1,10 @@
 package io.konekt.feature.purchase.server.domain
 
+import io.github.youndie.petich.PetichPayload
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import io.github.youndie.petich.PetichPayload
 
 // What a top-up is, on the saga. @SerialName for the same load-bearing reason as PurchasePayload's:
 // without it the polymorphic discriminator is the fully qualified class name, and the STORAGE format

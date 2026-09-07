@@ -1,5 +1,6 @@
 package io.konekt.http
 
+import io.github.youndie.katcher.Katcher
 import io.konekt.domain.ApiError
 import io.konekt.domain.KonektException
 import io.ktor.http.HttpHeaders
@@ -15,7 +16,6 @@ import io.ktor.util.cio.ChannelWriteException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
-import io.github.youndie.katcher.Katcher
 
 private val logger = LoggerFactory.getLogger("io.konekt.http.StatusPages")
 

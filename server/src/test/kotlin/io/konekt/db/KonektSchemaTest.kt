@@ -1,5 +1,9 @@
 package io.konekt.db
 
+import io.github.youndie.petich.postgres.IdempotencyKeysTable
+import io.github.youndie.petich.postgres.OutboxEventsTable
+import io.github.youndie.petich.postgres.PetichTable
+import io.github.youndie.petich.postgres.ScheduledJobsTable
 import io.konekt.db.tables.konektCoreTables
 import io.konekt.feature.auth.server.data.OtpChallengeTable
 import io.konekt.feature.auth.server.data.RefreshTokenTable
@@ -13,10 +17,6 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
-import io.github.youndie.petich.postgres.IdempotencyKeysTable
-import io.github.youndie.petich.postgres.OutboxEventsTable
-import io.github.youndie.petich.postgres.PetichTable
-import io.github.youndie.petich.postgres.ScheduledJobsTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

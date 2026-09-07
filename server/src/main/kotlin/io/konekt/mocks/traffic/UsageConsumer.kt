@@ -1,5 +1,11 @@
 package io.konekt.mocks.traffic
 
+import io.github.youndie.booblik.Offset
+import io.github.youndie.booblik.PartitionId
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.FetchFailedException
+import io.github.youndie.booblik.net.wire.ErrorCode
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.RoamingConsumption
@@ -20,12 +26,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
-import io.github.youndie.booblik.Offset
-import io.github.youndie.booblik.PartitionId
-import io.github.youndie.booblik.TopicName
-import io.github.youndie.booblik.net.client.Consumer
-import io.github.youndie.booblik.net.client.FetchFailedException
-import io.github.youndie.booblik.net.wire.ErrorCode
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 

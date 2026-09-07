@@ -1,5 +1,6 @@
 package io.konekt.feature.purchase.server.data
 
+import io.github.youndie.petich.PetichInterceptor
 import io.konekt.feature.purchase.server.domain.AccountBalances
 import io.konekt.feature.purchase.server.domain.AnnouncePurchaseInterceptor
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
@@ -27,7 +28,6 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import io.github.youndie.petich.PetichInterceptor
 import kotlin.time.Duration
 
 // The four steps, in one place, so the saga can be read as a list rather than assembled from

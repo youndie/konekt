@@ -1,5 +1,13 @@
 package io.konekt.events
 
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.Producer
+import io.github.youndie.petich.outbox.OutboxPublisher
+import io.github.youndie.petich.outbox.OutboxRecord
+import io.github.youndie.petich.outbox.OutboxRelayWorker
+import io.github.youndie.petich.postgres.ExposedOutboxRepository
+import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.konekt.testing.PostgresHarness
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,14 +19,6 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import io.github.youndie.booblik.TopicName
-import io.github.youndie.booblik.net.client.Consumer
-import io.github.youndie.booblik.net.client.Producer
-import io.github.youndie.petich.outbox.OutboxPublisher
-import io.github.youndie.petich.outbox.OutboxRecord
-import io.github.youndie.petich.outbox.OutboxRelayWorker
-import io.github.youndie.petich.postgres.ExposedOutboxRepository
-import io.github.youndie.petich.postgres.OutboxEventsTable
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

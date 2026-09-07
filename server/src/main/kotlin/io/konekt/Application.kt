@@ -10,6 +10,23 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
+import io.github.youndie.petich.EnrichedPayload
+import io.github.youndie.petich.ExpiringPetichRepository
+import io.github.youndie.petich.OutboxAwarePetichRepository
+import io.github.youndie.petich.PetichEngine
+import io.github.youndie.petich.PetichEngineConfig
+import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.PetichPhase
+import io.github.youndie.petich.PetichRepository
+import io.github.youndie.petich.ResumePayload
+import io.github.youndie.petich.SimpleEnrichedPayload
+import io.github.youndie.petich.SuspendedPetichSweeper
+import io.github.youndie.petich.outbox.OutboxPublisher
+import io.github.youndie.petich.outbox.OutboxRelayWorker
+import io.github.youndie.petich.postgres.ExposedOutboxRepository
+import io.github.youndie.petich.postgres.ExposedPetichRepository
+import io.github.youndie.petich.postgres.OutboxEventsTable
+import io.github.youndie.petich.postgres.PetichTable
 import io.konekt.db.DatabaseFactory
 import io.konekt.events.BooblikOutboxPublisher
 import io.konekt.events.BrokerConnection
@@ -121,23 +138,6 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
-import io.github.youndie.petich.EnrichedPayload
-import io.github.youndie.petich.ExpiringPetichRepository
-import io.github.youndie.petich.OutboxAwarePetichRepository
-import io.github.youndie.petich.PetichEngine
-import io.github.youndie.petich.PetichEngineConfig
-import io.github.youndie.petich.PetichPayload
-import io.github.youndie.petich.PetichPhase
-import io.github.youndie.petich.PetichRepository
-import io.github.youndie.petich.ResumePayload
-import io.github.youndie.petich.SimpleEnrichedPayload
-import io.github.youndie.petich.SuspendedPetichSweeper
-import io.github.youndie.petich.outbox.OutboxPublisher
-import io.github.youndie.petich.outbox.OutboxRelayWorker
-import io.github.youndie.petich.postgres.ExposedOutboxRepository
-import io.github.youndie.petich.postgres.ExposedPetichRepository
-import io.github.youndie.petich.postgres.OutboxEventsTable
-import io.github.youndie.petich.postgres.PetichTable
 import kotlin.time.Duration
 
 // The engine is CIO because the load-bearing endpoint of this server is SSE — many long-lived,

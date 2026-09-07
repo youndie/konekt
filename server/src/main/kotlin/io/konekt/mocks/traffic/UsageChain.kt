@@ -1,5 +1,6 @@
 package io.konekt.mocks.traffic
 
+import io.github.youndie.booblik.TopicName
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.RoamingPackages
@@ -12,7 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import io.github.youndie.booblik.TopicName
 
 // THE PRODUCT'S OWN WORKER: whatever arrives on the `usage` topic is applied to the counters and
 // pushed to whoever is looking at a screen.

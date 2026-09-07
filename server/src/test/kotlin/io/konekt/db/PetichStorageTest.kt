@@ -1,13 +1,5 @@
 package io.konekt.db
 
-import io.konekt.testing.PostgresHarness
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.InterceptorResult
 import io.github.youndie.petich.Petich
@@ -21,6 +13,14 @@ import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
+import io.konekt.testing.PostgresHarness
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import kotlinx.serialization.modules.subclass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

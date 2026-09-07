@@ -1,5 +1,8 @@
 package io.konekt.mocks
 
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.Producer
 import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.UpdateComponentMessage
@@ -35,9 +38,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import io.github.youndie.booblik.TopicName
-import io.github.youndie.booblik.net.client.Consumer
-import io.github.youndie.booblik.net.client.Producer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

@@ -1,12 +1,12 @@
 package io.konekt.events
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import io.github.youndie.booblik.TopicName
 import io.github.youndie.booblik.net.client.TopicHandle
 import io.github.youndie.petich.outbox.OutboxPublisher
 import io.github.youndie.petich.outbox.OutboxRecord
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 // The transport petich deliberately does not provide.
 //
