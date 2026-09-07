@@ -45,6 +45,10 @@ for round in $(seq 1 "$ROUNDS"); do
     echo "== round $round: konekt-server-jib:$variant, $RUNS restarts"
     SERVER_IMAGE=konekt-server-jib:$variant "${COMPOSE[@]}" up -d --no-build --wait server
     docker inspect --format '  image {{.Config.Image}}' "${PROJECT}-server-1"
+    # A Jib image declares no HEALTHCHECK, so `--wait` returns on "running", not on "serving" —
+    # and coldstart.sh's sign-in against a server still starting fails silently under `curl -sf`.
+    for i in $(seq 300); do curl -sf -o /dev/null "$BASE/health" && break; sleep 0.1; done
+    curl -sf -o /dev/null "$BASE/health" || { echo "server never answered /health"; exit 1; }
     scripts/measure/coldstart.sh "$RUNS" "$BASE"
     cp "$MEASURE_HOME/out/coldstart.csv" "$OUT/coldstart-$variant-$round.csv"
   done
