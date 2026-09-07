@@ -300,6 +300,26 @@ at two is marked ready at five either way, so the gain reaches a rollout only on
 retuned — and the cache reaches the image only once the release trains it, which today it has
 nowhere to do (`B-119`, `B-123`).
 
+**The same restart on a Jib image** (the same day, `scripts/measure/aot-coldstart-jib.sh`; record in
+[`measurements-2026-09-07/aot-jib/`](measurements-2026-09-07/aot-jib/README.md)). The server as a
+Jib image — `eclipse-temurin:25-jre`, `containerizingMode = "packaged"`, no start script — and
+the cache trained inside a container of it by zavarnik's `jibAotTrain` on the stand's network,
+carried by the next Jib build as a layer with `-XX:AOTCache` in the entrypoint; 4 727 of 4 730
+application classes came from it under `-XX:AOTMode=on`.
+
+| | Jib, without the cache | Jib, with the cache |
+|---|---|---|
+| `docker start` → `/health`, median of 10 | 6 244 ms (round 2 alone 4 253) | **2 242 ms** |
+| the same, range | 3 396–21 472 ms | 1 476–2 729 ms |
+| first home screen, median | 309 ms | **168 ms** |
+| p50 / p95 of the next hundred | 10 / 74 ms | 8 / 90 ms |
+| image | 537 MB | 614 MB |
+
+The first round without the cache carried four restarts between 8.5 and 21.5 s, taken right after
+the Jib builds and the training on the same box; the second round, 3.4–8.2 s, is the Dockerfile
+baseline again. The Jib image is 65 MB smaller than the Dockerfile one with the same jars, and
+the two paths agree on the result.
+
 ## 4. Realtime fan-out
 
 **What was measured.** N subscribers, each with a plan and an open SSE stream from the generator

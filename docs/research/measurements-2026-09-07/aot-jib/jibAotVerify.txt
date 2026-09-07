@@ -1,0 +1,1 @@
+4727 of 4730 application classes (99.9%) came from app.aot; 7778 of 7810 loaded classes overall

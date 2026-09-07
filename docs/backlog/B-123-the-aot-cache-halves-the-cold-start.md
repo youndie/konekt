@@ -46,6 +46,30 @@ move, because the cache holds classes, heap objects and method profiles, not com
 JIT still compiles the request path, only from a warm profile. This clears the threshold the
 experiment was given (20 % of readiness) by a wide margin.
 
+**The same server as a Jib image** (the same day, `scripts/measure/aot-coldstart-jib.sh`): `:server`
+gains `jib { }` — `eclipse-temurin:25-jre`, `packaged`, user 10001 — and zavarnik's Jib mode trains
+inside a container of the Jib image on the stand's network (`zavarnik { jib { dockerRunArgs } }`
+fed from `-Pkonekt.aotDocker`), the next Jib build carries the cache as a layer with
+`-XX:AOTCache` in the entrypoint, `jibAotVerify` checks it there: 4 727 of 4 730 application
+classes from the cache. The record is
+[`measurements-2026-09-07/aot-jib/`](../research/measurements-2026-09-07/aot-jib/README.md):
+
+| | Jib image without the cache | Jib image with the cache |
+|---|---|---|
+| `docker start` → `/health`, median of 10 | 6 244 ms (round 2 alone: 4 253 ms) | **2 242 ms** |
+| the same, range | 3 396–21 472 ms; round 1 had four restarts over 8 s | 1 476–2 729 ms |
+| first home screen, median | 309 ms | **168 ms** |
+| p50 / p95 of the next hundred | 10 / 74 ms | 8 / 90 ms |
+| cache / image | — | 61 MB / 614 MB against 537 |
+
+Round 1 of the image without the cache is the noisy one — four restarts between 8.5 and 21.5 s
+right after the Jib builds and the training on the same box — and round 2 (3.4–8.2 s, median
+4.3 s) is the Dockerfile baseline again. Both paths land in the same place: about two seconds to
+`/health` on one core against four and a half. Two things the Jib path taught: Jib 3.5.4 does not
+support the configuration cache this build has on (`--no-configuration-cache` on its tasks), and
+a Jib image declares no `HEALTHCHECK`, so `compose up --wait` returns on "running" and the
+measurement has to wait for `/health` itself.
+
 **What shipping it would take, and this item decides whether to:**
 
 - training becomes a step of the release: `publish-image.yaml` has no stand today (`B-119` is
