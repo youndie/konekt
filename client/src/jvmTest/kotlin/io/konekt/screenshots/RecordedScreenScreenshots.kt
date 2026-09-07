@@ -8,7 +8,7 @@ import io.github.youndie.kompot.decodeKompotComponent
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.form.FormSchema
 import io.konekt.client.net.konektClientJson
-import ru.workinprogress.viddik.annotations.ViddikScreenshot
+import io.github.youndie.viddik.annotations.ViddikScreenshot
 
 // A GOLDEN OF A TREE THE SERVER PRODUCED, which is B-43's fourth acceptance criterion and the one
 // thing every other frame in this package cannot be.

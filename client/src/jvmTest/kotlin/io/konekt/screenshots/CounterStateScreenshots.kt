@@ -5,7 +5,7 @@ import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.SizeType
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
-import ru.workinprogress.viddik.annotations.ViddikScreenshot
+import io.github.youndie.viddik.annotations.ViddikScreenshot
 
 // The counter card in every state the wire can put it in — including one the wire can put it in and
 // this build has never heard of.

@@ -1,6 +1,6 @@
 package io.konekt.observability
 
-import ru.workinprogress.tracy.agent.TracyAgent
+import io.github.youndie.tracy.agent.TracyAgent
 
 // THE HANDLE A FEATURE ASKS FOR, and it is a wrapper rather than the agent itself for one reason:
 // Koin cannot bind a null, and a feature must be able to run in a deployment that has no tracy.

@@ -15,8 +15,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.TopicHandle
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.TopicHandle
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant

@@ -39,7 +39,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import ru.workinprogress.katcher.Katcher
+import io.github.youndie.katcher.Katcher
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

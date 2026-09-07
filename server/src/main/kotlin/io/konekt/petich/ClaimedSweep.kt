@@ -12,9 +12,9 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.slf4j.LoggerFactory
-import ru.workinprogress.petich.ExpiringPetichRepository
-import ru.workinprogress.petich.Petich
-import ru.workinprogress.petich.PetichRepository
+import io.github.youndie.petich.ExpiringPetichRepository
+import io.github.youndie.petich.Petich
+import io.github.youndie.petich.PetichRepository
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 

@@ -13,8 +13,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
 import kotlin.time.Duration
 
 // Both ends of the simulated traffic, started together, because separately they are two halves of a

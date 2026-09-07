@@ -35,9 +35,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
-import ru.workinprogress.booblik.net.client.Producer
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.Producer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -140,7 +140,7 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
-                    ).start(scope, partition, ru.workinprogress.booblik.Offset.ZERO)
+                    ).start(scope, partition, io.github.youndie.booblik.Offset.ZERO)
 
                 // THE BROKER GOES AWAY AND STAYS AWAY. Not a replaced pod — a port that answers
                 // nothing, which is the state a pod is in for the seconds between the old one dying
@@ -671,7 +671,7 @@ class TrafficChainTest {
     // and `PollIsNotAPositionTest` is what stops it coming back — including through a comment that
     // spells it out, which is why this one does not.
     private suspend fun endOf(
-        connection: ru.workinprogress.booblik.net.client.BooblikConnection,
+        connection: io.github.youndie.booblik.net.client.BooblikConnection,
         topic: String,
     ) = connection
         .metadata(listOf(TopicName(topic)))

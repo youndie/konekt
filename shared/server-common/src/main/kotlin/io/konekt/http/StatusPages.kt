@@ -15,7 +15,7 @@ import io.ktor.util.cio.ChannelWriteException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import org.slf4j.LoggerFactory
-import ru.workinprogress.katcher.Katcher
+import io.github.youndie.katcher.Katcher
 
 private val logger = LoggerFactory.getLogger("io.konekt.http.StatusPages")
 

@@ -27,7 +27,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import ru.workinprogress.petich.PetichInterceptor
+import io.github.youndie.petich.PetichInterceptor
 import kotlin.time.Duration
 
 // The four steps, in one place, so the saga can be read as a list rather than assembled from

@@ -5,12 +5,12 @@ import io.konekt.domain.Money
 import io.konekt.domain.suspendRunCatching
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ru.workinprogress.petich.Petich
-import ru.workinprogress.petich.PetichEngine
-import ru.workinprogress.petich.PetichRepository
-import ru.workinprogress.petich.PetichStatus
-import ru.workinprogress.petich.ResumePayload
-import ru.workinprogress.petich.SimpleEnrichedPayload
+import io.github.youndie.petich.Petich
+import io.github.youndie.petich.PetichEngine
+import io.github.youndie.petich.PetichRepository
+import io.github.youndie.petich.PetichStatus
+import io.github.youndie.petich.ResumePayload
+import io.github.youndie.petich.SimpleEnrichedPayload
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

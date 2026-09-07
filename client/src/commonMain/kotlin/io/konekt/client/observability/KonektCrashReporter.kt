@@ -1,6 +1,6 @@
 package io.konekt.client.observability
 
-import ru.workinprogress.katcher.Katcher
+import io.github.youndie.katcher.Katcher
 
 // CRASH REPORTING, FOR EVERY PLATFORM THIS CLIENT RUNS ON. It lived in `iosMain` until `B-85`, and
 // nothing in it was ever Apple-specific: the whole file is the common `Katcher` API plus three

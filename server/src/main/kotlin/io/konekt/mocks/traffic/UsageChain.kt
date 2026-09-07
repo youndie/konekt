@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import ru.workinprogress.booblik.TopicName
+import io.github.youndie.booblik.TopicName
 
 // THE PRODUCT'S OWN WORKER: whatever arrives on the `usage` topic is applied to the counters and
 // pushed to whoever is looking at a screen.

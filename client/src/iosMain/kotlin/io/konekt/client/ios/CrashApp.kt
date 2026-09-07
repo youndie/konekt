@@ -4,7 +4,7 @@ import io.konekt.client.observability.KonektCrashReporter
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSProcessInfo
 import platform.posix.usleep
-import ru.workinprogress.katcher.Katcher
+import io.github.youndie.katcher.Katcher
 
 // AN IOS APPLICATION WHOSE WHOLE JOB IS TO CRASH, and B-27 has no way to be met without one.
 //

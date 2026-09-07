@@ -3,12 +3,12 @@ package io.konekt.feature.purchase.server.domain
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import ru.workinprogress.petich.InterceptorResult
-import ru.workinprogress.petich.OutboxEvent
-import ru.workinprogress.petich.Petich
-import ru.workinprogress.petich.PetichInterceptor
-import ru.workinprogress.petich.PetichPayload
-import ru.workinprogress.petich.PetichPhase
+import io.github.youndie.petich.InterceptorResult
+import io.github.youndie.petich.OutboxEvent
+import io.github.youndie.petich.Petich
+import io.github.youndie.petich.PetichInterceptor
+import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.PetichPhase
 
 // THREE INTERCEPTORS, and the order is the whole design.
 //

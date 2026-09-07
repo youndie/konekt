@@ -24,9 +24,9 @@ import io.konekt.client.theme.BrandKits
 import io.konekt.client.theme.KonektTypography
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import ru.workinprogress.viddik.LocalViddikDarkTheme
-import ru.workinprogress.viddik.annotations.ViddikScreenshot
-import ru.workinprogress.viddik.core.viddikTypography
+import io.github.youndie.viddik.LocalViddikDarkTheme
+import io.github.youndie.viddik.annotations.ViddikScreenshot
+import io.github.youndie.viddik.core.viddikTypography
 
 // THE APPLICATION, PHOTOGRAPHED — which the gallery beside this file does not do, and that omission
 // is why every frame-level defect in this product was found by a person and none by the harness.

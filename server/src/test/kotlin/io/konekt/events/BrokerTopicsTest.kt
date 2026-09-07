@@ -5,10 +5,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import ru.workinprogress.booblik.PartitionId
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
-import ru.workinprogress.booblik.net.client.Producer
+import io.github.youndie.booblik.PartitionId
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.Producer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

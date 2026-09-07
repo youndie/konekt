@@ -2,9 +2,9 @@ package io.konekt.events
 
 import io.konekt.mocks.traffic.UsageConsumer
 import kotlinx.coroutines.runBlocking
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
-import ru.workinprogress.petich.outbox.OutboxRecord
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.petich.outbox.OutboxRecord
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

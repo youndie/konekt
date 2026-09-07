@@ -13,7 +13,7 @@ import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.konekt.client.net.konektClientJson
-import ru.workinprogress.viddik.annotations.ViddikScreenshot
+import io.github.youndie.viddik.annotations.ViddikScreenshot
 
 // EVERY SCREEN THIS BUILD SERVES, AT THE SIZE THE CANVAS DRAWS THEM, so the two can be held side by
 // side. `RecordedHomeScreen` was one frame of this and carried the whole argument for the approach;

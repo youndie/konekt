@@ -4,10 +4,10 @@ import io.konekt.client.app.KonektDegradation
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import ru.workinprogress.katcher.Katcher
-import ru.workinprogress.tracy.agent.AgentConfig
-import ru.workinprogress.tracy.agent.TracyAgent
-import ru.workinprogress.tracy.agent.TracyDelivery
+import io.github.youndie.katcher.Katcher
+import io.github.youndie.tracy.agent.AgentConfig
+import io.github.youndie.tracy.agent.TracyAgent
+import io.github.youndie.tracy.agent.TracyDelivery
 
 // WHERE A CLIENT-SIDE DEGRADATION GOES, which until now was nowhere on any platform and could not go
 // anywhere on one of them.

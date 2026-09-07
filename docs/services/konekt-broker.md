@@ -35,7 +35,7 @@ What it does not do: **it does not create topics**, and it does not store consum
 ## 2. API contracts
 
 There is no HTTP surface. The wire is booblik's own plaintext protocol, spoken through
-`ru.workinprogress.booblik.net.client` — see the anchors below for the only two call sites.
+`io.github.youndie.booblik.net.client` — see the anchors below for the only two call sites.
 
 ## 2a. Code anchors
 

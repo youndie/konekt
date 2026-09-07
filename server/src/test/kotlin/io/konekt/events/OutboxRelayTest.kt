@@ -11,14 +11,14 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
-import ru.workinprogress.booblik.net.client.Producer
-import ru.workinprogress.petich.outbox.OutboxPublisher
-import ru.workinprogress.petich.outbox.OutboxRecord
-import ru.workinprogress.petich.outbox.OutboxRelayWorker
-import ru.workinprogress.petich.postgres.ExposedOutboxRepository
-import ru.workinprogress.petich.postgres.OutboxEventsTable
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.Producer
+import io.github.youndie.petich.outbox.OutboxPublisher
+import io.github.youndie.petich.outbox.OutboxRecord
+import io.github.youndie.petich.outbox.OutboxRelayWorker
+import io.github.youndie.petich.postgres.ExposedOutboxRepository
+import io.github.youndie.petich.postgres.OutboxEventsTable
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -143,8 +143,8 @@ class OutboxRelayTest {
     // between the publish and the mark leaves behind — and the only way the outbox produces a
     // duplicate at all.
     private class SwallowsFirstMark(
-        private val delegate: ru.workinprogress.petich.outbox.OutboxRepository,
-    ) : ru.workinprogress.petich.outbox.OutboxRepository by delegate {
+        private val delegate: io.github.youndie.petich.outbox.OutboxRepository,
+    ) : io.github.youndie.petich.outbox.OutboxRepository by delegate {
         private var swallowed = false
 
         override suspend fun markDelivered(id: String) {
@@ -190,7 +190,7 @@ class OutboxRelayTest {
     // and `PollIsNotAPositionTest` is what stops it coming back — including through a comment that
     // spells it out, which is why this one does not.
     private suspend fun endOf(
-        connection: ru.workinprogress.booblik.net.client.BooblikConnection,
+        connection: io.github.youndie.booblik.net.client.BooblikConnection,
         topic: String,
     ) = connection
         .metadata(listOf(TopicName(topic)))

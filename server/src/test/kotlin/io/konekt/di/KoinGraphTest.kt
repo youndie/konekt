@@ -103,12 +103,12 @@ class KoinGraphTest {
             // it before the container and hands over the wrapper, precisely so that a deployment
             // without tracy has a `KonektTrace` holding null rather than a missing definition. Koin's
             // `verify` reflects on the constructor and cannot see that, so it is named here.
-            ru.workinprogress.tracy.agent.TracyAgent::class,
+            io.github.youndie.tracy.agent.TracyAgent::class,
             // the application's single Json, assembled in Application.kt
             kotlinx.serialization.json.Json::class,
             // petichModule, which needs a live Database and so is not verified here
-            ru.workinprogress.petich.PetichEngine::class,
-            ru.workinprogress.petich.PetichRepository::class,
+            io.github.youndie.petich.PetichEngine::class,
+            io.github.youndie.petich.PetichRepository::class,
             // The composition root's own module composes across features: TrafficChain names the
             // broker, the counters and the card builder, and each of those is another module's. This
             // is the list growing for the reason it was meant to — a feature genuinely reaching

@@ -20,12 +20,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
-import ru.workinprogress.booblik.Offset
-import ru.workinprogress.booblik.PartitionId
-import ru.workinprogress.booblik.TopicName
-import ru.workinprogress.booblik.net.client.Consumer
-import ru.workinprogress.booblik.net.client.FetchFailedException
-import ru.workinprogress.booblik.net.wire.ErrorCode
+import io.github.youndie.booblik.Offset
+import io.github.youndie.booblik.PartitionId
+import io.github.youndie.booblik.TopicName
+import io.github.youndie.booblik.net.client.Consumer
+import io.github.youndie.booblik.net.client.FetchFailedException
+import io.github.youndie.booblik.net.wire.ErrorCode
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 

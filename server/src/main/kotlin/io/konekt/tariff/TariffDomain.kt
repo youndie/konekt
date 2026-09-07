@@ -3,7 +3,7 @@ package io.konekt.tariff
 import io.konekt.time.KonektClock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import ru.workinprogress.petich.PetichPayload
+import io.github.youndie.petich.PetichPayload
 import java.time.ZoneId
 import kotlin.time.Instant
 import java.time.Instant as JavaInstant
