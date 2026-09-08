@@ -54,8 +54,11 @@ services:
       #
       # The segment size is the load-bearing one: retention drops whole segments and never the active
       # one, so a bound below one segment deletes nothing at all.
-      BOOBLIK_SEGMENT_CAPACITY_BYTES: 33554432
-      BOOBLIK_RETENTION_BYTES: 134217728
+      # 512 MiB segments and two of them per partition, because the cluster's volume already holds a
+      # log of that size and booblik refuses a smaller capacity over it (`B-124`); the same numbers
+      # here, because `ComposeStandTest` pairs the two files.
+      BOOBLIK_SEGMENT_CAPACITY_BYTES: 536870912
+      BOOBLIK_RETENTION_BYTES: 1073741824
       BOOBLIK_RETENTION_MILLIS: 21600000
     volumes:
       - broker-data:/var/lib/booblik

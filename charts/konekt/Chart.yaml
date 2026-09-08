@@ -26,7 +26,10 @@ type: application
 # 0.2.3 -> 0.2.4: `B-123` gave the server a startup probe and took the initial delay off readiness,
 # so a pod that answers /health in two seconds is ready in two rather than five. A values file
 # written for 0.2.3 renders under this without a change; the shape moved, additively — PATCH.
-version: 0.2.4
+# 0.2.4 -> 0.2.5: `B-124` sets the broker's segment to the 512 MiB the cluster's log already has and
+# the retention to two of them; a values file that names neither renders with the new defaults, and
+# one that names them renders as it did — additive, PATCH.
+version: 0.2.5
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

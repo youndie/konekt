@@ -1,7 +1,7 @@
 ---
 id: B-124
 title: "The chart's broker segment size cannot be deployed over the broker's existing log"
-status: open
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -29,3 +29,11 @@ the chart *as deployed*, not with the chart's defaults.
   the owner's call, not a deploy step's.
 - Anchors: `charts/konekt/values.yaml` (`broker.segmentBytes`), `docs/backlog/B-100-*.md`,
   `docs/backlog/B-106-*.md`, `docs/backlog/B-123-the-aot-cache-halves-the-cold-start.md`.
+
+**Decided 2026-09-08, the owner: the log stays, the number moves.** `values.yaml` says 512 MiB
+(chart `0.2.5`), and so does `deploy/compose.yaml`, which `ComposeStandTest` pairs with it.
+Retention moved with it to 1 GiB per partition — a bound below one segment deletes nothing, as the
+compose file already said — and the volume's 2 GiB claim stays where it was: `local-path` neither
+enforces nor expands it, and a changed `volumeClaimTemplates` size would be refused by the
+StatefulSet. The release's override is gone: revision 49 was upgraded with `--reset-values` and
+the release's own user values minus that key, and `helm get values` no longer names it.

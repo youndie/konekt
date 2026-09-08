@@ -122,8 +122,16 @@ broker:
   # booblik refuses it with "is not an integer" — which is the whole of why the first deploy of these
   # values rolled back. The compose stand never showed it, because there the number is already a
   # string in an environment file.
-  segmentBytes: "33554432"
-  retentionBytes: "134217728"
+  #
+  # 512 MiB AND NOT 32 (`B-124`, 2026-09-08). The first deploy that delivered these values found a
+  # log on the volume with 512 MiB segments — the broker had run for weeks with the env empty and its
+  # own default — and booblik refuses to open a log under a smaller capacity: "Lowering the capacity
+  # under an existing log would discard". The owner chose the log over the smaller number, so the
+  # segment is the size the volume already has, and retention follows it: a bound below one segment
+  # deletes nothing, so it is two segments per partition. The 32 MiB arithmetic above is what a fresh
+  # volume would want; this deployment is not a fresh volume.
+  segmentBytes: "536870912"
+  retentionBytes: "1073741824"
   retentionMillis: "21600000"
   size: 2Gi
   class: local-path
