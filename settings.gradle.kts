@@ -15,18 +15,22 @@ pluginManagement {
         mavenCentral()
         google()
 
-        // viddik's Gradle plugin is published here and nowhere else. Filtered like every
-        // third-party repository in this file: an unfiltered one takes part in resolving EVERY
-        // plugin, and when it is unreachable Gradle disables it and fails plugins it never served.
+        // The sborka plugins are published here and nowhere else, and this build cannot reach
+        // them any other way: `pluginManagement` is evaluated before the sborka settings plugin
+        // it fetches. viddik used to be the reason this line was here and is not any more —
+        // 0.4.0 is on Maven Central, declared above, and this server answers 404 for it.
+        //
+        // Filtered like every third-party repository in this file: an unfiltered one takes part in
+        // resolving EVERY plugin, and when it is unreachable Gradle disables it and fails plugins
+        // it never served.
         maven("https://reposilite.kotlin.website/snapshots") {
             name = "wip-snapshots"
             content {
-                // Both groups on purpose. The portfolio is moving to `io.github.youndie` and
-                // sborka is already there — the plugin marker and the jar behind it are under the
-                // new one. The old one is held by the library versions published before the move:
-                // they are still on the server and resolve as before.
+                // One group, and it is the only one there can be. The portfolio's move to
+                // `io.github.youndie` is finished: nothing this build resolves is under
+                // `ru.workinprogress` any more, and a filter naming a group the server is never asked
+                // about reads as a dependency that is still there.
                 includeGroupByRegex("io\\.github\\.youndie.*")
-                includeGroupByRegex("ru\\.workinprogress.*")
             }
         }
     }
