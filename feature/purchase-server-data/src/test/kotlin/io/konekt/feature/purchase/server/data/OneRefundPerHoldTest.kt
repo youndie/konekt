@@ -102,6 +102,10 @@ class OneRefundPerHoldTest {
             val orderId = Uuid.random().toString()
             balances.hold(accountId, orderId, price)
 
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "a test racing two compensations: capturing the throw is what it measures",
+            )
             withContext(Dispatchers.IO) {
                 listOf(
                     async { runCatching { balances.release(accountId, orderId, price) } },

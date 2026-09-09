@@ -46,6 +46,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.plus
 import java.sql.DriverManager
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -240,6 +241,10 @@ object Stand {
         while (started.elapsedNow() < timeout) {
             try {
                 attempt()?.let { return it }
+            } catch (failure: CancellationException) {
+                // A cancelled attempt is not an attempt that failed. Recorded as one, this loop
+                // would go on polling for the rest of the timeout and then blame the subject.
+                throw failure
             } catch (failure: Exception) {
                 lastFailure = failure
             }

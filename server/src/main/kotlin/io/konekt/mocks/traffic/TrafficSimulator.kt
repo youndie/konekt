@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -107,6 +108,10 @@ class TrafficSimulator(
                         // simulator with it — which is exactly what it did to the consumer.
                         try {
                             generation = broker.reconnect(generation)
+                        } catch (cancelled: CancellationException) {
+                            // The simulator being shut down is not a broker that is still away.
+                            // Logged as one, the loop would go on ticking after its own cancellation.
+                            throw cancelled
                         } catch (stillDown: Exception) {
                             logger.warn("the broker is not back yet; retrying in {}", interval, stillDown)
                         }
