@@ -83,6 +83,10 @@ class CustomPackagePlansTest {
         runTest {
             assertNotNull(plans.find(CustomPackagePlans.idOf(0, 0, 0)), "the state the form opens on does not resolve")
 
+            @Suppress(
+                "ktlint:kapkan:cancellation-swallowed",
+                "a test asserting the refusal; nothing cancels this scope",
+            )
             val refused =
                 runCatching {
                     CustomPackagePlans.requireSomethingChosen(CustomPackageQuantities(0, 0, 0))
