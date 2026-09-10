@@ -59,7 +59,13 @@ starting the same image on one box in one session, and not with §6 or §6a of
   the flag works on a plain start of the same image: brand-a answers `Konekt`, brand-b answers
   `Inkline`. So the snapshot carries the configuration it was taken with, and anything read once
   at boot — a brand, a database URL, a secret — is frozen into it.
-- **What was not reached:** the eSIM wizard issues its ICCID from `kotlin.random.Random.Default`
-  (`MockSmDpPlus`), which a restore does not reseed — but the wizard's first screen carries only a
-  `wizardId`, a UUID from `SecureRandom`, and those two differed as expected. Driving the wizard to
-  the step that issues a profile is left to zavarnik's `B-33`.
+- **The eSIM identifiers do not repeat, and the reason is worth knowing.** The wizard issues its
+  activation code from `kotlin.random.Random.Default` — on the JVM, the calling thread's
+  `ThreadLocalRandom` — which a restore does not reseed. Five restores of one snapshot were walked
+  to the issuing step, two with the traffic simulator on and three with it off
+  (`SIM=false`): five different codes. The stream is genuinely shared between replicas — zavarnik's
+  `experiments/crac-smoke/randoms.sh` shows two restores drawing identical `ThreadLocalRandom`
+  values — but in a server the sign-in, the token, the screens, Exposed and Hikari draw from it
+  first, on whichever pool thread served the request, so how far along the stream an identifier
+  lands is not deterministic. A collision is possible, not reproducible on demand; the check that
+  would catch it has to probe the generators, not compare the product's answers.

@@ -70,13 +70,15 @@ stand_up() {
 }
 stand_down() { SERVER_IMAGE=$IMG "${COMPOSE[@]}" down -v >/dev/null 2>&1; }
 
-# The environment the compose file gives the server, as plain flags. The traffic simulator is ON:
+# The environment the compose file gives the server, as plain flags. The traffic simulator is ON by
+# default (`SIM=false` turns it off, which is how the eSIM identifiers were compared without the
+# simulator drawing from the same generators):
 # the realtime updates the probe waits for are usage events, and without it the probe's stream is
 # empty on a plain start too — which is what the first h9 run measured.
 env_flags() {
   echo "-e DB_URL=jdbc:postgresql://postgres:5432/konekt -e DB_USER=konekt -e DB_PASSWORD=konekt \
 -e JWT_SECRET=dev-secret-not-for-anything-real -e BROKER_HOST=broker -e BROKER_PORT=9092 \
--e DEV_REVEAL_OTP=true -e DEV_SCREENS=true -e SIMULATE_TRAFFIC=true"
+-e DEV_REVEAL_OTP=true -e DEV_SCREENS=true -e SIMULATE_TRAFFIC=${SIM:-true}"
 }
 
 wait_ready() { # container -> ms to the first 200 on /health
