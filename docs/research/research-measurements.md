@@ -321,6 +321,48 @@ the Jib builds and the training on the same box; the second round, 3.4–8.2 s, 
 baseline again. The Jib image is 65 MB smaller than the Dockerfile one with the same jars, and
 the two paths agree on the result.
 
+### 6b. The same restart from a CRaC checkpoint (2026-09-11, `B-125`)
+
+**What was measured.** The same box, the same compose stand, and the same two questions — time to
+`/health` and the first signed-in screen — but the image is the distribution on
+`azul/zulu-openjdk:25-jre-crac` and the second variant is a *restore* of a checkpoint taken after
+the server had served 20 passes over the three `screens` routes. `scripts/measure/crac-restore.sh`,
+ten of each in alternation; the record, every phase and the policy file are in
+[`measurements-2026-09-11/crac/`](measurements-2026-09-11/crac/README.md). **No CPU limit**, so
+these two columns compare with each other and not with §6 or §6a.
+
+| | plain start | restore |
+|---|---|---|
+| `docker run` → `/health`, median of 10 | 2 317 ms (2 141–2 513) | **131 ms** (115–151) |
+| first signed-in home screen | 118 ms (102–128) | **32 ms** (27–50) |
+| checkpoint image | — | 143 MB |
+
+**What had to be true for it to work at all.** The checkpoint refuses while the pool holds
+connections, and names them: `CheckpointOpenSocketException` with
+`This file descriptor was created by HikariPool-1:connection-adder`. Closing them by policy fails —
+Hikari opens replacements while the checkpoint is being taken. **Ignoring** them works: warp
+replaces each with `/dev/null` at restore, Hikari validates and discards all ten, and the broker
+client reconnects on its own. One policy file, no application code:
+
+```yaml
+type: SOCKET
+listening: true
+action: reopen
+---
+type: SOCKET
+remotePort: 5432
+action: ignore
+```
+
+**What it says.** The restore is an order of magnitude faster than the start it replaces and the
+first request is not merely early but *warm* — the JIT is restored with the process, which is the
+one thing the AOT cache of §6a cannot do. The round trip proves it end to end: top-up, purchase,
+confirm, the order `completed`, and twelve realtime updates over SSE, the same twelve a plain start
+receives. What it costs: a single-vendor JDK, a 143 MB layer, and a snapshot that is frozen around
+the configuration it was taken with — `BRAND` on the restored container is ignored, because the
+brand was read at startup. Whether this reaches a deployment is `B-125`; the gate it answers is
+zavarnik's `B-32`.
+
 ## 4. Realtime fan-out
 
 **What was measured.** N subscribers, each with a plan and an open SSE stream from the generator

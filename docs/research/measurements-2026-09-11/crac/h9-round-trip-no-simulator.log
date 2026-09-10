@@ -1,0 +1,129 @@
+[00:34:32] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-broker-1  Healthy
+ Container konekt-crac-postgres-1  Healthy
+[00:34:37] stand up: postgres, broker, migrations
+=== phase h9
+[00:34:40] server up for the checkpoint: 2295 ms to /health
+[00:34:41] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+0
+-- container log tail:
+53595.612617: warp: error: Can't open FD 137 = socket:[139028] - replacing FD with /dev/null: No such file or directory
+53595.612649: warp: error: Can't open FD 138 = socket:[139039] - replacing FD with /dev/null: No such file or directory
+53595.612682: warp: error: Can't open FD 139 = socket:[139040] - replacing FD with /dev/null: No such file or directory
+53595.612702: warp: error: Can't open FD 140 = socket:[137344] - replacing FD with /dev/null: No such file or directory
+53595.612734: warp: error: Can't open FD 141 = socket:[133325] - replacing FD with /dev/null: No such file or directory
+53595.612754: warp: error: Can't open FD 142 = socket:[139044] - replacing FD with /dev/null: No such file or directory
+53595.612801: warp: error: Can't open FD 143 = socket:[133327] - replacing FD with /dev/null: No such file or directory
+53595.612819: warp: error: Can't open FD 144 = socket:[135157] - replacing FD with /dev/null: No such file or directory
+53595.613087: Waiting for other threads...
+53595.613088: Memory cleanup after checkpoint/restore
+53595.613830: Checkpointing thread checkpoint/restore completed
+53595.613835: warp: Checkpoint successful!
+-- image: 2 files, 141M
+-- control: the same probe against a plain start of the same image
+{
+  "otp_request": {
+    "status": 200,
+    "ms": 123
+  },
+  "otp_reveal": {
+    "status": 200,
+    "ms": 20
+  },
+  "otp_verify": {
+    "status": 200,
+    "ms": 90
+  },
+  "top_up": {
+    "status": 201,
+    "ms": 206
+  },
+  "purchase": {
+    "status": 202,
+    "ms": 65
+  },
+  "confirm": {
+    "status": 200,
+    "ms": 63
+  },
+  "order_state": {
+    "status": 200,
+    "ms": 16,
+    "value": "completed"
+  },
+  "screen_home": {
+    "status": 200,
+    "ms": 58
+  },
+  "realtime": {
+    "updates": 0,
+    "first": null
+  }
+}
+   control exit=1
+-- restored:
+ready=103ms
+  sign-in ok; home screen: 16ms 200; second: 16ms 200
+{
+  "otp_request": {
+    "status": 200,
+    "ms": 22
+  },
+  "otp_reveal": {
+    "status": 200,
+    "ms": 5
+  },
+  "otp_verify": {
+    "status": 200,
+    "ms": 17
+  },
+  "top_up": {
+    "status": 201,
+    "ms": 67
+  },
+  "purchase": {
+    "status": 202,
+    "ms": 27
+  },
+  "confirm": {
+    "status": 200,
+    "ms": 25
+  },
+  "order_state": {
+    "status": 200,
+    "ms": 18,
+    "value": "completed"
+  },
+  "screen_home": {
+    "status": 200,
+    "ms": 32
+  },
+  "realtime": {
+    "updates": 0,
+    "first": null
+  }
+}
+   restored exit=1
+-- restored container log, anything about the pool or the broker:
+java.io.EOFException: broker closed the connection
+	at io.github.youndie.booblik.net.client.ResponseReader.readFully(ResponseReader.kt:116)
+	at io.github.youndie.booblik.net.client.ResponseReader.readFrame(ResponseReader.kt:59)
+	at io.github.youndie.booblik.net.client.BooblikConnection$reader$1.invokeSuspend(BooblikConnection.kt:93)
+22:35:14.634 WARN  io.konekt.events.broker - reconnected to the broker at broker:9092 — generation 1
+22:35:14.636 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@52a70627 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.636 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@42f358b0 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.638 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@626e600c (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.638 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5ef0edb4 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@2258be28 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@4737e8d1 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@7a36440b (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@3f141449 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@66d0d352 (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+22:35:14.639 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5f5dddae (This connection has been closed.). Possibly consider using a shorter maxLifetime value.
+[00:35:37] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v

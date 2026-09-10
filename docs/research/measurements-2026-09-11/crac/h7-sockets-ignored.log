@@ -1,0 +1,32 @@
+[00:32:39] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-postgres-1  Healthy
+ Container konekt-crac-broker-1  Healthy
+[00:32:44] stand up: postgres, broker, migrations
+=== phase h7
+[00:32:47] server up for the checkpoint: 2307 ms to /health
+[00:32:48] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+0
+-- container log tail:
+53482.536488: warp: error: Can't open FD 137 = socket:[131144] - replacing FD with /dev/null: No such file or directory
+53482.536515: warp: error: Can't open FD 138 = socket:[120321] - replacing FD with /dev/null: No such file or directory
+53482.536540: warp: error: Can't open FD 139 = socket:[124877] - replacing FD with /dev/null: No such file or directory
+53482.536562: warp: error: Can't open FD 140 = socket:[117270] - replacing FD with /dev/null: No such file or directory
+53482.536584: warp: error: Can't open FD 141 = socket:[128355] - replacing FD with /dev/null: No such file or directory
+53482.536629: warp: error: Can't open FD 142 = socket:[117272] - replacing FD with /dev/null: No such file or directory
+53482.536667: warp: error: Can't open FD 143 = socket:[131157] - replacing FD with /dev/null: No such file or directory
+53482.536703: warp: error: Can't open FD 144 = socket:[131167] - replacing FD with /dev/null: No such file or directory
+53482.536882: Waiting for other threads...
+53482.536896: Memory cleanup after checkpoint/restore
+53482.538079: Checkpointing thread checkpoint/restore completed
+53482.538088: warp: Checkpoint successful!
+-- image: 2 files, 138M
+-- restore:
+ready=119ms
+  sign-in ok; home screen: 34ms 200; second: 26ms 200
+[00:32:55] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v

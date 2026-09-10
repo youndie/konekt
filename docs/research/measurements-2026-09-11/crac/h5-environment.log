@@ -1,0 +1,33 @@
+[00:40:18] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-postgres-1  Healthy
+ Container konekt-crac-broker-1  Healthy
+[00:40:22] stand up: postgres, broker, migrations
+=== phase h5
+[00:40:25] server up for the checkpoint: 2025 ms to /health
+[00:40:26] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+0
+-- container log tail:
+53940.125708: warp: error: Can't open FD 137 = socket:[196775] - replacing FD with /dev/null: No such file or directory
+53940.125726: warp: error: Can't open FD 138 = socket:[194688] - replacing FD with /dev/null: No such file or directory
+53940.125744: warp: error: Can't open FD 139 = socket:[198743] - replacing FD with /dev/null: No such file or directory
+53940.125761: warp: error: Can't open FD 140 = socket:[198744] - replacing FD with /dev/null: No such file or directory
+53940.125779: warp: error: Can't open FD 141 = socket:[193895] - replacing FD with /dev/null: No such file or directory
+53940.125945: warp: error: Can't open FD 142 = socket:[195653] - replacing FD with /dev/null: No such file or directory
+53940.126056: warp: error: Can't open FD 143 = socket:[184917] - replacing FD with /dev/null: No such file or directory
+53940.126731: warp: error: Can't open FD 144 = socket:[192253] - replacing FD with /dev/null: No such file or directory
+53940.127013: Waiting for other threads...
+53940.127056: Memory cleanup after checkpoint/restore
+53940.128869: Checkpointing thread checkpoint/restore completed
+53940.128879: warp: Checkpoint successful!
+-- image: 2 files, 165M
+-- restore with a different BRAND and DEV_SCREENS in the environment:
+ready=127ms
+  sign-in ok; home screen: 25ms 200; second: 24ms 200
+  BRAND the process reports: {"type":"column","id":"home","children":[{"type":"text","id":"home-brand","text":"Konekt","style":"headline_small","color":"on_surface"},{"type":"surface","id":"balance","children":[{"type":"row","id"
+[00:40:32] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v

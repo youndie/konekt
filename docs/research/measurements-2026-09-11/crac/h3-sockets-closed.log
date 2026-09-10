@@ -1,0 +1,31 @@
+[00:31:26] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-broker-1  Healthy
+ Container konekt-crac-postgres-1  Healthy
+[00:31:30] stand up: postgres, broker, migrations
+=== phase h3
+[00:31:33] server up for the checkpoint: 2058 ms to /health
+[00:31:34] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+An exception during a checkpoint operation:
+jdk.internal.crac.mirror.CheckpointException
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: FD fd=133 type=socket path=socket:[117055],port=0
+-- container log tail:
+org.postgresql.util.PSQLException: An I/O error occurred while sending to the backend.
+Caused by: java.net.SocketException: Socket closed
+	... 52 common frames omitted
+22:31:35.488 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@5538cb1a (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@75044f7b (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@3bb64aa1 (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@6416b9a9 (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@7765ce2a (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@20cd282a (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.489 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@29a79dd0 (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.490 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@78adb2bc (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+22:31:35.490 WARN  com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Failed to validate connection org.postgresql.jdbc.PgConnection@21e0271d (Unable to set network timeout.). Possibly consider using a shorter maxLifetime value.
+-- image: 0 files, 8.0K
+[00:31:40] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v

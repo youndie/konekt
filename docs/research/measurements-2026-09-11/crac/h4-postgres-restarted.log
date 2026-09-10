@@ -1,0 +1,35 @@
+[00:39:56] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-broker-1  Healthy
+ Container konekt-crac-postgres-1  Healthy
+[00:40:00] stand up: postgres, broker, migrations
+=== phase h4
+[00:40:03] server up for the checkpoint: 2022 ms to /health
+[00:40:04] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+0
+-- container log tail:
+53918.198960: warp: error: Can't open FD 137 = socket:[172934] - replacing FD with /dev/null: No such file or directory
+53918.198980: warp: error: Can't open FD 138 = socket:[186569] - replacing FD with /dev/null: No such file or directory
+53918.199001: warp: error: Can't open FD 139 = socket:[173918] - replacing FD with /dev/null: No such file or directory
+53918.199023: warp: error: Can't open FD 140 = socket:[173921] - replacing FD with /dev/null: No such file or directory
+53918.199043: warp: error: Can't open FD 141 = socket:[179033] - replacing FD with /dev/null: No such file or directory
+53918.199105: warp: error: Can't open FD 142 = socket:[191627] - replacing FD with /dev/null: No such file or directory
+53918.199131: warp: error: Can't open FD 143 = socket:[189033] - replacing FD with /dev/null: No such file or directory
+53918.199178: warp: error: Can't open FD 144 = socket:[189912] - replacing FD with /dev/null: No such file or directory
+53918.199467: Waiting for other threads...
+53918.199471: Memory cleanup after checkpoint/restore
+53918.201123: Checkpointing thread checkpoint/restore completed
+53918.201130: warp: Checkpoint successful!
+-- image: 2 files, 150M
+[00:40:09] restarting Postgres between checkpoint and restore
+ Container konekt-crac-postgres-1  Restarting
+ Container konekt-crac-postgres-1  Started
+-- restore after the database was restarted:
+ready=124ms
+  sign-in ok; home screen: 38ms 200; second: 18ms 200
+[00:40:17] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v
