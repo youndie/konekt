@@ -26,15 +26,25 @@ export function setup() {
     const s = signIn();
     topUp(s.token, 5000_00);
     buy(s.token, 'home-20gb-30d');
+    // A TRAVEL PLAN TOO, for the reason the home bundle is bought at all: a roaming screen with
+    // nothing on it is the empty state, and the empty state is a cheaper screen than the one a
+    // subscriber who travels actually reads. Provisioned dormant, which is its own card.
+    buy(s.token, 'tr-10gb-30d');
     subscribers.push(s.token);
   }
   return { tokens: subscribers };
 }
 
+// FOUR SCREENS AND NOT THREE (`B-126`). Roaming was missing for as long as this file has existed,
+// and the absence was invisible from here: every allocation figure this repository quotes was taken
+// under this scenario, so a screen nobody opens is a screen whose cost nobody knows. What found it
+// was a static rule - sborka's perf-lint names a chain in `ViewRoamingUseCase.invoke`, which runs
+// per request and appears in no profile.
 const SCREENS = [
   ['home', 'home'],
   ['plans', 'plans'],
   ['plans/tr-10gb-30d', 'plan-detail'],
+  ['roaming', 'roaming'],
 ];
 
 export function read(data) {

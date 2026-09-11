@@ -51,7 +51,7 @@ so re-prioritising must never move a file.
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 
-## Closed (122)
+## Closed (123)
 
 **The wire and the shell**
 
@@ -184,6 +184,7 @@ so re-prioritising must never move a file.
 - [B-122](docs/backlog/B-122-the-sse-loop-reconnects-for-ever-without-naming-what-failed.md) `[x]` - The realtime loop swallows every failure and reconnects for ever, so an auth expiry and a closed laptop are the same silence
 - [B-123](docs/backlog/B-123-the-aot-cache-halves-the-cold-start.md) `[x]` - A Leyden AOT cache trained inside the image halves the cold start; whether to ship it
 - [B-124](docs/backlog/B-124-the-broker-segment-size-cannot-be-deployed-over-the-existing-log.md) `[x]` - The chart's broker segment size cannot be deployed over the broker's existing log
+- [B-126](docs/backlog/B-126-the-load-profile-never-opens-the-roaming-screen.md) `[x]` - The load profile never opens the roaming screen, so a per-request path has never been measured
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it
 - [B-87](docs/backlog/B-87-the-custom-package-cannot-be-bought.md) `[x]` - The custom package form prices a package and cannot sell one, and nothing in the app leads to it
