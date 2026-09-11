@@ -1,0 +1,10 @@
+# The control for h5: what a PLAIN start of the same image shows for each brand, so that the
+# restored container's answer means something. brand-b's display name is "Inkline"
+# (server/src/main/resources/themes/brand-b.json).
+plain start with BRAND=brand-a -> "id":"home-brand","text":"Konekt"
+plain start with BRAND=brand-b -> "id":"home-brand","text":"Inkline"
+
+# h5-environment.log: the RESTORED container, started with -e BRAND=brand-b, answered
+#   {"type":"column","id":"home","children":[{"type":"text","id":"home-brand","text":"Konekt",...
+# i.e. brand-a — the value the checkpoint was taken with. The environment of the restore container
+# does not reach configuration that was read at startup.

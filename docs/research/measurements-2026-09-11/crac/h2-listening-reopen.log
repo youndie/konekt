@@ -1,0 +1,52 @@
+[00:31:08] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-broker-1  Healthy
+ Container konekt-crac-postgres-1  Healthy
+[00:31:12] stand up: postgres, broker, migrations
+=== phase h2
+[00:31:15] server up for the checkpoint: 2105 ms to /health
+[00:31:16] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+An exception during a checkpoint operation:
+jdk.internal.crac.mirror.CheckpointException
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55612]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474938 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55620]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474979 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55594]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474804 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: java.nio.channels.SocketChannel[connected local=/172.18.0.4:58578 remote=broker/172.18.0.3:9092]
+	Caused by: java.lang.Exception: This file descriptor was created by main at epoch:1789079475101 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55562]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474662 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55582]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474764 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55560]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474607 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55554]
+	Caused by: java.lang.Exception: This file descriptor was created by main at epoch:1789079474321 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55566]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474722 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55598]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474859 here
+	Suppressed: jdk.internal.crac.mirror.impl.CheckpointOpenSocketException: Socket[addr=postgres/172.18.0.2,port=5432,localport=55608]
+	Caused by: java.lang.Exception: This file descriptor was created by HikariPool-1:connection-adder at epoch:1789079474900 here
+-- container log tail:
+INFO: /opt/konekt/lib/stately-concurrent-collections-jvm-2.1.0.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/kotlinx-serialization-json-io-jvm-1.11.0.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/purchase-shared-api-jvm-0.1.0-SNAPSHOT.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/components-jvm-0.1.0-SNAPSHOT.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/logback-classic-1.6.3.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/error_prone_annotations-2.47.0.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/ktor-server-sse-jvm-3.5.2.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/auth-shared-api-jvm-0.1.0-SNAPSHOT.jar is recorded as always available on restore
+INFO: /opt/konekt/lib/flyway-database-postgresql-13.3.0.jar is recorded as always available on restore
+Sep 10, 2026 10:31:17 PM jdk.internal.crac.LoggerContainer warn
+WARNING: Socket sun.nio.ch.ServerSocketChannelImpl[] was not closed by the application.
+INFO: To suppress the warning above use 'warn: false' in the resource policy.
+-- image: 0 files, 8.0K
+[00:31:22] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v

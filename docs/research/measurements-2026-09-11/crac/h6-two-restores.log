@@ -1,0 +1,42 @@
+[00:42:11] image konekt-server:crac on azul/zulu-openjdk:25-jre-crac: 588MB
+ Container konekt-crac-postgres-1  Running
+ Container konekt-crac-broker-1  Running
+ Container konekt-crac-broker-1  Waiting
+ Container konekt-crac-postgres-1  Waiting
+ Container konekt-crac-postgres-1  Healthy
+ Container konekt-crac-broker-1  Healthy
+[00:42:15] stand up: postgres, broker, migrations
+=== phase h6
+[00:42:18] server up for the checkpoint: 2040 ms to /health
+[00:42:19] warmed: 20 passes over three screens; pool has served them
+-- jcmd JDK.checkpoint:
+129:
+0
+-- container log tail:
+54053.231022: warp: error: Can't open FD 137 = socket:[208199] - replacing FD with /dev/null: No such file or directory
+54053.231043: warp: error: Can't open FD 138 = socket:[96206] - replacing FD with /dev/null: No such file or directory
+54053.231064: warp: error: Can't open FD 139 = socket:[196403] - replacing FD with /dev/null: No such file or directory
+54053.231082: warp: error: Can't open FD 140 = socket:[191394] - replacing FD with /dev/null: No such file or directory
+54053.231097: warp: error: Can't open FD 141 = socket:[205538] - replacing FD with /dev/null: No such file or directory
+54053.231117: warp: error: Can't open FD 142 = socket:[191395] - replacing FD with /dev/null: No such file or directory
+54053.231147: warp: error: Can't open FD 143 = socket:[206440] - replacing FD with /dev/null: No such file or directory
+54053.234959: warp: error: Can't open FD 144 = socket:[208218] - replacing FD with /dev/null: No such file or directory
+54053.235660: Waiting for other threads...
+54053.235669: Memory cleanup after checkpoint/restore
+54053.236343: Checkpointing thread checkpoint/restore completed
+54053.236347: warp: Checkpoint successful!
+-- image: 2 files, 143M
+-- restore 1:
+ready=128ms
+  sign-in ok; home screen: 26ms 200; second: 24ms 200
+   wizard screen: 920 bytes; identifiers in it:
+-- restore 2:
+ready=120ms
+  sign-in ok; home screen: 30ms 200; second: 23ms 200
+   wizard screen: 920 bytes; identifiers in it:
+-- the two wizard screens differ in:
+30c30
+< "wizardId":"f3145208-6605-465d-845e-c6e6a6f4993e"
+---
+> "wizardId":"2c39e7f6-93bf-4532-987b-42fcdcdea450"
+[00:42:28] done; stand stays up (PROJECT=konekt-crac). Take it down with: docker compose -p konekt-crac -f deploy/compose.yaml down -v
