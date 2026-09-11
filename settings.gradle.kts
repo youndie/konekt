@@ -45,7 +45,7 @@ plugins {
     //
     // It also checks that this repository's `.editorconfig` is the one the rest of the portfolio
     // uses, which is the other half of pinning the formatter's version.
-    id("io.github.youndie.sborka.settings") version "0.4.0.52"
+    id("io.github.youndie.sborka.settings") version "0.4.0.54"
 }
 
 // The Compose Multiplatform client: the design system, the renderers of konekt's own components,
