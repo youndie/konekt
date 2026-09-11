@@ -4,10 +4,19 @@
 #     A=konekt-server:ab-a B=konekt-server:ab-b [REPS=3] [RATE=200] [WARMUP=60] [MEASURE=120] \
 #       scripts/measure/ab-images.sh
 #
-# The stand must already be up (`scripts/measure/stand-up.sh`) — this only restarts the `server`
-# service with each image in turn, so Postgres, the broker and the seeded data stay as they were.
-# Postgres is the reason the variants alternate rather than run one after the other: a cold page
-# cache and a warm one differ by more than the effects worth measuring here.
+# The stand must already be up (`scripts/measure/stand-up.sh`); this swaps the `server` image.
+#
+# A RESET BEFORE EVERY RUN, not between groups (`RESET=0` to keep the state). The first round of
+# this harness ran without one and the reason is worth keeping: every k6 setup signs its own
+# subscribers in, the simulator ticks EVERY subscriber every five seconds, so each successive run
+# carries more background allocation than the last. Allocated bytes per request rose monotonically
+# across the three repetitions of BOTH variants — 87.6, 95.6, 100.3 KiB for one of them — and that
+# drift, not random noise, was what made the spread within a single variant larger than the
+# difference between the variants. Alternating the variants keeps the comparison fair under it;
+# it does not make the numbers readable.
+#
+# The variants still alternate: a cold page cache and a warm one differ by more than the effects
+# worth measuring here.
 #
 # WHAT IT REPORTS AND WHY IT IS NOT THROUGHPUT. The scenario runs at a CONSTANT ARRIVAL RATE, so
 # requests per second is an input; what varies is what each request costs. The output is therefore
@@ -33,6 +42,7 @@ run() { # $1 variant $2 rep $3 image
   # The image is swapped in the env file the whole stand reads, so the variant is recorded where
   # anybody looking at the stand can see which one is running.
   sed -i "s|^SERVER_IMAGE=.*|SERVER_IMAGE=$image|; s|^RELEASE=.*|RELEASE=$image|" "$ENV_FILE"
+  if [ "${RESET:-1}" = 1 ]; then scripts/measure/reset.sh >/dev/null; fi
   "${COMPOSE[@]}" up -d --no-build --wait --force-recreate server >/dev/null
   local pid; pid=$(docker exec "$CONT" sh -c 'pgrep -o java')
   docker cp "$ASPROF" "$CONT:/tmp/asprof" >/dev/null && docker exec -u root "$CONT" chmod -R a+rX /tmp/asprof
