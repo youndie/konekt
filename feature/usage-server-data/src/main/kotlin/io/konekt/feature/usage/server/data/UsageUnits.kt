@@ -1,6 +1,7 @@
 package io.konekt.feature.usage.server.data
 
 import io.konekt.feature.usage.server.domain.UsageCounter
+import io.konekt.text.DigitGroups
 import kotlin.math.roundToLong
 
 // How an allowance is written for a person, on the server, because the server is the only side that
@@ -77,15 +78,10 @@ object UsageUnits {
             if (fraction == 0L) "${grouped(whole)} GB" else "${grouped(whole)}.$fraction GB"
         }
 
-    // Commas every three digits, the American way, matching MoneyFormat. The product runs in USD and
-    // a screen that groups money one way and megabytes another reads as two products.
-    private fun grouped(value: Long): String =
-        value
-            .toString()
-            .reversed()
-            .chunked(3)
-            .joinToString(",")
-            .reversed()
+    // Commas every three digits, the American way, matching MoneyFormat — and now literally the same
+    // code as MoneyFormat, which is what "matching" was asking for. The product runs in USD and a
+    // screen that groups money one way and megabytes another reads as two products.
+    private fun grouped(value: Long): String = DigitGroups.grouped(value, ',')
 
     private fun spelled(value: Long): String =
         when (value) {
