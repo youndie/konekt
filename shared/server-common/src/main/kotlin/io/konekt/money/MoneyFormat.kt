@@ -2,6 +2,7 @@ package io.konekt.money
 
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
+import io.konekt.text.DigitGroups
 import kotlin.math.absoluteValue
 
 // The one place money becomes text in this product.
@@ -195,14 +196,10 @@ object MoneyFormat {
         }
     }
 
+    // In `io.konekt.text` rather than here, because the usage formatter needs the same rule and had
+    // its own copy of it. Why it is a loop and not a chain of four operators is in that file.
     private fun group(
         major: Long,
         separator: Char,
-    ): String =
-        major
-            .toString()
-            .reversed()
-            .chunked(3)
-            .joinToString(separator.toString())
-            .reversed()
+    ): String = DigitGroups.grouped(major, separator)
 }
