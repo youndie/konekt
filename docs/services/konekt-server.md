@@ -257,7 +257,18 @@ what the schema does that eighteen scattered `System.getenv` calls did not:
 - **A value that does not parse refuses the start** rather than falling back.
   `KONEKT_PAYMENT_MOCK_DELAY_MS=1s` used to be zero.
 - **An agent is both its variables or neither.** `KONEKT_TRACY_ENDPOINT` without `KONEKT_TRACY_KEY` is
-  a refusal naming the missing half, and all three agents are checked in the same pass.
+  a refusal naming the missing half, and all three agents are checked in the same pass. That rule and
+  the agent keys themselves are **kore's**, spliced into konekt's schema as a list — kore publishes
+  keys rather than a schema of its own, because a schema owns a prefix and two prefixes would mean a
+  variable that is unknown to one scope and declared by the other.
+- **`KONEKT_SERVICE` is required and has no default.** There is no registration step in any of the
+  three agents, so the service name IS the identifier: a typo does not fail, it files everything under
+  a phantom service that looks healthy and receives nothing. Every path that runs this binary names
+  it, the migrate container included.
+- **`KONEKT_TRACY_SAMPLE_RATE` is 1.0 here and would not be in production.** It decides whether a
+  request's WHOLE pending trace is kept, not how many spans survive inside one — below the rate a
+  trace is warnings and entity references with nothing behind them. tracy's own default is 0.01; this
+  deployment promises one purchase visible whole by its order id.
 - Every switch is opt-in by the exact string `"true"` — `KONEKT_DEV_REVEAL_OTP`,
   `KONEKT_SIMULATE_TRAFFIC`, `KONEKT_MIGRATE_ONLY`. Anything else is off, a misspelling included, so
   a security switch cannot ship open. `KONEKT_PAYMENT_MOCK_MODE` is the same shape: anything other

@@ -92,22 +92,28 @@ kompot = "0.36.1.112"
 petich = "0.1.0"
 booblik = "0.3.4"
 
-# kore, the portfolio's process lifecycle. `kore-core` and `kore-ktor` are on Maven Central;
-# `kore-observability` is portfolio-only, because the three agents it wires are not on Central either.
-# 0.1.2 AND NOT 0.1.0, and the difference is not a patch: `runUntilSignal` — the one call the
-# ordered shutdown is — does not exist in 0.1.0 at all. Read out of the published jars rather than
-# out of kore's working copy, which is where the spec was read and which was ahead of both.
+# kore, the portfolio's process lifecycle. ALL FOUR MODULES ARE PORTFOLIO-ONLY — a comment here used
+# to say `kore-core` and `kore-ktor` were on Maven Central and that is not true: `io/github/youndie/
+# kore-core/maven-metadata.xml` answers 404 on Central, checked rather than recalled.
+#
+# 0.1.3 AND NOT 0.1.2, and the difference is two features rather than a patch: `ObservabilitySettings`
+# gained `tracySampleRate` (youndie/kore#57, which held this stage) and `kore-build` is published at
+# all for the first time (youndie/kore#58). Read out of the published jars rather than out of kore's
+# working copy, which is where the spec was read and which has been ahead of every published version.
 #
 # Every module checked at this version before the bump, not just the first: this portfolio publishes
 # modules alphabetically and a version is real for one while absent for another for a while.
-kore = "0.1.2"
+kore = "0.1.3"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
 #   - the server image and the Kotlin client, which share the repository's own version. As of
 #     0.6.2 the client publishes all three iOS targets (youndie/katcher#25 closed it), so the
 #     host-picked `native` target is gone and an iOS build can report a crash;
-katcher = "0.7.44"
+# 0.7.47 is the first with `flush(grace)`. Until it, katcher had no lifecycle function beyond
+# `start`, so the reports buffered at the moment a process went down were the ones that explained why
+# it went down, and they were lost. kore's shutdown participant calls it.
+katcher = "0.7.47"
 #   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
 #     still on their own line.
 
@@ -297,6 +303,10 @@ booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.
 # --- kore --------------------------------------------------------------------------------------
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
 kore-ktor = { module = "io.github.youndie:kore-ktor", version.ref = "kore" }
+# The three agents in one call, plus the shutdown participant that flushes them. It does NOT put the
+# agents on a consumer's compile classpath — `jvmApiElements` declares no dependencies — so tracy,
+# metrik and katcher stay named below: konekt holds a `TracyAgent` of its own for `KonektTrace`.
+kore-observability = { module = "io.github.youndie:kore-observability", version.ref = "kore" }
 
 # --- observability -----------------------------------------------------------------------------
 

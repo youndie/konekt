@@ -21,6 +21,7 @@ import io.github.youndie.kore.lifecycle.AnnounceNotReady
 import io.github.youndie.kore.lifecycle.ShutdownDeadlines
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.github.youndie.kore.lifecycle.runUntilSignal
+import io.github.youndie.kore.observability.KoreObservability
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.OutboxAwarePetichRepository
@@ -240,7 +241,13 @@ fun main(args: Array<String>) {
 
     runBlocking {
         val run =
-            runUntilSignal(deadlines) {
+            runUntilSignal(
+                deadlines,
+                onFinished = { finished ->
+                    println("konekt shutdown transcript:")
+                    finished.transcript.stages.forEach { println("  $it") }
+                },
+            ) {
                 // READINESS FIRST, then a wait long enough for the rule change to reach every node.
                 // Until it does, this pod is still in a service's endpoint list and still being sent
                 // work — which is why announcing and draining are two stages rather than one.
@@ -256,6 +263,16 @@ fun main(args: Array<String>) {
                     },
                 )
 
+                // THE AGENTS, LAST — kore runs `RELEASE_TELEMETRY` after `RELEASE_POOLS`, which is
+                // the right way round: they speak HTTP and need nothing this process is closing, so
+                // the last thing they report can be the shutdown itself. kore's handle cancels
+                // tracy's delivery loop, makes one last bounded flush, and calls katcher's
+                // `flush(grace)`. This stage IS konekt#30: the old wiring
+                // built a `TracyDelivery`, started it, and kept no reference, so nothing could ever
+                // stop it — every shutdown lost up to a flush interval of records, the ones
+                // explaining the shutdown included.
+                telemetry(lifecycle.observability)
+
                 // THE BROKER, which flushes before it closes (`#31`) — `close()` sends on the
                 // producer's own coroutine without waiting, and tearing the connection down in the
                 // same breath cancels that coroutine mid-write.
@@ -266,18 +283,16 @@ fun main(args: Array<String>) {
                 pool(participant("postgres pool") { (lifecycle.dataSource as? Closeable)?.close() })
             }
 
-        // THE TRANSCRIPT IS NOT PRINTED HERE, AND ON THE JVM IT CANNOT BE.
+        // THE TRANSCRIPT, PRINTED IN `onFinished` AND NOT AFTER THE CALL.
         //
-        // kore's own example ends with `println(run.transcript)` in this position. On the JVM the
-        // signal arrives as a shutdown hook, and `runUntilSignal` releases that hook — letting the
-        // runtime finish terminating — BEFORE it returns. So anything after this line is racing the
-        // exit, and it loses: measured over several `docker compose stop` runs, the pool
-        // participant's own log appeared every time and a `println` on the next line appeared never.
-        // Tried through slf4j first, which ruled out the logging context being down.
+        // It used to be printed nowhere, and a comment here explained why: on the JVM the signal
+        // arrives as a shutdown hook and `runUntilSignal` released that hook before returning, so
+        // anything written after the call raced the exit and lost — measured over several
+        // `docker compose stop` runs, the pool participant's log appeared every time and a `println`
+        // on the next line appeared never. Reported as youndie/kore#59.
         //
-        // The ordering still happens, which is what this stage is for; what is missing is the record
-        // of it. Reported as youndie/kore#59, and this reads `run` so that the day kore hands the
-        // transcript over before releasing, the place to put it is obvious.
+        // kore `0.1.3` added `onFinished`, which runs BEFORE the release for exactly this. So the
+        // record of the ordering exists again, in the place a person reading `docker logs` looks.
         check(run.transcript.stages.isNotEmpty()) { "the shutdown sequence recorded no stages" }
     }
 }
@@ -291,6 +306,11 @@ class KonektLifecycle {
     lateinit var workers: CoroutineScope
     lateinit var broker: BrokerConnection
     lateinit var dataSource: DataSource
+
+    // kore's own participant: it cancels tracy's delivery loop and makes one last bounded flush, and
+    // it calls katcher's `flush(grace)`. `lateinit` like the rest, so forgetting to assign it is an
+    // exception naming the field at startup rather than a stage that silently is not there.
+    lateinit var observability: KoreObservability
 }
 
 // A named piece of shutdown work. kore takes participants rather than lambdas because a stage that
@@ -506,7 +526,17 @@ fun Application.module(
     // `RoutesResolveWhatTheyInjectTest` cannot see, and that guard exists because Koin resolves
     // lazily: the process starts, the health check passes, and the route answers 500 to its first
     // caller.
-    val tracy = configureObservability(config.observability, SystemClock)
+    // The handle, not just the agent. `lifecycle.observability` is what `main` puts into the
+    // shutdown sequence as the `telemetry` stage — konekt#30 is closed by holding this, not by
+    // installing anything extra.
+    val observability =
+        configureObservability(
+            config.observability,
+            metrikWindowMs = config.metrikWindowMs,
+            clock = SystemClock,
+        )
+    lifecycle.observability = observability
+    val tracy = observability.tracy
 
     val dataSource = DatabaseFactory.dataSource(config.database)
     val database = DatabaseFactory.connect(dataSource)

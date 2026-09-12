@@ -326,6 +326,10 @@ dependencies {
     // stops working, and `/health` stays where the chart points until the chart moves.
     implementation(libs.kore.core)
     implementation(libs.kore.ktor)
+    // The three agents in one call, and the handle that flushes them on the way down — which is what
+    // closes konekt#30. The agents themselves stay declared above: this module exposes none of them
+    // as `api`, so a consumer that names a type of theirs still has to name the coordinate.
+    implementation(libs.kore.observability)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
