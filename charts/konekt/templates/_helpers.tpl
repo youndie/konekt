@@ -30,16 +30,16 @@ different database, or refusing to start because it was handed no JWT secret, ar
 happen after the deploy has reported success.
 */}}
 {{- define "konekt.dbEnv" -}}
-- name: DB_URL
+- name: KONEKT_DB_URL
   value: {{ include "konekt.dbUrl" . | quote }}
-- name: DB_USER
+- name: KONEKT_DB_USER
   value: {{ .Values.postgres.user | quote }}
-- name: DB_PASSWORD
+- name: KONEKT_DB_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ .Release.Name }}-secrets
       key: postgres-password
-- name: JWT_SECRET
+- name: KONEKT_JWT_SECRET
   valueFrom:
     secretKeyRef:
       name: {{ .Release.Name }}-secrets
@@ -62,9 +62,9 @@ variable in a pod that is already failing.
 {{- fail (printf "konekt: observability.%s.key is set and observability.%s.endpoint is empty — a key with nowhere to send it observes nothing" .name .name) }}
 {{- end }}
 {{- if $agent.endpoint }}
-- name: {{ .name | upper }}_ENDPOINT
+- name: KONEKT_{{ .name | upper }}_ENDPOINT
   value: {{ $agent.endpoint | quote }}
-- name: {{ .name | upper }}_KEY
+- name: KONEKT_{{ .name | upper }}_KEY
   valueFrom:
     secretKeyRef:
       name: {{ .root.Release.Name }}-secrets

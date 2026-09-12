@@ -11,27 +11,19 @@ import javax.sql.DataSource
 // petich-postgres takes an Exposed `Database` and ships no driver, no pool, no DDL and no
 // migrations — so all four are here. That is not an omission upstream: the module deliberately does
 // not know which DBMS is underneath, which is the only reason it can be used against anything.
+// NOTHING HERE READS THE ENVIRONMENT. `KonektSchema` declares every variable the process has, and
+// this module is below the one that owns it — a second reader would be a second place a database
+// address can come from, which is how a deployment comes to migrate one database and serve another.
+//
+// There used to be a `fromEnv()` on this type and it had NO CALLERS: `KonektConfig` built the
+// three-argument constructor and took the Kotlin default for the pool. `DB_POOL_SIZE` was therefore
+// a variable that existed in a script and in no running process (`konekt#35`).
 data class DatabaseConfig(
     val url: String,
     val user: String,
     val password: String,
     val maximumPoolSize: Int = 10,
-) {
-    companion object {
-        fun fromEnv(): DatabaseConfig =
-            DatabaseConfig(
-                url = requireEnv("DB_URL"),
-                user = requireEnv("DB_USER"),
-                password = requireEnv("DB_PASSWORD"),
-                maximumPoolSize = System.getenv("DB_POOL_SIZE")?.toIntOrNull() ?: 10,
-            )
-
-        // Fails at startup rather than at the first query. A pool built from a null URL connects to
-        // nothing and reports it as a query failure minutes later, in a log line that names a route.
-        private fun requireEnv(name: String): String =
-            System.getenv(name) ?: error("$name is not set — the server cannot start without a database")
-    }
-}
+)
 
 object DatabaseFactory {
     fun dataSource(config: DatabaseConfig): DataSource =

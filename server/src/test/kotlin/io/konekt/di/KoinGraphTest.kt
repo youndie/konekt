@@ -36,6 +36,19 @@ class KoinGraphTest {
             org.jetbrains.exposed.v1.jdbc.Database
                 .connect({ error("the graph verifier never opens a connection") })
 
+        // Every agent off. Nothing in this graph reports anywhere; the observability wiring is
+        // installed by `Application.module`, which this test does not run.
+        val NO_OBSERVABILITY: io.konekt.observability.ObservabilityConfig =
+            io.konekt.observability.ObservabilityConfig(
+                service = "konekt-server",
+                release = "test",
+                environment = "test",
+                metrik = null,
+                metrikWindowMs = 60_000,
+                tracy = null,
+                katcher = null,
+            )
+
         fun applicationGraph() = koinApplication { modules(Modules.all) }.koin
     }
 
@@ -84,6 +97,7 @@ class KoinGraphTest {
                         simulateTraffic = false,
                         simulatedArrivalAfter = io.konekt.KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
                         migrateOnly = false,
+                        observability = NO_OBSERVABILITY,
                     ),
                 )
     }

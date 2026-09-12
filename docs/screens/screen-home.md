@@ -133,7 +133,7 @@ The screen is the reason the live channel exists. A frame carries an `UpdateComp
 generated. The client replaces that node; it does not reload the screen.
 
 Today the only thing that pushes one is the traffic simulator's consumer, and it is off unless
-`SIMULATE_TRAFFIC=true`. A default deployment therefore has a stream that is correct and silent,
+`KONEKT_SIMULATE_TRAFFIC=true`. A default deployment therefore has a stream that is correct and silent,
 which looks exactly like a broken one.
 
 After a dropped connection the client does **not** replay: `Last-Event-ID` is deliberately unused,

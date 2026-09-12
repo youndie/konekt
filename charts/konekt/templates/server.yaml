@@ -27,6 +27,22 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       {{/*
+      THE KUBELET MUST NOT WRITE INTO THIS POD'S CONFIGURATION, and with the default it does.
+
+      Service links are on unless switched off: for every Service in the namespace the kubelet injects
+      a block of variables named after the SERVICE — `<NAME>_SERVICE_HOST`, `<NAME>_SERVICE_PORT`,
+      `<NAME>_PORT`, and a `<NAME>_PORT_<port>_TCP*` group. This chart's server Service is
+      `{{ .Release.Name }}`, which for the deployment this repository describes is `konekt`. So every
+      one of those names lands under the `KONEKT_` prefix the schema owns: `KONEKT_PORT` would arrive
+      as `tcp://10.43.x.x:8080` where an integer is declared, and the rest would each be an undeclared
+      variable under the prefix. Either is a pod that will not start.
+
+      Switching them off is the correct answer regardless of the schema — nothing in this application
+      discovers anything through them; it reads addresses from its own configuration — but until
+      `konekt#35` nothing depended on it, so nothing said it.
+      */}}
+      enableServiceLinks: false
+      {{/*
       MIGRATIONS RUN BEFORE THE SERVER, from the same image with a switch, and they run HERE rather
       than as a helm hook. A `pre-install` hook is applied before the release's own objects, so on a
       first install it would run against a database that does not exist yet — the one deployment
@@ -47,7 +63,7 @@ spec:
           image: "{{ .Values.server.image }}:{{ include "konekt.require" (dict "name" "server.version" "because" "a tag that moves leaves helm nothing to notice, so a green deploy runs the previous binary" "value" .Values.server.version) }}"
           env:
             {{- include "konekt.dbEnv" . | nindent 12 }}
-            - name: MIGRATE_ONLY
+            - name: KONEKT_MIGRATE_ONLY
               value: "true"
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
@@ -56,33 +72,33 @@ spec:
           image: "{{ .Values.server.image }}:{{ .Values.server.version }}"
           env:
             {{- include "konekt.dbEnv" . | nindent 12 }}
-            - name: BROKER_HOST
+            - name: KONEKT_BROKER_HOST
               value: {{ .Release.Name }}-broker
-            - name: BROKER_PORT
+            - name: KONEKT_BROKER_PORT
               value: "9092"
-            - name: BRAND
+            - name: KONEKT_BRAND
               value: {{ .Values.brand | quote }}
             # Both switches are read as the exact string "true", so an unset or misspelled value
             # means closed. That is the server's rule and it is repeated here rather than relied on:
             # `quote` on a YAML boolean gives "true", and anything else gives something that is not.
-            - name: DEV_REVEAL_OTP
+            - name: KONEKT_DEV_REVEAL_OTP
               value: {{ .Values.dev.revealOtp | quote }}
-            - name: DEV_SCREENS
+            - name: KONEKT_DEV_SCREENS
               value: {{ .Values.dev.screens | quote }}
-            - name: SIMULATE_TRAFFIC
+            - name: KONEKT_SIMULATE_TRAFFIC
               value: {{ .Values.simulateTraffic | quote }}
-            - name: PAYMENT_MOCK_MODE
+            - name: KONEKT_PAYMENT_MOCK_MODE
               value: {{ .Values.payment.mode | quote }}
-            - name: PAYMENT_MOCK_DELAY_MS
+            - name: KONEKT_PAYMENT_MOCK_DELAY_MS
               value: {{ .Values.payment.delayMs | quote }}
             # WHICH BUILD THIS IS, and it is not decoration: it names the release in a metrik deploy
             # marker and in a katcher crash group. Unset, katcher's own default is `Unspecified`,
             # which is what makes a crash report unactionable.
-            - name: RELEASE
+            - name: KONEKT_RELEASE
               value: {{ .Values.server.version | quote }}
-            - name: ENVIRONMENT
+            - name: KONEKT_ENVIRONMENT
               value: {{ .Values.observability.environment | quote }}
-            - name: OBSERVABILITY_SERVICE
+            - name: KONEKT_OBSERVABILITY_SERVICE
               value: {{ .Values.observability.service | quote }}
             {{- include "konekt.agentEnv" (dict "name" "metrik" "agent" .Values.observability.metrik "root" .) | nindent 12 }}
             {{- include "konekt.agentEnv" (dict "name" "tracy" "agent" .Values.observability.tracy "root" .) | nindent 12 }}

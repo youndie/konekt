@@ -84,13 +84,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/konekt
-      DB_USER: konekt
-      DB_PASSWORD: konekt
-      MIGRATE_ONLY: "true"
+      KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
+      KONEKT_DB_USER: konekt
+      KONEKT_DB_PASSWORD: konekt
+      KONEKT_MIGRATE_ONLY: "true"
       # Read at startup and required, even though this process will never serve. A config that is
       # only half-validated in the migrate path is a config whose mistake is found by the server.
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      KONEKT_JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
     restart: "no"
 
   # Needs the distribution built first — see deploy/Dockerfile for why it is not built inside the
@@ -118,28 +118,28 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/konekt
-      DB_USER: konekt
-      DB_PASSWORD: konekt
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
-      BROKER_HOST: broker
-      BROKER_PORT: "9092"
+      KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
+      KONEKT_DB_USER: konekt
+      KONEKT_DB_PASSWORD: konekt
+      KONEKT_JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      KONEKT_BROKER_HOST: broker
+      KONEKT_BROKER_PORT: "9092"
       # Development only: the endpoint that reads back a one-time code. Absent means closed, which is
       # why the default is not "true".
-      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
       # The forward-compatibility screen: a component no client can render, beside ones that can. A
       # separate switch from the OTP readback because they are separate decisions, and on here
       # because a stand that cannot show the degradation cannot demonstrate it.
-      DEV_SCREENS: ${DEV_SCREENS:-true}
+      KONEKT_DEV_SCREENS: ${DEV_SCREENS:-true}
       # Which brand kit this deployment serves. One variable, and switching it is a redeploy rather
       # than a rebuild — which is the claim B-22 exists to demonstrate and the line an operator reads.
-      BRAND: ${BRAND:-brand-a}
-      PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
-      PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
+      KONEKT_BRAND: ${BRAND:-brand-a}
+      KONEKT_PAYMENT_MOCK_MODE: ${PAYMENT_MOCK_MODE:-approve}
+      KONEKT_PAYMENT_MOCK_DELAY_MS: ${PAYMENT_MOCK_DELAY_MS:-0}
       # Fictional usage against real counters, which is what makes a live update visible without
       # waiting for a subscriber to browse. Off by default everywhere else; on here because a stand
       # that cannot show the update cannot test it.
-      SIMULATE_TRAFFIC: ${SIMULATE_TRAFFIC:-true}
+      KONEKT_SIMULATE_TRAFFIC: ${SIMULATE_TRAFFIC:-true}
       # HOW LONG A ROAMING PACKAGE LIES DORMANT before the simulation starts it. Ten seconds here and
       # ninety in the application's default, and the two numbers want opposite things: a person giving
       # a demonstration needs long enough to show the dormant card and say what it means, and an
@@ -148,7 +148,7 @@ services:
       # It replaced `POST /api/v1/dev/roaming/arrive` (`B-88`) — a public route that took the
       # subscriber from the query string and was the only way to start a package, so the whole
       # feature was demonstrated through a route documented as never shippable.
-      SIMULATED_ARRIVAL_AFTER_SECONDS: ${SIMULATED_ARRIVAL_AFTER_SECONDS:-10}
+      KONEKT_SIMULATED_ARRIVAL_AFTER_SECONDS: ${SIMULATED_ARRIVAL_AFTER_SECONDS:-10}
       # THE THREE AGENTS. Each is `<NAME>_ENDPOINT` plus `<NAME>_KEY`, together or not at all — the
       # server refuses to start on one without the other, because a deployment that believes it is
       # observed and is not is the failure all three of these libraries make easy.
@@ -163,15 +163,15 @@ services:
       # when the window closes, so a process that has just started reports nothing for a minute. The
       # whole e2e run is shorter than that — and leaving the default is what made the check pass
       # locally against a stand that had been up a while and fail in CI against a fresh one.
-      METRIK_WINDOW_MS: ${METRIK_WINDOW_MS:-5000}
-      METRIK_ENDPOINT: ${METRIK_ENDPOINT-metrik:9999}
-      METRIK_KEY: ${METRIK_KEY-${METRIK_INGEST_KEY:-dev-metrik-key}}
-      TRACY_ENDPOINT: ${TRACY_ENDPOINT-http://tracy:8080}
-      TRACY_KEY: ${TRACY_KEY-${TRACY_INGEST_KEY:-dev-tracy-key}}
-      KATCHER_ENDPOINT: http://katcher:8080
-      KATCHER_KEY: ${KATCHER_APP_KEY:-konekt-server}
-      RELEASE: ${RELEASE:-stand}
-      ENVIRONMENT: stand
+      KONEKT_METRIK_WINDOW_MS: ${METRIK_WINDOW_MS:-5000}
+      KONEKT_METRIK_ENDPOINT: ${METRIK_ENDPOINT-metrik:9999}
+      KONEKT_METRIK_KEY: ${METRIK_KEY-${METRIK_INGEST_KEY:-dev-metrik-key}}
+      KONEKT_TRACY_ENDPOINT: ${TRACY_ENDPOINT-http://tracy:8080}
+      KONEKT_TRACY_KEY: ${TRACY_KEY-${TRACY_INGEST_KEY:-dev-tracy-key}}
+      KONEKT_KATCHER_ENDPOINT: http://katcher:8080
+      KONEKT_KATCHER_KEY: ${KATCHER_APP_KEY:-konekt-server}
+      KONEKT_RELEASE: ${RELEASE:-stand}
+      KONEKT_ENVIRONMENT: stand
     ports:
       - "${SERVER_PORT:-8080}:8080"
 
@@ -311,17 +311,17 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/konekt
-      DB_USER: konekt
-      DB_PASSWORD: konekt
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
-      BROKER_HOST: broker
-      BROKER_PORT: "9092"
-      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
-      PAYMENT_MOCK_MODE: decline
+      KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
+      KONEKT_DB_USER: konekt
+      KONEKT_DB_PASSWORD: konekt
+      KONEKT_JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      KONEKT_BROKER_HOST: broker
+      KONEKT_BROKER_PORT: "9092"
+      KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      KONEKT_PAYMENT_MOCK_MODE: decline
       # No traffic from this one: two simulators against one set of counters would each be spending
       # what the other measured.
-      SIMULATE_TRAFFIC: "false"
+      KONEKT_SIMULATE_TRAFFIC: "false"
     ports:
       - "${DECLINING_SERVER_PORT:-8081}:8080"
 

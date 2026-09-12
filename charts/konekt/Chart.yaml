@@ -40,7 +40,19 @@ type: application
 # render that fails — it fails during a rollout rather than at `helm template`. The chart and the
 # application have separate lifetimes here precisely so that a coupling like this has to be stated,
 # and a PATCH would have said the opposite.
-version: 0.3.0
+# 0.3.0 -> 0.4.0: `konekt#35` gave every variable the `KONEKT_` prefix and one declared schema, so
+# the template now sets `KONEKT_DB_URL` where it set `DB_URL`, and the pod sets
+# `enableServiceLinks: false` so the kubelet cannot write into that prefix. Nothing in `values.yaml`
+# moved — a values file written for 0.3.0 renders under this unchanged — so BY THE LETTER this is
+# again a PATCH.
+#
+# It is a MINOR for the same reason 0.3.0 was, and harder: this chart and the image must now agree
+# on the NAME OF EVERY VARIABLE. An old image under this chart reads none of its configuration —
+# `KONEKT_DB_URL` is not `DB_URL` — and refuses to start on a missing required value; a new image
+# under 0.3.0 refuses for the same reason from the other side. Neither failure happens at
+# `helm template`; both happen in a rollout, which is exactly the coupling the version is supposed
+# to announce.
+version: 0.4.0
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

@@ -10,6 +10,7 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
+import io.github.youndie.kore.config.printConfig
 import io.github.youndie.kore.health.HealthRegistry
 import io.github.youndie.kore.health.LivenessGate
 import io.github.youndie.kore.health.ReadinessGate
@@ -77,7 +78,6 @@ import io.konekt.login.loginRoutes
 import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.mocks.traffic.UsageChain
 import io.konekt.observability.KonektTrace
-import io.konekt.observability.ObservabilityConfig
 import io.konekt.observability.configureObservability
 import io.konekt.packages.CustomPackagePlans
 import io.konekt.packages.customPackageRoutes
@@ -153,6 +153,7 @@ import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
 import java.io.Closeable
 import javax.sql.DataSource
+import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -165,7 +166,19 @@ import kotlin.time.Duration.Companion.seconds
 // the mocks — the two imports collide, and the one that wins hands `embeddedServer` the CLIENT
 // engine. Import it as `io.ktor.server.cio.CIO as ServerCIO` at that point, not before: an alias for
 // a name nothing collides with is noise.
-fun main() {
+fun main(args: Array<String>) {
+    // `--print-config` BEFORE ANYTHING ELSE, and a flag rather than a route, because the question it
+    // answers — what does this deployment think it is configured as — is asked most often BECAUSE the
+    // process will not start. A route needs a process that started; a flag works in CI, in a
+    // `kubectl run` against the image, and in the migrate container that already runs this binary
+    // once per deploy. It prints what it did resolve even when the configuration is unusable, and
+    // exits non-zero with the same problems the start would have refused on.
+    if (args.contains("--print-config")) {
+        val printed = KonektSchema.SCHEMA.printConfig()
+        print(printed.text)
+        exitProcess(printed.exitCode)
+    }
+
     val config = KonektConfig.fromEnv()
 
     // Migrate-only mode: the deploy runs this image once, before the application pods roll, so the
@@ -493,7 +506,7 @@ fun Application.module(
     // `RoutesResolveWhatTheyInjectTest` cannot see, and that guard exists because Koin resolves
     // lazily: the process starts, the health check passes, and the route answers 500 to its first
     // caller.
-    val tracy = configureObservability(ObservabilityConfig.fromEnv(), SystemClock)
+    val tracy = configureObservability(config.observability, SystemClock)
 
     val dataSource = DatabaseFactory.dataSource(config.database)
     val database = DatabaseFactory.connect(dataSource)
