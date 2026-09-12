@@ -20,10 +20,24 @@ import kotlin.test.assertTrue
 // the schema to satisfy a test. What is under test is the recipe — two settings, one of which is the
 // difference between a failure and a hang.
 //
-// IT MEASURES BOTH VARIANTS IN ONE RUN AND COMPARES THEM. An absolute threshold in milliseconds
-// measures the runner, not the property: the first version of this test asserted that a plain
-// CREATE INDEX blocks a writer for at least 200ms and the Linux box did it in 148, which says
-// something about the box and nothing about the index.
+// IT ASKS POSTGRES WHETHER THE WRITER QUEUED, and that is the third shape this assertion has had.
+//
+// The first compared milliseconds against a fixed threshold — a plain build had to block a writer for
+// at least 200ms — and the Linux box did it in 148, which says something about the box and nothing
+// about the index. The second compared the two variants to each other in one run, which is better and
+// still a measurement: it wanted the plain arm to block four times longer than the concurrent one,
+// and on a two-core CI runner it twice could not tell them apart — 276ms against 119ms, then 442ms
+// against 232ms, once on `main` (`#43`).
+//
+// The tell was the concurrent arm. `CREATE INDEX CONCURRENTLY` takes no lock an `INSERT` queues
+// behind, so it should have been near zero and was not; whatever stalled that writer was the
+// scheduler, not the index. Once the noise is the same order as the effect, a ratio between two small
+// numbers is reachable by noise alone, and the harness is measuring the harness.
+//
+// So the gate is no longer a duration. `pg_blocking_pids` answers the question the recipe is actually
+// about — DID A WRITE QUEUE BEHIND THE BUILD — as a fact rather than as a number, and a slow runner
+// cannot change the answer. The durations are still collected and still printed in the failure,
+// because they are what a person reads to understand what happened; they just do not decide anything.
 class ConcurrentIndexTest {
     private val scripts = Files.createTempDirectory("konekt-concurrent-index")
 
@@ -93,10 +107,17 @@ class ConcurrentIndexTest {
 
     private data class Observed(
         val writes: Int,
+        /** Reported, never asserted on: it is what a person reads, not what decides. */
         val worstMillis: Long,
+        /** Whether Postgres ever named somebody as blocking the writer's backend. THE VERDICT. */
+        val queued: Boolean,
+        /** How many times the observer got to ask. Zero means it measured nothing at all. */
+        val polls: Int,
     )
 
-    // Hammers the table throughout the index build and reports the longest single write it saw.
+    // Hammers the table throughout the index build, and asks Postgres — from a third connection —
+    // whether the writer's backend is waiting on somebody. The durations come along for the failure
+    // message; `queued` is the answer.
     private fun whileWriting(
         schema: String,
         block: () -> Unit,
@@ -104,12 +125,21 @@ class ConcurrentIndexTest {
         val running = AtomicBoolean(true)
         val writes = AtomicInteger(0)
         val worst = AtomicLong(0)
-        val pool = Executors.newSingleThreadExecutor()
+        val writerPid = AtomicInteger(0)
+        val queued = AtomicBoolean(false)
+        val polls = AtomicInteger(0)
+        val pool = Executors.newFixedThreadPool(2)
 
         val writer =
             pool.submit {
                 PostgresHarness.dataSource.connection.use { connection ->
                     connection.autoCommit = true
+                    connection.createStatement().use { statement ->
+                        statement.executeQuery("SELECT pg_backend_pid()").use {
+                            it.next()
+                            writerPid.set(it.getInt(1))
+                        }
+                    }
                     connection.prepareStatement("INSERT INTO $schema.reading (value) VALUES (?)").use { statement ->
                         while (running.get()) {
                             val started = System.nanoTime()
@@ -124,15 +154,43 @@ class ConcurrentIndexTest {
                 }
             }
 
+        val observer =
+            pool.submit {
+                // The writer publishes its backend id before its first INSERT; until then there is
+                // nothing to ask about.
+                while (running.get() && writerPid.get() == 0) Thread.sleep(1)
+
+                PostgresHarness.dataSource.connection.use { connection ->
+                    connection.autoCommit = true
+                    // `pg_blocking_pids` is the question the recipe is about, asked of the server:
+                    // non-empty means this backend is waiting on a lock somebody else holds. It reads
+                    // system views only, so the observer cannot itself be blocked by the build.
+                    connection
+                        .prepareStatement("SELECT cardinality(pg_blocking_pids(?)) > 0")
+                        .use { statement ->
+                            statement.setInt(1, writerPid.get())
+                            while (running.get()) {
+                                statement.executeQuery().use {
+                                    it.next()
+                                    if (it.getBoolean(1)) queued.set(true)
+                                }
+                                polls.incrementAndGet()
+                                Thread.sleep(POLL_MILLIS)
+                            }
+                        }
+                }
+            }
+
         try {
             block()
         } finally {
             running.set(false)
             writer.get(60, TimeUnit.SECONDS)
+            observer.get(60, TimeUnit.SECONDS)
             pool.shutdown()
         }
 
-        return Observed(writes.get(), worst.get())
+        return Observed(writes.get(), worst.get(), queued.get(), polls.get())
     }
 
     @Test
@@ -156,17 +214,36 @@ class ConcurrentIndexTest {
         assertTrue(withConcurrently.writes > 0, "no write landed during the concurrent build")
         assertTrue(withoutConcurrently.writes > 0, "the control writer never ran, so it measured nothing")
 
-        // RELATIVE, because the two were measured on the same machine seconds apart. A plain build
-        // takes a SHARE lock and every INSERT queues behind it; a concurrent one does not.
+        // THE OBSERVER HAS TO HAVE ASKED. A poll count of zero would make both verdicts below read
+        // "nobody was blocked" — which is the right answer for one arm and a vacuous pass for the
+        // other, and the two would be indistinguishable. This is the guard on the guard.
+        assertTrue(withConcurrently.polls > 0, "the observer never asked during the concurrent build")
+        assertTrue(withoutConcurrently.polls > 0, "the observer never asked during the plain build")
+
+        // THE CONTROL, AND IT IS A FACT RATHER THAN A DURATION. A plain CREATE INDEX takes a SHARE
+        // lock on the table and every INSERT queues behind it, so Postgres names the builder as
+        // blocking the writer. Nothing about this answer depends on how fast the machine is.
         assertTrue(
-            withoutConcurrently.worstMillis > withConcurrently.worstMillis * 4,
-            "a plain CREATE INDEX blocked writers for ${withoutConcurrently.worstMillis}ms and a " +
-                "concurrent one for ${withConcurrently.worstMillis}ms — too close to tell apart, so " +
-                "this measured something other than the lock",
+            withoutConcurrently.queued,
+            "a plain CREATE INDEX never blocked a writer — pg_blocking_pids named nobody across " +
+                "${withoutConcurrently.polls} polls and ${withoutConcurrently.writes} writes, so the " +
+                "control asked nothing and the comparison below is vacuous",
         )
 
-        // And the absolute claim that matters on its own: nothing waited anywhere near the bound this
-        // repository sets on every migration.
+        // AND THE PROPERTY ITSELF. `CONCURRENTLY` takes a ShareUpdateExclusive lock, which an INSERT
+        // does not queue behind, so the writer must never once be found waiting.
+        assertTrue(
+            !withConcurrently.queued,
+            "a write queued behind CREATE INDEX CONCURRENTLY — the recipe in D22 does not hold. " +
+                "worst write ${withConcurrently.worstMillis}ms across ${withConcurrently.polls} polls " +
+                "(plain arm, for contrast: ${withoutConcurrently.worstMillis}ms)",
+        )
+
+        // The one duration still asserted on, and it is absolute rather than a ratio: nothing waited
+        // anywhere near the bound this repository sets on every migration. A third of the timeout is
+        // wide enough that a slow runner does not reach it — the failures in `#43` were 232ms against
+        // this 1000ms — and it is a claim worth keeping because a concurrent build that somehow did
+        // block would be caught here even if the lock question were answered wrongly.
         assertTrue(
             withConcurrently.worstMillis < LOCK_TIMEOUT_SECONDS * 1_000 / 3,
             "a write waited ${withConcurrently.worstMillis}ms against a ${LOCK_TIMEOUT_SECONDS}s timeout",
@@ -178,5 +255,10 @@ class ConcurrentIndexTest {
         // writer could be blocked, and the control would pass having asked nothing.
         const val ROWS = 400_000
         const val LOCK_TIMEOUT_SECONDS = 3
+
+        // Fast enough that a plain build — hundreds of milliseconds over 400k rows — is seen many
+        // times over, and slow enough that the observer is not itself a load on the server it is
+        // asking. It bounds how briefly a block could hide, not how long anything takes.
+        const val POLL_MILLIS = 5L
     }
 }
