@@ -25,15 +25,15 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/konekt
-      DB_USER: konekt
-      DB_PASSWORD: konekt
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
-      BROKER_HOST: broker
-      BROKER_PORT: "9092"
-      DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
+      KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
+      KONEKT_DB_USER: konekt
+      KONEKT_DB_PASSWORD: konekt
+      KONEKT_JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      KONEKT_BROKER_HOST: broker
+      KONEKT_BROKER_PORT: "9092"
+      KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
       # No traffic and no observability from this one. It is here to answer requests against a schema
       # it has never seen, and a second simulator would spend the counters the other server measures.
-      SIMULATE_TRAFFIC: "false"
+      KONEKT_SIMULATE_TRAFFIC: "false"
     ports:
       - "${PREVIOUS_SERVER_PORT:-8082}:8080"

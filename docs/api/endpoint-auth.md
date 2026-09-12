@@ -28,7 +28,7 @@ parent_feature: feature-authentication
 | `POST /api/v1/auth/otp/verify` | **public** | `konektRoutes`, `AuthTier.PUBLIC` (`authRoutes()`) | exchange a code for a session |
 | `POST /api/v1/auth/session/refresh` | **public** | `konektRoutes`, `AuthTier.PUBLIC` (`sessionRoutes()`) | exchange a refresh token for a new pair |
 | `POST /api/v1/auth/session/logout` | **user token** | `konektRoutes`, `AuthTier.USER` (`authenticatedSessionRoutes()`) | end the caller's session family |
-| `GET /api/v1/dev/otp?msisdn=…` | **public, and mounted only when `DEV_REVEAL_OTP=true`** | `devOtpRouteGroup`, `AuthTier.PUBLIC`, appended to the table only when the flag is on | read back the code the SMSC would have carried |
+| `GET /api/v1/dev/otp?msisdn=…` | **public, and mounted only when `KONEKT_DEV_REVEAL_OTP=true`** | `devOtpRouteGroup`, `AuthTier.PUBLIC`, appended to the table only when the flag is on | read back the code the SMSC would have carried |
 
 The tier is a **value**, not the indentation of a `routing { }` block: `konektRoutes` in
 `server/src/main/kotlin/io/konekt/Application.kt` pairs an `AuthTier` with the routes that sit at it,
@@ -45,7 +45,7 @@ body-supplied family id is a route that ends anybody's session for anybody who a
 **The development route is the whole authentication system if it ships.** It reads any subscriber's
 outstanding code with no credential at all. It exists because the boundary of this product stops at
 the SMSC — no message is ever sent — so without it there is no way to sign in. It is absent unless
-`DEV_REVEAL_OTP` is exactly `"true"`; the compose stand sets it, and nothing else should.
+`KONEKT_DEV_REVEAL_OTP` is exactly `"true"`; the compose stand sets it, and nothing else should.
 
 ## Handlers (code anchors)
 

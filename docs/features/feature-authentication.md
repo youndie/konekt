@@ -58,7 +58,7 @@ session system — see [research-architecture](../research/research-architecture
 ## 3. Flow
 
 1. `POST /api/v1/auth/otp/request` — the code is generated, hashed, stored, and handed to
-   `OtpDelivery` — a composite that **writes it to the log** and, when `DEV_REVEAL_OTP` is on, also
+   `OtpDelivery` — a composite that **writes it to the log** and, when `KONEKT_DEV_REVEAL_OTP` is on, also
    keeps it in memory for the development route. No message is ever sent: the boundary of this system
    stops at the SMSC.
 2. In development only, `GET /api/v1/dev/otp?msisdn=…` reads the code back. Without it there is no
@@ -156,7 +156,7 @@ All tiers are decided in `konektRoutes` in `server/src/main/kotlin/io/konekt/App
 * **Automated:** `SessionRotationTest`
 
 ### Scenario: the stand signs in end to end, through the development code route
-* **Given:** the compose stand with `DEV_REVEAL_OTP=true`
+* **Given:** the compose stand with `KONEKT_DEV_REVEAL_OTP=true`
 * **When:** a scenario calls `Stand.signIn`
 * **Then:** request, read-back and verify all succeed against the running server
 * **Automated:** `PurchaseScenarioTest` (through `Stand`)
@@ -186,7 +186,7 @@ All tiers are decided in `konektRoutes` in `server/src/main/kotlin/io/konekt/App
   deployment's server-side key" and neither leaves the process. A deployment with a key-management
   story gives them separate keys; that is a row in the operator material (`B-30`), not a change here.
 - **The development route reads any subscriber's code with no credential.** It is absent unless
-  `DEV_REVEAL_OTP` is exactly `"true"`. If it ever ships enabled, it **is** the authentication system.
+  `KONEKT_DEV_REVEAL_OTP` is exactly `"true"`. If it ever ships enabled, it **is** the authentication system.
 - **The code is written into the log, as a warning, deliberately.** It is a credential in a log, and
   it is there because there is no SMSC; the class is named `LoggingOtpDelivery` so nobody wires it in
   without noticing. `RevealedCodes` is unbounded in memory by design — one short string per number

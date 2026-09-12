@@ -22,7 +22,7 @@ MEASURE_HOME=${MEASURE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/konekt-measur
 OUT=$MEASURE_HOME/aot-jib
 COMPOSE=(docker compose -p "$PROJECT" -f deploy/compose.yaml -f deploy/compose.measure.yaml)
 # What the compose file gives the server, handed to the training container the same way.
-AOT_DOCKER="--network ${PROJECT}_default -e DB_URL=jdbc:postgresql://postgres:5432/konekt -e DB_USER=konekt -e DB_PASSWORD=konekt -e JWT_SECRET=dev-secret-not-for-anything-real -e BROKER_HOST=broker -e BROKER_PORT=9092 -e DEV_REVEAL_OTP=true -e DEV_SCREENS=true -e BRAND=brand-a -e PAYMENT_MOCK_MODE=approve -e PAYMENT_MOCK_DELAY_MS=0"
+AOT_DOCKER="--network ${PROJECT}_default -e KONEKT_DB_URL=jdbc:postgresql://postgres:5432/konekt -e KONEKT_DB_USER=konekt -e KONEKT_DB_PASSWORD=konekt -e KONEKT_JWT_SECRET=dev-secret-not-for-anything-real -e KONEKT_BROKER_HOST=broker -e KONEKT_BROKER_PORT=9092 -e KONEKT_DEV_REVEAL_OTP=true -e KONEKT_DEV_SCREENS=true -e KONEKT_BRAND=brand-a -e KONEKT_PAYMENT_MOCK_MODE=approve -e KONEKT_PAYMENT_MOCK_DELAY_MS=0"
 rm -rf "$OUT" server/build/zavarnik/jib; mkdir -p "$OUT"
 
 echo "== the Jib image without a cache, and the stand on it"

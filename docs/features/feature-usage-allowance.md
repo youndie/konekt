@@ -66,7 +66,7 @@ database would prove none of it and would be a second place counters are decreme
    card through `ComponentBroadcaster`.
 3. The subscriber's open SSE stream carries the frame; the client replaces the node.
 
-The whole chain is **off unless `SIMULATE_TRAFFIC=true`**: it spends real counters with fictional
+The whole chain is **off unless `KONEKT_SIMULATE_TRAFFIC=true`**: it spends real counters with fictional
 traffic, and a deployment that forgot the switch must not be one that quietly empties its
 subscribers' allowances.
 

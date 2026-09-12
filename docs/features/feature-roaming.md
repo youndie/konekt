@@ -147,7 +147,7 @@ package bought for a trip must be visible on the screen somebody opens, not only
 
 * **Real network attachment.** Nothing observes a device landing anywhere; in a real MVNO that event
   is a first-attach notification from the network. What starts a package here is the **traffic
-  simulator**, behind `SIMULATE_TRAFFIC`: a package lies dormant for `SIMULATED_ARRIVAL_AFTER_SECONDS`
+  simulator**, behind `KONEKT_SIMULATE_TRAFFIC`: a package lies dormant for `KONEKT_SIMULATED_ARRIVAL_AFTER_SECONDS`
   and then the simulation publishes one megabyte of usage in its zone, through the same broker every
   other event takes.
 

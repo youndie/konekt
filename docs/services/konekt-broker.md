@@ -47,7 +47,7 @@ There is no HTTP surface. The wire is booblik's own plaintext protocol, spoken t
 | `server/src/main/kotlin/io/konekt/events/BooblikOutboxPublisher.kt` | petich's outbox transport |
 | `server/src/main/kotlin/io/konekt/mocks/traffic/UsageConsumer.kt` | the only consumer |
 | `server/src/main/kotlin/io/konekt/mocks/traffic/UsageChain.kt` | what starts it, always |
-| `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficChain.kt` | what starts the simulator, behind `SIMULATE_TRAFFIC` |
+| `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficChain.kt` | what starts the simulator, behind `KONEKT_SIMULATE_TRAFFIC` |
 
 ## 3. How it is built
 
@@ -135,7 +135,7 @@ retention bound was not a bound on what gets applied but a bound on how much get
 the high watermark from METADATA now, and `TrafficChainTest` publishes *before* the chain starts to
 hold it to that.
 
-The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default `9092`) in
+The server's half is `KONEKT_BROKER_HOST` (default `broker`) and `KONEKT_BROKER_PORT` (default `9092`) in
 `server/src/main/kotlin/io/konekt/KonektConfig.kt`.
 
 ## 8. Quirks
@@ -173,7 +173,7 @@ The server's half is `BROKER_HOST` (default `broker`) and `BROKER_PORT` (default
   rather than on traffic.
 - **`UsageChain` and `TrafficChain` are separate starters, and the split is load-bearing.** The
   consumer is the product's own worker and starts whenever the application does; the simulator is a
-  mock and starts behind `SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with
+  mock and starts behind `KONEKT_SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with
   the flag off — the default, and what the chart requires above one replica — **no process in this
   build read the `usage` topic at all**: the broker accepted events and nobody applied them.
 - **A broker restart used to be permanent.** `BooblikConnection` opens one socket in its constructor

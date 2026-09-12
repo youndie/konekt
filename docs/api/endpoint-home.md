@@ -87,7 +87,7 @@ There is no 404 on either route: a subscriber with no counters gets a screen tha
 - **`KompotUpdateBroadcaster` must be started or it refuses to broadcast**, and the binding for it
   existed nowhere until the stand tried to start the application.
 - **Nothing in the product moves a counter except the traffic simulator and a completed purchase.**
-  The simulator is off unless `SIMULATE_TRAFFIC=true`, so on a default deployment this stream is
+  The simulator is off unless `KONEKT_SIMULATE_TRAFFIC=true`, so on a default deployment this stream is
   correct and silent — which looks exactly like a broken one.
 - **How the client cache and a live update interact is an open question**, `B-18`. The hypothesis on
   record is that a cold start shows a stale value for exactly one request.

@@ -25,5 +25,7 @@ if [ "$MODE" = off ]; then
   printf 'METRIK_ENDPOINT=\nMETRIK_KEY=\nTRACY_ENDPOINT=\nTRACY_KEY=\n' >> "$ENV_FILE"
 fi
 "${COMPOSE[@]}" up -d --no-build --wait server >/dev/null
-"${COMPOSE[@]}" exec server bash -c 'echo "METRIK_ENDPOINT=[$METRIK_ENDPOINT] METRIK_KEY=[${METRIK_KEY:+set}] TRACY_ENDPOINT=[$TRACY_ENDPOINT] TRACY_KEY=[${TRACY_KEY:+set}]"'
+# The CONTAINER's names, which carry the prefix; the `.env` above holds the HOST's, which compose
+# interpolates into them and which deliberately do not (`konekt#35`).
+"${COMPOSE[@]}" exec server bash -c 'echo "KONEKT_METRIK_ENDPOINT=[$KONEKT_METRIK_ENDPOINT] KONEKT_METRIK_KEY=[${KONEKT_METRIK_KEY:+set}] KONEKT_TRACY_ENDPOINT=[$KONEKT_TRACY_ENDPOINT] KONEKT_TRACY_KEY=[${KONEKT_TRACY_KEY:+set}]"'
 echo "observability $MODE; the server restarted — warm it up before measuring"

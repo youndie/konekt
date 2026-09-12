@@ -59,7 +59,7 @@ server.
 | `openApiDocument` itself | a route added, removed or renamed without a line in `konektEndpointFacts` |
 | `OpenApiDocumentTest` — "matches what is committed" | anything at all changing without the file being re-recorded |
 | `OpenApiDocumentTest` — the operation count | a route quietly leaving the surface |
-| `OpenApiDocumentTest` — "the development flag adds exactly one route" | `DEV_REVEAL_OTP` changing the surface by more than `GET /api/v1/dev/otp` |
+| `OpenApiDocumentTest` — "the development flag adds exactly one route" | `KONEKT_DEV_REVEAL_OTP` changing the surface by more than `GET /api/v1/dev/otp` |
 | `OpenApiDocumentTest` — "the way in is public…" | a screen route moving into the public group |
 | `CompositionRootRoutesTest` | a route registered directly in `routing { }` instead of through the table |
 
@@ -119,7 +119,7 @@ An admitted gap costs a reader nothing; an invented detail costs them the whole 
   wire specification really describes carry a `$ref`, because the kit validates a response against
   whatever the ref points at — a ref to a schema nobody publishes would be a finding about the server
   rather than about the document.
-- **The development route.** `GET /api/v1/dev/otp` exists only when `DEV_REVEAL_OTP=true`, and the
+- **The development route.** `GET /api/v1/dev/otp` exists only when `KONEKT_DEV_REVEAL_OTP=true`, and the
   committed document describes a production deployment. It is still described in code
   (`devOtpEndpointFacts`), and the test builds the development document too, so that description
   cannot rot unnoticed.

@@ -76,9 +76,9 @@ stand_down() { SERVER_IMAGE=$IMG "${COMPOSE[@]}" down -v >/dev/null 2>&1; }
 # the realtime updates the probe waits for are usage events, and without it the probe's stream is
 # empty on a plain start too — which is what the first h9 run measured.
 env_flags() {
-  echo "-e DB_URL=jdbc:postgresql://postgres:5432/konekt -e DB_USER=konekt -e DB_PASSWORD=konekt \
--e JWT_SECRET=dev-secret-not-for-anything-real -e BROKER_HOST=broker -e BROKER_PORT=9092 \
--e DEV_REVEAL_OTP=true -e DEV_SCREENS=true -e SIMULATE_TRAFFIC=${SIM:-true}"
+  echo "-e KONEKT_DB_URL=jdbc:postgresql://postgres:5432/konekt -e KONEKT_DB_USER=konekt -e KONEKT_DB_PASSWORD=konekt \
+-e KONEKT_JWT_SECRET=dev-secret-not-for-anything-real -e KONEKT_BROKER_HOST=broker -e KONEKT_BROKER_PORT=9092 \
+-e KONEKT_DEV_REVEAL_OTP=true -e KONEKT_DEV_SCREENS=true -e KONEKT_SIMULATE_TRAFFIC=${SIM:-true}"
 }
 
 wait_ready() { # container -> ms to the first 200 on /health
@@ -166,7 +166,7 @@ checkpoint() { # phase -> leaves the image in $CR, prints what the JVM said
   [ -f "$CR/policies.yaml" ] && opts="$opts -Djdk.crac.resource-policies=/cr/policies.yaml"
   docker rm -f $CP >/dev/null 2>&1
   # shellcheck disable=SC2046
-  docker run -d --name $CP --network "$NET" -p $PORT:8080 $(env_flags) ${POOL:+-e DB_POOL_SIZE=$POOL} \
+  docker run -d --name $CP --network "$NET" -p $PORT:8080 $(env_flags) ${POOL:+-e KONEKT_DB_POOL_SIZE=$POOL} \
     -e JAVA_OPTS="$opts" -v "$CR:/cr" "$IMG" >/dev/null
   log "server up for the checkpoint: $(wait_ready $CP) ms to /health"
   local token; token=$(sign_in)
@@ -185,7 +185,7 @@ checkpoint() { # phase -> leaves the image in $CR, prints what the JVM said
 restore() { # name, extra docker flags -> prints readiness and the first screen
   docker rm -f $RS >/dev/null 2>&1
   # shellcheck disable=SC2046
-  docker run -d --name $RS --network "$NET" -p $PORT:8080 $(env_flags) ${POOL:+-e DB_POOL_SIZE=$POOL} "$@" \
+  docker run -d --name $RS --network "$NET" -p $PORT:8080 $(env_flags) ${POOL:+-e KONEKT_DB_POOL_SIZE=$POOL} "$@" \
     -v "$CR:/cr" --entrypoint java "$IMG" -XX:CRaCRestoreFrom=/cr >/dev/null
   local r; r=$(wait_ready $RS)
   echo "ready=${r}ms"
@@ -259,7 +259,7 @@ case $PHASE in
   h5)
     checkpoint h7
     echo "-- restore with a different BRAND and DEV_SCREENS in the environment:"
-    restore -e BRAND=brand-b -e DEV_SCREENS=false
+    restore -e KONEKT_BRAND=brand-b -e KONEKT_DEV_SCREENS=false
     echo "  BRAND the process reports: $(api "http://127.0.0.1:$PORT/api/v1/screens/home" -H "Authorization: Bearer $(sign_in)" | head -c 200)"
     ;;
   h6)

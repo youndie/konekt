@@ -72,7 +72,7 @@ What it deliberately does not do:
 
 ## 3. How it is built
 
-**Migrations run as their own process, before any server serves.** `main` reads `MIGRATE_ONLY`, and
+**Migrations run as their own process, before any server serves.** `main` reads `KONEKT_MIGRATE_ONLY`, and
 when it is set it migrates and exits without opening a port
 (`server/src/main/kotlin/io/konekt/Application.kt`). In the stand that is the `migrate` service, which
 the servers wait on with `condition: service_completed_successfully`; in a rolling deploy it is a job
@@ -87,7 +87,7 @@ with correct state while nobody downstream is told.
 
 **The workers are started from `ApplicationStarted` and cancelled on `ApplicationStopping`** — the
 petich sweeper, the outbox relay, kompot's broadcaster, and the traffic chain when
-`SIMULATE_TRAFFIC` is on. A binding is data and can be verified; a `start(scope)` call is control
+`KONEKT_SIMULATE_TRAFFIC` is on. A binding is data and can be verified; a `start(scope)` call is control
 flow and cannot, which is why `WorkersAreStartedTest` reads this file as text.
 
 **A screen is drawn from a view, and the render step looks nothing up.** `data → use case → view →
@@ -218,7 +218,7 @@ second pod would do rather than a sentence saying not to. `charts/konekt/values.
 | Worker | Started by | With two pods |
 |---|---|---|
 | `UsageChain` — applies whatever arrives on `usage` | always, on `ApplicationStarted` | **each applies every event**: booblik keeps no consumer offsets and there is no group, so a 25 MB decrement becomes 50 MB. Nothing in any log says so |
-| `TrafficChain` — the traffic simulator | `SIMULATE_TRAFFIC` | each publishes its own fictional usage, so allowances drain at a multiple of the configured rate. **The chart refuses this combination outright** |
+| `TrafficChain` — the traffic simulator | `KONEKT_SIMULATE_TRAFFIC` | each publishes its own fictional usage, so allowances drain at a multiple of the configured rate. **The chart refuses this combination outright** |
 | `SuspendedPetichSweeper` — compensates abandoned sagas | always | both walk the same sagas and both compensate; the money is correct because of a unique index on `ledger_entry (order_id, kind)` (`B-64`) and since [B-92](../backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md) the loser does not repeat the work either: `ClaimedSweep` claims each expired saga with one conditional write before compensating it |
 | `OutboxRelayWorker` — publishes outbox rows | always | both read the same pending rows; delivery is at-least-once by design and the event id is stable across redeliveries, so a consumer keyed on it copes |
 | `KompotUpdateBroadcaster` — the realtime bus | always | **in memory**, so a push produced on one pod never reaches a subscriber attached to the other. The screen does not refresh, nothing is logged, and the next ordinary fetch shows the right state — which is the hardest symptom to attribute — and why [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md) made the chart refuse the second replica rather than leave the boundary to a reader |
@@ -242,14 +242,44 @@ compensated branch of a purchase is a service rather than a switch.
 
 ## 7. Configuration
 
-Every key is read in one place — `server/src/main/kotlin/io/konekt/KonektConfig.kt` — and the file is
-the list. Do not copy it here; what is worth stating is the shape of the defaults:
+**Every variable carries the `KONEKT_` prefix and is declared in one schema** — `KonektSchema` in
+`server/src/main/kotlin/io/konekt/KonektConfig.kt`, read once at startup through kore's
+`ConfigSchema` (`konekt#35`). The file is the list. Do not copy it here; what is worth stating is
+what the schema does that eighteen scattered `System.getenv` calls did not:
 
-- `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` are **required**: absent means a process that will
-  not start, rather than a route that fails later under a user.
-- Every switch is opt-in by the exact string `"true"` — `DEV_REVEAL_OTP`, `SIMULATE_TRAFFIC`,
-  `MIGRATE_ONLY`. An unset or misspelled variable means off. `PAYMENT_MOCK_MODE` is the same shape:
-  anything other than `"decline"` approves.
+- `KONEKT_DB_URL`, `KONEKT_DB_USER`, `KONEKT_DB_PASSWORD`, `KONEKT_JWT_SECRET` are **required**:
+  absent means a process that will not start, rather than a route that fails later under a user. Every
+  problem is reported at once, so a deployment being configured for the first time is one round trip
+  rather than one restart per missing value.
+- **A variable under the prefix that the schema does not declare refuses the start**, and the message
+  names the declared variable it is probably a misspelling of. `KONEKT_SIMULATE_TRAFIC` used to be a
+  stand that silently did not simulate.
+- **A value that does not parse refuses the start** rather than falling back.
+  `KONEKT_PAYMENT_MOCK_DELAY_MS=1s` used to be zero.
+- **An agent is both its variables or neither.** `KONEKT_TRACY_ENDPOINT` without `KONEKT_TRACY_KEY` is
+  a refusal naming the missing half, and all three agents are checked in the same pass.
+- Every switch is opt-in by the exact string `"true"` — `KONEKT_DEV_REVEAL_OTP`,
+  `KONEKT_SIMULATE_TRAFFIC`, `KONEKT_MIGRATE_ONLY`. Anything else is off, a misspelling included, so
+  a security switch cannot ship open. `KONEKT_PAYMENT_MOCK_MODE` is the same shape: anything other
+  than `"decline"` approves.
+
+**`./bin/server --print-config` prints what a deployment thinks it is configured as**, with each
+value's origin — the environment or the default — and secrets masked. It is a flag rather than a
+route because the question is asked most often *because* the process will not start: it prints what
+it did resolve and exits non-zero with the problems the start would have refused on.
+
+**The host's variables in `deploy/compose.yaml` are deliberately NOT prefixed.**
+`SIMULATE_TRAFFIC=false docker compose … up` still works; compose interpolates it into the
+container's `KONEKT_SIMULATE_TRAFFIC`. The prefix belongs to the server process, not to the shell
+that starts a stand. The same split applies to the client, whose own `TRACY_ENDPOINT` and
+`KATCHER_ENDPOINT` are a different process's settings and stay as they are.
+
+**`enableServiceLinks: false` in the chart is load-bearing, not tidiness.** For every Service in the
+namespace the kubelet injects `<NAME>_SERVICE_HOST`, `<NAME>_PORT` and a `<NAME>_PORT_<port>_TCP*`
+group named after the **Service** — and this chart's server Service is `{{ .Release.Name }}`, which
+is `konekt`. Left on, the pod is handed `KONEKT_PORT=tcp://10.43.x.x:8080` where an integer is
+declared, plus four undeclared names under the prefix, and does not start.
+`KonektConfigSchemaTest` is what keeps the line in the chart.
 
 ## 8. Quirks
 
