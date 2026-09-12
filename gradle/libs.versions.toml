@@ -92,6 +92,10 @@ kompot = "0.36.1.112"
 petich = "0.1.0"
 booblik = "0.3.4"
 
+# kore, the portfolio's process lifecycle. `kore-core` and `kore-ktor` are on Maven Central;
+# `kore-observability` is portfolio-only, because the three agents it wires are not on Central either.
+kore = "0.1.0"
+
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
 #   - the server image and the Kotlin client, which share the repository's own version. As of
@@ -283,6 +287,10 @@ petich-scheduler = { module = "io.github.youndie.petich:petich-scheduler", versi
 # JVM only: booblik-client is a src/main/kotlin source set. The broker itself is a container, not a
 # dependency — see deploy/compose.yaml.
 booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.ref = "booblik" }
+
+# --- kore --------------------------------------------------------------------------------------
+kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
+kore-ktor = { module = "io.github.youndie:kore-ktor", version.ref = "kore" }
 
 # --- observability -----------------------------------------------------------------------------
 

@@ -118,7 +118,13 @@ class OpenApiDocumentTest {
 
         assertEquals(
             setOf(
+                // THE PROBES, and they are public because a supervisor has no session. All four,
+                // named one by one rather than by a prefix: a `/health/*` wildcard here would admit a
+                // fifth route somebody mounts under that path later without anyone deciding it.
                 "GET /health",
+                "GET /health/startup",
+                "GET /health/ready",
+                "GET /health/live",
                 "POST /api/v1/auth/otp/request",
                 "POST /api/v1/auth/otp/verify",
                 // THE LOGIN SCREENS AND THEIR SUBMITS, and they must be public for the same reason
@@ -154,6 +160,6 @@ class OpenApiDocumentTest {
         // prose beside a constant does — so it says neither now. What it is for is the change nobody
         // intended: an endpoint appearing or disappearing is a contract moving, and this is the line
         // that makes somebody type the new number and mean it.
-        const val EXPECTED_OPERATIONS = 36
+        const val EXPECTED_OPERATIONS = 39
     }
 }

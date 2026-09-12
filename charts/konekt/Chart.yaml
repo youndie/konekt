@@ -29,7 +29,18 @@ type: application
 # 0.2.4 -> 0.2.5: `B-124` sets the broker's segment to the 512 MiB the cluster's log already has and
 # the retention to two of them; a values file that names neither renders with the new defaults, and
 # one that names them renders as it did — additive, PATCH.
-version: 0.2.5
+# 0.2.5 -> 0.3.0: `konekt#32` split one probe route into three, so the three probes now point at
+# `/health/startup`, `/health/live` and `/health/ready` instead of all three at `/health`. A values
+# file written for 0.2.5 renders under this unchanged — nothing was removed, renamed or newly
+# required — so BY THE LETTER of the rule above this is a PATCH.
+#
+# It is a MINOR, and the reason is a case the rule's list does not cover. That list is about values;
+# this adds a requirement on the IMAGE. A deployment that takes this chart and keeps a `server.version`
+# from before the routes existed gets pods whose startup probe never passes, which is worse than a
+# render that fails — it fails during a rollout rather than at `helm template`. The chart and the
+# application have separate lifetimes here precisely so that a coupling like this has to be stated,
+# and a PATCH would have said the opposite.
+version: 0.3.0
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

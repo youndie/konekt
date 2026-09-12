@@ -34,7 +34,15 @@ EXPOSE 8080
 # nonexistent" on every run, so the container was permanently unhealthy while the process inside it
 # was serving. Nothing depended on the healthcheck until `depends_on: service_healthy` did, which is
 # why it went unnoticed: an unhealthy container that nobody waits for looks exactly like a healthy one.
+# LIVENESS, NAMED, and the body it greps for changed with it. `/health` still answers — kore mounts
+# it as the liveness alias so a chart migrates a line at a time — but it answers `alive` rather than
+# `ok`, and a healthcheck grepping the old word would have failed here forever. The stand waits on
+# this through `service_healthy`, so it would not have been a quiet failure; it would have been a
+# stand that never comes up.
+#
+# Pointed at the explicit route rather than the alias, because this file is not a chart anybody has to
+# migrate carefully: it is ours, and naming the question is worth more than keeping the old address.
 HEALTHCHECK --interval=5s --timeout=3s --start-period=20s --retries=10 \
-    CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ok <&3"]
+    CMD ["bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/live HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q alive <&3"]
 
 ENTRYPOINT ["./bin/server"]
