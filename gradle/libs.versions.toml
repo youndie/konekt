@@ -358,6 +358,10 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+# Compiles the commit, the build time and the version into a Kotlin object, which is what `/version`
+# serves. A generated source rather than a resource or a manifest entry, because Kotlin/Native has
+# neither — the plugin is shaped for the portfolio's native servers and the JVM gets the same answer.
+koreBuild = { id = "io.github.youndie.kore.build", version.ref = "kore" }
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 # The APPLICATION plugin, for the one module that produces an APK. A different id from the line
 # above and the same AGP: the library plugin cannot build an application and vice versa.

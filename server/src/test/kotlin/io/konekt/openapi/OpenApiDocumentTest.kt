@@ -125,6 +125,9 @@ class OpenApiDocumentTest {
                 "GET /health/startup",
                 "GET /health/ready",
                 "GET /health/live",
+                // Public because a deploy check reads it, and a check has no session to offer. A
+                // commit hash in a public repository is not a secret.
+                "GET /version",
                 "POST /api/v1/auth/otp/request",
                 "POST /api/v1/auth/otp/verify",
                 // THE LOGIN SCREENS AND THEIR SUBMITS, and they must be public for the same reason
@@ -160,6 +163,6 @@ class OpenApiDocumentTest {
         // prose beside a constant does — so it says neither now. What it is for is the change nobody
         // intended: an endpoint appearing or disappearing is a contract moving, and this is the line
         // that makes somebody type the new number and mean it.
-        const val EXPECTED_OPERATIONS = 39
+        const val EXPECTED_OPERATIONS = 40
     }
 }

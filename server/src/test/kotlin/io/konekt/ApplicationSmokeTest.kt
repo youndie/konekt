@@ -1,6 +1,8 @@
 package io.konekt
 
+import io.github.youndie.kore.generated.KoreBuildIdentity
 import io.github.youndie.kore.health.StartupGate
+import io.github.youndie.kore.version.releaseOf
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
@@ -45,6 +47,43 @@ class ApplicationSmokeTest {
 
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals("alive", response.bodyAsText().trim())
+        }
+
+    // WHICH BUILD THIS IS, asserted on the SHAPE and not on the values. The commit and the build
+    // time differ between every run and every machine, so a test naming them would be a test of the
+    // machine — and the thing a deploy check depends on is the shape: `key: value` per line, in a
+    // fixed order, greppable without a parser.
+    @Test
+    fun `version answers a contract a shell can read`() =
+        testApplication {
+            application { baseModule() }
+
+            val body = client.get("/version").bodyAsText()
+
+            assertEquals(
+                listOf("release", "version", "commit", "built"),
+                body.trim().lines().map { it.substringBefore(":") },
+                "the /version body is read by deploy checks, so its keys and their order are a contract",
+            )
+        }
+
+    // The switch shortens the body and CANNOT remove the route: a 404 is indistinguishable from a
+    // broken deployment to the check that reads it. konekt leaves it off — this is a public
+    // repository and a commit hash in it is not a secret — so this is the only place it is exercised.
+    @Test
+    fun `version reduced is the release alone, and is still a route`() =
+        testApplication {
+            application {
+                baseModule(
+                    release = releaseOf(KoreBuildIdentity, override = "v9.9.9-for-this-test"),
+                    reduced = true,
+                )
+            }
+
+            val response = client.get("/version")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("release: v9.9.9-for-this-test", response.bodyAsText().trim())
         }
 
     @Test

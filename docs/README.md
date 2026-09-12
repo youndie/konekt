@@ -155,7 +155,7 @@ Subscription and assembly:
   rather than a DTO
 - [x] [endpoint-home](api/endpoint-home.md) — the home screen and the SSE stream that keeps one card
   of it current
-- [x] [endpoint-health](api/endpoint-health.md) — one route, and the only one that is not in the
+- [x] [endpoint-health](api/endpoint-health.md) — five routes, and the only ones that are not in the
   server's route table
 - [x] [api-openapi](api/api-openapi.md) — the generated `openapi.json`: which half of an operation is
   derived from the routing tree and which half is declared and can therefore drift

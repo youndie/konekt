@@ -2052,6 +2052,35 @@
                     }
                 }
             }
+        },
+        "/version": {
+            "get": {
+                "summary": "Which build this is: the release, the version, the commit and the build time",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "Which build this is: the release, the version, the commit and the build time",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "key: value per line — release, version, commit, built"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
