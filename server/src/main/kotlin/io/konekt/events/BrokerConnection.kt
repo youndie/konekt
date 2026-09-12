@@ -7,10 +7,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.ClosedSendChannelException
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.io.IOException
 import java.net.InetSocketAddress
+import kotlin.time.Duration.Companion.seconds
 
 // One connection and one producer for the process — and, since `B-107`, one that can be REPLACED.
 //
@@ -105,6 +108,10 @@ class BrokerConnection(
         // The first version of the consumer's recovery matched `IOException` alone. It would have
         // worked in production and been exercised by nothing.
         fun isFinished(failure: Throwable): Boolean = failure is IOException || failure is ClosedSendChannelException
+
+        // How long a close may wait for the accumulator to drain. See [flushQuietly] for why the
+        // number is about the callers waiting on the lock rather than about the broker.
+        private val FLUSH_DEADLINE = 2.seconds
     }
 
     override fun close() {
@@ -112,7 +119,49 @@ class BrokerConnection(
         scope.cancel()
     }
 
+    // SEND WHAT IS STILL IN THE ACCUMULATOR, BEFORE CLOSING DISCARDS IT.
+    //
+    // `Producer` collects records for `lingerMillis` before writing them — that accumulator is worth
+    // 54x and is what a producer IS — so at any instant there may be records handed over and not yet
+    // sent. booblik's JVM client answers a close by throwing them away: `drainPending()` completes
+    // every pending batch EXCEPTIONALLY with `ConnectionClosedException` rather than sending it. Its
+    // own native client begins the same method with `sendAll()`, under a comment reading "dropping it
+    // would be silent loss". The two clients of one broker disagree and this build uses the one that
+    // drops; reported as youndie/booblik#68, and flushed here until that is settled.
+    //
+    // HERE RATHER THAN IN THE TWO CALLERS, because the caller that matters is the one nobody thinks
+    // about: `reconnect` reaches this once per broker reconnect, not once per deployment. A pod being
+    // replaced is routine, and the records describing it are the ones worth keeping.
+    //
+    // BOUNDED, and the deadline is about the callers rather than about the broker. This runs inside
+    // the lock that `reconnect` holds, so every other caller that found the socket dead is waiting on
+    // it — and a flush against a broker that has just gone away must not be what holds a shutdown
+    // open. Two seconds is four hundred linger windows: a healthy flush never comes near it, and a
+    // hopeless one is abandoned before anyone notices.
+    //
+    // `runBlocking` because `flush` is suspend and `Closeable.close` is not. It is safe here and not
+    // in general: the producer's loop runs on `scope`, which `close` cancels only AFTER this returns.
+    private fun flushQuietly(what: Live) {
+        try {
+            val flushed = runBlocking { withTimeoutOrNull(FLUSH_DEADLINE) { what.producer.flush() } }
+            if (flushed == null) {
+                // Said out loud. A flush that timed out has lost records, and the whole reason this
+                // defect lived is that losing them looks exactly like having none.
+                logger.warn(
+                    "the producer of generation {} did not flush within {} — records may have been dropped",
+                    what.generation,
+                    FLUSH_DEADLINE,
+                )
+            }
+        } catch (ignored: Exception) {
+            // Best-effort, like the close below it: the socket is already broken by hypothesis on the
+            // reconnect path, and a flush that cannot happen must not stop the connection replacing it.
+            logger.debug("flushing the producer of generation {} failed", what.generation, ignored)
+        }
+    }
+
     private fun closeQuietly(what: Live) {
+        flushQuietly(what)
         try {
             what.producer.close()
         } catch (ignored: Exception) {
