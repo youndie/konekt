@@ -106,21 +106,13 @@ object KonektSchema {
     // `KONEKT_SERVICE`. What it buys is three settings konekt did not have — `TRACY_SAMPLE_RATE`,
     // `INSTANCE` and `KATCHER_CACHE_DIR` — and one it loses, below.
     //
-    // `METRIK_WINDOW_MS` IS STILL KONEKT'S OWN, and the reason is a gap in kore rather than a
-    // preference. kore's `installKoreObservability` installs metrik's plugin itself and exposes no
-    // way to set the aggregation window, so adopting the one call for all three would drop this.
-    //
-    // MEASURED, and the first measurement was wrong — which is why the second one is written down.
-    // Dropping it, `ObservabilityScenarioTest` passed four times in a row and looked safe; it then
-    // FAILED on a freshly rebuilt stand with "waited 20s for: metrik to have seen konekt-server",
-    // server up 41 seconds. The mechanism explains both: the agent sends a window when the window
-    // CLOSES, so at 60000 the test passes exactly when a boundary happens to fall inside its 20s
-    // wait. Four passes measured a stand that had been up for minutes, not the setting.
-    //
-    // So konekt installs metrik itself and takes tracy and katcher from kore — which is where
-    // `konekt#30` actually lives, metrik having no flush to hold a handle for. The workaround is
-    // named in `Observability.kt` and goes away when youndie/kore#68 does.
-    val METRIK_WINDOW_MS: ConfigKey<Long> = ConfigKey.long("METRIK_WINDOW_MS", default = 60_000)
+    // `METRIK_WINDOW_MS` IS KORE'S KEY TOO, as of 0.1.4 — it was konekt's for one version, and the
+    // reason is worth keeping: kore's wiring could not set metrik's aggregation window, metrik's
+    // default is 60 seconds, and `ObservabilityScenarioTest` waits 20 for a request to be counted.
+    // Measured, and the first measurement was wrong: at the default the scenario passed four times
+    // and then failed on a freshly rebuilt stand, server up 41 seconds. Four passes measured a stand
+    // that had been up for minutes, not the setting. `youndie/kore#68` closed it and the variable
+    // name did not change, so no deployment moves.
 
     // THE PREFIX, and it is part of the schema rather than decoration: it is what scopes the
     // unknown-variable check, which over a whole container environment would fail on `PATH` and
@@ -155,7 +147,6 @@ object KonektSchema {
                     SIMULATED_ARRIVAL_AFTER_SECONDS,
                     BRAND,
                     MIGRATE_ONLY,
-                    METRIK_WINDOW_MS,
                     // `/version` reduced to the release name alone. kore's key, like the agents'.
                     KoreKeys.VERSION_REDUCED,
                 ) + ObservabilityKeys.all,
@@ -191,7 +182,6 @@ data class KonektConfig(
     val observability: ObservabilitySettings,
     // KONEKT'S, NOT KORE'S, and `Observability.kt` says why: kore's wiring cannot set it, so metrik
     // is the one agent this server still installs itself (youndie/kore#68).
-    val metrikWindowMs: Long,
     // WHICH BUILD THIS IS, and it is ONE value rather than two. The compiled-in identity is the
     // source and `KONEKT_RELEASE` overrides it; the same `KoreRelease` names the metrik deploy
     // marker, the katcher crash group and the `/version` body, so a disagreement between what is
@@ -259,7 +249,6 @@ data class KonektConfig(
                         values,
                         instanceFallback = System.getenv("HOSTNAME") ?: "local",
                     ),
-                metrikWindowMs = values[KonektSchema.METRIK_WINDOW_MS],
                 release = releaseOf(KoreBuildIdentity, override = values[ObservabilityKeys.RELEASE]),
                 versionReduced = values[KoreKeys.VERSION_REDUCED],
             )

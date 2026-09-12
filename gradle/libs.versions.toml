@@ -96,14 +96,20 @@ booblik = "0.3.4"
 # to say `kore-core` and `kore-ktor` were on Maven Central and that is not true: `io/github/youndie/
 # kore-core/maven-metadata.xml` answers 404 on Central, checked rather than recalled.
 #
-# 0.1.3 AND NOT 0.1.2, and the difference is two features rather than a patch: `ObservabilitySettings`
-# gained `tracySampleRate` (youndie/kore#57, which held this stage) and `kore-build` is published at
-# all for the first time (youndie/kore#58). Read out of the published jars rather than out of kore's
-# working copy, which is where the spec was read and which has been ahead of every published version.
+# 0.1.4, and every one of the three bumps so far was paid for by a measurement this repository made.
+# 0.1.2 for `runUntilSignal`; 0.1.3 for `tracySampleRate` (youndie/kore#57) and for `kore-build`
+# being published at all (#58); this one deletes three workarounds konekt was carrying:
+#
+#   * #68 — `ObservabilitySettings.metrikWindow`, so all three agents go back into one call
+#   * #70 — `kore-build` wires a `kotlin("jvm")` module's `main` source set itself
+#   * #71 — `GenerateBuildIdentity.commit` can be supplied where `.git` is not reachable
+#
+# Read out of the published jars rather than out of kore's working copy, which is where the spec was
+# read and which has been ahead of every published version.
 #
 # Every module checked at this version before the bump, not just the first: this portfolio publishes
 # modules alphabetically and a version is real for one while absent for another for a while.
-kore = "0.1.3"
+kore = "0.1.4"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.

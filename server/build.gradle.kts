@@ -134,23 +134,25 @@ val collidingLibNames: Provider<Map<String, String>> =
 // does not match" — and started without it, silently. The same map that renames the files names
 // them here, so the script and the directory cannot drift apart, and the string is the same on
 // every filesystem.
-// THE GENERATED IDENTITY, WIRED INTO THE COMPILATION BY HAND, and this is a workaround rather than a
-// convention.
+// WHERE THE COMMIT COMES FROM WHEN GIT IS NOT REACHABLE.
 //
-// `io.github.youndie.kore.build` adds its output directory to `kotlin.sourceSets.commonMain` — and it
-// does that only when `org.jetbrains.kotlin.multiplatform` is applied. This module is `kotlin("jvm")`,
-// so applying the plugin registered the task, the task generated the file, and NOTHING COMPILED IT:
-// `import io.github.youndie.kore.generated.KoreBuildIdentity` was an unresolved reference in a build
-// that otherwise succeeded. Measured by referencing it, not inferred.
+// The plugin reads git in the project directory, which is right everywhere except the two places
+// this build actually runs: the WSL box gets the working tree through mutagen, which does NOT
+// replicate `.git`, and a CI job has the SHA in the environment before it has anything else.
+// Unset, the plugin degrades to `unknown` — correct, and useless to a deploy check.
 //
-// The `map` rather than a bare path is what makes the generated file an INPUT of the compilation
-// instead of a side effect of the build. Without the task dependency the first clean build compiles
-// before the file exists, and every later one compiles whatever the previous run left — a stale
-// commit hash with a green build, which is the failure this whole feature exists to prevent.
+// A SUPPLIED COMMIT MEANS `dirty = false`, deliberately: it is an assertion about a commit and not
+// about a working tree, and asking git for the second half would kill the case the property exists
+// for. So the local stand still reports `unknown` unless `-Pcommit=` is passed, and a CI-built image
+// reports the SHA it was built from.
 //
-// Reported as youndie/kore#70. Delete this block when the plugin wires a JVM module itself.
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(tasks.named("generateKoreBuildIdentity"))
+// `kotlin.srcDir(tasks.named(...))` used to sit here as well: the plugin added its output only to a
+// multiplatform `commonMain`, so on this `kotlin("jvm")` module it generated a file nothing compiled
+// (youndie/kore#70). Fixed in 0.1.4 — the block is deleted rather than left working-but-redundant.
+tasks.named<io.github.youndie.kore.gradle.GenerateBuildIdentity>("generateKoreBuildIdentity") {
+    commit.set(
+        providers.environmentVariable("GITHUB_SHA").orElse(providers.gradleProperty("commit")),
+    )
 }
 
 tasks.named<CreateStartScripts>("startScripts") {

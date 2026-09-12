@@ -556,7 +556,6 @@ fun Application.module(
     val observability =
         configureObservability(
             config.observability,
-            metrikWindowMs = config.metrikWindowMs,
             release = config.release.name,
             clock = SystemClock,
         )
