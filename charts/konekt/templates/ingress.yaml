@@ -18,9 +18,15 @@ would reject it on every route, so the bypass would have to be every route — a
 nothing while looking like protection.
 
 What guards this instead is the server's own tier, which is a VALUE on each route rather than the
-indentation of an `authenticate { }` block — see docs/api/endpoint-auth.md. Four addresses answer
-without a token, each because it must: requesting a code, verifying one, refreshing a session, and
-`/health`. Everything else answers 401.
+indentation of an `authenticate { }` block — see docs/api/endpoint-auth.md. A few addresses answer
+without a token, each because it must: the way in (requesting a code, verifying one, refreshing a
+session, and the login screens that carry those), and the probes, which a supervisor asks with no
+session to offer. Everything else answers 401.
+
+THE SET IS NOT COUNTED HERE, deliberately. `OpenApiDocumentTest` asserts it as one exact set derived
+from the routing tree, so a screen that moved into the public group fails a test rather than
+disagreeing with a number in a comment — which is what this sentence used to do: it said four, and
+had been wrong about that for some time.
 
 The one route that would change this answer is `GET /api/v1/dev/otp`, which reads back any
 subscriber's one-time code. It is mounted only when `DEV_REVEAL_OTP=true`, and `dev.revealOtp` is

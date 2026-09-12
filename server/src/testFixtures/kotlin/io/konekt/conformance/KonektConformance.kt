@@ -1,5 +1,6 @@
 package io.konekt.conformance
 
+import io.github.youndie.kore.ktor.KoreRoutes
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.LoginCodeSubmit
@@ -61,7 +62,10 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
     setOf(
         // Not part of the product's API surface at all: it answers two letters of text/plain so a
         // supervisor can ask the process a question, and a blind walk parses one JSON document.
-        "GET /health",
+        "GET ${KoreRoutes.HEALTH}",
+        "GET ${KoreRoutes.STARTUP}",
+        "GET ${KoreRoutes.READY}",
+        "GET ${KoreRoutes.LIVE}",
         // A stream. The kit checks it from a recording, and there is none — see the `updates` entry
         // above.
         "GET ${RealtimeStream.PATH}",

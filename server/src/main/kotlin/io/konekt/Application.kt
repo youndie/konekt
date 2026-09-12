@@ -10,6 +10,11 @@ import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
+import io.github.youndie.kore.health.HealthRegistry
+import io.github.youndie.kore.health.LivenessGate
+import io.github.youndie.kore.health.ReadinessGate
+import io.github.youndie.kore.health.StartupGate
+import io.github.youndie.kore.ktor.installKoreProbes
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.OutboxAwarePetichRepository
@@ -61,6 +66,7 @@ import io.konekt.feature.shell.shared.api.ScreenChrome
 import io.konekt.feature.shell.shared.api.shellActionsSerializersModule
 import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
+import io.konekt.health.DatabaseHealthCheck
 import io.konekt.http.configureStatusPages
 import io.konekt.login.loginRoutes
 import io.konekt.mocks.traffic.TrafficChain
@@ -166,7 +172,10 @@ fun main() {
 
 // Everything that needs no database. Split out so a test — and the health check — can have a server
 // without one, and so the list of plugins is readable on its own.
-fun Application.baseModule(extraModules: List<org.koin.core.module.Module> = emptyList()) {
+fun Application.baseModule(
+    extraModules: List<org.koin.core.module.Module> = emptyList(),
+    probes: KonektProbes = KonektProbes(),
+) {
     install(Koin) {
         slf4jLogger()
         modules(listOf(timeModule) + extraModules)
@@ -181,13 +190,31 @@ fun Application.baseModule(extraModules: List<org.koin.core.module.Module> = emp
     // catch what it throws.
     configureStatusPages()
 
-    routing {
-        // It exists so the compose stand's healthcheck can ask the process a question rather than
-        // ask the kernel whether a port accepts — the kernel accepts into the backlog with no help
-        // from a hung process.
-        get("/health") { call.respondText("ok") }
-    }
+    // THREE QUESTIONS, THREE ROUTES, which is konekt#32 and the first stage of adopting kore
+    // (konekt#35). They were one route answering "ok" for as long as the process was alive — the one
+    // condition that cannot tell startup from liveness from readiness, so a pod whose database was
+    // unreachable reported itself ready and kept taking traffic.
+    //
+    // `/health` DOES NOT GO AWAY: kore mounts it as an alias for liveness, which is the right answer
+    // for a chart pointing its liveness probe there and the wrong one for readiness. That lets the
+    // chart migrate a line at a time instead of in one commit, and it is why this stage changes no
+    // deployment.
+    //
+    // The readiness gate reads a REMEMBERED answer refreshed by a loop of its own, so the probe never
+    // blocks on a dependency and `timeoutSeconds` in the chart never decides the verdict.
+    installKoreProbes(probes.startup, probes.readiness, probes.liveness)
 }
+
+// The three gates, together, because every caller needs all three and a signature taking them one by
+// one is three chances to pass the same one twice.
+//
+// Defaulted so a test that wants an application rather than a lifecycle gets one — `ApplicationSmokeTest`
+// and the OpenAPI routing tree both build a server with no dependencies to be ready for.
+class KonektProbes(
+    val startup: StartupGate = StartupGate(),
+    val readiness: ReadinessGate = ReadinessGate(),
+    val liveness: LivenessGate = LivenessGate(),
+)
 
 // THE AUTH TIER OF A ROUTE, as a value rather than as indentation.
 //
@@ -357,29 +384,46 @@ fun Application.module(config: KonektConfig) {
     // validation that makes a missing kit a startup failure runs exactly once.
     val brandKit = BrandThemeCatalogue(config.brand)
 
+    // WHAT THIS POD HAS TO BE ABLE TO REACH IN ORDER TO BE READY (konekt#32).
+    //
+    // Asked on a loop of kore's own and remembered, so the probe serves an answer rather than going to
+    // fetch one — which is what keeps `timeoutSeconds` in the chart from deciding the verdict, and
+    // what stops a slow database turning a readiness probe into a second liveness probe.
+    //
+    // The startup gate names what it waits for. `markStarted` is not enough on its own: a gate with no
+    // name starts already open, so the latch would be a latch over nothing.
+    val checks = HealthRegistry(listOf(DatabaseHealthCheck(database)))
+    val probes =
+        KonektProbes(
+            startup = StartupGate(gates = setOf("workers")),
+            readiness = ReadinessGate(checks = checks),
+        )
+
     baseModule(
-        listOf(
-            module { single { kompotJson } },
-            brandModule(brandKit),
-            authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
-            // THE CATALOGUE, WRAPPED. `CustomPackagePlans` answers for the ids the builder composes
-            // and delegates everything else, so the purchase saga sells a package nobody listed
-            // through exactly the interceptors it sells a listed plan through (`B-87`).
-            purchaseModule(
-                database,
-                CustomPackagePlans(StaticPlanCatalog()),
-                config.paymentMode,
-                config.paymentDelay,
+        probes = probes,
+        extraModules =
+            listOf(
+                module { single { kompotJson } },
+                brandModule(brandKit),
+                authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
+                // THE CATALOGUE, WRAPPED. `CustomPackagePlans` answers for the ids the builder composes
+                // and delegates everything else, so the purchase saga sells a package nobody listed
+                // through exactly the interceptors it sells a listed plan through (`B-87`).
+                purchaseModule(
+                    database,
+                    CustomPackagePlans(StaticPlanCatalog()),
+                    config.paymentMode,
+                    config.paymentDelay,
+                ),
+                esimModule(database),
+                // Bound here for the first time in B-07. The counters existed, were tested, and were
+                // reachable from nothing: five imports of this feature sat in this file with no use
+                // beneath them.
+                usageModule(database),
+                roamingModule(database),
+                serverModule(KonektTrace(tracy), config.simulatedArrivalAfter),
+                petichModule(database, config),
             ),
-            esimModule(database),
-            // Bound here for the first time in B-07. The counters existed, were tested, and were
-            // reachable from nothing: five imports of this feature sat in this file with no use
-            // beneath them.
-            usageModule(database),
-            roamingModule(database),
-            serverModule(KonektTrace(tracy), config.simulatedArrivalAfter),
-            petichModule(database, config),
-        ),
     )
 
     configureAuthentication(config.jwt)
@@ -388,6 +432,9 @@ fun Application.module(config: KonektConfig) {
     // builds an application does not leave a poller running against a database it is about to drop.
     val workers = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     monitor.subscribe(ApplicationStarted) {
+        // The refresh loop, on the workers' scope so it stops when they do.
+        checks.start(workers)
+
         val koin = getKoin()
         koin.get<SuspendedPetichSweeper>().start(workers)
         koin.get<OutboxRelayWorker>().start(workers)
@@ -408,6 +455,12 @@ fun Application.module(config: KonektConfig) {
         if (config.simulateTraffic) {
             workers.launch { koin.get<TrafficChain>().start(workers) }
         }
+
+        // THE LATCH OPENS HERE AND NOWHERE ELSE, after every worker above is running. Before this the
+        // startup probe refuses, which is what stops Kubernetes counting a pod as started while its
+        // sweeper, its relay and its broadcaster are not — and a startup probe that never refuses is
+        // a startup probe that answers the liveness question.
+        probes.startup.completed("workers")
     }
     monitor.subscribe(ApplicationStopping) {
         workers.cancel()

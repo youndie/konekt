@@ -1899,22 +1899,149 @@
         },
         "/health": {
             "get": {
-                "summary": "Answer while the process is alive",
+                "summary": "Liveness, under the name the chart already points at",
                 "security": [],
                 "responses": {
                     "200": {
-                        "description": "Answer while the process is alive",
+                        "description": "Liveness, under the name the chart already points at",
                         "content": {
                             "text/plain": {
                                 "schema": {
                                     "type": "object",
-                                    "description": "the two-letter string ok"
+                                    "description": "the word alive"
                                 }
                             }
                         }
                     },
                     "500": {
                         "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "A probe refusing. Not an error: it is this process answering the question it was asked — still starting, wedged, or a dependency that is not answering — and the body names which. No product route returns it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health/live": {
+            "get": {
+                "summary": "Is the process wedged",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "Is the process wedged",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "the word alive"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "A probe refusing. Not an error: it is this process answering the question it was asked — still starting, wedged, or a dependency that is not answering — and the body names which. No product route returns it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health/ready": {
+            "get": {
+                "summary": "Are this pod's dependencies answering",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "Are this pod's dependencies answering",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "the word ready"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "A probe refusing. Not an error: it is this process answering the question it was asked — still starting, wedged, or a dependency that is not answering — and the body names which. No product route returns it.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/health/startup": {
+            "get": {
+                "summary": "A latch: has the process finished starting",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "A latch: has the process finished starting",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "the word started"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Something went wrong on our side. The body never carries the cause: an unexpected exception's message is written for whoever wrote the code, and a subscriber is not that reader.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "A probe refusing. Not an error: it is this process answering the question it was asked — still starting, wedged, or a dependency that is not answering — and the body names which. No product route returns it.",
                         "content": {
                             "application/json": {
                                 "schema": {

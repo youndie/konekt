@@ -321,6 +321,12 @@ dependencies {
     implementation(libs.tracy.agent)
     implementation(libs.katcher.client)
 
+    // THE PROCESS LIFECYCLE, from the portfolio's own library. Adopted a stage at a time
+    // (youndie/konekt#35): the probes first, because they are additive — nothing that works today
+    // stops working, and `/health` stays where the chart points until the chart moves.
+    implementation(libs.kore.core)
+    implementation(libs.kore.ktor)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
     runtimeOnly(libs.logback.classic)
@@ -342,6 +348,9 @@ dependencies {
     // The fixtures see :server's main output automatically, which is where `io.konekt.openapi`
     // lives — the endpoint kinds and `endpointKey` are the vocabulary the declarations are written
     // in, and re-deriving them here would be the second spelling of the contract.
+    // kore's route constants, so the declarations name the same address the server mounts rather
+    // than a second spelling of it. `implementation` on the main source set does not reach here.
+    testFixturesApi(libs.kore.ktor)
     testFixturesApi(project(":feature:auth-shared-api"))
     testFixturesApi(project(":feature:purchase-shared-api"))
     testFixturesApi(project(":feature:esim-shared-api"))

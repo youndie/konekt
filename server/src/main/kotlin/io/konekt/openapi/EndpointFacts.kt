@@ -1,5 +1,6 @@
 package io.konekt.openapi
 
+import io.github.youndie.kore.ktor.KoreRoutes
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
 import io.konekt.feature.auth.shared.api.DevOtp
@@ -106,14 +107,47 @@ inline fun <reified T : Any> resourceAddress(): String = ResourceAddresses.of(se
 // first one that names a route the server does not serve, or leaves out one it does.
 val konektEndpointFacts: Map<String, EndpointFacts> =
     mapOf(
-        // The one route in this build with no `@Resource` behind it, because it is not part of the
-        // product's API surface: it exists so a supervisor can ask the process a question rather
-        // than ask the kernel whether a port accepts.
-        "GET /health" to
+        // THE PROBES, none of which has a `@Resource` behind it, because none is part of the product's
+        // API surface: they exist so a supervisor can ask the process a question rather than ask the
+        // kernel whether a port accepts. Mounted by kore (konekt#35), which is why the addresses are
+        // its constants rather than strings spelled here.
+        //
+        // THREE QUESTIONS RATHER THAN ONE, which is konekt#32. `/health` stays as the liveness alias
+        // the chart still points at, so a deployment migrates one line at a time.
+        "GET ${KoreRoutes.STARTUP}" to
             EndpointFacts(
-                summary = "Answer while the process is alive",
+                summary = "A latch: has the process finished starting",
                 successContentType = "text/plain",
-                successBodyType = "the two-letter string ok",
+                successBodyType = "the word started",
+                // 503 while a declared gate is still outstanding. Never again once it has opened —
+                // that is what makes it a latch rather than a third readiness.
+                refusals = setOf(503),
+            ),
+        "GET ${KoreRoutes.READY}" to
+            EndpointFacts(
+                summary = "Are this pod's dependencies answering",
+                successContentType = "text/plain",
+                successBodyType = "the word ready",
+                // The only probe that may refuse for something outside the process. Its failure is the
+                // cheap one — traffic stops and nothing is killed — which is why it is the one that
+                // answers for dependencies and liveness is not.
+                refusals = setOf(503),
+            ),
+        "GET ${KoreRoutes.LIVE}" to
+            EndpointFacts(
+                summary = "Is the process wedged",
+                successContentType = "text/plain",
+                successBodyType = "the word alive",
+                // Reads no dependency, ever: a liveness probe that reads the store restarts a pod for
+                // an outage a restart cannot fix.
+                refusals = setOf(503),
+            ),
+        "GET ${KoreRoutes.HEALTH}" to
+            EndpointFacts(
+                summary = "Liveness, under the name the chart already points at",
+                successContentType = "text/plain",
+                successBodyType = "the word alive",
+                refusals = setOf(503),
             ),
         // The brand kit. Keyed by the constant rather than by a `@Resource`, like `/health` above and
         // for the same reason: the address exists as a string in `:feature:theme-shared-api` because

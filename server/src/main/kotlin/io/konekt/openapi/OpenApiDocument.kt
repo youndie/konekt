@@ -214,6 +214,10 @@ private val REFUSAL_DESCRIPTIONS: Map<Int, String> =
         409 to "The current state of the world refuses this, and retrying the same request will not help.",
         422 to "The request is well-formed and its contents are wrong.",
         429 to "Too many attempts. Retry-After carries the wait.",
+        503 to
+            "A probe refusing. Not an error: it is this process answering the question it was asked " +
+            "— still starting, wedged, or a dependency that is not answering — and the body names " +
+            "which. No product route returns it.",
         500 to
             "Something went wrong on our side. The body never carries the cause: an unexpected " +
             "exception's message is written for whoever wrote the code, and a subscriber is not " +

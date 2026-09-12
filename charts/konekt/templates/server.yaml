@@ -90,30 +90,41 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          # `/health` answers without a token and without touching the database — it is served by
-          # the half of the routing tree that needs neither. A probe that read the store would
-          # restart the pod for a slow query, and one that authenticated would report the state of
-          # the session machinery rather than of this process.
+          # THREE QUESTIONS, THREE ROUTES (`konekt#32`). All three used to point at `/health`, which
+          # answered while the process was alive — the one condition that cannot tell them apart. A
+          # pod whose database was unreachable reported itself READY and kept taking traffic.
+          #
+          # The old comment here argued, correctly, that a probe must not read the store — and then
+          # pointed readiness at the same route. That reasoning is right for LIVENESS: a liveness
+          # probe that reads the store restarts a pod for an outage a restart cannot fix. Readiness is
+          # the opposite case. Its failure is the cheap one — traffic stops, nothing is killed — and it
+          # is the only probe that should answer for dependencies.
+          #
+          # Readiness still does not BLOCK on the database: the answer it serves is remembered, and a
+          # loop inside the process refreshes it. So `timeoutSeconds` here never decides the verdict.
+          #
           # THE START IS ASKED ABOUT EVERY SECOND, and readiness has no initial delay (`B-123`).
-          # With the AOT cache the process answers /health about two seconds after it starts; a
-          # readiness probe that waited five before its first question marked the pod ready at five
-          # either way, and the cache changed nothing a rollout could see. The startup probe owns
-          # the first minute — liveness stays out until it passes — and readiness follows it at
-          # its own pace.
+          # With the AOT cache the process answers about two seconds after it starts; a readiness
+          # probe that waited five before its first question marked the pod ready at five either way,
+          # and the cache changed nothing a rollout could see. The startup probe owns the first
+          # minute — liveness stays out until it passes — and readiness follows it at its own pace.
+          #
+          # The startup latch now waits for the workers rather than for the port: it opens once the
+          # sweeper, the relay and the broadcaster are running, and never closes again.
           startupProbe:
             httpGet:
-              path: /health
+              path: /health/startup
               port: http
             periodSeconds: 1
             failureThreshold: 60
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: http
             periodSeconds: 20
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
             periodSeconds: 2
           resources:
