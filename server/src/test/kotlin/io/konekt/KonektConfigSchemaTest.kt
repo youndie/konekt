@@ -105,7 +105,7 @@ class KonektConfigSchemaTest {
         assertEquals(10, config.database.maximumPoolSize)
         assertFalse(config.simulateTraffic, "an unset switch must be the closed position")
         assertEquals(90, config.simulatedArrivalAfter.inWholeSeconds)
-        assertEquals(60_000, config.metrikWindowMs, "unset leaves metrik's own default")
+        assertEquals(null, config.observability.metrikWindow, "unset leaves metrik's own default")
     }
 
     // A MISSPELLED VARIABLE USED TO BE SILENT, and this is the test that says it is not. Measured

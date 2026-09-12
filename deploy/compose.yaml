@@ -170,9 +170,6 @@ services:
       # whole e2e run is shorter than that. `ObservabilityScenarioTest` waits 20s for metrik to have
       # counted a request: at the default it passes only when a window boundary happens to fall
       # inside that wait, which is how it passed four times and then failed on a fresh stand.
-      #
-      # This is the one agent kore's wiring cannot configure, which is why the server still installs
-      # metrik itself — see `Observability.kt` and youndie/kore#68.
       KONEKT_METRIK_WINDOW_MS: ${METRIK_WINDOW_MS:-5000}
       # EVERY TRACE KEPT, against tracy's default of 0.01. The rate decides whether a request's WHOLE
       # pending trace is kept, not how many spans survive within one — below it what remains is

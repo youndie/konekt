@@ -128,6 +128,13 @@ with no help from a hung process, so a TCP check would pass against a server tha
   are defaulted for exactly that: `StartupGate()` with no named gates starts already OPEN, because a
   service that declares nothing to wait for has nothing to wait for. The real composition root names
   its gate — `workers` — and opens it after the sweeper, the relay and the broadcaster are running.
+- **`built:` is when the identity last CHANGED, not when this binary was built.** Measured: the
+  generator rewrote its file at `21:06:14Z` and the content still read `builtAt = "2026-09-12T20:09:01Z"`
+  — the task reads the existing file and keeps the timestamp when nothing else about the identity
+  moved, which is what stops every build invalidating the compilation over a clock tick. The
+  consequence lands here because on a locally built stand the commit is always `unknown`, so nothing
+  else ever moves and `built:` freezes at the first generation. In CI, where `GITHUB_SHA` is supplied,
+  the commit changes per build and the timestamp moves with it.
 - **`/version`'s `version:` line says `0.1.0-SNAPSHOT` and means nothing.** The `:server` module
   declares no Gradle version, so the plugin compiles in Gradle's default. The identity that carries
   meaning here is `release`, which the chart sets from `server.version` — the image tag — and which

@@ -95,7 +95,6 @@ class KoinGraphTest {
                         simulatedArrivalAfter = io.konekt.KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
                         migrateOnly = false,
                         observability = NO_OBSERVABILITY,
-                        metrikWindowMs = 60_000,
                         release =
                             io.github.youndie.kore.version.releaseOf(
                                 io.github.youndie.kore.generated.KoreBuildIdentity,
