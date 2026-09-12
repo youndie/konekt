@@ -14,7 +14,12 @@ import io.github.youndie.kore.health.HealthRegistry
 import io.github.youndie.kore.health.LivenessGate
 import io.github.youndie.kore.health.ReadinessGate
 import io.github.youndie.kore.health.StartupGate
+import io.github.youndie.kore.ktor.EngineDrain
 import io.github.youndie.kore.ktor.installKoreProbes
+import io.github.youndie.kore.lifecycle.AnnounceNotReady
+import io.github.youndie.kore.lifecycle.ShutdownDeadlines
+import io.github.youndie.kore.lifecycle.ShutdownParticipant
+import io.github.youndie.kore.lifecycle.runUntilSignal
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.OutboxAwarePetichRepository
@@ -120,6 +125,7 @@ import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.cio.CIO
+import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.resources.Resources
@@ -133,6 +139,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
@@ -144,7 +151,10 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
+import java.io.Closeable
+import javax.sql.DataSource
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 // The engine is CIO because the load-bearing endpoint of this server is SSE — many long-lived,
 // mostly idle streams, which is the profile a coroutine-per-connection engine is shaped for and a
@@ -167,8 +177,120 @@ fun main() {
         return
     }
 
-    embeddedServer(CIO, port = config.port, host = "0.0.0.0") { module(config) }.start(wait = true)
+    // WHAT THIS PROCESS HAS TO PUT DOWN, AND IN WHAT ORDER (`konekt#35`).
+    //
+    // What stood here was `start(wait = true)` plus one `ApplicationStopping` subscriber that
+    // cancelled the worker scope and closed the broker. Two things were wrong with it and only the
+    // second is about konekt.
+    //
+    // `ApplicationStopping` IS THE WRONG PLACE ON PRINCIPLE. kore's research §1.1 measured
+    // `EmbeddedServer.stop` running its steps in the opposite order on JVM and on Kotlin/Native: the
+    // subscriber fires after the drain on one and BEFORE it on the other. Work that must happen after
+    // in-flight requests have finished cannot be a Ktor subscriber at all, on either platform, if the
+    // same code is meant to be right on both.
+    //
+    // AND IT CANCELLED THE SCOPE WITH REQUESTS STILL IN IT. `start(wait = true)` returns when the
+    // engine stops, so the subscriber ran while the drain was still going: the consumer, the relay
+    // and the broadcaster were cancelled underneath calls that had not answered yet. kore measured
+    // what that costs on a sample of the same shape — of 40 requests in flight at the signal, the
+    // arm without an ordered shutdown finished 0 and dropped all 40, on both platforms, every run.
+    //
+    // The lifecycle holder is filled by `module` as it assembles, because the things to put down are
+    // built in there and `main` is where the sequence runs. `lateinit` rather than a builder: the
+    // failure of forgetting one is an exception naming the field, at startup, in a process that has
+    // not begun serving.
+    val lifecycle = KonektLifecycle()
+    val deadlines = ShutdownDeadlines()
+
+    val server =
+        embeddedServer(
+            CIO,
+            configure = {
+                connectors.add(
+                    EngineConnectorBuilder().apply {
+                        port = config.port
+                        host = "0.0.0.0"
+                    },
+                )
+                // kore owns these rather than leaving Ktor's 1000 ms default, which is shorter than a
+                // great many real requests — and this server's slowest is a saga waiting on a payment
+                // provider that is allowed to take ten seconds.
+                shutdownGracePeriod = deadlines.drain.inWholeMilliseconds
+                shutdownTimeout = deadlines.drain.inWholeMilliseconds + 5_000
+            },
+            module = { module(config, lifecycle) },
+        )
+
+    // NOT `wait = true`. The main thread has to be free to wait for the signal and then run the
+    // sequence, which is the whole reason kore does not go through `addShutdownHook`.
+    server.start(wait = false)
+
+    runBlocking {
+        val run =
+            runUntilSignal(deadlines) {
+                // READINESS FIRST, then a wait long enough for the rule change to reach every node.
+                // Until it does, this pod is still in a service's endpoint list and still being sent
+                // work — which is why announcing and draining are two stages rather than one.
+                announce(AnnounceNotReady(lifecycle.probes.readiness))
+                drain(EngineDrain(server, deadlines.drain, deadlines.drain + 5.seconds))
+
+                // THE CONSUMERS, and cancelling their scope is what stopping them means here: the
+                // usage consumer, the outbox relay, the update broadcaster and the sweeper are all
+                // coroutines on it. After the drain, so nothing is cancelled underneath a request.
+                consumer(
+                    participant("workers") {
+                        lifecycle.workers.cancel()
+                    },
+                )
+
+                // THE BROKER, which flushes before it closes (`#31`) — `close()` sends on the
+                // producer's own coroutine without waiting, and tearing the connection down in the
+                // same breath cancels that coroutine mid-write.
+                pool(participant("broker") { lifecycle.broker.close() })
+
+                // AND THE POOL. Hikari closes its connections; left to the process ending, an
+                // in-flight statement is cut rather than finished.
+                pool(participant("postgres pool") { (lifecycle.dataSource as? Closeable)?.close() })
+            }
+
+        // THE TRANSCRIPT IS NOT PRINTED HERE, AND ON THE JVM IT CANNOT BE.
+        //
+        // kore's own example ends with `println(run.transcript)` in this position. On the JVM the
+        // signal arrives as a shutdown hook, and `runUntilSignal` releases that hook — letting the
+        // runtime finish terminating — BEFORE it returns. So anything after this line is racing the
+        // exit, and it loses: measured over several `docker compose stop` runs, the pool
+        // participant's own log appeared every time and a `println` on the next line appeared never.
+        // Tried through slf4j first, which ruled out the logging context being down.
+        //
+        // The ordering still happens, which is what this stage is for; what is missing is the record
+        // of it. Reported as youndie/kore#59, and this reads `run` so that the day kore hands the
+        // transcript over before releasing, the place to put it is obvious.
+        check(run.transcript.stages.isNotEmpty()) { "the shutdown sequence recorded no stages" }
+    }
 }
+
+// WHAT `main` HAS TO PUT DOWN, filled in by `module` as it builds them.
+//
+// Not Koin: two of these — the worker scope and the probes — are not bindings, and a holder that
+// worked for some and not others would be the more confusing half-answer.
+class KonektLifecycle {
+    lateinit var probes: KonektProbes
+    lateinit var workers: CoroutineScope
+    lateinit var broker: BrokerConnection
+    lateinit var dataSource: DataSource
+}
+
+// A named piece of shutdown work. kore takes participants rather than lambdas because a stage that
+// overruns has to be able to say WHICH one did.
+private fun participant(
+    what: String,
+    body: suspend () -> Unit,
+): ShutdownParticipant =
+    object : ShutdownParticipant {
+        override val name: String = what
+
+        override suspend fun stop() = body()
+    }
 
 // Everything that needs no database. Split out so a test — and the health check — can have a server
 // without one, and so the list of plugins is readable on its own.
@@ -358,7 +480,10 @@ fun Route.mountKonektRoutes(groups: List<RouteGroup>) {
 }
 
 // The composition root. A feature contributes bindings and routes; plugins are installed once, here.
-fun Application.module(config: KonektConfig) {
+fun Application.module(
+    config: KonektConfig,
+    lifecycle: KonektLifecycle = KonektLifecycle(),
+) {
     // BEFORE THE ROUTES, because metrik's plugin measures a call and tracy's opens a span around it:
     // installed later they would observe whatever was registered after them, which is nothing.
     // Whether any of the three runs at all is decided by the environment, not here.
@@ -398,6 +523,9 @@ fun Application.module(config: KonektConfig) {
             startup = StartupGate(gates = setOf("workers")),
             readiness = ReadinessGate(checks = checks),
         )
+
+    lifecycle.probes = probes
+    lifecycle.dataSource = dataSource
 
     baseModule(
         probes = probes,
@@ -462,12 +590,11 @@ fun Application.module(config: KonektConfig) {
         // a startup probe that answers the liveness question.
         probes.startup.completed("workers")
     }
-    monitor.subscribe(ApplicationStopping) {
-        workers.cancel()
-        // Closed explicitly rather than left to the process ending: the producer holds a coroutine
-        // and a socket, and a test that builds an application leaves both behind otherwise.
-        getKoin().get<BrokerConnection>().close()
-    }
+    // NO `ApplicationStopping` SUBSCRIBER. Everything that used to be here is a participant of the
+    // release stage in `main`, which runs after the drain has returned on both platforms — see the
+    // comment there for why a subscriber cannot be made to do that.
+    lifecycle.workers = workers
+    lifecycle.broker = getKoin().get<BrokerConnection>()
 
     // THE WHOLE OF THE ROUTING, and deliberately nothing beside it. What is mounted and at which
     // tier is `konektRoutes`; this block only hands it a Route. A route registered here directly

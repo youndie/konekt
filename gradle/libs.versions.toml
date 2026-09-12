@@ -94,7 +94,13 @@ booblik = "0.3.4"
 
 # kore, the portfolio's process lifecycle. `kore-core` and `kore-ktor` are on Maven Central;
 # `kore-observability` is portfolio-only, because the three agents it wires are not on Central either.
-kore = "0.1.0"
+# 0.1.2 AND NOT 0.1.0, and the difference is not a patch: `runUntilSignal` — the one call the
+# ordered shutdown is — does not exist in 0.1.0 at all. Read out of the published jars rather than
+# out of kore's working copy, which is where the spec was read and which was ahead of both.
+#
+# Every module checked at this version before the bump, not just the first: this portfolio publishes
+# modules alphabetically and a version is real for one while absent for another for a while.
+kore = "0.1.2"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
