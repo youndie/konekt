@@ -29,6 +29,7 @@ services:
       KONEKT_DB_USER: konekt
       KONEKT_DB_PASSWORD: konekt
       KONEKT_JWT_SECRET: ${JWT_SECRET:-dev-secret-not-for-anything-real}
+      KONEKT_SERVICE: konekt-server
       KONEKT_BROKER_HOST: broker
       KONEKT_BROKER_PORT: "9092"
       KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}

@@ -89,17 +89,23 @@ class KonektConfigSchemaTest {
             "KONEKT_DB_USER" to "konekt",
             "KONEKT_DB_PASSWORD" to "a-database-password-that-must-not-be-printed",
             "KONEKT_JWT_SECRET" to "dev-secret-not-for-anything-real",
+            // REQUIRED, and it is kore's key rather than konekt's old defaulted one. There is no
+            // registration step in any of the three agents, so the service name IS the identifier: a
+            // typo does not fail, it files everything under a phantom service that looks healthy and
+            // receives nothing. That is why it has no default, and why every deployment path — the
+            // migrate container included — now names it.
+            "KONEKT_SERVICE" to "konekt-server",
         )
 
     @Test
-    fun `the minimum a deployment must set is the database and the signing secret`() {
+    fun `the minimum a deployment must set is the database, the signing secret and the service name`() {
         val config = KonektConfig.fromEnv(Environment.of(required()))
 
         assertEquals(8080, config.port)
         assertEquals(10, config.database.maximumPoolSize)
         assertFalse(config.simulateTraffic, "an unset switch must be the closed position")
         assertEquals(90, config.simulatedArrivalAfter.inWholeSeconds)
-        assertEquals(60_000, config.observability.metrikWindowMs)
+        assertEquals(60_000, config.metrikWindowMs, "unset leaves metrik's own default")
     }
 
     // A MISSPELLED VARIABLE USED TO BE SILENT, and this is the test that says it is not. Measured
@@ -137,7 +143,7 @@ class KonektConfigSchemaTest {
     }
 
     // An agent is both variables or neither — the rule that used to be hand-written in
-    // `ObservabilityConfig` and threw on the FIRST bad agent, so a deployment that had two of them
+    // `ObservabilityConfig` — deleted in this stage — and threw on the FIRST bad agent, so a deployment that had two of them
     // wrong found out about the second one on the next restart.
     @Test
     fun `half a configured agent refuses the start, and every half at once`() {
@@ -169,7 +175,7 @@ class KonektConfigSchemaTest {
         assertEquals("dev-tracy-key", observability.tracy?.key)
         assertEquals(null, observability.metrik)
         assertEquals(null, observability.katcher)
-        assertTrue(observability.anyEnabled)
+        assertTrue(observability.anyAgentOn)
     }
 
     // WHAT `--print-config` MAY NOT PRINT. The masking is a property of the declaration — `secret`

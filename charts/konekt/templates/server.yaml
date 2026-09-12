@@ -65,6 +65,12 @@ spec:
             {{- include "konekt.dbEnv" . | nindent 12 }}
             - name: KONEKT_MIGRATE_ONLY
               value: "true"
+            # Required by the schema even though this container observes nothing: there is no
+            # registration step in any of the three agents, so the service name IS the identifier and
+            # kore gives it no default. A name of its own rather than the server's, so that if this
+            # container ever does report, it does not do so as the server.
+            - name: KONEKT_SERVICE
+              value: {{ printf "%s-migrate" .Values.observability.service | quote }}
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
       containers:
@@ -98,8 +104,17 @@ spec:
               value: {{ .Values.server.version | quote }}
             - name: KONEKT_ENVIRONMENT
               value: {{ .Values.observability.environment | quote }}
-            - name: KONEKT_OBSERVABILITY_SERVICE
+            - name: KONEKT_SERVICE
               value: {{ .Values.observability.service | quote }}
+            {{- if .Values.observability.tracy.endpoint }}
+            # WHAT FRACTION OF REQUESTS KEEP THEIR TRACE. It decides whether a request's whole pending
+            # trace is kept rather than how many spans survive inside one, so below the rate what
+            # remains is warnings and entity references with no body behind them. tracy's own default
+            # is 0.01, which is right for real traffic and wrong for a reference deployment; the value
+            # is therefore the deployment's to choose (youndie/kore#57).
+            - name: KONEKT_TRACY_SAMPLE_RATE
+              value: {{ .Values.observability.tracy.sampleRate | quote }}
+            {{- end }}
             {{- include "konekt.agentEnv" (dict "name" "metrik" "agent" .Values.observability.metrik "root" .) | nindent 12 }}
             {{- include "konekt.agentEnv" (dict "name" "tracy" "agent" .Values.observability.tracy "root" .) | nindent 12 }}
             {{- include "konekt.agentEnv" (dict "name" "katcher" "agent" .Values.observability.katcher "root" .) | nindent 12 }}

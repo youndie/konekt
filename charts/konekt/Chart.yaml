@@ -52,7 +52,15 @@ type: application
 # under 0.3.0 refuses for the same reason from the other side. Neither failure happens at
 # `helm template`; both happen in a rollout, which is exactly the coupling the version is supposed
 # to announce.
-version: 0.4.0
+# 0.4.0 -> 0.5.0: `konekt#30` took the three agents from kore's `installKoreObservability`, which
+# renames `KONEKT_OBSERVABILITY_SERVICE` to `KONEKT_SERVICE` — and makes it REQUIRED, on the init
+# container too — and adds `observability.tracy.sampleRate` to `values.yaml`. A values file written
+# for 0.4.0 renders under this unchanged, so BY THE LETTER this is a PATCH again.
+#
+# MINOR, and for the third time the reason is the image rather than the values: this chart now sets a
+# variable name the old image does not read and omits the one it does, and the new image refuses to
+# start without `KONEKT_SERVICE`. As before, neither failure happens at `helm template`.
+version: 0.5.0
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

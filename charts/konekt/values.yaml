@@ -170,6 +170,19 @@ observability:
   tracy:
     endpoint: ""
     key: ""
+    # WHAT FRACTION OF REQUESTS KEEP THEIR TRACE, and 1.0 is right only because of what this
+    # deployment is. The rate decides whether a request's WHOLE pending trace is kept, not how many
+    # spans survive inside one — below it a trace is warnings and entity references with nothing
+    # behind them, which reads as tracy being broken rather than as sampling working.
+    #
+    # tracy's own default is 0.01. A reference deployment serving a handful of requests and promising
+    # one purchase visible whole by its order id needs every one; a service at real traffic very much
+    # does not, and lowers this. Ignored when `endpoint` is empty: there is nothing to sample into.
+    # A STRING, and the quotes are not style. helm parses an unquoted `1.0` as a YAML float and
+    # renders it back as `1` — the same shape that made `B-100`'s broker numbers come out in
+    # scientific notation and the broker refuse to start on them (chart 0.2.1 -> 0.2.2). `"1"` happens
+    # to parse as a Double, so this one would have worked and gone on looking like it might not.
+    sampleRate: "1.0"
   # A URL, plus a key that must name an application katcher already knows: `Katcher.catch` posts
   # with an app key and the collector looks it up, so a key naming nothing is every report refused,
   # silently, from the agent's point of view indistinguishable from an agent that was never started.

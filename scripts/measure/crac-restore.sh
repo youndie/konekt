@@ -77,7 +77,7 @@ stand_down() { SERVER_IMAGE=$IMG "${COMPOSE[@]}" down -v >/dev/null 2>&1; }
 # empty on a plain start too — which is what the first h9 run measured.
 env_flags() {
   echo "-e KONEKT_DB_URL=jdbc:postgresql://postgres:5432/konekt -e KONEKT_DB_USER=konekt -e KONEKT_DB_PASSWORD=konekt \
--e KONEKT_JWT_SECRET=dev-secret-not-for-anything-real -e KONEKT_BROKER_HOST=broker -e KONEKT_BROKER_PORT=9092 \
+-e KONEKT_JWT_SECRET=dev-secret-not-for-anything-real -e KONEKT_SERVICE=konekt-server -e KONEKT_BROKER_HOST=broker -e KONEKT_BROKER_PORT=9092 \
 -e KONEKT_DEV_REVEAL_OTP=true -e KONEKT_DEV_SCREENS=true -e KONEKT_SIMULATE_TRAFFIC=${SIM:-true}"
 }
 

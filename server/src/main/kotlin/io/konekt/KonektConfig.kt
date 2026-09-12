@@ -1,17 +1,16 @@
 package io.konekt
 
 import io.github.youndie.kore.config.ConfigKey
-import io.github.youndie.kore.config.ConfigPair
 import io.github.youndie.kore.config.ConfigSchema
 import io.github.youndie.kore.config.Configuration
 import io.github.youndie.kore.config.Environment
 import io.github.youndie.kore.config.systemEnvironment
+import io.github.youndie.kore.observability.ObservabilityKeys
+import io.github.youndie.kore.observability.ObservabilitySettings
 import io.konekt.db.DatabaseConfig
 import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.theme.shared.api.BrandTheme
-import io.konekt.observability.AgentEndpoint
-import io.konekt.observability.ObservabilityConfig
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -94,35 +93,30 @@ object KonektSchema {
     // the application pods roll.
     val MIGRATE_ONLY: ConfigKey<Boolean> = ConfigKey.boolean("MIGRATE_ONLY")
 
-    // The service name IS the identifier in all three agents — there is no registration step
-    // anywhere — so a typo does not fail, it creates a phantom service that looks healthy and
-    // receives nothing.
-    val OBSERVABILITY_SERVICE: ConfigKey<String> = ConfigKey.string("OBSERVABILITY_SERVICE", default = "konekt-server")
-
-    // A release that changes draws a deploy marker in metrik and names the build in a katcher crash
-    // group. `Unspecified` is katcher's own default and it is what makes a crash unactionable.
-    val RELEASE: ConfigKey<String> = ConfigKey.string("RELEASE", default = "dev")
-    val ENVIRONMENT: ConfigKey<String> = ConfigKey.string("ENVIRONMENT", default = "dev")
-
-    // SIXTY THOUSAND, read out of `MetrikConfig.<init>` in the published `metrik:agent-jvm:0.2.18` —
-    // `ldc2_w 60000l; putfield windowMs` — rather than recalled. It used to be a `Long?` that was
-    // left unset, so the agent's own default applied and nothing here stated it; kore's schema has no
-    // optional number, and pinning metrik's value is the change that keeps the behaviour identical
-    // while making it visible in `--print-config`.
+    // THE OBSERVABILITY VARIABLES ARE KORE'S OWN KEYS, spliced into this schema rather than
+    // declared here (`konekt#35`). kore publishes them as a LIST and not as a schema, deliberately:
+    // a schema owns a prefix and the unknown-variable refusal is scoped to it, so two schemas would
+    // mean two scopes and a variable that is unknown to one and declared by the other.
     //
-    // Why it matters at all: the agent buffers an aggregation window and sends it when the window
-    // closes, so a freshly started process reports nothing for a minute. That is right for a
-    // deployment and wrong for a stand, where the whole run is shorter than one window — leaving it
-    // at the default is what made an e2e check pass locally against a stand that had been up a while
-    // and fail in CI against a fresh one.
+    // What that costs, and it is a rename in a chart: `KONEKT_OBSERVABILITY_SERVICE` becomes
+    // `KONEKT_SERVICE`. What it buys is three settings konekt did not have — `TRACY_SAMPLE_RATE`,
+    // `INSTANCE` and `KATCHER_CACHE_DIR` — and one it loses, below.
+    //
+    // `METRIK_WINDOW_MS` IS STILL KONEKT'S OWN, and the reason is a gap in kore rather than a
+    // preference. kore's `installKoreObservability` installs metrik's plugin itself and exposes no
+    // way to set the aggregation window, so adopting the one call for all three would drop this.
+    //
+    // MEASURED, and the first measurement was wrong — which is why the second one is written down.
+    // Dropping it, `ObservabilityScenarioTest` passed four times in a row and looked safe; it then
+    // FAILED on a freshly rebuilt stand with "waited 20s for: metrik to have seen konekt-server",
+    // server up 41 seconds. The mechanism explains both: the agent sends a window when the window
+    // CLOSES, so at 60000 the test passes exactly when a boundary happens to fall inside its 20s
+    // wait. Four passes measured a stand that had been up for minutes, not the setting.
+    //
+    // So konekt installs metrik itself and takes tracy and katcher from kore — which is where
+    // `konekt#30` actually lives, metrik having no flush to hold a handle for. The workaround is
+    // named in `Observability.kt` and goes away when youndie/kore#68 does.
     val METRIK_WINDOW_MS: ConfigKey<Long> = ConfigKey.long("METRIK_WINDOW_MS", default = 60_000)
-
-    val METRIK_ENDPOINT: ConfigKey<String?> = ConfigKey.optional("METRIK_ENDPOINT")
-    val METRIK_KEY: ConfigKey<String?> = ConfigKey.optional("METRIK_KEY", secret = true)
-    val TRACY_ENDPOINT: ConfigKey<String?> = ConfigKey.optional("TRACY_ENDPOINT")
-    val TRACY_KEY: ConfigKey<String?> = ConfigKey.optional("TRACY_KEY", secret = true)
-    val KATCHER_ENDPOINT: ConfigKey<String?> = ConfigKey.optional("KATCHER_ENDPOINT")
-    val KATCHER_KEY: ConfigKey<String?> = ConfigKey.optional("KATCHER_KEY", secret = true)
 
     // THE PREFIX, and it is part of the schema rather than decoration: it is what scopes the
     // unknown-variable check, which over a whole container environment would fail on `PATH` and
@@ -157,28 +151,13 @@ object KonektSchema {
                     SIMULATED_ARRIVAL_AFTER_SECONDS,
                     BRAND,
                     MIGRATE_ONLY,
-                    OBSERVABILITY_SERVICE,
-                    RELEASE,
-                    ENVIRONMENT,
                     METRIK_WINDOW_MS,
-                    METRIK_ENDPOINT,
-                    METRIK_KEY,
-                    TRACY_ENDPOINT,
-                    TRACY_KEY,
-                    KATCHER_ENDPOINT,
-                    KATCHER_KEY,
-                ),
-            // AN AGENT IS BOTH VARIABLES OR NEITHER, and this replaces a hand-written check that said
-            // the same thing in `ObservabilityConfig`. Every one of the three agents answers a missing
-            // endpoint or a missing key by doing nothing — metrik's plugin has an `enabled` flag,
-            // tracy's delivery never connects, katcher's `start` prints a line and returns — so a
+                ) + ObservabilityKeys.all,
+            // AN AGENT IS BOTH VARIABLES OR NEITHER — kore's rule now, and it used to be a
+            // hand-written check in `ObservabilityConfig` that threw on the FIRST bad agent. Every
+            // one of the three answers a missing endpoint or a missing key by doing nothing, so a
             // half-configured agent is a deployment that believes it is observed and is silent.
-            pairs =
-                listOf(
-                    ConfigPair("METRIK_ENDPOINT", "METRIK_KEY"),
-                    ConfigPair("TRACY_ENDPOINT", "TRACY_KEY"),
-                    ConfigPair("KATCHER_ENDPOINT", "KATCHER_KEY"),
-                ),
+            pairs = ObservabilityKeys.pairs,
         )
 }
 
@@ -203,7 +182,10 @@ data class KonektConfig(
     // READ WITH EVERYTHING ELSE, in the same pass and against the same schema. It used to be read
     // separately, from inside `Application.module`, which meant the composition root could refuse a
     // configuration the entry point had already accepted.
-    val observability: ObservabilityConfig,
+    val observability: ObservabilitySettings,
+    // KONEKT'S, NOT KORE'S, and `Observability.kt` says why: kore's wiring cannot set it, so metrik
+    // is the one agent this server still installs itself (youndie/kore#68).
+    val metrikWindowMs: Long,
 ) {
     companion object {
         // Long enough to look at a dormant card and say what it means; short enough that nobody
@@ -247,25 +229,19 @@ data class KonektConfig(
                 brand = values[KonektSchema.BRAND],
                 devScreens = values[KonektSchema.DEV_SCREENS],
                 migrateOnly = values[KonektSchema.MIGRATE_ONLY],
+                // kore reads its own keys back out of the configuration, so konekt neither names
+                // them twice nor decides what "both or neither" means — it did, and the copy is gone.
+                //
+                // `instanceFallback` is the one thing kore cannot read: the pod name lives behind a
+                // `getenv` that differs per target, so it is passed in rather than split inside the
+                // library for one string. Without it every instance of a rolling deploy is the same
+                // instance, and "which one is slow" stops being a question the data can answer.
                 observability =
-                    ObservabilityConfig(
-                        service = values[KonektSchema.OBSERVABILITY_SERVICE],
-                        release = values[KonektSchema.RELEASE],
-                        environment = values[KonektSchema.ENVIRONMENT],
-                        metrik = agent(values, KonektSchema.METRIK_ENDPOINT, KonektSchema.METRIK_KEY),
-                        metrikWindowMs = values[KonektSchema.METRIK_WINDOW_MS],
-                        tracy = agent(values, KonektSchema.TRACY_ENDPOINT, KonektSchema.TRACY_KEY),
-                        katcher = agent(values, KonektSchema.KATCHER_ENDPOINT, KonektSchema.KATCHER_KEY),
+                    ObservabilitySettings.from(
+                        values,
+                        instanceFallback = System.getenv("HOSTNAME") ?: "local",
                     ),
+                metrikWindowMs = values[KonektSchema.METRIK_WINDOW_MS],
             )
-
-        // Both or neither, and the SCHEMA is what refuses the half — this only has to read the whole
-        // one. The `!!` is safe for exactly that reason: `ConfigPair` has already turned one-without-
-        // the-other into a `ConfigurationException` naming the missing variable.
-        private fun agent(
-            values: Configuration,
-            endpoint: ConfigKey<String?>,
-            key: ConfigKey<String?>,
-        ): AgentEndpoint? = values[endpoint]?.let { AgentEndpoint(endpoint = it, key = values[key]!!) }
     }
 }

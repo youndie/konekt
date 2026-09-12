@@ -38,15 +38,12 @@ class KoinGraphTest {
 
         // Every agent off. Nothing in this graph reports anywhere; the observability wiring is
         // installed by `Application.module`, which this test does not run.
-        val NO_OBSERVABILITY: io.konekt.observability.ObservabilityConfig =
-            io.konekt.observability.ObservabilityConfig(
+        val NO_OBSERVABILITY: io.github.youndie.kore.observability.ObservabilitySettings =
+            io.github.youndie.kore.observability.ObservabilitySettings(
                 service = "konekt-server",
                 release = "test",
+                instance = "test",
                 environment = "test",
-                metrik = null,
-                metrikWindowMs = 60_000,
-                tracy = null,
-                katcher = null,
             )
 
         fun applicationGraph() = koinApplication { modules(Modules.all) }.koin
@@ -98,6 +95,7 @@ class KoinGraphTest {
                         simulatedArrivalAfter = io.konekt.KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
                         migrateOnly = false,
                         observability = NO_OBSERVABILITY,
+                        metrikWindowMs = 60_000,
                     ),
                 )
     }
