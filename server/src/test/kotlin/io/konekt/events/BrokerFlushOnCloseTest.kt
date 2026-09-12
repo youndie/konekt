@@ -11,11 +11,18 @@ import kotlin.test.assertTrue
 //
 // `Producer` is an accumulator by design — it collects for `lingerMillis` before sending, which is
 // the single largest factor in this broker — so at any instant there may be records that have been
-// handed over and not yet written. Closing decides what becomes of them, and booblik's JVM client
-// decides to throw them away: `drainPending()` completes every pending batch EXCEPTIONALLY with
-// `ConnectionClosedException` instead of sending it. Its native client does the opposite, beginning
-// the same method with `sendAll()` under a comment reading "dropping it would be silent loss". Filed
-// as youndie/booblik#68; until that is settled, the flush has to happen on this side.
+// handed over and not yet written.
+//
+// WHAT CLOSING DOES TO THEM, measured rather than read: `close()` SENDS them, on the producer's own
+// coroutine, without waiting. Tearing the connection and the scope down in the same breath cancels
+// that coroutine mid-write — 1 of 51 records survives it, 51 of 51 when anything at all waits
+// afterwards (youndie/booblik#68, closed as not confirmed; youndie/kore's
+// `measurements-2026-09-12/broker-flush.md`).
+//
+// This file first said the batch was DISCARDED, citing `drainPending()`. That was a true quotation
+// joined to an inference nobody had run, and the assertion below is unchanged by the correction:
+// what it demands is that the record reach the broker, which is a statement about the outcome rather
+// than about the mechanism — and it failed before the flush existed for the reason above.
 //
 // The path that matters is not shutdown. `closeQuietly` is reached from `reconnect` as well, once
 // per broker reconnect — which is exactly when the broker pod was replaced and the records
