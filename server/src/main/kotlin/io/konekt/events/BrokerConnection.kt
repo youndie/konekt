@@ -119,15 +119,25 @@ class BrokerConnection(
         scope.cancel()
     }
 
-    // SEND WHAT IS STILL IN THE ACCUMULATOR, BEFORE CLOSING DISCARDS IT.
+    // WAIT FOR WHAT IS STILL IN THE ACCUMULATOR. The missing verb is WAIT, not SEND.
     //
     // `Producer` collects records for `lingerMillis` before writing them — that accumulator is worth
     // 54x and is what a producer IS — so at any instant there may be records handed over and not yet
-    // sent. booblik's JVM client answers a close by throwing them away: `drainPending()` completes
-    // every pending batch EXCEPTIONALLY with `ConnectionClosedException` rather than sending it. Its
-    // own native client begins the same method with `sendAll()`, under a comment reading "dropping it
-    // would be silent loss". The two clients of one broker disagree and this build uses the one that
-    // drops; reported as youndie/booblik#68, and flushed here until that is settled.
+    // sent.
+    //
+    // THE MECHANISM THIS COMMENT FIRST GAVE WAS WRONG, and it is corrected here rather than quietly
+    // rewritten. It said `close()` throws the batch away, citing `drainPending()` completing pending
+    // answers exceptionally — a true quotation joined to an inference nobody had run. Measured since,
+    // against a real broker, five runs a cell (youndie/booblik#68, closed as not confirmed;
+    // youndie/kore's `measurements-2026-09-12/broker-flush.md`):
+    //
+    //   close(), then connection.close() and scope.cancel() in the same breath  ->   1 of 51
+    //   close(), then 500 ms of silence, then the same teardown                 ->  51 of 51
+    //   flush() awaited, then close(), then the same teardown                   ->  51 of 51
+    //
+    // So `close()` DOES send. It sends on the producer's own coroutine and does not wait, and the
+    // teardown below cancels that coroutine — the loss is a race, not a discard. Which is why the fix
+    // is the same fix: something has to wait, and this is it.
     //
     // HERE RATHER THAN IN THE TWO CALLERS, because the caller that matters is the one nobody thinks
     // about: `reconnect` reaches this once per broker reconnect, not once per deployment. A pod being
