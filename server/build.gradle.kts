@@ -7,6 +7,13 @@ plugins {
     id("konekt.jvm")
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.exposedMigrations)
+    // Generates `KoreBuildIdentity` — the commit, the build time and the version, compiled in rather
+    // than read at runtime. A value read from a file or an environment variable is a value the
+    // deployment can get wrong in the same way it got the image wrong.
+    //
+    // THE GENERATED SOURCE HAS TO BE WIRED IN BY HAND HERE — see the source set below. Left to the
+    // plugin this module compiles without it and `/version` cannot be built at all.
+    alias(libs.plugins.koreBuild)
     application
     // THE AOT CACHE (B-123, an experiment). Trains a Leyden cache through the start script and
     // verifies that the JVM would accept it. Neither task runs on `check`: the application does not
@@ -127,6 +134,25 @@ val collidingLibNames: Provider<Map<String, String>> =
 // does not match" — and started without it, silently. The same map that renames the files names
 // them here, so the script and the directory cannot drift apart, and the string is the same on
 // every filesystem.
+// THE GENERATED IDENTITY, WIRED INTO THE COMPILATION BY HAND, and this is a workaround rather than a
+// convention.
+//
+// `io.github.youndie.kore.build` adds its output directory to `kotlin.sourceSets.commonMain` — and it
+// does that only when `org.jetbrains.kotlin.multiplatform` is applied. This module is `kotlin("jvm")`,
+// so applying the plugin registered the task, the task generated the file, and NOTHING COMPILED IT:
+// `import io.github.youndie.kore.generated.KoreBuildIdentity` was an unresolved reference in a build
+// that otherwise succeeded. Measured by referencing it, not inferred.
+//
+// The `map` rather than a bare path is what makes the generated file an INPUT of the compilation
+// instead of a side effect of the build. Without the task dependency the first clean build compiles
+// before the file exists, and every later one compiles whatever the previous run left — a stale
+// commit hash with a green build, which is the failure this whole feature exists to prevent.
+//
+// Reported as youndie/kore#70. Delete this block when the plugin wires a JVM module itself.
+kotlin.sourceSets.named("main") {
+    kotlin.srcDir(tasks.named("generateKoreBuildIdentity"))
+}
+
 tasks.named<CreateStartScripts>("startScripts") {
     val runtime = configurations.runtimeClasspath.flatMap { it.incoming.artifacts.resolvedArtifacts }
     val named =

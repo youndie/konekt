@@ -54,6 +54,11 @@ import io.ktor.server.application.install
 fun Application.configureObservability(
     settings: ObservabilitySettings,
     metrikWindowMs: Long,
+    // THE RESOLVED RELEASE, not the raw environment value. It is the compiled-in `version+commit`
+    // unless `KONEKT_RELEASE` overrides it, and it is the same object `/version` serves — kore's rule
+    // 4, one value in one place. A deploy marker and a crash group that named something the running
+    // binary did not report is the disagreement nobody could previously see.
+    release: String,
     clock: KonektClock,
 ): KoreObservability {
     val observability =
@@ -62,7 +67,7 @@ fun Application.configureObservability(
             settings =
                 ObservabilitySettings(
                     service = settings.service,
-                    release = settings.release,
+                    release = release,
                     instance = settings.instance,
                     environment = settings.environment,
                     tracy = settings.tracy,
@@ -83,7 +88,7 @@ fun Application.configureObservability(
             apiKey = metrik.key
             endpoint = metrik.endpoint
             instanceId = settings.instance
-            release = settings.release
+            this.release = release
             windowMs = metrikWindowMs
         }
     }

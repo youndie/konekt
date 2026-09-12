@@ -63,6 +63,7 @@ val KONEKT_UNWALKED_ENDPOINTS: Set<String> =
         // Not part of the product's API surface at all: it answers two letters of text/plain so a
         // supervisor can ask the process a question, and a blind walk parses one JSON document.
         "GET ${KoreRoutes.HEALTH}",
+        "GET ${KoreRoutes.VERSION}",
         "GET ${KoreRoutes.STARTUP}",
         "GET ${KoreRoutes.READY}",
         "GET ${KoreRoutes.LIVE}",

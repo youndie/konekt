@@ -5,8 +5,12 @@ import io.github.youndie.kore.config.ConfigSchema
 import io.github.youndie.kore.config.Configuration
 import io.github.youndie.kore.config.Environment
 import io.github.youndie.kore.config.systemEnvironment
+import io.github.youndie.kore.generated.KoreBuildIdentity
 import io.github.youndie.kore.observability.ObservabilityKeys
 import io.github.youndie.kore.observability.ObservabilitySettings
+import io.github.youndie.kore.version.KoreKeys
+import io.github.youndie.kore.version.KoreRelease
+import io.github.youndie.kore.version.releaseOf
 import io.konekt.db.DatabaseConfig
 import io.konekt.feature.auth.server.data.JwtConfig
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
@@ -152,6 +156,8 @@ object KonektSchema {
                     BRAND,
                     MIGRATE_ONLY,
                     METRIK_WINDOW_MS,
+                    // `/version` reduced to the release name alone. kore's key, like the agents'.
+                    KoreKeys.VERSION_REDUCED,
                 ) + ObservabilityKeys.all,
             // AN AGENT IS BOTH VARIABLES OR NEITHER — kore's rule now, and it used to be a
             // hand-written check in `ObservabilityConfig` that threw on the FIRST bad agent. Every
@@ -186,6 +192,18 @@ data class KonektConfig(
     // KONEKT'S, NOT KORE'S, and `Observability.kt` says why: kore's wiring cannot set it, so metrik
     // is the one agent this server still installs itself (youndie/kore#68).
     val metrikWindowMs: Long,
+    // WHICH BUILD THIS IS, and it is ONE value rather than two. The compiled-in identity is the
+    // source and `KONEKT_RELEASE` overrides it; the same `KoreRelease` names the metrik deploy
+    // marker, the katcher crash group and the `/version` body, so a disagreement between what is
+    // deployed and what is reported becomes a `compiled-release:` line instead of nothing at all.
+    //
+    // It also means the agents always have a release. kore refuses to start an agent without one —
+    // katcher's own default is `Unspecified`, which makes a crash unactionable — and that refusal is
+    // now unreachable: `version+commit` is always there to fall back to.
+    val release: KoreRelease,
+    // `/version` serves the release name alone. Off here: this is a public repository, a commit hash
+    // in it is not a secret, and the route earns its keep in every deploy check.
+    val versionReduced: Boolean,
 ) {
     companion object {
         // Long enough to look at a dormant card and say what it means; short enough that nobody
@@ -242,6 +260,8 @@ data class KonektConfig(
                         instanceFallback = System.getenv("HOSTNAME") ?: "local",
                     ),
                 metrikWindowMs = values[KonektSchema.METRIK_WINDOW_MS],
+                release = releaseOf(KoreBuildIdentity, override = values[ObservabilityKeys.RELEASE]),
+                versionReduced = values[KoreKeys.VERSION_REDUCED],
             )
     }
 }

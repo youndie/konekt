@@ -149,6 +149,21 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 successBodyType = "the word alive",
                 refusals = setOf(503),
             ),
+        // WHICH BUILD THIS IS (`konekt#35`). Public, and deliberately: a deploy check reads it, and a
+        // route that needs a session is a route a check cannot use. A commit hash in a public
+        // repository is not a secret, and the body is a CONTRACT unlike the probes' — `key: value`
+        // per line, in a fixed order, the shape a shell can grep without a parser. Lines may be
+        // added; the four kore names keep their names.
+        //
+        // It answers no refusal. `KONEKT_KORE_VERSION_REDUCED` shortens the body to the release name
+        // alone and cannot remove the route, because a 404 is indistinguishable from a broken
+        // deployment to the check that reads it.
+        "GET ${KoreRoutes.VERSION}" to
+            EndpointFacts(
+                summary = "Which build this is: the release, the version, the commit and the build time",
+                successContentType = "text/plain",
+                successBodyType = "key: value per line — release, version, commit, built",
+            ),
         // The brand kit. Keyed by the constant rather than by a `@Resource`, like `/health` above and
         // for the same reason: the address exists as a string in `:feature:theme-shared-api` because
         // the client fetches it before it has any typed routing, and one spelling is the whole point.

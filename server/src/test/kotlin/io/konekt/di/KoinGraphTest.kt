@@ -96,6 +96,11 @@ class KoinGraphTest {
                         migrateOnly = false,
                         observability = NO_OBSERVABILITY,
                         metrikWindowMs = 60_000,
+                        release =
+                            io.github.youndie.kore.version.releaseOf(
+                                io.github.youndie.kore.generated.KoreBuildIdentity,
+                            ),
+                        versionReduced = false,
                     ),
                 )
     }

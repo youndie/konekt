@@ -11,17 +11,21 @@ import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.github.youndie.kompot.standard.kompotStandardSerializersModule
 import io.github.youndie.kore.config.printConfig
+import io.github.youndie.kore.generated.KoreBuildIdentity
 import io.github.youndie.kore.health.HealthRegistry
 import io.github.youndie.kore.health.LivenessGate
 import io.github.youndie.kore.health.ReadinessGate
 import io.github.youndie.kore.health.StartupGate
 import io.github.youndie.kore.ktor.EngineDrain
 import io.github.youndie.kore.ktor.installKoreProbes
+import io.github.youndie.kore.ktor.installKoreVersion
 import io.github.youndie.kore.lifecycle.AnnounceNotReady
 import io.github.youndie.kore.lifecycle.ShutdownDeadlines
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.github.youndie.kore.lifecycle.runUntilSignal
 import io.github.youndie.kore.observability.KoreObservability
+import io.github.youndie.kore.version.KoreRelease
+import io.github.youndie.kore.version.releaseOf
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.OutboxAwarePetichRepository
@@ -330,6 +334,10 @@ private fun participant(
 fun Application.baseModule(
     extraModules: List<org.koin.core.module.Module> = emptyList(),
     probes: KonektProbes = KonektProbes(),
+    // Defaulted from the compiled-in identity so a test that wants an application rather than a
+    // deployment gets one. The composition root passes the release the agents were given.
+    release: KoreRelease = releaseOf(KoreBuildIdentity),
+    reduced: Boolean = false,
 ) {
     install(Koin) {
         slf4jLogger()
@@ -358,6 +366,22 @@ fun Application.baseModule(
     // The readiness gate reads a REMEMBERED answer refreshed by a loop of its own, so the probe never
     // blocks on a dependency and `timeoutSeconds` in the chart never decides the verdict.
     installKoreProbes(probes.startup, probes.readiness, probes.liveness)
+
+    // WHICH BUILD THIS IS (`konekt#35`), and it answers the question asked during a deploy and during
+    // an incident: is what is running the thing we think we pushed? Until now this repository answered
+    // it by trusting that the image tag matched the chart value that matched the commit — three claims,
+    // each true separately, and the case where they disagree is exactly the case somebody is
+    // investigating.
+    //
+    // The identity is COMPILED IN by `io.github.youndie.kore.build`, not read from a file or an
+    // environment variable: a value read at runtime is a value the deployment can get wrong in the
+    // same way it got the image wrong.
+    //
+    // ONE RELEASE, NOT TWO. The same `KoreRelease` goes to the three agents, so a metrik deploy
+    // marker, a katcher crash group and this route cannot name different things. When the environment
+    // overrides the compiled-in name the body says so on a `compiled-release:` line — which is the
+    // disagreement that was previously impossible to notice.
+    installKoreVersion(KoreBuildIdentity, release = release, reduced = reduced)
 }
 
 // The three gates, together, because every caller needs all three and a signature taking them one by
@@ -533,6 +557,7 @@ fun Application.module(
         configureObservability(
             config.observability,
             metrikWindowMs = config.metrikWindowMs,
+            release = config.release.name,
             clock = SystemClock,
         )
     lifecycle.observability = observability
@@ -572,6 +597,8 @@ fun Application.module(
 
     baseModule(
         probes = probes,
+        release = config.release,
+        reduced = config.versionReduced,
         extraModules =
             listOf(
                 module { single { kompotJson } },
