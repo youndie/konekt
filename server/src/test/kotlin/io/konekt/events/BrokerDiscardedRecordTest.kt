@@ -1,6 +1,7 @@
 package io.konekt.events
 
 import io.github.youndie.booblik.TopicName
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -48,6 +49,13 @@ class BrokerDiscardedRecordTest {
                     try {
                         answer.await()
                         null
+                    } catch (cancelled: CancellationException) {
+                        // Ahead of the catch below, because `CancellationException` IS an `Exception`:
+                        // swallowing it would turn a cancelled await into a value and leave this
+                        // coroutine running after something asked it to stop. What this test wants is
+                        // the failure the producer put on the answer, not the one the test framework
+                        // put on the test.
+                        throw cancelled
                     } catch (thrown: Exception) {
                         thrown
                     }
