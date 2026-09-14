@@ -123,7 +123,7 @@ katcher = "0.7.47"
 #   - the Android client and the Gradle plugin that uploads the R8 mapping, released together and
 #     still on their own line.
 
-metrikAgent = "0.2.18"
+metrikAgent = "0.3.21"
 tracyAgent = "0.2.15"
 viddik = "0.4.0"
 
