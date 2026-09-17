@@ -38,7 +38,7 @@ androidxActivity = "1.12.0"
 #
 # Its COMPILER is not this version either: `org.jetbrains.kotlin.plugin.compose` ships with Kotlin
 # and is versioned with it, which is why the two plugin aliases below point at different refs.
-composeMultiplatform = "1.11.1"
+composeMultiplatform = "1.12.0"
 
 # Material3 moves on its OWN line, exactly as it does in the toolkit's catalogue: it has no stable
 # release in either train (`<latest>1.12.0-alpha03` on 2026-08-25), so tying it to the line above
