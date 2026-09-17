@@ -46,7 +46,16 @@ composeMultiplatform = "1.11.1"
 # built against, which is the whole requirement.
 composeMaterial3 = "1.11.0-alpha07"
 
-ktor = "3.6.0"
+# NOT 3.6.0, and the reason is not this line's to fix. 3.6.0 resolves okhttp 5.5.0, whose Android
+# artefact refuses to be compiled against anything below API 37 — and `androidCompileSdk` here is 36
+# deliberately, for the reason written beside it: compiling against the newest available API is how a
+# build starts depending on something no released device has. The same sentence already keeps
+# androidx.core off this build.
+#
+# So taking 3.6.0 means raising compileSdk, which is a decision about what this application runs on,
+# not a dependency bump. The rest of the portfolio moved to 3.6.0 on 2026-09-17; this build did not,
+# and that is a choice rather than an oversight.
+ktor = "3.5.2"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
