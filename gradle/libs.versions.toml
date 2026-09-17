@@ -46,7 +46,7 @@ composeMultiplatform = "1.11.1"
 # built against, which is the whole requirement.
 composeMaterial3 = "1.11.0-alpha07"
 
-ktor = "3.5.2"
+ktor = "3.6.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
