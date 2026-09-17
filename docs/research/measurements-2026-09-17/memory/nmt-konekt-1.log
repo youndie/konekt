@@ -1,0 +1,292 @@
+Picked up JAVA_TOOL_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+PrintNMTStatistics -XX:+UseSerialGC -XX:ReservedCodeCacheSize=48M -XX:MaxDirectMemorySize=32M -Xss256k -XX:MaxMetaspaceSize=128M -Xmx64M -XX:+ExitOnOutOfMemoryError
+21:01:56.918 INFO  io.ktor.server.Application - Autoreload is disabled because the development mode is off.
+21:01:57.020 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+21:01:57.126 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5b464ce8
+21:01:57.126 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+21:01:57.133 INFO  [Koin] - Started 74 definitions in 2.101 ms
+21:01:57.147 INFO  io.ktor.server.Application - Application started in 0.286 seconds.
+21:01:57.148 INFO  io.konekt.mocks.traffic.chain - DEV ONLY — traffic simulator starting, arrivals after 10s
+21:01:57.221 INFO  io.konekt.usage.chain - usage consumer starting on partition 0 from offset 0
+21:01:57.223 INFO  io.ktor.server.Application - Responding at http://0.0.0.0:8080
+21:02:07.178 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+21:02:07.179 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+konekt shutdown transcript:
+  SIGNAL COMPLETED in 20.246us
+  ANNOUNCE COMPLETED in 5.000262782s
+  DRAIN COMPLETED in 521.751us
+  RELEASE_CONSUMERS COMPLETED in 186.002us
+  RELEASE_POOLS COMPLETED in 3.074734ms
+  RELEASE_TELEMETRY COMPLETED in 562.208us
+  EXIT COMPLETED in 1.248us
+
+Native Memory Tracking:
+
+Total: reserved=386979515, committed=95635131
+       malloc: 7259835 #51087, peak=48276433 #45454
+       mmap:   reserved=379719680, committed=88375296
+
+-                 Java Heap (reserved=67108864, committed=16162816)
+                            (mmap: reserved=67108864, committed=16162816, at peak)
+
+-                     Class (reserved=117930286, committed=686382)
+                            (classes #9199)
+                            (  instance classes #8625, array classes #574)
+                            (malloc=489774 tag=Class #12919) (peak=490566 #12925)
+                            (mmap: reserved=117440512, committed=196608, at peak)
+                            (  Metadata:   )
+                            (    reserved=67108864, committed=2490368)
+                            (    used=2461112)
+                            (    waste=29256 =1.17%)
+                            (  Class space:)
+                            (    reserved=117440512, committed=196608)
+                            (    used=95424)
+                            (    waste=101184 =51.46%)
+
+-                    Thread (reserved=10061640, committed=2492232)
+                            (threads #25)
+                            (stack: reserved=9961472, committed=2392064, peak=2392064)
+                            (malloc=70168 tag=Thread #164) (peak=94456 #204)
+                            (arena=30000 #50) (peak=358480 #52)
+
+-                      Code (reserved=53090704, committed=7719312)
+                            (malloc=2364856 tag=Code #15806) (at peak)
+                            (mmap: reserved=50724864, committed=5353472, at peak)
+                            (arena=984 #1) (peak=35680 #3)
+
+-                        GC (reserved=225734, committed=74182)
+                            (malloc=4550 tag=GC #54) (peak=5270 #66)
+                            (mmap: reserved=221184, committed=69632, at peak)
+
+-                  Compiler (reserved=573240, committed=573240)
+                            (malloc=109696 tag=Compiler #413) (peak=154736 #429)
+                            (arena=463544 #7) (peak=43489848 #14)
+
+-                  Internal (reserved=303569, committed=303569)
+                            (malloc=266705 tag=Internal #4268) (peak=273228 #4174)
+                            (mmap: reserved=36864, committed=36864, at peak)
+
+-                     Other (reserved=127448, committed=127448)
+                            (malloc=127448 tag=Other #11) (peak=162416 #18)
+
+-                    Symbol (reserved=1520001, committed=1520001)
+                            (malloc=1151361 tag=Symbol #11891) (at peak)
+                            (arena=368640 #1) (at peak)
+
+-    Native Memory Tracking (reserved=931614, committed=931614)
+                            (malloc=12048 tag=Native Memory Tracking #194) (peak=12776 #203)
+                            (tracking overhead=919566)
+
+-        Shared class space (reserved=67108960, committed=61665376, readonly=0)
+                            (malloc=96 tag=Shared class space #2) (at peak)
+                            (mmap: reserved=67108864, committed=61665280, peak=62521344)
+
+-               Arena Chunk (reserved=413784, committed=413784)
+                            (malloc=413784 tag=Arena Chunk #96) (peak=44097376 #999)
+
+-                   Tracing (reserved=7169, committed=7169)
+                            (malloc=7169 tag=Tracing #32) (peak=8705 #38)
+
+-                Statistics (reserved=128, committed=128)
+                            (malloc=128 tag=Statistics #2) (at peak)
+
+-                 Arguments (reserved=86, committed=86)
+                            (malloc=86 tag=Arguments #4) (at peak)
+
+-                    Module (reserved=68752, committed=68752)
+                            (malloc=68752 tag=Module #1765) (peak=72312 #737)
+
+-                 Safepoint (reserved=8192, committed=8192)
+                            (mmap: reserved=8192, committed=8192, at peak)
+
+-           Synchronization (reserved=355648, committed=355648)
+                            (malloc=355648 tag=Synchronization #3409) (peak=355752 #3410)
+
+-            Serviceability (reserved=17216, committed=17216)
+                            (malloc=17216 tag=Serviceability #10) (peak=17360 #12)
+
+-                 Metaspace (reserved=67120200, committed=2501704)
+                            (malloc=11336 tag=Metaspace #11) (at peak)
+                            (mmap: reserved=67108864, committed=2490368, at peak)
+
+-      String Deduplication (reserved=680, committed=680)
+                            (malloc=680 tag=String Deduplication #8) (at peak)
+
+-           Object Monitors (reserved=5600, committed=5600)
+                            (malloc=5600 tag=Object Monitors #28) (at peak)
+
+Picked up JAVA_TOOL_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+PrintNMTStatistics -XX:+UseSerialGC -XX:ReservedCodeCacheSize=48M -XX:MaxDirectMemorySize=32M -Xss256k -XX:MaxMetaspaceSize=128M -Xmx64M -XX:+ExitOnOutOfMemoryError
+21:02:08.916 INFO  io.ktor.server.Application - Autoreload is disabled because the development mode is off.
+21:02:09.032 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+21:02:09.141 INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5b464ce8
+21:02:09.141 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+21:02:09.213 INFO  [Koin] - Started 74 definitions in 66.259 ms
+21:02:09.230 INFO  io.ktor.server.Application - Application started in 0.37 seconds.
+21:02:09.231 INFO  io.konekt.mocks.traffic.chain - DEV ONLY — traffic simulator starting, arrivals after 10s
+21:02:09.235 INFO  io.konekt.usage.chain - usage consumer starting on partition 0 from offset 0
+21:02:09.236 INFO  io.ktor.server.Application - Responding at http://0.0.0.0:8080
+21:02:43.887 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15558888995 is 622719
+21:02:44.112 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15555804553 is 611402
+21:02:44.178 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15557408820 is 901856
+21:02:44.274 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553761611 is 080715
+21:02:44.342 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553561742 is 260634
+21:02:44.411 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553766032 is 891659
+21:02:44.488 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15557984434 is 085510
+21:02:44.557 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15555646519 is 416854
+21:02:44.664 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15555740099 is 717285
+21:02:44.731 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15558926388 is 701499
+21:02:44.814 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15551415902 is 149610
+21:02:44.873 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15555848027 is 072675
+21:02:44.933 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553387911 is 315912
+21:02:44.991 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15552255642 is 563448
+21:02:45.053 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15558566627 is 420478
+21:02:45.122 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15559554890 is 515434
+21:02:45.182 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15552668949 is 750693
+21:02:45.240 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15556857844 is 160966
+21:02:45.298 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553855404 is 138933
+21:02:45.354 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15554586370 is 325192
+21:02:45.405 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15551270007 is 740893
+21:02:45.454 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15551061235 is 458929
+21:02:45.504 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15557146112 is 909828
+21:02:45.559 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15553033716 is 032504
+21:02:45.609 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15557339996 is 779552
+21:02:45.663 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15552025441 is 207374
+21:02:45.729 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15556056367 is 456140
+21:02:45.819 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15555698331 is 427714
+21:02:45.894 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15554947530 is 873190
+21:02:45.946 WARN  io.konekt.auth.otp - DEV ONLY — otp for 15554239480 is 516485
+21:02:56.769 INFO  io.konekt.mocks.traffic.consumer - roaming package 1382d446-e9dc-4128-9cfd-0de98513dbde started in tr and now ends 2026-10-17T21:02:56.766096625Z
+21:02:56.777 INFO  io.konekt.mocks.traffic.consumer - roaming package 65755c02-a58e-43c6-8343-33799bb7b309 started in tr and now ends 2026-10-17T21:02:56.775904886Z
+21:02:56.778 INFO  io.konekt.mocks.traffic.consumer - roaming package d9be534a-39eb-4dcd-b976-23960bf46a44 started in tr and now ends 2026-10-17T21:02:56.777350691Z
+21:02:56.779 INFO  io.konekt.mocks.traffic.consumer - roaming package ac054b18-a520-468c-a0ec-3c21da3954ac started in tr and now ends 2026-10-17T21:02:56.778599306Z
+21:02:56.781 INFO  io.konekt.mocks.traffic.consumer - roaming package 18f12c69-8423-46ad-b449-f6e5d1a36b99 started in tr and now ends 2026-10-17T21:02:56.779847661Z
+21:02:56.782 INFO  io.konekt.mocks.traffic.consumer - roaming package 96659c8a-cc77-47ef-befe-9517b7ec9d53 started in tr and now ends 2026-10-17T21:02:56.781257748Z
+21:02:56.783 INFO  io.konekt.mocks.traffic.consumer - roaming package 3ab6dd0b-3a62-433b-a3fe-1e07e33a49d2 started in tr and now ends 2026-10-17T21:02:56.782388656Z
+21:02:56.784 INFO  io.konekt.mocks.traffic.consumer - roaming package 79e06325-c715-4a29-8513-d839026f9c29 started in tr and now ends 2026-10-17T21:02:56.783547081Z
+21:02:56.785 INFO  io.konekt.mocks.traffic.consumer - roaming package 44d9144c-4ffc-4ef5-a1b4-10ee0f7acef6 started in tr and now ends 2026-10-17T21:02:56.784698400Z
+21:02:56.787 INFO  io.konekt.mocks.traffic.consumer - roaming package ac3fd3d6-1ec7-4f58-b088-7c090328f4ee started in tr and now ends 2026-10-17T21:02:56.786102238Z
+21:02:56.788 INFO  io.konekt.mocks.traffic.consumer - roaming package 3e3a88d4-2a4f-4900-aa92-fc82a66d8f90 started in tr and now ends 2026-10-17T21:02:56.787319615Z
+21:02:56.789 INFO  io.konekt.mocks.traffic.consumer - roaming package b4cdb029-0e55-4e89-b5c6-e62f07f59160 started in tr and now ends 2026-10-17T21:02:56.788346771Z
+21:02:56.790 INFO  io.konekt.mocks.traffic.consumer - roaming package ef1d6b32-d982-444c-9773-8ad6fd0a8932 started in tr and now ends 2026-10-17T21:02:56.789526749Z
+21:02:56.791 INFO  io.konekt.mocks.traffic.consumer - roaming package 3e34f8e8-d655-4d75-b25a-c46c4e21b21a started in tr and now ends 2026-10-17T21:02:56.790576150Z
+21:02:56.792 INFO  io.konekt.mocks.traffic.consumer - roaming package b223a4c2-b6f2-497b-a476-805ceae1a32b started in tr and now ends 2026-10-17T21:02:56.791555157Z
+21:02:56.793 INFO  io.konekt.mocks.traffic.consumer - roaming package 269f1628-e9dc-482d-ba60-351661f49672 started in tr and now ends 2026-10-17T21:02:56.792819669Z
+21:02:56.794 INFO  io.konekt.mocks.traffic.consumer - roaming package 922b3376-aa64-4ba9-8a11-ca70fe6323fc started in tr and now ends 2026-10-17T21:02:56.793864450Z
+21:02:56.795 INFO  io.konekt.mocks.traffic.consumer - roaming package 73b4a08d-b3c3-40c4-b4f3-34dd366de3dd started in tr and now ends 2026-10-17T21:02:56.794983899Z
+21:02:56.797 INFO  io.konekt.mocks.traffic.consumer - roaming package b3aea365-214f-4d9d-91b8-9c4d5bf43c9f started in tr and now ends 2026-10-17T21:02:56.796101841Z
+21:02:56.798 INFO  io.konekt.mocks.traffic.consumer - roaming package c7669cbf-6787-4eb1-8bc8-ad777d6ca382 started in tr and now ends 2026-10-17T21:02:56.797161023Z
+21:02:56.799 INFO  io.konekt.mocks.traffic.consumer - roaming package 0bab126c-dba3-4919-9869-a0ebb4279f38 started in tr and now ends 2026-10-17T21:02:56.798198354Z
+21:02:56.800 INFO  io.konekt.mocks.traffic.consumer - roaming package 584bb07e-8ebe-459f-8378-fec85c86fd5e started in tr and now ends 2026-10-17T21:02:56.799358397Z
+21:02:56.801 INFO  io.konekt.mocks.traffic.consumer - roaming package eecbcf80-1eae-416f-8b44-98a4aeec491d started in tr and now ends 2026-10-17T21:02:56.800555636Z
+21:02:56.802 INFO  io.konekt.mocks.traffic.consumer - roaming package f95b7ff3-7dbb-4579-8ae4-0b8a1c34e4b4 started in tr and now ends 2026-10-17T21:02:56.801655428Z
+21:02:56.803 INFO  io.konekt.mocks.traffic.consumer - roaming package b670b8fb-3e30-4e7e-a6d3-85b80c839524 started in tr and now ends 2026-10-17T21:02:56.802813294Z
+21:02:56.804 INFO  io.konekt.mocks.traffic.consumer - roaming package 929f7c0b-6c54-494d-b45c-31c138f3df87 started in tr and now ends 2026-10-17T21:02:56.803969648Z
+21:02:56.806 INFO  io.konekt.mocks.traffic.consumer - roaming package c4d430e4-55cd-4fc3-985b-43c4d8d6a468 started in tr and now ends 2026-10-17T21:02:56.805104870Z
+21:02:56.807 INFO  io.konekt.mocks.traffic.consumer - roaming package 0879d007-6918-435a-81c7-aa4dc7849e1d started in tr and now ends 2026-10-17T21:02:56.806231331Z
+21:02:56.808 INFO  io.konekt.mocks.traffic.consumer - roaming package f50c145a-118b-45ea-b9f5-6c9dee0fa5af started in tr and now ends 2026-10-17T21:02:56.807406792Z
+21:02:56.809 INFO  io.konekt.mocks.traffic.consumer - roaming package bb3623c4-4eea-460f-90da-c51a3601715f started in tr and now ends 2026-10-17T21:02:56.808630598Z
+21:04:42.865 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+21:04:42.866 INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+konekt shutdown transcript:
+  SIGNAL COMPLETED in 16.931us
+  ANNOUNCE COMPLETED in 5.000449603s
+  DRAIN COMPLETED in 569.099us
+  RELEASE_CONSUMERS COMPLETED in 106.703us
+  RELEASE_POOLS COMPLETED in 3.855309ms
+  RELEASE_TELEMETRY COMPLETED in 4.556157ms
+  EXIT COMPLETED in 1.075us
+
+Native Memory Tracking:
+
+Total: reserved=418236419, committed=190130179
+       malloc: 23836675 #97267, peak=49458108 #46207
+       mmap:   reserved=394399744, committed=166293504
+
+-                 Java Heap (reserved=67108864, committed=65974272)
+                            (mmap: reserved=67108864, committed=65974272, at peak)
+
+-                     Class (reserved=118130454, committed=1148694)
+                            (classes #9577)
+                            (  instance classes #8987, array classes #590)
+                            (malloc=689942 tag=Class #17952) (peak=691358 #17947)
+                            (mmap: reserved=117440512, committed=458752, at peak)
+                            (  Metadata:   )
+                            (    reserved=67108864, committed=6946816)
+                            (    used=6835240)
+                            (    waste=111576 =1.61%)
+                            (  Class space:)
+                            (    reserved=117440512, committed=458752)
+                            (    used=329936)
+                            (    waste=128816 =28.08%)
+
+-                    Thread (reserved=24958376, committed=9504168)
+                            (threads #82)
+                            (stack: reserved=24641536, committed=9187328, peak=9187328)
+                            (malloc=219640 tag=Thread #504) (peak=244376 #544)
+                            (arena=97200 #162) (peak=360880 #56)
+
+-                      Code (reserved=62622776, committed=33696824)
+                            (malloc=11896928 tag=Code #37140) (peak=12012256 #41629)
+                            (mmap: reserved=50724864, committed=21798912, at peak)
+                            (arena=984 #1) (peak=34696 #2)
+
+-                        GC (reserved=243318, committed=239222)
+                            (malloc=22134 tag=GC #58) (peak=197942 #103)
+                            (mmap: reserved=221184, committed=217088, at peak)
+
+-                  Compiler (reserved=713912, committed=713912)
+                            (malloc=513176 tag=Compiler #523) (peak=588664 #548)
+                            (arena=200736 #6) (peak=44607456 #15)
+
+-                  Internal (reserved=526023, committed=526023)
+                            (malloc=489159 tag=Internal #10988) (peak=498447 #11021)
+                            (mmap: reserved=36864, committed=36864, at peak)
+
+-                     Other (reserved=620880, committed=620880)
+                            (malloc=620880 tag=Other #67) (peak=655896 #75)
+
+-                    Symbol (reserved=1825363, committed=1825363)
+                            (malloc=1456723 tag=Symbol #17433) (at peak)
+                            (arena=368640 #1) (at peak)
+
+-    Native Memory Tracking (reserved=1790910, committed=1790910)
+                            (malloc=40104 tag=Native Memory Tracking #663) (peak=41000 #675)
+                            (tracking overhead=1750806)
+
+-        Shared class space (reserved=67108960, committed=61665376, readonly=0)
+                            (malloc=96 tag=Shared class space #2) (at peak)
+                            (mmap: reserved=67108864, committed=61665280, peak=62521344)
+
+-               Arena Chunk (reserved=4314992, committed=4314992)
+                            (malloc=4314992 tag=Arena Chunk #320) (peak=45217072 #1036)
+
+-                   Tracing (reserved=21505, committed=21505)
+                            (malloc=21505 tag=Tracing #88) (peak=23041 #94)
+
+-                Statistics (reserved=128, committed=128)
+                            (malloc=128 tag=Statistics #2) (at peak)
+
+-                 Arguments (reserved=86, committed=86)
+                            (malloc=86 tag=Arguments #4) (at peak)
+
+-                    Module (reserved=68992, committed=68992)
+                            (malloc=68992 tag=Module #1771) (peak=72312 #737)
+
+-                 Safepoint (reserved=8192, committed=8192)
+                            (mmap: reserved=8192, committed=8192, at peak)
+
+-           Synchronization (reserved=1008976, committed=1008976)
+                            (malloc=1008976 tag=Synchronization #9691) (peak=1009184 #9693)
+
+-            Serviceability (reserved=17216, committed=17216)
+                            (malloc=17216 tag=Serviceability #10) (peak=17360 #12)
+
+-                 Metaspace (reserved=67142216, committed=6980168)
+                            (malloc=33352 tag=Metaspace #25) (at peak)
+                            (mmap: reserved=67108864, committed=6946816, at peak)
+
+-      String Deduplication (reserved=680, committed=680)
+                            (malloc=680 tag=String Deduplication #8) (at peak)
+
+-           Object Monitors (reserved=3600, committed=3600)
+                            (malloc=3600 tag=Object Monitors #18) (peak=7200 #36)
+

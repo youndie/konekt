@@ -60,7 +60,19 @@ type: application
 # MINOR, and for the third time the reason is the image rather than the values: this chart now sets a
 # variable name the old image does not read and omits the one it does, and the new image refuses to
 # start without `KONEKT_SERVICE`. As before, neither failure happens at `helm template`.
-version: 0.5.0
+# 0.5.0 -> 0.6.0: `B-127` gives the server its own memory ceilings (`server.jvmOptions`, set as
+# `JAVA_TOOL_OPTIONS` on the server and on the migration) and takes `resources.limits.memory` from
+# 1Gi to 256Mi. Two things make this a MINOR rather than a PATCH, and only the second is in the
+# rule's list.
+#
+# The template gained a REFUSAL: a limit below what `server.jvmOptions` already promises the JVM
+# stops the render, so a values file that set a small limit and rendered before now fails.
+#
+# And the default limit MOVED DOWNWARDS, which is the half worth stating: a deployment that never
+# named `resources` and took the chart's 1Gi now takes 256Mi, and a workload heavier than the one
+# measured here would meet the limit rather than the heap. That is a change to what an existing
+# values file DOES, which is exactly what a minor is for below 1.0.0.
+version: 0.6.0
 # Deliberately empty, and the render fails when `server.version` is empty too.
 #
 # A chart version and an application version are two different lifetimes here: the shape of this

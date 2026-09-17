@@ -37,13 +37,79 @@ server:
   # build does not read such a setting, so a key that let the render through would be a switch that
   # changes nothing while promising to. What it would actually take is named in the failure message.
   replicas: 1
+  # THE JVM'S OWN CEILINGS, AND THE REASON THERE ARE SIX OF THEM RATHER THAN A SMALLER LIMIT
+  # (`B-127`). Every number here was measured on this server rather than copied — the recipe is the
+  # one three other Kotlin/JVM services on this stack already run, but a recipe is a hypothesis until
+  # it is run against the thing it is meant to bound, and two of these numbers are NOT theirs.
+  #
+  # **A SMALLER LIMIT ALONE IS NOT A SMALLER FOOTPRINT — IT IS A WORSE ONE, AND THAT WAS MEASURED**
+  # as its own variant, because without it this list would take credit for what the limit did.
+  # At 256Mi with no flags the ergonomics do pick the Serial collector, and then size the heap off
+  # `MinRAMPercentage` rather than `MaxRAMPercentage`: **125 MiB committed, half the limit** rather
+  # than the quarter the rule of thumb promises. The peak was 250 MiB of 256 — a pod one hiccup from
+  # an OOMKill — and the longest GC pause 260 ms against the unbounded JVM's 5. What the limit never
+  # bounds is the rest: the code cache reserves 240 MB and had **40 MB committed** under load,
+  # direct memory defaults to the whole heap, and a thread reserves a megabyte of stack. That is why
+  # this is a list and not one line in `resources`.
+  #
+  # **`MaxMetaspaceSize` is 128M and not the 80M the neighbours use, and the reason is the AOT
+  # cache.** With the cache accepted, class metadata is mapped from it — `Shared class space`, 62 MB,
+  # which the cgroup counts as this process's own anonymous memory because the archive is mapped
+  # private and relocated on the way in — and metaspace holds about 7 MB. With the cache REFUSED, which is a
+  # thing that has happened in this cluster once already (`B-31`: the JVM rejected a cache over a
+  # different jar order), those classes load the ordinary way and metaspace carries them. A ceiling
+  # sized for the good case turns a silent cache rejection into `OutOfMemoryError: Metaspace` — a
+  # crash loop whose cause is three layers from its message. Metaspace is reserved address space
+  # until it is touched, so the headroom costs nothing when the cache works. What it would cost in
+  # ANON if the cache were ever refused is not measured — the run that would answer it
+  # (`-XX:AOTMode=off` under this clamp) is the open question on `B-127`; the arithmetic says the
+  # 62 MiB the archive holds moves into metaspace rather than adds to it, and arithmetic is not a run.
+  #
+  # **`-Xss256k` buys less than it looks like.** Committed thread memory went from 10.2 to 9.5 MiB —
+  # the saving is in RESERVED address space, not in what the pod holds. It is kept because the rest
+  # of the portfolio runs it and because reserved space is not free either, but it is the one flag
+  # here whose failure mode (a `StackOverflowError` on one deep path) is worse than its measured gain.
+  #
+  # **`ReservedCodeCacheSize` is 48M for the measured reason**: 40 MB was committed under the
+  # reading profile at 200 rps, and a cap below what the JIT is using is not a saving — it is
+  # recompilation, paid in CPU on a pod that has one core.
+  #
+  # **`ExitOnOutOfMemoryError`, because the alternative is worse than a crash.** Without it a JVM
+  # out of heap limps: it serves, slowly, `/health/ready` times out, and the kubelet reports a pod
+  # that failed its probe. The event log then names the probe and not the memory.
+  #
+  # Set as `JAVA_TOOL_OPTIONS`, which the JVM reads directly — so it reaches the migrate container
+  # too, which is the same image with a switch and has no reason to size itself differently.
+  jvmOptions: >-
+    -XX:+UseSerialGC
+    -XX:ReservedCodeCacheSize=48M
+    -XX:MaxDirectMemorySize=32M
+    -Xss256k
+    -XX:MaxMetaspaceSize=128M
+    -Xmx64M
+    -XX:+ExitOnOutOfMemoryError
+  # 256Mi AND NOT 1Gi, and the number is the measurement rather than a round figure (`B-127`).
+  #
+  # Anonymous memory — `anon` from the container's own `memory.stat`, which is what a limit is
+  # actually spent on — was 110–113 MiB at rest and 230 MiB under the reading profile with the JVM
+  # unbounded, twice. With the ceilings above it is **116 MiB at rest and 196 MiB** under the same
+  # profile, which is what 256Mi is sized against — 60 MiB of headroom over the peak.
+  #
+  # THE CLAMPED FIGURE IS ONE ROUND. The sweep was cut short at six of its twelve runs (the build
+  # box dropped off the network), so the unbounded JVM has two rounds that agree to the megabyte and
+  # the clamp has one. 196 is therefore a measurement with a known weakness rather than an average,
+  # and the third round is worth finishing before anybody quotes it as a bound.
+  #
+  # `requests` is the resting figure rounded up, not half the limit: the scheduler packs on requests
+  # and a request that names the peak reserves for the minute a pod spends serving and not for the
+  # hours it spends idle.
   resources:
     requests:
       cpu: "100m"
-      memory: "512Mi"
+      memory: "192Mi"
     limits:
       cpu: "1"
-      memory: "1Gi"
+      memory: "256Mi"
 
 # The signing key of every subscriber's session. The server refuses to start without it, which
 # arrives as a green deploy and a service that is down. Comes from a secret through --set.

@@ -62,6 +62,7 @@ spec:
         - name: migrate
           image: "{{ .Values.server.image }}:{{ include "konekt.require" (dict "name" "server.version" "because" "a tag that moves leaves helm nothing to notice, so a green deploy runs the previous binary" "value" .Values.server.version) }}"
           env:
+            {{- include "konekt.jvmEnv" . | nindent 12 }}
             {{- include "konekt.dbEnv" . | nindent 12 }}
             - name: KONEKT_MIGRATE_ONLY
               value: "true"
@@ -77,6 +78,7 @@ spec:
         - name: server
           image: "{{ .Values.server.image }}:{{ .Values.server.version }}"
           env:
+            {{- include "konekt.jvmEnv" . | nindent 12 }}
             {{- include "konekt.dbEnv" . | nindent 12 }}
             - name: KONEKT_BROKER_HOST
               value: {{ .Release.Name }}-broker
