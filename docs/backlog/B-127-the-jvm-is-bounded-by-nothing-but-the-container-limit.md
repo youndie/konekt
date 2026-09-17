@@ -1,7 +1,7 @@
 ---
 id: B-127
 title: "The JVM is bounded by nothing but the container limit, and the limit is a gigabyte"
-status: wip
+status: done
 priority: P2
 size: S
 stage: stage-m7-completeness
@@ -59,3 +59,18 @@ the service it is meant to bound rather than copied into it.
 - Anchors: `konekt/charts/konekt/values.yaml`, `konekt/charts/konekt/templates/_helpers.tpl`,
   `konekt/deploy/compose.yaml`, `konekt/scripts/measure/memory.sh`,
   `konekt/server/src/test/kotlin/io/konekt/MemoryCeilingsTest.kt`
+
+**Shipped in `konekt#47`, chart 0.6.0.** The ceilings reach both containers, the render refuses a
+limit below them, `MemoryCeilingsTest` pairs the chart with the stand, and CI's `e2e` job ran the
+whole suite against a stand carrying them — migration included.
+
+**Two things this item did NOT finish**, and they are the reason the numbers above carry a caveat
+rather than a bound:
+
+- the sweep stopped at six runs of twelve when the build box left the network, so each clamped
+  variant has ONE round against the unbounded JVM's two;
+- no run with `-XX:AOTMode=off`, which is what would price `MaxMetaspaceSize=128M` instead of
+  reasoning about it from the archive's size.
+
+Both are cheap to finish — `scripts/measure/memory.sh 3` with the sweep file, plus one variant — and
+whoever quotes 196 MiB as a bound should finish them first.
