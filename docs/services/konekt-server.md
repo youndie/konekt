@@ -161,6 +161,20 @@ is the profile a coroutine-per-connection engine is shaped for. See
   plugin behind it is [zavarnik](https://github.com/youndie/zavarnik): `server/build.gradle.kts`
   declares the readiness URL and the signed-in workload, and `installDist` carries the runner and
   its configuration in `lib/`. Measured in `research-measurements.md` §6a.
+- **The JVM carries its own ceilings, and the container limit is not one of them** (`B-127`).
+  `server.jvmOptions` sets `-XX:+UseSerialGC -Xmx64M -XX:MaxMetaspaceSize=128M
+  -XX:ReservedCodeCacheSize=48M -XX:MaxDirectMemorySize=32M -Xss256k -XX:+ExitOnOutOfMemoryError`
+  as `JAVA_TOOL_OPTIONS`, on the server and on the migration that runs before it, and the limit is
+  `256Mi` against the `1Gi` this chart shipped with. The recipe is the one three other
+  Kotlin/JVM services on this stack run, and two of its numbers are konekt's own: the code cache is 48M because 40 MB was
+  committed under the reading profile at 200 rps, and metaspace is 128M because the AOT cache is
+  what keeps metaspace at 7 MiB, and a cache the JVM refuses (`B-31` is that, in this cluster) puts
+  those classes back into it. **Lowering the limit alone is not the same change and is worse than
+  leaving it alone**: at a 256 MiB limit HotSpot's ergonomics take half of it for the heap rather
+  than a quarter, so the measured peak was 250 MiB of 256 and the longest GC pause 260 ms against
+  the unbounded JVM's 5. The chart refuses to render a limit below what the ceilings promise, which
+  is the one arithmetic mistake here that arrives as `OOMKilled` and names nothing. Measured in
+  `research-measurements.md` §9.
 - **Probes:** a startup probe on `/health` every second for up to a minute, readiness every two
   seconds with no initial delay, liveness every twenty once startup has passed. The readiness probe
   used to wait five seconds before its first question, which made a pod ready at five whether the

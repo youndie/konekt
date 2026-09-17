@@ -88,4 +88,29 @@ scientific() {
 
 scientific
 
+# THE JVM'S CEILINGS REACH BOTH CONTAINERS, and the render is what is asked (`B-127`).
+#
+# The migration is the same image with a switch and runs FIRST, as this pod's init container — so a
+# ceiling it cannot live with fails the deploy before the server has a chance to start, and a
+# ceiling it never receives means the one JVM that runs against an unmigrated database is the one
+# nobody bounded. `MemoryCeilingsTest` pairs the chart with the stand; this asks the render.
+ceilings_reach_both() {
+    local count
+    count=$(helm template konekt "$CHART" "${VALID[@]}" | grep -c 'name: JAVA_TOOL_OPTIONS' || true)
+    if [ "$count" -ge 2 ]; then
+        echo "ok    the JVM's ceilings reach the server and the migration ($count containers)"
+    else
+        echo "FAIL  JAVA_TOOL_OPTIONS reaches $count container(s); the server and the migration both need it"
+        fail=1
+    fi
+}
+
+ceilings_reach_both
+
+# AND THE ARITHMETIC BETWEEN THE TWO FILES IS REFUSED WHEN IT IS WRONG. A limit below what
+# `server.jvmOptions` already promises the JVM is an OOMKill under load — an event that names the
+# kill and not the number, which is in another file.
+refuses "a limit below the JVM's own ceilings" "already promises the JVM" \
+  "${VALID[@]}" --set server.resources.limits.memory=128Mi
+
 exit $fail

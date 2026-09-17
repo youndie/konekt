@@ -43,12 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (4)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
+| [B-127](docs/backlog/B-127-the-jvm-is-bounded-by-nothing-but-the-container-limit.md) `[~]` | The JVM is bounded by nothing but the container limit, and the limit is a gigabyte | P2 | S | - |
 | [B-116](docs/backlog/B-116-the-confirmation-is-a-screen-not-a-sheet.md) `[ ]` | The purchase confirmation is a screen of its own, not a sheet over the plan page | P3 | M | - |
 
 ## Closed (123)

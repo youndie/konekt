@@ -1,0 +1,8 @@
+# image=konekt-server:mem-base-aot rates=25,200 hold=45 subscribers=30 rounds=3
+round,variant,limit,start_to_ready_ms,anon_idle_mib,anon_peak_mib,anon_after_mib,file_mib,k6_p95_ms,k6_failed,gc_pauses,gc_max_ms,nmt_heap_mib,nmt_class_mib,nmt_code_mib,nmt_thread_mib,nmt_shared_mib,nmt_committed_mib,oom
+1,base,1G,5222,110,230,228,22,4.1,0,281,7.636,90,1,37,10,58,213,0
+1,limit-only,256M,1624,113,250,249,0,3.0,0,569,49.733,125,1,37,8,58,249,0
+1,neighbour,320M,1669,114,180,184,2,2.9,0,108,31.894,56,1,27,8,58,168,2
+1,konekt,256M,1719,116,196,196,32,3.0,0,110,48.289,62,1,32,9,58,181,2
+2,base,1G,1733,113,230,230,18,3.4,0,281,4.559,90,1,37,8,58,214,0
+2,limit-only,256M,1768,110,233,219,27,4.8,0,569,259.707,125,1,38,7,58,249,0

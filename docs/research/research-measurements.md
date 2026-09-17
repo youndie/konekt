@@ -500,3 +500,45 @@ of this build, and it is a decision somebody should take deliberately.
 **One metric turned out to be uninformative and is kept as such.** `usage_counter` rows sat at 135
 for twelve hours because the table holds a row per subscriber, not per event: the count cannot say
 whether usage was applied. A soak that wants that answer must sample a SUM.
+
+## 9. What the JVM holds, and what clamping it costs
+
+**What was measured.** The server under the reading profile (`screens`, 25 then 200 rps, 45 s each,
+30 subscribers), in four configurations of the SAME image — the release shape with its AOT cache —
+differing only in `JAVA_TOOL_OPTIONS` and the container's memory limit. `scripts/measure/memory.sh`
+on the build box, 2026-09-17. The metric is `anon` from the container's own `memory.stat`, not
+`memory.current`: this image maps a 64 MiB cache, and the page cache is not what a limit is spent
+on. Record and raw logs: [`measurements-2026-09-17/memory/`](measurements-2026-09-17/memory/README.md).
+
+**What came out.** Memory in MiB; two rounds where two figures are given, one where one is.
+
+| | limit | anon at rest | anon peak | k6 p95 | GC pauses | longest | heap committed |
+|---|---|---|---|---|---|---|---|
+| today's chart, no flags | 1Gi | 110 / 113 | 230 / 230 | 4.1 / 3.4 | 281 | 7.6 / 4.6 ms | 90 |
+| the limit alone | 256Mi | 113 / 110 | 250 / 233 | 3.0 / 4.8 | 569 | 49.7 / 259.7 ms | 125 |
+| the portfolio's recipe | 320Mi | 114 | 180 | 2.9 | 108 | 31.9 ms | 56 |
+| the recipe, two numbers changed | 256Mi | 116 | 196 | 3.0 | 110 | 48.3 ms | 62 |
+
+**Lowering the limit alone makes this service worse, and that is the result worth carrying.** At a
+256 MiB limit HotSpot sizes the heap off `MinRAMPercentage` — half the limit — so the heap goes UP,
+to 125 MiB committed against 90 unbounded, the peak lands at 250 of 256, and the longest pause is
+260 ms against 5. The collector is Serial in every row here; `cpu: 1` already chose it. Without this
+variant the clamp's numbers would have been published with the limit doing the work.
+
+**The clamp buys 34 MiB at the peak and costs tail pause.** 230 → 196 at the peak, at rest
+unchanged (110 → 116); GC pauses go from 5 ms to 48 at the tail. The p95 of a screen does not move
+— 3.0 ms against 3.4–4.1 — which on a box the generator shares with the subject is noise either way.
+
+**The AOT cache survives the clamp**, which was the risk worth checking before shipping it: NMT at
+exit shows the same 58.8 MiB of shared class space with `-XX:+UseSerialGC -Xmx64M` as without, so a
+cache trained under G1 at a default heap is still accepted. It is also what keeps metaspace at 7 MiB
+rather than seventy, and therefore what `MaxMetaspaceSize=128M` is insuring against.
+
+**Chapter 2's open question is now answerable and not answered.** The twelve-hour soak recorded the
+server going 186 → 248 MiB and could not tell a heap settling towards a 247 MB ceiling from a leak.
+A heap that cannot exceed 64 MB makes the two distinguishable — a soak under this clamp either
+settles or dies with `ExitOnOutOfMemoryError`, and both are answers. That soak has not been run.
+
+**What this section does not have**: six of its twelve runs (the box dropped off the network
+mid-sweep, so the two clamped rows are one round each), and no run with the cache refused
+(`-XX:AOTMode=off`), which is what would price the metaspace ceiling instead of reasoning about it.

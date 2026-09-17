@@ -84,6 +84,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # THE SAME CEILINGS THE CHART SETS, for the same reason the limits are the same in
+      # `compose.measure.yaml`: a stand whose JVM is configured differently from the deployment's is
+      # a stand that cannot find what the deployment will. `MemoryCeilingsTest` pairs this string
+      # with `charts/konekt/values.yaml`, the way `ComposeStandTest` already pairs the broker's
+      # retention — set in one file and forgotten in the other is a defect this repository has had
+      # twice.
+      JAVA_TOOL_OPTIONS: ${SERVER_JVM_OPTIONS:--XX:+UseSerialGC -XX:ReservedCodeCacheSize=48M -XX:MaxDirectMemorySize=32M -Xss256k -XX:MaxMetaspaceSize=128M -Xmx64M -XX:+ExitOnOutOfMemoryError}
       KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
       KONEKT_DB_USER: konekt
       KONEKT_DB_PASSWORD: konekt
@@ -123,6 +130,10 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
+      # THE CHART'S CEILINGS, PAIRED BY `MemoryCeilingsTest` — see the migrate service above for why
+      # the stand carries them at all. Overridable as one string, because the sweep that chose these
+      # numbers is a sweep over exactly this variable (`scripts/measure/memory.sh`).
+      JAVA_TOOL_OPTIONS: ${SERVER_JVM_OPTIONS:--XX:+UseSerialGC -XX:ReservedCodeCacheSize=48M -XX:MaxDirectMemorySize=32M -Xss256k -XX:MaxMetaspaceSize=128M -Xmx64M -XX:+ExitOnOutOfMemoryError}
       KONEKT_DB_URL: jdbc:postgresql://postgres:5432/konekt
       KONEKT_DB_USER: konekt
       KONEKT_DB_PASSWORD: konekt
