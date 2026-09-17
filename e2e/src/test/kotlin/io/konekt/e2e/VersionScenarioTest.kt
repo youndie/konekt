@@ -40,9 +40,26 @@ class VersionScenarioTest {
                     "the /version body is read by deploy checks and lost one of its keys: $lines",
                 )
 
-                // The stand sets `KONEKT_RELEASE`, so the override path is the one exercised here —
-                // and the compiled-in name is reported beside it rather than silently replaced.
-                assertEquals("stand", lines["release"])
+                // THE RELEASE THE HARNESS ASKED FOR, AND NOT THE WORD `stand`.
+                //
+                // This assertion read `assertEquals("stand", …)` and passed everywhere it had ever
+                // run — `make stand-up` leaves `RELEASE` unset and `deploy/compose.yaml` defaults it
+                // to `stand`. The publish workflow's `verify` job is the other environment: it
+                // drives the PUBLISHED image with `RELEASE` set to the tag, because the point of
+                // that job is a container that names the release being shipped. Nothing had tagged
+                // a release since this test was written, so the first tag after it failed the
+                // release — on a string, with the image already in the registry.
+                //
+                // So the expectation comes from the same variable the stand was configured with.
+                // The workflow passes it to this step as well as to `stand-up` for exactly that
+                // reason: a test that guesses what the harness configured is a test of the guess.
+                val asked = System.getenv("RELEASE")?.takeIf { it.isNotBlank() } ?: "stand"
+                assertEquals(
+                    asked,
+                    lines["release"],
+                    "the container reports a release the deploy did not ask for: " +
+                        "RELEASE=$asked, /version says ${lines["release"]}",
+                )
                 assertTrue(
                     "compiled-release" in lines,
                     "the environment overrode the release and the body did not say so: $lines",

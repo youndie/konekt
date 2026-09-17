@@ -140,9 +140,14 @@ jobs:
         run: |
           docker inspect --format '{{.Config.Image}}' konekt-server-1
 
+      # `RELEASE` IS HERE AS WELL AS ON `stand-up`, and it is not duplication. The stand was
+      # started with the tag as its release, and `VersionScenarioTest` asks the container which
+      # release it reports — so the test needs to know what this job configured. Without it the
+      # test falls back to the stand's own default and compares the tag against the word `stand`.
       - name: Drive it
         env:
           SERVER_IMAGE: ghcr.io/youndie/konekt-server:${{ github.ref_name }}
+          RELEASE: ${{ github.ref_name }}
         run: make e2e
 
       # The cache, asked of the PULLED image rather than of the one the previous job trained in: the
