@@ -34,6 +34,7 @@ import io.github.youndie.petich.PetichEngineConfig
 import io.github.youndie.petich.PetichPayload
 import io.github.youndie.petich.PetichPhase
 import io.github.youndie.petich.PetichRepository
+import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.ResumePayload
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.SuspendedPetichSweeper
@@ -64,13 +65,14 @@ import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.data.topUpRoutes
+import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
 import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
-import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.purchase.server.domain.topUpPetich
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.shell.shared.api.ScreenChrome
@@ -834,7 +836,7 @@ fun petichModule(
 
     single(named(TOP_UP_SAGA_TYPE)) {
         PetichEngine(
-            interceptors = topUpInterceptors(balances = get(), payments = get(), json = get()),
+            definitions = listOf(topUpPetich(balances = get(), payments = get(), json = get())),
             repository = get<OutboxAwarePetichRepository>(),
             // The same requireOutbox for the same reason: petich degrades quietly to a plain update
             // when handed a repository that cannot store events, and a top-up whose completion nobody
@@ -879,6 +881,10 @@ private val petichSerializersModule =
             subclass(TariffChangePayload::class)
         }
         polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
+        // What a member recorded about what it did, written into the saga row beside its key. The
+        // same rule and the same first-request failure as the payloads above: unregistered means the
+        // first top-up that credits anything cannot be written down.
+        polymorphic(PetichStepRecord::class) { subclass(Credited::class) }
         polymorphic(ResumePayload::class) {
             subclass(PurchaseConfirmation::class)
             // The tariff change's own confirmation. Without it a resume decodes to nothing and the

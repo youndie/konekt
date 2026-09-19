@@ -3,6 +3,7 @@ package io.konekt.petich
 import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.Petich
 import io.github.youndie.petich.PetichRepository
+import io.github.youndie.petich.PetichStatus
 import io.konekt.db.tables.SagaSweepClaimTable
 import io.konekt.time.KonektClock
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +71,17 @@ class ClaimedSweep(
         }
         return mine
     }
+
+    // petich 0.4.0 arbitrates both sweep queues through the saga's own row, so this decorator is a
+    // second claim on top of one that is already closed (youndie/petich#70). It survives here only
+    // until the purchase and tariff sagas move onto definitions too; delegating is the honest
+    // placeholder, since claiming twice would narrow nothing and skipping the claim would be a lie
+    // about what this class does.
+    override suspend fun findStuck(
+        status: PetichStatus,
+        notTouchedSinceEpochMs: Long,
+        limit: Int,
+    ): List<Petich> = delegate.findStuck(status, notTouchedSinceEpochMs, limit)
 
     // ONE ROW, ONE CONDITIONAL WRITE. `insertIgnore` is the whole arbitration: the primary key on
     // `saga_id` decides, in the database, which caller proceeds — the same shape the refresh-token

@@ -143,6 +143,15 @@ class ClaimedSweepTest {
             nowEpochMs: Long,
             limit: Int,
         ): List<Petich> = expired.take(limit)
+
+        // petich 0.4.0's second queue. This test calls findExpired and nothing else, so erroring is
+        // the honest answer - a fake that quietly returned an empty list would let a future change
+        // to ClaimedSweep pass here while doing something else.
+        override suspend fun findStuck(
+            status: PetichStatus,
+            notTouchedSinceEpochMs: Long,
+            limit: Int,
+        ): List<Petich> = error("ClaimedSweepTest calls only findExpired")
     }
 
     // Every other method of the repository. It throws rather than returning a plausible answer: this
