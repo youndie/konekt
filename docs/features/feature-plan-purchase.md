@@ -278,6 +278,16 @@ Then both answer 422 rather than rounding it
   case it exists for.
 - **The compensating step releases only what it took.** Every step can see everything, which makes
   "return the money twice" an easy mistake; the hold is the previous step's to release.
+- **And it undoes only what the ledger says happened.** The sentence above — compensation walks back
+  through the steps that RAN — is petich `0.1.0`'s contract and stops being true in `0.3.0`, which
+  also compensates the step whose `intercept` threw
+  ([petich#59](https://github.com/youndie/petich/issues/59)): the engine cannot tell an effect that
+  reached the far side from a call that never landed, it only learns that the step did not report
+  success. So `release` and `debit` ask the ledger whether the movement they are undoing is
+  recorded — a `HOLD` for a release, a `TOP_UP` for a reversal — and return quietly when it is not.
+  Without that, a gateway timeout inside `CollectFundsInterceptor` becomes a `TOP_UP_REVERSAL`
+  against a top-up with no `TOP_UP` and a balance below where it started, and a failure inside
+  `hold` becomes a refund of money that was never taken ([konekt#48](https://github.com/youndie/konekt/issues/48)).
 - **The event id is `<orderId>:<type>`, and the partition key is the order id read out of the
   payload.** The outbox row is `(id, type, payload)` and nothing else, so the key has to come from
   what is already there; a payload without an `orderId` is published unkeyed and round-robins.

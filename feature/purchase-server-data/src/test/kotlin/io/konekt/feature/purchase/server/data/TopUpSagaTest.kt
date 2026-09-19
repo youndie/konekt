@@ -17,6 +17,7 @@ import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.CollectFundsInterceptor
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
+import io.konekt.feature.purchase.server.domain.PaymentGateway
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpAmount
@@ -31,11 +32,15 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.Instant
@@ -201,4 +206,66 @@ class TopUpSagaTest {
             // always the subscriber's.
             assertNotNull(balances.balanceOf(accountId))
         }
+
+    // THE OTHER EXIT FROM THE SAME STEP, and the one no test reached until `konekt#48`.
+    //
+    // `intercept` settles at the provider BEFORE it credits. A decline comes back as a value and
+    // returns `Compensate`; a gateway that does not answer at all — a timeout, a reset connection,
+    // a 502 — comes back as a THROW, and then the credit never happened. petich `0.3.0` compensates
+    // the step that threw as well as the steps below it (youndie/petich#59), because the engine
+    // cannot tell an effect that reached the far side from a call that never landed.
+    //
+    // So this asks the interceptor the question the engine is about to ask it, directly: take back
+    // a top-up that was never given. The answer must be nothing at all — not a reversal against a
+    // top-up with no `TOP_UP`, and not a balance dropping by an amount nobody added. Written against
+    // petich `0.1.0`, where the engine does not yet make this call, so that the upgrade finds the
+    // question already answered.
+    @Test
+    fun `a settle that throws leaves nothing to take back`(): Unit =
+        runBlocking {
+            val interceptor = CollectFundsInterceptor(balances, UnreachableGateway)
+            val payload = TopUpPayload(subscriberId = subscriberId, accountId = accountId, amount = amount)
+            val saga =
+                Petich(
+                    id = Uuid.random().toString(),
+                    type = TOP_UP_SAGA_TYPE,
+                    status = PetichStatus.PROCESSING,
+                    payload = payload,
+                    enrichedPayload = SimpleEnrichedPayload(),
+                )
+
+            assertFailsWith<IllegalStateException> { interceptor.intercept(saga, payload) }
+            assertEquals(opening, balances.balanceOf(accountId))
+
+            interceptor.compensate(saga, payload)
+
+            assertEquals(opening, balances.balanceOf(accountId))
+            assertEquals(
+                0,
+                ledgerEntries(saga.id, LedgerEntryTable.TOP_UP_REVERSAL),
+                "a reversal was recorded against a top-up that never happened",
+            )
+        }
+
+    private fun ledgerEntries(
+        orderId: String,
+        kind: String,
+    ): Int =
+        transaction(PostgresHarness.database) {
+            LedgerEntryTable
+                .selectAll()
+                .where { (LedgerEntryTable.orderId eq orderId) and (LedgerEntryTable.kind eq kind) }
+                .count()
+                .toInt()
+        }
+
+    // A provider that does not answer. Not a `MockPaymentGateway.Mode`, because that class is
+    // PRODUCTION code — it is what a demonstration runs against — and a mode whose only job is to
+    // throw would be a switch nobody may flip on a stand.
+    private object UnreachableGateway : PaymentGateway {
+        override suspend fun settle(
+            orderId: String,
+            amount: Money,
+        ): PaymentGateway.Settlement = error("the gateway did not answer")
+    }
 }

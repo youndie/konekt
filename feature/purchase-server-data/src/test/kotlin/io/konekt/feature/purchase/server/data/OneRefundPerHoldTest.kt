@@ -147,4 +147,25 @@ class OneRefundPerHoldTest {
             assertEquals(1, releasesFor(second))
             assertEquals(5_000, balanceNow())
         }
+
+    // A REFUND FOR A HOLD THAT NEVER HAPPENED IS INVENTING MONEY, and it is the mirror of the defect
+    // this file was written for: the index stops a SECOND release, and nothing used to stop a FIRST
+    // one that had no hold under it.
+    //
+    // `hold` writes its entry only when the UPDATE moved a row, so an order with no `HOLD` is one
+    // where the money was never taken. petich `0.3.0` compensates the step that THREW as well as the
+    // steps below it (youndie/petich#59), and `HoldFundsInterceptor.compensate` calls `release` — so
+    // a gateway or a database that fails inside `hold` arrives here as a refund of nothing.
+    // `konekt#48` found it on the top-up side; this is the same question asked of the purchase side,
+    // and it costs more, because inventing money is worse than losing track of it.
+    @Test
+    fun `a release for an order that was never held adds nothing`() =
+        runBlocking {
+            val orderId = Uuid.random().toString()
+
+            balances.release(accountId, orderId, price)
+
+            assertEquals(0, releasesFor(orderId), "a release was recorded for an order with no hold")
+            assertEquals(5_000, balanceNow(), "the balance moved for a hold that never happened")
+        }
 }
