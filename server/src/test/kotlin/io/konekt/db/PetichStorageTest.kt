@@ -1,15 +1,16 @@
 package io.konekt.db
 
 import io.github.youndie.petich.EnrichedPayload
-import io.github.youndie.petich.InterceptorResult
 import io.github.youndie.petich.Petich
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
-import io.github.youndie.petich.PetichInterceptor
 import io.github.youndie.petich.PetichPayload
 import io.github.youndie.petich.PetichPhase
 import io.github.youndie.petich.PetichStatus
+import io.github.youndie.petich.PetichStep
+import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.SimpleEnrichedPayload
+import io.github.youndie.petich.petich
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
@@ -39,21 +40,17 @@ class PetichStorageTest {
         val note: String,
     ) : PetichPayload()
 
-    // The engine's forward pass, one step, doing nothing. What is under test is the storage, not the
-    // business logic — and a saga with no interceptors never reaches EXECUTION, so it would prove
-    // less than it looks.
-    class ProbeInterceptor : PetichInterceptor<ProbePayload> {
-        override val phase = PetichPhase.EXECUTION
-
-        override fun supports(payload: PetichPayload) = payload is ProbePayload
-
-        override suspend fun intercept(
-            petich: Petich,
+    // The engine's forward pass, one member, doing nothing. What is under test is the storage, not
+    // the business logic — and a saga no member applies to is refused outright (youndie/petich#78),
+    // so an empty definition would prove nothing at all.
+    class ProbeStep : PetichStep<ProbePayload> {
+        override suspend fun execute(
+            ctx: PetichStepContext,
             payload: ProbePayload,
-        ): InterceptorResult = InterceptorResult.Proceed()
+        ) = Unit
 
         override suspend fun compensate(
-            petich: Petich,
+            ctx: PetichStepContext,
             payload: ProbePayload,
         ) = Unit
     }
@@ -79,7 +76,7 @@ class PetichStorageTest {
 
     private val engine =
         PetichEngine(
-            interceptors = listOf(ProbeInterceptor()),
+            definitions = listOf(petich<ProbePayload>("probe") { step("probe", ProbeStep()) }),
             repository = repository,
             // The flag petich#3 added. On here from the first saga this repository ever runs, so
             // that a repository which cannot store events can never reach production quietly: the

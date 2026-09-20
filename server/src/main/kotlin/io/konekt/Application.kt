@@ -34,6 +34,7 @@ import io.github.youndie.petich.PetichEngineConfig
 import io.github.youndie.petich.PetichPayload
 import io.github.youndie.petich.PetichPhase
 import io.github.youndie.petich.PetichRepository
+import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.ResumePayload
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.SuspendedPetichSweeper
@@ -60,17 +61,20 @@ import io.konekt.feature.esim.server.data.esimWizardRoutes
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.purchase.server.data.StaticPlanCatalog
-import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.data.topUpRoutes
+import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
+import io.konekt.feature.purchase.server.domain.Held
 import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
+import io.konekt.feature.purchase.server.domain.Provisioned
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
-import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.purchase.server.domain.purchasePetich
+import io.konekt.feature.purchase.server.domain.topUpPetich
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
 import io.konekt.feature.shell.shared.api.ScreenChrome
@@ -114,7 +118,7 @@ import io.konekt.tariff.TariffChangePayload
 import io.konekt.tariff.TariffChanges
 import io.konekt.tariff.TariffConfirmation
 import io.konekt.tariff.ViewTariffChangeUseCase
-import io.konekt.tariff.tariffInterceptors
+import io.konekt.tariff.tariffPetich
 import io.konekt.tariff.tariffRoutes
 import io.konekt.theme.BrandThemeCatalogue
 import io.konekt.theme.themeRoutes
@@ -741,31 +745,53 @@ fun petichModule(
     single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
     single<PetichRepository> { get<OutboxAwarePetichRepository>() }
 
-    // TWO ENGINES OVER ONE SAGA TABLE, named by saga type. petich resolves nothing by type itself —
-    // an engine is a fixed interceptor list — so handing a top-up to the purchase engine finds no
-    // step that supports its payload, completes a saga that did nothing, and reports success.
-    single(named(PURCHASE_SAGA_TYPE)) {
+    // ONE ENGINE OVER ONE SAGA TABLE, and it resolves the saga by type itself.
+    //
+    // This used to be three, qualified by saga type, with a comment here explaining that petich
+    // "resolves nothing by type itself — an engine is a fixed interceptor list — so handing a top-up
+    // to the purchase engine finds no step that supports its payload, completes a saga that did
+    // nothing, and reports success". That was a workaround for a defect the library has now fixed:
+    // a definition IS a value keyed by type, so one engine holds all three and answers which of them
+    // owns a given row (youndie/petich B-31). The qualifiers, the three bindings and the dispatch
+    // lambda in the sweeper all go with it.
+    single {
         PetichEngine(
-            interceptors =
-                purchaseInterceptors(
-                    balances = get(),
-                    entitlements = get(),
-                    plans = get(),
-                    payments = get(),
-                    grants = get(),
-                    roaming = get(),
-                    clock = get(),
-                    json = get(),
+            definitions =
+                listOf(
+                    purchasePetich(
+                        balances = get(),
+                        entitlements = get(),
+                        plans = get(),
+                        payments = get(),
+                        grants = get(),
+                        roaming = get(),
+                        clock = get(),
+                        json = get(),
+                    ),
+                    topUpPetich(balances = get(), payments = get(), json = get()),
+                    tariffPetich(get(), get(), get(), DEFAULT_CONFIRMATION_TTL),
                 ),
             repository = get<OutboxAwarePetichRepository>(),
             config =
                 PetichEngineConfig(
+                    // petich degrades quietly to a plain update when handed a repository that cannot
+                    // store events, and a saga whose completion nobody was told about looks exactly
+                    // like one that worked.
                     requireOutbox = true,
                     // The canvas tells the subscriber a settlement "usually takes under 15
                     // seconds", and petich's default EXECUTION bound is 10 — so the screen
                     // describes a provider the engine would cancel. Raised rather than the copy
                     // lowered: a timeout that fires before the provider has answered turns a slow
                     // approval into a rollback nobody asked for.
+                    //
+                    // NOW IT APPLIES TO ALL THREE SAGAS, and that is a real consequence of having one
+                    // engine: petich's timeouts are per engine, not per definition. It is the right
+                    // way round here — the top-up settles through the same gateway and was running on
+                    // the 10-second default, which is a rollback waiting for a slow provider; the
+                    // tariff change only writes a row and cannot use the extra patience. A portfolio
+                    // where two saga types genuinely needed different bounds would still need two
+                    // engines, and then only one of them could have the sweeper.
+                    //
                     // The defaults, with one entry replaced. `PetichPhase.timeoutMs` is not
                     // visible from outside petich, so the defaults are taken from a default
                     // config rather than rebuilt — which is also the form that keeps every other
@@ -811,17 +837,8 @@ fun petichModule(
     single<TariffCatalogue> { StaticTariffCatalogue() }
     single<TariffChanges> { ExposedTariffChanges(database, get()) }
 
-    single(named(TARIFF_CHANGE_SAGA_TYPE)) {
-        PetichEngine(
-            interceptors = tariffInterceptors(get(), get(), get(), DEFAULT_CONFIRMATION_TTL),
-            repository = get<OutboxAwarePetichRepository>(),
-            config = PetichEngineConfig(requireOutbox = true),
-            clock = get<KonektClock>().asPetichClock(),
-        )
-    }
-
-    factory { StartTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get(), get()) }
-    factory { ConfirmTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get()) }
+    factory { StartTariffChangeUseCase(get(), get(), get(), get(), get()) }
+    factory { ConfirmTariffChangeUseCase(get(), get(), get(), get()) }
     // READING one change, which is what the screen does. No engine: it decides nothing and runs no
     // saga, and a use case that took one would be able to.
     factory { ViewTariffChangeUseCase(get(), get(), get()) }
@@ -832,18 +849,6 @@ fun petichModule(
     // is calling.
     factory { ViewProfileUseCase(get(), get()) }
 
-    single(named(TOP_UP_SAGA_TYPE)) {
-        PetichEngine(
-            interceptors = topUpInterceptors(balances = get(), payments = get(), json = get()),
-            repository = get<OutboxAwarePetichRepository>(),
-            // The same requireOutbox for the same reason: petich degrades quietly to a plain update
-            // when handed a repository that cannot store events, and a top-up whose completion nobody
-            // was told about looks exactly like one that worked.
-            config = PetichEngineConfig(requireOutbox = true),
-            clock = get<KonektClock>().asPetichClock(),
-        )
-    }
-
     single {
         SuspendedPetichSweeper(
             // WRAPPED, so that one replica compensates each abandoned saga rather than all of them
@@ -851,15 +856,12 @@ fun petichModule(
             // this replica is about to work on — and `SuspendedPetichSweeper` is petich's, so what
             // konekt owns is which repository it is handed.
             repository = ClaimedSweep(get<OutboxAwarePetichRepository>() as ExpiringPetichRepository, database, get()),
-            // BY SAGA TYPE, and `{ get() }` stopped being correct the moment there were two engines.
-            // The sweeper rolls back sagas that waited too long, and rolling one back with another
-            // type's interceptor list runs the wrong compensations — or none, which is the quiet one:
-            // the money stays held and the saga is marked failed.
-            //
-            // Only the purchase saga ever suspends today, so this dispatch is exercised by one branch.
-            // It is written for both anyway: the day a top-up grows a confirmation step, the failure
-            // is a balance that is never returned rather than a compile error.
-            engineFor = { saga -> get(named(saga.type)) },
+            // THE ENGINE, not a dispatch lambda. `engineFor = { saga -> get(named(saga.type)) }`
+            // existed because there were three engines and only this application knew which owned
+            // which; one engine holding every definition answers that itself, and a saga whose type
+            // it has no definition for is skipped rather than rolled back at random
+            // (youndie/petich B-31).
+            engine = get(),
             clock = get<KonektClock>().asPetichClock(),
         )
     }
@@ -879,6 +881,14 @@ private val petichSerializersModule =
             subclass(TariffChangePayload::class)
         }
         polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
+        // What a member recorded about what it did, written into the saga row beside its key. The
+        // same rule and the same first-request failure as the payloads above: unregistered means the
+        // first top-up that credits anything cannot be written down.
+        polymorphic(PetichStepRecord::class) {
+            subclass(Credited::class)
+            subclass(Held::class)
+            subclass(Provisioned::class)
+        }
         polymorphic(ResumePayload::class) {
             subclass(PurchaseConfirmation::class)
             // The tariff change's own confirmation. Without it a resume decodes to nothing and the

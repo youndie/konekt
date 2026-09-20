@@ -1,11 +1,16 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.petich.EnrichedPayload
+import io.github.youndie.petich.OutboxEvent
 import io.github.youndie.petich.Petich
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
+import io.github.youndie.petich.PetichMemberProbe
 import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.PetichSideEffect
 import io.github.youndie.petich.PetichStatus
+import io.github.youndie.petich.PetichStepContext
+import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
@@ -14,7 +19,8 @@ import io.konekt.db.tables.AccountTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
-import io.konekt.feature.purchase.server.domain.CollectFundsInterceptor
+import io.konekt.feature.purchase.server.domain.CollectFunds
+import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.OrderStatus
 import io.konekt.feature.purchase.server.domain.PaymentGateway
@@ -23,7 +29,7 @@ import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpAmount
 import io.konekt.feature.purchase.server.domain.TopUpLimits
 import io.konekt.feature.purchase.server.domain.TopUpPayload
-import io.konekt.feature.purchase.server.domain.topUpInterceptors
+import io.konekt.feature.purchase.server.domain.topUpPetich
 import io.konekt.testing.PostgresHarness
 import io.konekt.time.KonektClock
 import io.konekt.time.asPetichClock
@@ -43,6 +49,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.time.Duration
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -61,6 +68,10 @@ class TopUpSagaTest {
                 SerializersModule {
                     polymorphic(PetichPayload::class) { subclass(TopUpPayload::class) }
                     polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
+                    // The same registration the application makes, and for the same reason the
+                    // comment there gives: unregistered means the first top-up that credits
+                    // anything cannot be written down at all.
+                    polymorphic(PetichStepRecord::class) { subclass(Credited::class) }
                 }
         }
 
@@ -76,7 +87,7 @@ class TopUpSagaTest {
         StartTopUpUseCase(
             engine =
                 PetichEngine(
-                    interceptors = topUpInterceptors(balances, payments, json),
+                    definitions = listOf(topUpPetich(balances, payments, json)),
                     repository = repository,
                     config = PetichEngineConfig(requireOutbox = true),
                     clock = clock.asPetichClock(),
@@ -183,8 +194,7 @@ class TopUpSagaTest {
     @Test
     fun `taking a credit back debits exactly what was credited`(): Unit =
         runBlocking {
-            val interceptor =
-                CollectFundsInterceptor(balances, MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE))
+            val member = CollectFunds(balances, MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE))
             val payload = TopUpPayload(subscriberId = subscriberId, accountId = accountId, amount = amount)
             val saga =
                 Petich(
@@ -195,10 +205,13 @@ class TopUpSagaTest {
                     enrichedPayload = SimpleEnrichedPayload(),
                 )
 
-            interceptor.intercept(saga, payload)
+            val ctx = PetichMemberProbe(saga, stepKey = "collect-funds")
+            member.execute(ctx, payload)
             assertEquals(opening + amount, balances.balanceOf(accountId))
 
-            interceptor.compensate(saga, payload)
+            // The undo gets the SAME context, which is how it sees what the action recorded — the
+            // engine does this by keeping the record on the saga's row between the two.
+            member.compensate(ctx, payload)
 
             assertEquals(opening, balances.balanceOf(accountId))
             // Both movements are in the ledger under their own kinds, which is what keeps a top-up
@@ -223,7 +236,7 @@ class TopUpSagaTest {
     @Test
     fun `a settle that throws leaves nothing to take back`(): Unit =
         runBlocking {
-            val interceptor = CollectFundsInterceptor(balances, UnreachableGateway)
+            val member = CollectFunds(balances, UnreachableGateway)
             val payload = TopUpPayload(subscriberId = subscriberId, accountId = accountId, amount = amount)
             val saga =
                 Petich(
@@ -234,10 +247,11 @@ class TopUpSagaTest {
                     enrichedPayload = SimpleEnrichedPayload(),
                 )
 
-            assertFailsWith<IllegalStateException> { interceptor.intercept(saga, payload) }
+            val ctx = PetichMemberProbe(saga, stepKey = "collect-funds")
+            assertFailsWith<IllegalStateException> { member.execute(ctx, payload) }
             assertEquals(opening, balances.balanceOf(accountId))
 
-            interceptor.compensate(saga, payload)
+            member.compensate(ctx, payload)
 
             assertEquals(opening, balances.balanceOf(accountId))
             assertEquals(

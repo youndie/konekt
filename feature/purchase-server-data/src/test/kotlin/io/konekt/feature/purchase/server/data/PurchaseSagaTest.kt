@@ -5,6 +5,7 @@ import io.github.youndie.petich.ExpiringPetichRepository
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
 import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.ResumePayload
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.SuspendedPetichSweeper
@@ -17,11 +18,14 @@ import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.Entitlement
+import io.konekt.feature.purchase.server.domain.Held
 import io.konekt.feature.purchase.server.domain.OrderStatus
+import io.konekt.feature.purchase.server.domain.Provisioned
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.PurchaseRefusals
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
+import io.konekt.feature.purchase.server.domain.purchasePetich
 import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.testing.PostgresHarness
@@ -83,6 +87,10 @@ class PurchaseSagaTest {
                     polymorphic(PetichPayload::class) { subclass(PurchasePayload::class) }
                     polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
                     polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
+                    polymorphic(PetichStepRecord::class) {
+                        subclass(Held::class)
+                        subclass(Provisioned::class)
+                    }
                 }
         }
 
@@ -105,17 +113,19 @@ class PurchaseSagaTest {
 
     private val engine =
         PetichEngine(
-            interceptors =
-                purchaseInterceptors(
-                    balances,
-                    entitlements,
-                    plans,
-                    payments,
-                    grants,
-                    roaming,
-                    clock,
-                    json,
-                    ttl,
+            definitions =
+                listOf(
+                    purchasePetich(
+                        balances,
+                        entitlements,
+                        plans,
+                        payments,
+                        grants,
+                        roaming,
+                        clock,
+                        json,
+                        ttl,
+                    ),
                 ),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
@@ -125,7 +135,7 @@ class PurchaseSagaTest {
     private val sweeper =
         SuspendedPetichSweeper(
             repository = repository as ExpiringPetichRepository,
-            engineFor = { engine },
+            engine = engine,
             clock = clock.asPetichClock(),
         )
 

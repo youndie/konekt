@@ -106,11 +106,23 @@ enum class OrderStatus(
         fun of(status: PetichStatus): OrderStatus =
             when (status) {
                 PetichStatus.DRAFT, PetichStatus.PROCESSING -> PENDING
+
                 PetichStatus.PENDING_SIGNATURE -> AWAITING_CONFIRMATION
+
                 PetichStatus.COMPLETED -> COMPLETED
+
                 PetichStatus.REJECTED -> REJECTED
+
                 PetichStatus.FAILED -> COMPENSATED
-                PetichStatus.COMPENSATING -> COMPENSATING
+
+                // FOLDED IN, AND THAT IS A CHOICE TO REVISIT. The comment on COMPENSATING above
+                // says this bucket means "in flight, or stuck because a compensating step itself
+                // failed — the one state that needs a person". petich can now say the second half
+                // on its own: COMPENSATION_FAILED means the rollback gave up and nothing will try
+                // again. Keeping them together preserves today's behaviour and gives up a
+                // distinction that has just become available — worth its own decision, since a new
+                // OrderStatus is a product change and not a migration.
+                PetichStatus.COMPENSATING, PetichStatus.COMPENSATION_FAILED -> COMPENSATING
             }
     }
 }

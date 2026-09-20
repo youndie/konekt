@@ -1,17 +1,18 @@
 package io.konekt.time
 
 import io.github.youndie.petich.EnrichedPayload
-import io.github.youndie.petich.InterceptorResult
 import io.github.youndie.petich.Petich
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
-import io.github.youndie.petich.PetichInterceptor
 import io.github.youndie.petich.PetichPayload
 import io.github.youndie.petich.PetichPhase
 import io.github.youndie.petich.PetichStatus
+import io.github.youndie.petich.PetichStep
+import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.SuspendedPetichSweeper
 import io.github.youndie.petich.isTerminal
+import io.github.youndie.petich.petich
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
@@ -49,27 +50,23 @@ class SuspendedSagaExpiryTest {
 
     // Records whether the rollback actually ran. The status alone would not distinguish "the engine
     // marked it terminal" from "the engine undid the work", and undoing the work is the whole point.
-    class ReservingInterceptor : PetichInterceptor<ConfirmablePayload> {
+    class ReservingStep : PetichStep<ConfirmablePayload> {
         var reserved = false
         var released = false
 
-        override val phase = PetichPhase.AUTHORIZATION
-
-        override fun supports(payload: PetichPayload) = payload is ConfirmablePayload
-
-        override suspend fun intercept(
-            petich: Petich,
+        override suspend fun execute(
+            ctx: PetichStepContext,
             payload: ConfirmablePayload,
-        ): InterceptorResult {
+        ) {
             reserved = true
-            // Five minutes is this step's own deadline, not the engine's: typing a one-time code and
-            // approving a long-running request live on different time scales, and the step knows
-            // that.
-            return InterceptorResult.Suspend(requiredAction = "CONFIRM", ttl = 5.minutes)
+            // Five minutes is this member's own deadline, not the engine's: typing a one-time code
+            // and approving a long-running request live on different time scales, and the member
+            // knows that.
+            return ctx.suspendFor("CONFIRM", 5.minutes)
         }
 
         override suspend fun compensate(
-            petich: Petich,
+            ctx: PetichStepContext,
             payload: ConfirmablePayload,
         ) {
             released = true
@@ -94,11 +91,11 @@ class SuspendedSagaExpiryTest {
             outboxTable = OutboxEventsTable(),
         )
 
-    private val interceptor = ReservingInterceptor()
+    private val member = ReservingStep()
 
     private val engine =
         PetichEngine(
-            interceptors = listOf(interceptor),
+            definitions = listOf(petich<ConfirmablePayload>("confirmable") { authorize("reserve", member) }),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             // The same clock the sweeper reads. One notion of now for both, so a test that moves time
@@ -109,7 +106,7 @@ class SuspendedSagaExpiryTest {
     private val sweeper =
         SuspendedPetichSweeper(
             repository = repository,
-            engineFor = { engine },
+            engine = engine,
             clock = clock.asPetichClock(),
         )
 
@@ -132,8 +129,8 @@ class SuspendedSagaExpiryTest {
 
             val suspended = assertNotNull(repository.findById("confirmable-1"))
             assertEquals(PetichStatus.PENDING_SIGNATURE, suspended.status)
-            assertTrue(interceptor.reserved, "the step that holds the resource did not run")
-            assertTrue(!interceptor.released, "nothing should be released while the wait is open")
+            assertTrue(member.reserved, "the step that holds the resource did not run")
+            assertTrue(!member.released, "nothing should be released while the wait is open")
             assertNotNull(suspended.suspendedUntilEpochMs, "no deadline was stamped, so nothing would ever expire")
 
             // Before the deadline, a sweep must do nothing. Asserted rather than assumed: a sweeper
@@ -146,6 +143,6 @@ class SuspendedSagaExpiryTest {
 
             val expired = assertNotNull(repository.findById("confirmable-1"))
             assertTrue(expired.status.isTerminal(), "an expired saga must end, it was ${expired.status}")
-            assertTrue(interceptor.released, "the saga ended without undoing what it had already done")
+            assertTrue(member.released, "the saga ended without undoing what it had already done")
         }
 }
