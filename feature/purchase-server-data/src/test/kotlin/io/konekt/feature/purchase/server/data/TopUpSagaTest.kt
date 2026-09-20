@@ -5,6 +5,7 @@ import io.github.youndie.petich.OutboxEvent
 import io.github.youndie.petich.Petich
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
+import io.github.youndie.petich.PetichMemberProbe
 import io.github.youndie.petich.PetichPayload
 import io.github.youndie.petich.PetichSideEffect
 import io.github.youndie.petich.PetichStatus
@@ -204,7 +205,7 @@ class TopUpSagaTest {
                     enrichedPayload = SimpleEnrichedPayload(),
                 )
 
-            val ctx = RecordingContext(saga)
+            val ctx = PetichMemberProbe(saga, stepKey = "collect-funds")
             member.execute(ctx, payload)
             assertEquals(opening + amount, balances.balanceOf(accountId))
 
@@ -246,7 +247,7 @@ class TopUpSagaTest {
                     enrichedPayload = SimpleEnrichedPayload(),
                 )
 
-            val ctx = RecordingContext(saga)
+            val ctx = PetichMemberProbe(saga, stepKey = "collect-funds")
             assertFailsWith<IllegalStateException> { member.execute(ctx, payload) }
             assertEquals(opening, balances.balanceOf(accountId))
 
@@ -280,47 +281,5 @@ class TopUpSagaTest {
             orderId: String,
             amount: Money,
         ): PaymentGateway.Settlement = error("the gateway did not answer")
-    }
-
-    /**
-     * A context for calling a member directly, which petich does not ship one of.
-     *
-     * The two cases above ask a member the question the engine is about to ask it, and a member now
-     * takes a context rather than the saga. Eleven methods of boilerplate is what every consumer of
-     * this engine writes for itself — and it grew twice while the model settled, each time as a
-     * compile error here rather than upstream. shashki wrote the same double independently, which is
-     * the argument for petich shipping one.
-     */
-    private class RecordingContext(
-        override val petich: Petich,
-        override val stepKey: String = "collect-funds",
-    ) : PetichStepContext {
-        private var record: PetichStepRecord? = null
-
-        override fun enrich(payload: EnrichedPayload) = Unit
-
-        override fun record(value: PetichStepRecord) {
-            record = value
-        }
-
-        override fun recordedValue(): PetichStepRecord? = record
-
-        override fun emit(event: OutboxEvent) = Unit
-
-        override fun attach(effect: PetichSideEffect) = Unit
-
-        override fun suspendFor(
-            action: String,
-            ttl: Duration?,
-        ) = Unit
-
-        override fun resuspendFor(
-            action: String,
-            ttl: Duration?,
-        ) = Unit
-
-        override fun reject(reason: String) = Unit
-
-        override fun fail(reason: String) = Unit
     }
 }
