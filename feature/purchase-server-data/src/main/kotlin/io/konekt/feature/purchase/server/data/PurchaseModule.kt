@@ -1,56 +1,25 @@
 package io.konekt.feature.purchase.server.data
 
-import io.github.youndie.petich.PetichInterceptor
 import io.konekt.feature.purchase.server.domain.AccountBalances
-import io.konekt.feature.purchase.server.domain.AnnouncePurchaseInterceptor
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
 import io.konekt.feature.purchase.server.domain.Entitlements
 import io.konekt.feature.purchase.server.domain.FindOrderUseCase
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
 import io.konekt.feature.purchase.server.domain.HistoryRepository
-import io.konekt.feature.purchase.server.domain.HoldFundsInterceptor
 import io.konekt.feature.purchase.server.domain.LoadHistoryUseCase
 import io.konekt.feature.purchase.server.domain.LoadOrderScreenUseCase
 import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.PaymentGateway
 import io.konekt.feature.purchase.server.domain.PlanCatalog
-import io.konekt.feature.purchase.server.domain.ProvisionInterceptor
-import io.konekt.feature.purchase.server.domain.PurchaseEvents
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.StartTopUpUseCase
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
-import io.konekt.feature.purchase.server.domain.ValidatePurchaseInterceptor
-import io.konekt.feature.roaming.server.domain.RoamingPackages
-import io.konekt.feature.usage.server.domain.UsageGrants
-import io.konekt.time.KonektClock
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Duration
-
-// The four steps, in one place, so the saga can be read as a list rather than assembled from
-// annotations. Order inside a phase is priority; between phases it is the engine's fixed order.
-fun purchaseInterceptors(
-    balances: AccountBalances,
-    entitlements: Entitlements,
-    plans: PlanCatalog,
-    payments: PaymentGateway,
-    grants: UsageGrants,
-    roaming: RoamingPackages,
-    clock: KonektClock,
-    json: Json,
-    confirmationTtl: Duration = DEFAULT_CONFIRMATION_TTL,
-): List<PetichInterceptor<*>> {
-    val events = PurchaseEvents(json)
-    return listOf(
-        ValidatePurchaseInterceptor(plans, balances),
-        HoldFundsInterceptor(balances, entitlements, events, confirmationTtl),
-        ProvisionInterceptor(balances, entitlements, payments, grants, roaming, clock),
-        AnnouncePurchaseInterceptor(events),
-    )
-}
 
 // The engine is NOT built here. It is built by the composition root, because an application usually
 // keeps several — one per saga type, sharing one saga table — and only the root knows the set. A

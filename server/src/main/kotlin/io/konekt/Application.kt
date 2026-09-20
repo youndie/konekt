@@ -61,17 +61,19 @@ import io.konekt.feature.esim.server.data.esimWizardRoutes
 import io.konekt.feature.esim.shared.api.esimActionsSerializersModule
 import io.konekt.feature.purchase.server.data.MockPaymentGateway
 import io.konekt.feature.purchase.server.data.StaticPlanCatalog
-import io.konekt.feature.purchase.server.data.purchaseInterceptors
 import io.konekt.feature.purchase.server.data.purchaseModule
 import io.konekt.feature.purchase.server.data.purchaseRoutes
 import io.konekt.feature.purchase.server.data.topUpRoutes
 import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
+import io.konekt.feature.purchase.server.domain.Held
 import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
+import io.konekt.feature.purchase.server.domain.Provisioned
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
+import io.konekt.feature.purchase.server.domain.purchasePetich
 import io.konekt.feature.purchase.server.domain.topUpPetich
 import io.konekt.feature.purchase.shared.api.purchaseActionsSerializersModule
 import io.konekt.feature.roaming.server.data.roamingModule
@@ -748,16 +750,18 @@ fun petichModule(
     // step that supports its payload, completes a saga that did nothing, and reports success.
     single(named(PURCHASE_SAGA_TYPE)) {
         PetichEngine(
-            interceptors =
-                purchaseInterceptors(
-                    balances = get(),
-                    entitlements = get(),
-                    plans = get(),
-                    payments = get(),
-                    grants = get(),
-                    roaming = get(),
-                    clock = get(),
-                    json = get(),
+            definitions =
+                listOf(
+                    purchasePetich(
+                        balances = get(),
+                        entitlements = get(),
+                        plans = get(),
+                        payments = get(),
+                        grants = get(),
+                        roaming = get(),
+                        clock = get(),
+                        json = get(),
+                    ),
                 ),
             repository = get<OutboxAwarePetichRepository>(),
             config =
@@ -884,7 +888,11 @@ private val petichSerializersModule =
         // What a member recorded about what it did, written into the saga row beside its key. The
         // same rule and the same first-request failure as the payloads above: unregistered means the
         // first top-up that credits anything cannot be written down.
-        polymorphic(PetichStepRecord::class) { subclass(Credited::class) }
+        polymorphic(PetichStepRecord::class) {
+            subclass(Credited::class)
+            subclass(Held::class)
+            subclass(Provisioned::class)
+        }
         polymorphic(ResumePayload::class) {
             subclass(PurchaseConfirmation::class)
             // The tariff change's own confirmation. Without it a resume decodes to nothing and the

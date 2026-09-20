@@ -4,6 +4,7 @@ import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
 import io.github.youndie.petich.PetichPayload
+import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.ResumePayload
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.postgres.ExposedPetichRepository
@@ -15,10 +16,13 @@ import io.konekt.domain.Currency
 import io.konekt.domain.Money
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
 import io.konekt.feature.purchase.server.domain.Entitlement
+import io.konekt.feature.purchase.server.domain.Held
 import io.konekt.feature.purchase.server.domain.OrderStatus
+import io.konekt.feature.purchase.server.domain.Provisioned
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
 import io.konekt.feature.purchase.server.domain.StartPurchaseUseCase
+import io.konekt.feature.purchase.server.domain.purchasePetich
 import io.konekt.feature.roaming.server.domain.InMemoryRoamingPackages
 import io.konekt.feature.usage.server.data.ExposedUsageCounters
 import io.konekt.testing.PostgresHarness
@@ -62,6 +66,10 @@ class PaymentDeclineTest {
                     polymorphic(PetichPayload::class) { subclass(PurchasePayload::class) }
                     polymorphic(EnrichedPayload::class) { subclass(SimpleEnrichedPayload::class) }
                     polymorphic(ResumePayload::class) { subclass(PurchaseConfirmation::class) }
+                    polymorphic(PetichStepRecord::class) {
+                        subclass(Held::class)
+                        subclass(Provisioned::class)
+                    }
                 }
         }
 
@@ -83,17 +91,19 @@ class PaymentDeclineTest {
     private fun sagaWith(payments: MockPaymentGateway): Pair<StartPurchaseUseCase, ConfirmPurchaseUseCase> {
         val engine =
             PetichEngine(
-                interceptors =
-                    purchaseInterceptors(
-                        balances,
-                        entitlements,
-                        plans,
-                        payments,
-                        grants,
-                        roaming,
-                        clock,
-                        json,
-                        5.minutes,
+                definitions =
+                    listOf(
+                        purchasePetich(
+                            balances,
+                            entitlements,
+                            plans,
+                            payments,
+                            grants,
+                            roaming,
+                            clock,
+                            json,
+                            5.minutes,
+                        ),
                     ),
                 repository = repository,
                 config = PetichEngineConfig(requireOutbox = true),
