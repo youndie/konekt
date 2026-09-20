@@ -12,7 +12,7 @@ import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.SimpleEnrichedPayload
 import io.github.youndie.petich.SuspendedPetichSweeper
 import io.github.youndie.petich.isTerminal
-import io.github.youndie.petich.petich
+import io.github.youndie.petich.petichDefinition
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
@@ -95,7 +95,7 @@ class SuspendedSagaExpiryTest {
 
     private val engine =
         PetichEngine(
-            definitions = listOf(petich<ConfirmablePayload>("confirmable") { step("reserve", member) }),
+            definitions = listOf(petichDefinition<ConfirmablePayload>("confirmable") { step("reserve", member) }),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             // The same clock the sweeper reads. One notion of now for both, so a test that moves time

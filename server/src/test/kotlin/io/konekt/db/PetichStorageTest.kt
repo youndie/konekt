@@ -10,7 +10,7 @@ import io.github.youndie.petich.PetichStatus
 import io.github.youndie.petich.PetichStep
 import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.SimpleEnrichedPayload
-import io.github.youndie.petich.petich
+import io.github.youndie.petich.petichDefinition
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
@@ -76,7 +76,7 @@ class PetichStorageTest {
 
     private val engine =
         PetichEngine(
-            definitions = listOf(petich<ProbePayload>("probe") { step("probe", ProbeStep()) }),
+            definitions = listOf(petichDefinition<ProbePayload>("probe") { step("probe", ProbeStep()) }),
             repository = repository,
             // The flag petich#3 added. On here from the first saga this repository ever runs, so
             // that a repository which cannot store events can never reach production quietly: the

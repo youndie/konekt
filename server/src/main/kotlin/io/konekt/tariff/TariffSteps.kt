@@ -6,7 +6,7 @@ import io.github.youndie.petich.PetichCheckContext
 import io.github.youndie.petich.PetichDefinition
 import io.github.youndie.petich.PetichStep
 import io.github.youndie.petich.PetichStepContext
-import io.github.youndie.petich.petich
+import io.github.youndie.petich.petichDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -172,7 +172,7 @@ fun tariffPetich(
     confirmationTtl: Duration,
 ): PetichDefinition<TariffChangePayload> =
     // THE TYPE COMES FROM THE CONSTANT the rest of the code already uses, never spelled by hand.
-    petich(TARIFF_CHANGE_SAGA_TYPE) {
+    petichDefinition(TARIFF_CHANGE_SAGA_TYPE) {
         validate("catalogue-and-pending", ValidateTariffChange(catalogue, changes))
         step("record-change", RecordTariffChange(changes, confirmationTtl))
         step("apply", ApplyTariffChange(changes, TariffEvents(json)))
