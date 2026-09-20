@@ -9,7 +9,7 @@ import io.github.youndie.petich.PetichDefinition
 import io.github.youndie.petich.PetichStep
 import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.PetichStepRecord
-import io.github.youndie.petich.petich
+import io.github.youndie.petich.petichDefinition
 import io.github.youndie.petich.recorded
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -162,7 +162,7 @@ fun topUpPetich(
     // The TYPE COMES FROM THE CONSTANT the rest of the code already uses. Spelled by hand it read
     // `topup` against a row that says `top_up`, and petich — before youndie/petich#78 — ran zero
     // members and reported the saga complete.
-    petich(TOP_UP_SAGA_TYPE) {
+    petichDefinition(TOP_UP_SAGA_TYPE) {
         validate("limits", ValidateTopUp(balances))
         step("collect-funds", CollectFunds(balances, payments))
         announce("announce", AnnounceTopUp(TopUpEvents(json)))

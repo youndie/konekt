@@ -9,7 +9,7 @@ import io.github.youndie.petich.PetichDefinition
 import io.github.youndie.petich.PetichStep
 import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.PetichStepRecord
-import io.github.youndie.petich.petich
+import io.github.youndie.petich.petichDefinition
 import io.github.youndie.petich.recorded
 import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.roaming.server.domain.Zones
@@ -339,7 +339,7 @@ fun purchasePetich(
     // definition declared `purchse` against a row that says `purchase` used to run zero members and
     // report the saga complete; petich refuses that now (youndie/petich#78), and the constant is what
     // keeps the refusal from being something anybody has to see.
-    return petich(PURCHASE_SAGA_TYPE) {
+    return petichDefinition(PURCHASE_SAGA_TYPE) {
         validate("plan-and-funds", ValidatePurchase(plans, balances))
         step("hold-funds", HoldFunds(balances, entitlements, events, confirmationTtl))
         step("provision", Provision(balances, entitlements, payments, grants, roaming, clock))
