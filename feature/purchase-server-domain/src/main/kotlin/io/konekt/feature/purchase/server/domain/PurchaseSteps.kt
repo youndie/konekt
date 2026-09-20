@@ -110,8 +110,13 @@ class ValidatePurchase(
 
 // 2. AUTHORIZATION — hold the money, then wait for the subscriber.
 //
-// ONE MEMBER RATHER THAN TWO, per D5, and `authorize` takes a step as well as a check for exactly
-// this (petich D3). The hold happens, and then the member suspends: the saga stops, holding neither a
+// ONE MEMBER RATHER THAN TWO, per D5 — and a STEP, which is the correction petich made to D3 on our
+// account. That decision existed because this member holds money and then waits, and `authorize` was
+// widened to take it; what it was really saying is that a hold is not an *authorisation* in petich's
+// sense. In payments the word means the hold itself; in petich's phases it asks whether it is
+// allowed. So this sits in EXECUTION, above the members that depend on it, and the rollback gets the
+// order it should always have had. The hold happens, and then the member suspends: the saga stops,
+// holding neither a
 // thread nor a database connection, and continues on a later HTTP request. A member that suspended is
 // deliberately NOT re-executed on resume — the engine stores the index PAST it — so the money is held
 // exactly once.
@@ -343,7 +348,7 @@ fun purchasePetich(
     // keeps the refusal from being something anybody has to see.
     return petich(PURCHASE_SAGA_TYPE) {
         validate("plan-and-funds", ValidatePurchase(plans, balances))
-        authorize("hold-funds", HoldFunds(balances, entitlements, events, confirmationTtl))
+        step("hold-funds", HoldFunds(balances, entitlements, events, confirmationTtl))
         step("provision", Provision(balances, entitlements, payments, grants, roaming, clock))
         announce("announce", AnnouncePurchase(events))
     }
