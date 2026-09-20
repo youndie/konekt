@@ -63,7 +63,7 @@ class TariffChangeSagaTest {
 
     private val engine =
         PetichEngine(
-            interceptors = tariffInterceptors(catalogue, changes, json, 5.minutes),
+            definitions = listOf(tariffPetich(catalogue, changes, json, 5.minutes)),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             clock = clock.asPetichClock(),

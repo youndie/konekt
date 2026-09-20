@@ -118,7 +118,7 @@ import io.konekt.tariff.TariffChangePayload
 import io.konekt.tariff.TariffChanges
 import io.konekt.tariff.TariffConfirmation
 import io.konekt.tariff.ViewTariffChangeUseCase
-import io.konekt.tariff.tariffInterceptors
+import io.konekt.tariff.tariffPetich
 import io.konekt.tariff.tariffRoutes
 import io.konekt.theme.BrandThemeCatalogue
 import io.konekt.theme.themeRoutes
@@ -819,7 +819,7 @@ fun petichModule(
 
     single(named(TARIFF_CHANGE_SAGA_TYPE)) {
         PetichEngine(
-            interceptors = tariffInterceptors(get(), get(), get(), DEFAULT_CONFIRMATION_TTL),
+            definitions = listOf(tariffPetich(get(), get(), get(), DEFAULT_CONFIRMATION_TTL)),
             repository = get<OutboxAwarePetichRepository>(),
             config = PetichEngineConfig(requireOutbox = true),
             clock = get<KonektClock>().asPetichClock(),
