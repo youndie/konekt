@@ -745,10 +745,16 @@ fun petichModule(
     single<OutboxAwarePetichRepository> { ExposedPetichRepository(database, get(), get()) }
     single<PetichRepository> { get<OutboxAwarePetichRepository>() }
 
-    // TWO ENGINES OVER ONE SAGA TABLE, named by saga type. petich resolves nothing by type itself —
-    // an engine is a fixed interceptor list — so handing a top-up to the purchase engine finds no
-    // step that supports its payload, completes a saga that did nothing, and reports success.
-    single(named(PURCHASE_SAGA_TYPE)) {
+    // ONE ENGINE OVER ONE SAGA TABLE, and it resolves the saga by type itself.
+    //
+    // This used to be three, qualified by saga type, with a comment here explaining that petich
+    // "resolves nothing by type itself — an engine is a fixed interceptor list — so handing a top-up
+    // to the purchase engine finds no step that supports its payload, completes a saga that did
+    // nothing, and reports success". That was a workaround for a defect the library has now fixed:
+    // a definition IS a value keyed by type, so one engine holds all three and answers which of them
+    // owns a given row (youndie/petich B-31). The qualifiers, the three bindings and the dispatch
+    // lambda in the sweeper all go with it.
+    single {
         PetichEngine(
             definitions =
                 listOf(
@@ -762,16 +768,30 @@ fun petichModule(
                         clock = get(),
                         json = get(),
                     ),
+                    topUpPetich(balances = get(), payments = get(), json = get()),
+                    tariffPetich(get(), get(), get(), DEFAULT_CONFIRMATION_TTL),
                 ),
             repository = get<OutboxAwarePetichRepository>(),
             config =
                 PetichEngineConfig(
+                    // petich degrades quietly to a plain update when handed a repository that cannot
+                    // store events, and a saga whose completion nobody was told about looks exactly
+                    // like one that worked.
                     requireOutbox = true,
                     // The canvas tells the subscriber a settlement "usually takes under 15
                     // seconds", and petich's default EXECUTION bound is 10 — so the screen
                     // describes a provider the engine would cancel. Raised rather than the copy
                     // lowered: a timeout that fires before the provider has answered turns a slow
                     // approval into a rollback nobody asked for.
+                    //
+                    // NOW IT APPLIES TO ALL THREE SAGAS, and that is a real consequence of having one
+                    // engine: petich's timeouts are per engine, not per definition. It is the right
+                    // way round here — the top-up settles through the same gateway and was running on
+                    // the 10-second default, which is a rollback waiting for a slow provider; the
+                    // tariff change only writes a row and cannot use the extra patience. A portfolio
+                    // where two saga types genuinely needed different bounds would still need two
+                    // engines, and then only one of them could have the sweeper.
+                    //
                     // The defaults, with one entry replaced. `PetichPhase.timeoutMs` is not
                     // visible from outside petich, so the defaults are taken from a default
                     // config rather than rebuilt — which is also the form that keeps every other
@@ -817,17 +837,8 @@ fun petichModule(
     single<TariffCatalogue> { StaticTariffCatalogue() }
     single<TariffChanges> { ExposedTariffChanges(database, get()) }
 
-    single(named(TARIFF_CHANGE_SAGA_TYPE)) {
-        PetichEngine(
-            definitions = listOf(tariffPetich(get(), get(), get(), DEFAULT_CONFIRMATION_TTL)),
-            repository = get<OutboxAwarePetichRepository>(),
-            config = PetichEngineConfig(requireOutbox = true),
-            clock = get<KonektClock>().asPetichClock(),
-        )
-    }
-
-    factory { StartTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get(), get()) }
-    factory { ConfirmTariffChangeUseCase(get(named(TARIFF_CHANGE_SAGA_TYPE)), get(), get(), get()) }
+    factory { StartTariffChangeUseCase(get(), get(), get(), get(), get()) }
+    factory { ConfirmTariffChangeUseCase(get(), get(), get(), get()) }
     // READING one change, which is what the screen does. No engine: it decides nothing and runs no
     // saga, and a use case that took one would be able to.
     factory { ViewTariffChangeUseCase(get(), get(), get()) }
@@ -838,18 +849,6 @@ fun petichModule(
     // is calling.
     factory { ViewProfileUseCase(get(), get()) }
 
-    single(named(TOP_UP_SAGA_TYPE)) {
-        PetichEngine(
-            definitions = listOf(topUpPetich(balances = get(), payments = get(), json = get())),
-            repository = get<OutboxAwarePetichRepository>(),
-            // The same requireOutbox for the same reason: petich degrades quietly to a plain update
-            // when handed a repository that cannot store events, and a top-up whose completion nobody
-            // was told about looks exactly like one that worked.
-            config = PetichEngineConfig(requireOutbox = true),
-            clock = get<KonektClock>().asPetichClock(),
-        )
-    }
-
     single {
         SuspendedPetichSweeper(
             // WRAPPED, so that one replica compensates each abandoned saga rather than all of them
@@ -857,15 +856,12 @@ fun petichModule(
             // this replica is about to work on — and `SuspendedPetichSweeper` is petich's, so what
             // konekt owns is which repository it is handed.
             repository = ClaimedSweep(get<OutboxAwarePetichRepository>() as ExpiringPetichRepository, database, get()),
-            // BY SAGA TYPE, and `{ get() }` stopped being correct the moment there were two engines.
-            // The sweeper rolls back sagas that waited too long, and rolling one back with another
-            // type's interceptor list runs the wrong compensations — or none, which is the quiet one:
-            // the money stays held and the saga is marked failed.
-            //
-            // Only the purchase saga ever suspends today, so this dispatch is exercised by one branch.
-            // It is written for both anyway: the day a top-up grows a confirmation step, the failure
-            // is a balance that is never returned rather than a compile error.
-            engineFor = { saga -> get(named(saga.type)) },
+            // THE ENGINE, not a dispatch lambda. `engineFor = { saga -> get(named(saga.type)) }`
+            // existed because there were three engines and only this application knew which owned
+            // which; one engine holding every definition answers that itself, and a saga whose type
+            // it has no definition for is skipped rather than rolled back at random
+            // (youndie/petich B-31).
+            engine = get(),
             clock = get<KonektClock>().asPetichClock(),
         )
     }

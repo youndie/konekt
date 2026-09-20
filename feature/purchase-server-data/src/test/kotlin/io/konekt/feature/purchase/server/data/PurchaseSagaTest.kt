@@ -135,7 +135,7 @@ class PurchaseSagaTest {
     private val sweeper =
         SuspendedPetichSweeper(
             repository = repository as ExpiringPetichRepository,
-            engineFor = { engine },
+            engine = engine,
             clock = clock.asPetichClock(),
         )
 

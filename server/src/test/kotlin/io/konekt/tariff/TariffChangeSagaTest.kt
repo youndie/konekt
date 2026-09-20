@@ -121,7 +121,7 @@ class TariffChangeSagaTest {
 
             SuspendedPetichSweeper(
                 repository = repository as ExpiringPetichRepository,
-                engineFor = { engine },
+                engine = engine,
                 clock = clock.asPetichClock(),
             ).sweep()
 

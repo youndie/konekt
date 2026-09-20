@@ -43,16 +43,18 @@ fun purchaseModule(
     // Explicit lambdas rather than singleOf/factoryOf: the reflective form resolves every
     // constructor parameter through the container, including defaulted ones, and both the
     // interceptor list and the use cases have those.
-    // THE ENGINE IS ASKED FOR BY SAGA TYPE, and the qualifier is not tidiness. There are two engines
-    // over one saga table, and an unqualified `get()` would resolve whichever binding Koin saw last —
-    // a purchase driven by the top-up interceptor list finds no step that supports its payload,
-    // completes having done nothing, and answers COMPLETED for an order that was never paid for.
-    factory { StartPurchaseUseCase(get(named(PURCHASE_SAGA_TYPE)), get(), get(), get()) }
-    factory { ConfirmPurchaseUseCase(get(named(PURCHASE_SAGA_TYPE)), get(), get()) }
+    // ONE ENGINE, asked for plainly. The qualifier here was not tidiness: there were two engines over
+    // one saga table, and an unqualified `get()` would resolve whichever binding Koin saw last — a
+    // purchase driven by the top-up list finds no step that supports its payload, completes having
+    // done nothing, and answers COMPLETED for an order that was never paid for. petich now keeps
+    // definitions by type and answers which one owns a row, so there is one binding and nothing to
+    // resolve to the wrong half (youndie/petich B-31).
+    factory { StartPurchaseUseCase(get(), get(), get(), get()) }
+    factory { ConfirmPurchaseUseCase(get(), get(), get()) }
     factory { FindOrderUseCase(get(), get()) }
 
     // Putting money in. The engine is the top-up one for the same reason.
-    factory { StartTopUpUseCase(get(named(TOP_UP_SAGA_TYPE)), get(), get()) }
+    factory { StartTopUpUseCase(get(), get(), get()) }
     factory { FindTopUpUseCase(get(), get()) }
     // Both were injected by `purchaseRoutes` and bound by nothing, so the history screen and the
     // order screen answered 500 in the running server. Every route test builds its own graph and
