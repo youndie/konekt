@@ -1,6 +1,8 @@
 package io.konekt.feature.purchase.server.domain
 
 import io.github.youndie.petich.OutboxEvent
+import io.github.youndie.petich.PetichAnnouncement
+import io.github.youndie.petich.PetichAnnouncementContext
 import io.github.youndie.petich.PetichCheck
 import io.github.youndie.petich.PetichCheckContext
 import io.github.youndie.petich.PetichDefinition
@@ -102,21 +104,13 @@ class CollectFunds(
 // 3. POST_PROCESSING — say what happened, in the same write as the state change.
 class AnnounceTopUp(
     private val events: TopUpEvents,
-) : PetichStep<TopUpPayload> {
-    override suspend fun execute(
-        ctx: PetichStepContext,
+) : PetichAnnouncement<TopUpPayload> {
+    override suspend fun announce(
+        ctx: PetichAnnouncementContext,
         payload: TopUpPayload,
     ) {
         ctx.emit(events.completed(ctx.petich.id, payload))
     }
-
-    // Empty, and it is a statement rather than a stub: an announcement committed to the outbox is
-    // delivered at least once and cannot be un-announced. A member that had nothing to do in the
-    // first place is a PetichCheck and has no compensate at all; this one acted.
-    override suspend fun compensate(
-        ctx: PetichStepContext,
-        payload: TopUpPayload,
-    ) = Unit
 }
 
 class TopUpEvents(

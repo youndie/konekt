@@ -1,6 +1,8 @@
 package io.konekt.feature.purchase.server.domain
 
 import io.github.youndie.petich.OutboxEvent
+import io.github.youndie.petich.PetichAnnouncement
+import io.github.youndie.petich.PetichAnnouncementContext
 import io.github.youndie.petich.PetichCheck
 import io.github.youndie.petich.PetichCheckContext
 import io.github.youndie.petich.PetichDefinition
@@ -311,22 +313,13 @@ class Provision(
 // was told" structurally impossible. Delivery is the relay's job.
 class AnnouncePurchase(
     private val events: PurchaseEvents,
-) : PetichStep<PurchasePayload> {
-    override suspend fun execute(
-        ctx: PetichStepContext,
+) : PetichAnnouncement<PurchasePayload> {
+    override suspend fun announce(
+        ctx: PetichAnnouncementContext,
         payload: PurchasePayload,
     ) {
         ctx.emit(events.completed(ctx.petich.id, payload))
     }
-
-    // Empty, and it is a statement rather than a stub: an announcement committed to the outbox is
-    // delivered at least once and cannot be un-announced. A member with nothing to do in the first
-    // place is a PetichCheck and has no compensate at all; this one acted. The announcement of a
-    // reversal belongs to the member whose work is being reversed.
-    override suspend fun compensate(
-        ctx: PetichStepContext,
-        payload: PurchasePayload,
-    ) = Unit
 }
 
 // The purchase saga, in the order it runs.
