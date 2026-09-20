@@ -59,8 +59,11 @@ class ValidateTariffChange(
 
 // 2. AUTHORIZATION — write the promise down, then wait for the subscriber.
 //
-// One member rather than two, exactly as the purchase saga does it, and `authorize` takes a step for
-// precisely this shape (petich D3): the record happens, and then the member suspends. A member that
+// One member rather than two, exactly as the purchase saga does it, and a STEP rather than an
+// `authorize`: petich withdrew that overload (its B-39), because a phase meaning "before effects"
+// that accepts members with effects tells a reader nothing. Writing the promise down IS an effect —
+// the row exists afterwards and the compensation below cancels it. The record happens, and then the
+// member suspends. A member that
 // suspended is NOT re-executed on resume — the engine stores the index past it — so the row is
 // written once.
 class RecordTariffChange(
@@ -171,6 +174,6 @@ fun tariffPetich(
     // THE TYPE COMES FROM THE CONSTANT the rest of the code already uses, never spelled by hand.
     petich(TARIFF_CHANGE_SAGA_TYPE) {
         validate("catalogue-and-pending", ValidateTariffChange(catalogue, changes))
-        authorize("record-change", RecordTariffChange(changes, confirmationTtl))
+        step("record-change", RecordTariffChange(changes, confirmationTtl))
         step("apply", ApplyTariffChange(changes, TariffEvents(json)))
     }

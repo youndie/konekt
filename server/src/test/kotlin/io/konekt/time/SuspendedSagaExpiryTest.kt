@@ -95,7 +95,7 @@ class SuspendedSagaExpiryTest {
 
     private val engine =
         PetichEngine(
-            definitions = listOf(petich<ConfirmablePayload>("confirmable") { authorize("reserve", member) }),
+            definitions = listOf(petich<ConfirmablePayload>("confirmable") { step("reserve", member) }),
             repository = repository,
             config = PetichEngineConfig(requireOutbox = true),
             // The same clock the sweeper reads. One notion of now for both, so a test that moves time
