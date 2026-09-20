@@ -286,11 +286,14 @@ class TopUpSagaTest {
      * A context for calling a member directly, which petich does not ship one of.
      *
      * The two cases above ask a member the question the engine is about to ask it, and a member now
-     * takes a context rather than the saga. Nine methods of boilerplate is what every consumer of
-     * this engine would write for itself — reported upstream as part of youndie/petich#75's follow-up.
+     * takes a context rather than the saga. Eleven methods of boilerplate is what every consumer of
+     * this engine writes for itself — and it grew twice while the model settled, each time as a
+     * compile error here rather than upstream. shashki wrote the same double independently, which is
+     * the argument for petich shipping one.
      */
     private class RecordingContext(
         override val petich: Petich,
+        override val stepKey: String = "collect-funds",
     ) : PetichStepContext {
         private var record: PetichStepRecord? = null
 
@@ -307,6 +310,11 @@ class TopUpSagaTest {
         override fun attach(effect: PetichSideEffect) = Unit
 
         override fun suspendFor(
+            action: String,
+            ttl: Duration?,
+        ) = Unit
+
+        override fun resuspendFor(
             action: String,
             ttl: Duration?,
         ) = Unit
