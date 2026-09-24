@@ -28,7 +28,7 @@ androidMinSdk = "26"
 
 # `activity-compose`, and it moves on its own line because AndroidX does: it is not part of the
 # Compose Multiplatform distribution and is not versioned with it.
-androidxActivity = "1.12.0"
+androidxActivity = "1.13.0"
 
 # Compose Multiplatform. NOT the newest — 1.12.0 was released — and the difference is not caution.
 # The toolkit's Compose modules are compiled against 1.11.1, and mixing a newer foundation with the
