@@ -28,6 +28,7 @@ import io.github.youndie.kore.version.KoreRelease
 import io.github.youndie.kore.version.releaseOf
 import io.github.youndie.petich.EnrichedPayload
 import io.github.youndie.petich.ExpiringPetichRepository
+import io.github.youndie.petich.LinePetichTracer
 import io.github.youndie.petich.OutboxAwarePetichRepository
 import io.github.youndie.petich.PetichEngine
 import io.github.youndie.petich.PetichEngineConfig
@@ -160,11 +161,14 @@ import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
+import org.slf4j.LoggerFactory
 import java.io.Closeable
 import javax.sql.DataSource
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
+private val SAGA_TRACE = LoggerFactory.getLogger("io.konekt.saga")
 
 // The engine is CIO because the load-bearing endpoint of this server is SSE — many long-lived,
 // mostly idle streams, which is the profile a coroutine-per-connection engine is shaped for and a
@@ -804,6 +808,16 @@ fun petichModule(
                             ),
                 ),
             clock = get<KonektClock>().asPetichClock(),
+            // ONE LINE PER SAGA EVENT, into the log (B-128). petich asks whether two weeks of
+            // reading these answers anything a counting test double had not (its B-60), and this
+            // server is one of the two places that can say. Stamped with the same instance name the
+            // observability agents use, so a line and a span name the same pod.
+            tracer =
+                LinePetichTracer(
+                    replica = config.observability.instance,
+                    clock = get<KonektClock>().asPetichClock(),
+                    write = SAGA_TRACE::info,
+                ),
         )
     }
 
