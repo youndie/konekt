@@ -98,7 +98,10 @@ kompot = "0.36.1.112"
 # A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
 # `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
 # would have gone stale in place rather than by failing.
-petich = "0.4.0.88"
+#
+# `0.4.0.112` (B-128): the per-saga trace this server logs (petich B-58/B-60), and petich B-49..B-65
+# on the way. Two columns come with it, from petich B-54 — `V14__petich_0_4_0_112.sql`.
+petich = "0.4.0.112"
 booblik = "0.3.4"
 
 # kore, the portfolio's process lifecycle. ALL FOUR MODULES ARE PORTFOLIO-ONLY — a comment here used
