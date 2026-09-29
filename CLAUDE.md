@@ -7,9 +7,10 @@ not a product an operator deploys and sells service on; the telecom is the fixtu
 stack. What is deliberately absent, and why, is
 [docs/services/reference-scope.md](docs/services/reference-scope.md).
 
-Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 is mandatory
-rather than chosen: kompot and petich publish variants tagged `org.gradle.jvm.version = 25`, and
-Gradle refuses to build a module on anything lower against them. The full version table, each row read
+Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 was mandatory
+when this was written — kompot and petich published variants tagged `org.gradle.jvm.version = 25`,
+and Gradle refuses to build a module on anything lower against them. Neither does any more (kompot
+0.38.0 declares 17, petich 0.4.0.112 declares 21, `B-129`), so 25 is now this build's choice. The full version table, each row read
 from a registry rather than recalled, is [docs/research/research-stack.md](docs/research/research-stack.md) §1.1.
 
 ## How to start a session
@@ -175,13 +176,18 @@ circular dependency inside `:server` naming neither module.
   `ios_arm64` and `ios_simulator_arm64`. The reason the convention plugin still does not fit is the
   second one, which outlived the first: it declares all THREE iOS targets and the Compose half has
   two, because Compose stopped publishing `iosX64` after `1.11.0-alpha01`. So `:client` names its own.
-- **Compose versions are matched to the toolkit's binaries, not to the newest release.** The client
-  pins `1.11.1` with material3 `1.11.0-alpha07`, named by coordinate rather than through the
-  plugin's `compose.*` accessors. A newer foundation beside the toolkit's material3 resolves and
-  compiles and then throws `AbstractMethodError` inside a renderer.
-- **Never name a kompot version.** One `platform("io.github.youndie:kompot-bom")` and no version on
-  any kompot coordinate. The tail digit of a version is the CI run number, so two coordinates one run
-  apart resolve into a combination nobody ever built.
+- **Compose versions are matched to the toolkit's binaries, not to the newest release.** kompot
+  0.38.0 is built on Compose Multiplatform `1.12.1` with material3 `1.12.0-alpha03`, so the client
+  pins exactly those, named by coordinate rather than through the plugin's `compose.*` accessors —
+  and viddik `0.6.1`, which is the 1.12 line of the screenshot tester. A different foundation beside
+  the toolkit's material3 resolves and compiles and then throws `AbstractMethodError` inside a
+  renderer. So kompot, the two Compose lines and viddik move in one commit (`B-129`), and Android's
+  `compileSdk` is 37 because every kompot 0.38 AAR says `minCompileSdk = 37`.
+- **Never name a kompot version.** One `platform("io.github.youndie.kompot:kompot-bom")` and no
+  version on any kompot coordinate. The group is `io.github.youndie.kompot` since 0.38.0 — on Central the
+  bare `io.github.youndie` group ends at 0.37.0, though the snapshot repository still holds early
+  `0.38.0.<run>` builds under it — while the Kotlin packages stayed `io.github.youndie.kompot.*`. The tail digit of a snapshot version is the CI run number, so two
+  coordinates one run apart resolve into a combination nobody ever built.
 - **katcher is three version lines**, not one: server, `client`, and `client-android` plus the Gradle
   plugin. They are separate entries in the catalogue and the catalogue says why.
 - **A session is a family, not a token.** The access token carries its family id and the

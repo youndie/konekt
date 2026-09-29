@@ -5,7 +5,7 @@ type: service
 status: active
 repo_url: https://github.com/youndie/konekt
 module: client
-tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.11.1, kompot client, Ktor client CIO on JVM and Darwin on iOS, JVM + Android + iosArm64 + iosSimulatorArm64]
+tech_stack: [Kotlin Multiplatform, Compose Multiplatform 1.12.1, kompot client, Ktor client CIO on JVM and Darwin on iOS, JVM + Android + iosArm64 + iosSimulatorArm64]
 owner: unassigned
 depends_on:
   - konekt-server
@@ -78,9 +78,10 @@ executable — no Xcode project, because what an iOS application needs is a `UIA
 delegate that owns a window and a root view controller, and `platform.UIKit` has all three. The
 application that draws is built by the same compiler, from the same source set, as everything in it.
 
-**Compose versions are matched to the toolkit's binaries**, not to the newest release: `1.11.1` with
-material3 `1.11.0-alpha07`, named by coordinate. A newer foundation beside the toolkit's material3
-resolves, compiles, and then throws `AbstractMethodError` inside a renderer.
+**Compose versions are matched to the toolkit's binaries**, not to the newest release: kompot
+0.38.0 is built on `1.12.1` with material3 `1.12.0-alpha03`, and the client pins the same, named by
+coordinate, with viddik `0.6.1` for the screenshots (`B-129`). A different foundation beside the
+toolkit's material3 resolves, compiles, and then throws `AbstractMethodError` inside a renderer.
 
 **The session lives behind ktor's bearer plugin, not an interceptor.** The plugin already knows when
 to attach a token and when to ask for a new one; what it lacks is somewhere to keep them.

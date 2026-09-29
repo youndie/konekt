@@ -154,6 +154,11 @@ sets no sink. The *drawing* half of Consequence 1 is unchanged and stays konekt'
 draws nothing without a server-named fallback, which is the right default and the wrong one for this
 product.
 
+**Superseded in kompot 0.38.0 (`B-129`).** The flag was `true` for a missing renderer too — the
+toolkit's own placeholder — so a server-named equivalent could not be counted apart from a build
+that had nothing to draw with. It is now `KompotDegradationOutcome` (`NOTHING`, `PLACEHOLDER`,
+`SERVER_FALLBACK`), and konekt's record, breadcrumb and tracy field carry it as `outcome`.
+
 ### 1.5 What kompot's component dictionary already contains, and what konekt has to own
 
 Verified by reading every `@SerialName` in the published protocol modules.

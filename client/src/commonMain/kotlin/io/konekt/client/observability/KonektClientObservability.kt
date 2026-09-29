@@ -51,7 +51,7 @@ class KonektClientObservability(
                     mapOf(
                         "originalType" to degradation.originalType,
                         "kind" to degradation.kind.name,
-                        "drawnAsFallback" to degradation.drawnAsFallback.toString(),
+                        "outcome" to degradation.outcome.name.lowercase(),
                     ),
             )
 
@@ -74,7 +74,7 @@ class KonektClientObservability(
                         // A hole and a substitution are different facts about a screen, and folding
                         // them together would make the count useless for deciding whether anybody
                         // must act.
-                        field("drawnAsFallback", degradation.drawnAsFallback)
+                        field("outcome", degradation.outcome.name.lowercase())
                     }
                 }
             }

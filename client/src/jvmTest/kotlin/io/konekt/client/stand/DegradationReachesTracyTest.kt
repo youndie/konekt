@@ -157,7 +157,7 @@ class DegradationReachesTracyTest {
         // A crash report carries breadcrumbs so somebody can read what happened BEFORE it. A crumb
         // that cannot say which type went unrendered is a line of prose in a list of prose.
         assertTrue(
-            crumbs.all { it.data?.get("drawnAsFallback") == "false" },
+            crumbs.all { it.data?.get("outcome") == "placeholder" },
             "a placeholder was recorded as a substitution: ${crumbs.map { it.data }}",
         )
 

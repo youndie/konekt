@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotDegradationKind
+import io.github.youndie.kompot.KompotDegradationOutcome
 import io.github.youndie.kompot.KompotDegradationSink
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.form.FormController
@@ -38,8 +39,8 @@ class UndrawableComponentRendererTest {
         override fun onUnknown(
             kind: KompotDegradationKind,
             originalType: String,
-            drawnAsFallback: Boolean,
-        ) = delegate.onUnknown(kind, originalType, drawnAsFallback)
+            outcome: KompotDegradationOutcome,
+        ) = delegate.onUnknown(kind, originalType, outcome)
 
         fun konekt() = delegate
     }
@@ -89,7 +90,7 @@ class UndrawableComponentRendererTest {
                 override fun onUnknown(
                     kind: KompotDegradationKind,
                     originalType: String,
-                    drawnAsFallback: Boolean,
+                    outcome: KompotDegradationOutcome,
                 ) {
                     heard += originalType
                 }

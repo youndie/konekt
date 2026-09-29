@@ -6,6 +6,7 @@ import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotComponentRenderer
 import io.github.youndie.kompot.KompotDegradationKind
+import io.github.youndie.kompot.KompotDegradationOutcome
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.UnknownComponent
 import io.github.youndie.kompot.form.FormController
@@ -49,11 +50,20 @@ class UndrawableComponentRenderer<T : KompotComponent>(
         // becomes a function of how often Compose redrew rather than of how many components failed.
         LaunchedEffect(component.id, wireName) {
             when (sink) {
-                is KonektDegradationSink -> sink.onUndrawable(wireName)
+                is KonektDegradationSink -> {
+                    sink.onUndrawable(wireName)
+                }
 
                 // Some other sink: it still hears about the component and cannot be told which of the
-                // two happened. Better than silence, which is what this was.
-                else -> sink.onUnknown(KompotDegradationKind.UNKNOWN_COMPONENT, wireName, drawnAsFallback = false)
+                // two happened. Better than silence, which is what this was. `PLACEHOLDER`, because
+                // the block below is what the subscriber sees in its place.
+                else -> {
+                    sink.onUnknown(
+                        KompotDegradationKind.UNKNOWN_COMPONENT,
+                        wireName,
+                        KompotDegradationOutcome.PLACEHOLDER,
+                    )
+                }
             }
         }
 

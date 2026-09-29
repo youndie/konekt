@@ -20,41 +20,42 @@ agp = "9.3.1"
 # against and `minSdk` the floor a device must meet; they are separate numbers because raising the
 # first is a build concern and raising the second drops devices.
 #
-# 36 rather than 37 deliberately: the build box carries both platforms, and compiling against the
-# newest available API is how a build starts depending on something no released device has. 26 is the
-# floor Compose Multiplatform itself states, so a lower number here would not buy a device.
-androidCompileSdk = "36"
+# 37 because the toolkit requires it, not because it is the newest (B-129). Every kompot 0.38 AAR
+# carries `minCompileSdk = 37` — AGP writes a library's own compileSdk into its AAR — and Compose 1.12
+# brings androidx material3 1.5, which asks for 37 on its own. It used to be 36 on the principle that
+# compiling against the newest API is how a build starts depending on something no released device
+# has; that principle now costs the toolkit, so it gives way here, and `minSdk` is what still guards
+# the devices. 26 is the floor Compose Multiplatform itself states, so a lower number would not buy a
+# device.
+androidCompileSdk = "37"
 androidMinSdk = "26"
 
 # `activity-compose`, and it moves on its own line because AndroidX does: it is not part of the
 # Compose Multiplatform distribution and is not versioned with it.
 androidxActivity = "1.12.0"
 
-# Compose Multiplatform. NOT the newest — 1.12.0 was released — and the difference is not caution.
-# The toolkit's Compose modules are compiled against 1.11.1, and mixing a newer foundation with the
-# material3 they carry fails at RUNTIME, inside a renderer:
+# Compose Multiplatform, MATCHED TO THE TOOLKIT'S BINARIES rather than to the newest release. kompot
+# 0.38.0 is compiled against 1.12.1 (its UPGRADING.md, and `compose-multiplatform` in its catalogue),
+# and mixing a different foundation with the material3 it carries fails at RUNTIME, inside a renderer:
 #   AbstractMethodError: OutlinedTextFieldDefaults$$Lambda does not define ... CustomStyle.applyStyle
-# Nothing fails to resolve and nothing fails to compile. See research-stack §1.10.
+# Nothing fails to resolve and nothing fails to compile. See research-stack §1.10. This line, the one
+# below, `viddik` and kompot move in ONE commit or not at all (B-129).
 #
 # Its COMPILER is not this version either: `org.jetbrains.kotlin.plugin.compose` ships with Kotlin
 # and is versioned with it, which is why the two plugin aliases below point at different refs.
-composeMultiplatform = "1.11.1"
+composeMultiplatform = "1.12.1"
 
 # Material3 moves on its OWN line, exactly as it does in the toolkit's catalogue: it has no stable
-# release in either train (`<latest>1.12.0-alpha03` on 2026-08-25), so tying it to the line above
-# would ask for a version that was never published. This is the one the toolkit's binaries were
-# built against, which is the whole requirement.
-composeMaterial3 = "1.11.0-alpha07"
+# release on the 1.12 train, so tying it to the line above would ask for a version that was never
+# published. This is the one kompot 0.38.0's binaries were built against, which is the whole
+# requirement.
+composeMaterial3 = "1.12.0-alpha03"
 
-# NOT 3.6.0, and the reason is not this line's to fix. 3.6.0 resolves okhttp 5.5.0, whose Android
-# artefact refuses to be compiled against anything below API 37 — and `androidCompileSdk` here is 36
-# deliberately, for the reason written beside it: compiling against the newest available API is how a
-# build starts depending on something no released device has. The same sentence already keeps
-# androidx.core off this build.
-#
-# So taking 3.6.0 means raising compileSdk, which is a decision about what this application runs on,
-# not a dependency bump. The rest of the portfolio moved to 3.6.0 on 2026-09-17; this build did not,
-# and that is a choice rather than an oversight.
+# NOT 3.6.0 — yet. 3.6.0 resolves okhttp 5.5.0, whose Android artefact refuses to be compiled against
+# anything below API 37, and that was the reason this line stayed: `androidCompileSdk` was 36. It is
+# 37 since B-129 (kompot 0.38 requires it), so the obstacle is gone and what is left is an ordinary
+# bump that the kompot move deliberately did not carry — the rest of the portfolio has been on 3.6.0
+# since 2026-09-17, and kompot 0.38.0 itself is still compiled against 3.5.2.
 ktor = "3.5.2"
 coroutines = "1.11.0"
 serialization = "1.11.0"
@@ -62,9 +63,11 @@ datetime = "0.8.0"
 
 # --- Java --------------------------------------------------------------------------------------
 #
-# 25 is required, not preferred: kompot and petich publish variants tagged
+# 25 was REQUIRED when this was written: kompot and petich published variants tagged
 # `org.gradle.jvm.version = 25`, and Gradle refuses to build a module on anything lower against
-# them. It lives here so the convention plugin reads it rather than repeating the literal.
+# them. That is no longer true of either — kompot 0.38.0 declares 17 and petich 0.4.0.112 declares
+# 21, read from their `.module` files (B-129) — so 25 is now this build's choice rather than the
+# toolkits' demand. It lives here so the convention plugin reads it rather than repeating the literal.
 jvmToolchain = "25"
 # The shared build conventions: the coordinate, the toolchain, the style, the test platform and the
 # guard that every declared @Test ran. Bumping this changes how every module is built.
@@ -83,17 +86,24 @@ ktlint = "1.8.0"
 # --- the toolkits ------------------------------------------------------------------------------
 #
 # kompot is the ONLY thing here declared through a platform, and its version appears exactly once.
-# The tail digit of a kompot version is the CI run number, so kompot-core:0.30.0.71 beside
+# The tail digit of a SNAPSHOT version is the CI run number, so kompot-core:0.30.0.71 beside
 # kompot-client:0.30.0.72 resolves into a combination nobody ever built. Through the BOM that
 # combination cannot be written down — which is why no kompot library below carries a version.
 #
-# CHECK THAT EVERY MODULE EXISTS AT THE VERSION BEFORE MOVING THIS LINE. The publication walks the
-# modules alphabetically and fills in each one's pending versions as it goes, so for a while a
-# version is real for `form-core` and absent for `wizard-core` — and the BOM, being early in the
-# alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
+# A RELEASE FROM CENTRAL NOW, under its own group. 0.38.0 moved every artefact, the BOM, `form-core`,
+# `form-standard` and `wizard-core` included, from `io.github.youndie` to `io.github.youndie.kompot`
+# (its UPGRADING.md); Kotlin packages did not move, so no source file changed for it. It also moved
+# the Compose half to 1.12, which is why `composeMultiplatform`, `composeMaterial3`, `viddik` and
+# `androidCompileSdk` above moved in the same commit (B-129).
+#
+# CHECK THAT EVERY MODULE EXISTS AT THE VERSION BEFORE MOVING THIS LINE. The snapshot publication
+# walks the modules alphabetically and fills in each one's pending versions as it goes, so for a
+# while a version is real for `form-core` and absent for `wizard-core` — and the BOM, being early in
+# the alphabet, is one of the first to appear. Bumping into that produces "Could not find" halfway
 # through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
-# the whole time .77 was being published; the check is one loop over the coordinates below.
-kompot = "0.36.1.112"
+# the whole time .77 was being published; the check is one loop over the coordinates below. All 28
+# answered 200 on repo1.maven.org at 0.38.0.
+kompot = "0.38.0"
 
 # A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
 # `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
@@ -137,7 +147,11 @@ katcher = "0.7.47"
 
 metrikAgent = "0.3.21"
 tracyAgent = "0.2.15"
-viddik = "0.4.0"
+# ON THE COMPOSE LINE, like the two Compose entries above. 0.6 is the one built on Compose 1.12; kompot
+# 0.38.0 names 0.6.1 as the screenshot tester of the 1.12 line, and a 0.4 fixture renders through a
+# 1.11 test harness beside a 1.12 foundation — the same mixing that throws inside a renderer (B-129).
+# 0.6 declares Java 21 in its metadata, which a Java 25 test classpath accepts.
+viddik = "0.6.1"
 
 # The QR encoder behind esim_qr. See the coordinate below for why an encoder rather than a widget.
 qrcode = "4.5.0"
@@ -242,35 +256,35 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 # No version on any of these, on purpose. The platform below constrains every coordinate this
 # toolkit publishes, including the per-target ones a Kotlin Multiplatform module adds beside its
 # root (kompot-core-jvm, kompot-core-iosarm64 ...), so naming one of those directly is covered too.
-kompot-bom = { module = "io.github.youndie:kompot-bom", version.ref = "kompot" }
-kompot-core = { module = "io.github.youndie:kompot-core" }
-kompot-standard = { module = "io.github.youndie:kompot-standard" }
-kompot-ktor = { module = "io.github.youndie:kompot-ktor" }
-kompot-forms = { module = "io.github.youndie:kompot-forms" }
-kompot-formsStandard = { module = "io.github.youndie:kompot-forms-standard" }
-kompot-formCore = { module = "io.github.youndie:form-core" }
-kompot-formStandard = { module = "io.github.youndie:form-standard" }
-kompot-wizard = { module = "io.github.youndie:kompot-wizard" }
-kompot-wizardCore = { module = "io.github.youndie:wizard-core" }
-kompot-theme = { module = "io.github.youndie:kompot-theme" }
-kompot-dsMaterial = { module = "io.github.youndie:kompot-ds-material" }
-kompot-auth = { module = "io.github.youndie:kompot-auth" }
-kompot-navigation = { module = "io.github.youndie:kompot-navigation" }
-kompot-realtime = { module = "io.github.youndie:kompot-realtime" }
-kompot-realtimeServer = { module = "io.github.youndie:kompot-realtime-server" }
-kompot-analytics = { module = "io.github.youndie:kompot-analytics" }
-kompot-registryAnnotations = { module = "io.github.youndie:kompot-registry-annotations" }
-kompot-registryProcessor = { module = "io.github.youndie:kompot-registry-processor" }
-kompot-spec = { module = "io.github.youndie:kompot-spec" }
-kompot-tck = { module = "io.github.youndie:kompot-tck" }
+kompot-bom = { module = "io.github.youndie.kompot:kompot-bom", version.ref = "kompot" }
+kompot-core = { module = "io.github.youndie.kompot:kompot-core" }
+kompot-standard = { module = "io.github.youndie.kompot:kompot-standard" }
+kompot-ktor = { module = "io.github.youndie.kompot:kompot-ktor" }
+kompot-forms = { module = "io.github.youndie.kompot:kompot-forms" }
+kompot-formsStandard = { module = "io.github.youndie.kompot:kompot-forms-standard" }
+kompot-formCore = { module = "io.github.youndie.kompot:form-core" }
+kompot-formStandard = { module = "io.github.youndie.kompot:form-standard" }
+kompot-wizard = { module = "io.github.youndie.kompot:kompot-wizard" }
+kompot-wizardCore = { module = "io.github.youndie.kompot:wizard-core" }
+kompot-theme = { module = "io.github.youndie.kompot:kompot-theme" }
+kompot-dsMaterial = { module = "io.github.youndie.kompot:kompot-ds-material" }
+kompot-auth = { module = "io.github.youndie.kompot:kompot-auth" }
+kompot-navigation = { module = "io.github.youndie.kompot:kompot-navigation" }
+kompot-realtime = { module = "io.github.youndie.kompot:kompot-realtime" }
+kompot-realtimeServer = { module = "io.github.youndie.kompot:kompot-realtime-server" }
+kompot-analytics = { module = "io.github.youndie.kompot:kompot-analytics" }
+kompot-registryAnnotations = { module = "io.github.youndie.kompot:kompot-registry-annotations" }
+kompot-registryProcessor = { module = "io.github.youndie.kompot:kompot-registry-processor" }
+kompot-spec = { module = "io.github.youndie.kompot:kompot-spec" }
+kompot-tck = { module = "io.github.youndie.kompot:kompot-tck" }
 # The Compose side. Arrives with the client module; listed here so the platform covers it from the
 # start rather than being remembered later.
-kompot-client = { module = "io.github.youndie:kompot-client" }
-kompot-clientCache = { module = "io.github.youndie:kompot-client-cache" }
-kompot-formsClient = { module = "io.github.youndie:kompot-forms-client" }
-kompot-wizardClient = { module = "io.github.youndie:kompot-wizard-client" }
-kompot-themeClient = { module = "io.github.youndie:kompot-theme-client" }
-kompot-dsMaterialCompose = { module = "io.github.youndie:kompot-ds-material-compose" }
+kompot-client = { module = "io.github.youndie.kompot:kompot-client" }
+kompot-clientCache = { module = "io.github.youndie.kompot:kompot-client-cache" }
+kompot-formsClient = { module = "io.github.youndie.kompot:kompot-forms-client" }
+kompot-wizardClient = { module = "io.github.youndie.kompot:kompot-wizard-client" }
+kompot-themeClient = { module = "io.github.youndie.kompot:kompot-theme-client" }
+kompot-dsMaterialCompose = { module = "io.github.youndie.kompot:kompot-ds-material-compose" }
 
 # --- the client's own Compose dependencies ------------------------------------------------------
 #
@@ -301,7 +315,7 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 # `addDependencies = false`; the plugin's own version is the one that decides what it pulls.
 viddik-annotations = { module = "io.github.youndie.viddik:viddik-annotations", version.ref = "viddik" }
 viddik-testingCore = { module = "io.github.youndie.viddik:viddik-testing-core", version.ref = "viddik" }
-kompot-clientTck = { module = "io.github.youndie:kompot-client-tck" }
+kompot-clientTck = { module = "io.github.youndie.kompot:kompot-client-tck" }
 
 # --- petich ------------------------------------------------------------------------------------
 
@@ -396,7 +410,7 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 # The screenshot tester's plugin. It exists because the wiring it replaces is silently wrong when
 # hand-written: the right KSP configuration and snapshot directory depend on how the target is
 # declared, and getting one wrong makes KSP report SKIPPED while the screenshot task passes with no
-# tests in it. Published to reposilite, which is why pluginManagement names that repository too.
+# tests in it. Published to Maven Central.
 viddik = { id = "io.github.youndie.viddik", version.ref = "viddik" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 sborkaBase = { id = "io.github.youndie.sborka.base", version.ref = "sborka" }

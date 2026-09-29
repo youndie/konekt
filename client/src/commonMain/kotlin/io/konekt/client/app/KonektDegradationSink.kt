@@ -1,6 +1,7 @@
 package io.konekt.client.app
 
 import io.github.youndie.kompot.KompotDegradationKind
+import io.github.youndie.kompot.KompotDegradationOutcome
 import io.github.youndie.kompot.KompotDegradationSink
 
 // WHERE A DEGRADATION GOES, which until now was nowhere.
@@ -24,12 +25,12 @@ class KonektDegradationSink(
     override fun onUnknown(
         kind: KompotDegradationKind,
         originalType: String,
-        drawnAsFallback: Boolean,
+        outcome: KompotDegradationOutcome,
     ) {
         // WHAT REACHES THIS METHOD IS ALWAYS A DECODE FAILURE, because that is the only thing kompot
         // can know about: it owns the wire and not konekt's dictionary. The other cause is set at the
         // one call site that knows it — see `KonektDegradation.Cause`.
-        record(KonektDegradation(kind, originalType, drawnAsFallback, KonektDegradation.Cause.UNDECODABLE))
+        record(KonektDegradation(kind, originalType, outcome, KonektDegradation.Cause.UNDECODABLE))
     }
 
     // THE OTHER CAUSE, and it needs a method of its own because kompot's interface cannot carry it:
@@ -44,7 +45,8 @@ class KonektDegradationSink(
             KonektDegradation(
                 kind = KompotDegradationKind.UNKNOWN_COMPONENT,
                 originalType = originalType,
-                drawnAsFallback = false,
+                // konekt's block, drawn by `UndrawableComponentRenderer` in the component's place.
+                outcome = KompotDegradationOutcome.PLACEHOLDER,
                 cause = KonektDegradation.Cause.UNDRAWABLE,
             ),
         )
@@ -57,10 +59,15 @@ class KonektDegradationSink(
 data class KonektDegradation(
     val kind: KompotDegradationKind,
     val originalType: String,
-    // False when a placeholder was drawn and true when the server named an equivalent the client
-    // could draw instead. A hole and a substitution are different facts about a screen, and folding
-    // them together would make the count useless for deciding whether anybody has to act.
-    val drawnAsFallback: Boolean,
+    // What the subscriber saw in the component's place: nothing, a placeholder, or the equivalent the
+    // server named. A hole and a substitution are different facts about a screen, and folding them
+    // together would make the count useless for deciding whether anybody has to act.
+    //
+    // THREE VALUES WHERE THERE WERE TWO. Until kompot 0.38 this was `drawnAsFallback: Boolean`, and
+    // the toolkit set it `true` for a missing renderer too — its own placeholder — so "the server's
+    // equivalent was drawn" could not be counted apart from "this build had nothing to draw it with".
+    // kompot's `KompotDegradationOutcome` separates them (its B-34), and the record carries it as is.
+    val outcome: KompotDegradationOutcome,
     // WHOSE FAULT IT IS, and it is the field this record was missing for most of the build's life.
     val cause: Cause = Cause.UNDECODABLE,
 ) {
