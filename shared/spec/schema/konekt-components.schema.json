@@ -676,7 +676,8 @@
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "format": "float"
         },
         "state": {
           "type": "string"
@@ -714,10 +715,12 @@
           }
         },
         "viewportSize": {
-          "type": "number"
+          "type": "number",
+          "format": "float"
         },
         "strokeWidth": {
-          "type": "number"
+          "type": "number",
+          "format": "float"
         }
       },
       "required": [

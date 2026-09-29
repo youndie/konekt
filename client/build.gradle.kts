@@ -513,12 +513,12 @@ tasks.named<Test>("viddikVerify") {
 // classpath fails this check too, which is how the list is kept honest rather than left to rot.
 val androidVariantExpected =
     listOf(
-        "io.github.youndie:kompot-client",
-        "io.github.youndie:kompot-core",
-        "io.github.youndie:kompot-standard",
-        "io.github.youndie:kompot-forms-client",
-        "io.github.youndie:kompot-theme-client",
-        "io.github.youndie:kompot-navigation",
+        "io.github.youndie.kompot:kompot-client",
+        "io.github.youndie.kompot:kompot-core",
+        "io.github.youndie.kompot:kompot-standard",
+        "io.github.youndie.kompot:kompot-forms-client",
+        "io.github.youndie.kompot:kompot-theme-client",
+        "io.github.youndie.kompot:kompot-navigation",
         "io.github.youndie.katcher:client",
     )
 

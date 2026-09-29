@@ -11,6 +11,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import io.github.youndie.kompot.ColumnRenderer
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotDegradationKind
+import io.github.youndie.kompot.KompotDegradationOutcome
 import io.github.youndie.kompot.KompotDegradationSink
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.LocalKompotDesignSystem
@@ -88,14 +89,14 @@ class UnknownBlockRendererTest {
     }
 
     private class Recording : KompotDegradationSink {
-        val reports = mutableListOf<Triple<KompotDegradationKind, String, Boolean>>()
+        val reports = mutableListOf<Triple<KompotDegradationKind, String, KompotDegradationOutcome>>()
 
         override fun onUnknown(
             kind: KompotDegradationKind,
             originalType: String,
-            drawnAsFallback: Boolean,
+            outcome: KompotDegradationOutcome,
         ) {
-            reports += Triple(kind, originalType, drawnAsFallback)
+            reports += Triple(kind, originalType, outcome)
         }
     }
 
@@ -155,7 +156,11 @@ class UnknownBlockRendererTest {
         assertEquals(1, sink.reports.size, "reported ${sink.reports.size} times for one unknown component")
         assertEquals(KompotDegradationKind.UNKNOWN_COMPONENT, sink.reports.single().first)
         assertEquals("esim_transfer_widget", sink.reports.single().second)
-        assertEquals(false, sink.reports.single().third, "we drew a placeholder, not the thing itself")
+        assertEquals(
+            KompotDegradationOutcome.PLACEHOLDER,
+            sink.reports.single().third,
+            "we drew a placeholder, not the thing itself",
+        )
     }
 
     @Test
@@ -184,7 +189,11 @@ class UnknownBlockRendererTest {
             }
 
         assertEquals(1, sink.reports.size)
-        assertTrue(sink.reports.single().third, "a fallback was drawn and the report says it was not")
+        assertEquals(
+            KompotDegradationOutcome.SERVER_FALLBACK,
+            sink.reports.single().third,
+            "a fallback was drawn and the report says it was not",
+        )
     }
 
     @Test

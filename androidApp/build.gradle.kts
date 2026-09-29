@@ -59,10 +59,10 @@ kotlin {
 
 dependencies {
     implementation(project(":client"))
-    // `WindowCompat` comes with it, transitively, and is NOT declared separately on purpose:
-    // `androidx.core:core-ktx:1.19.0` refuses to be compiled against anything below API 37, and this
-    // build pins 36 deliberately. Naming the artefact would have meant either raising `compileSdk` to
-    // the newest API for one helper class, or pinning a second AndroidX version by hand.
+    // `WindowCompat` comes with it, transitively, and is NOT declared separately on purpose: naming
+    // `androidx.core:core-ktx` would mean pinning a second AndroidX version by hand for one helper
+    // class. (It was also held off because 1.19.0 refuses anything below API 37 while this build was
+    // on 36; `compileSdk` is 37 since B-129, so that half of the reason is gone.)
     implementation(libs.androidx.activityCompose)
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)

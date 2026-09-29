@@ -331,6 +331,11 @@ is the requirement. Raised upstream as the second half of
 [youndie/kompot#84](https://github.com/youndie/kompot/issues/84), since nothing in the toolkit says
 which versions it was built against.
 
+**Moved on 2026-09-29 (`B-129`), and the rule held rather than changed.** kompot 0.38.0 moved its
+Compose half to `1.12.1` with material3 `1.12.0-alpha03`, and says so in its `UPGRADING.md` — the
+statement #84 asked for. The client moved to the same pair in the same commit, with viddik `0.6.1`,
+and `androidCompileSdk` went to 37 because every 0.38 AAR carries `minCompileSdk = 37`.
+
 ## 2. Decisions
 
 ### D11. Gradle 9.7.1 on a Java 25 toolchain *(deviation: 9.7.1, not the 9.7.0 that was asked for)*

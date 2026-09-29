@@ -75,8 +75,9 @@ class UnknownBlockRenderer(
         }
 
         // Reported through the toolkit's sink rather than a channel of ours, so a deployment sets one
-        // sink and hears about all three kinds. `drawnAsFallback = false`: we drew a placeholder, not
-        // the thing itself, and a hole and a placeholder are different facts about a screen.
+        // sink and hears about all three kinds. `PLACEHOLDER`: we drew a block, not the thing itself
+        // and not the server's equivalent, and a hole and a placeholder are different facts about a
+        // screen.
         //
         // INSIDE A `LaunchedEffect`, AND THAT IS THE FIX FOR A REAL DEFECT. Called in the composable
         // body it fired on every RECOMPOSITION, so the count an operator reads was a function of how
@@ -92,7 +93,7 @@ class UnknownBlockRenderer(
             sink.onUnknown(
                 io.github.youndie.kompot.KompotDegradationKind.UNKNOWN_COMPONENT,
                 component.originalType,
-                drawnAsFallback = false,
+                io.github.youndie.kompot.KompotDegradationOutcome.PLACEHOLDER,
             )
         }
 

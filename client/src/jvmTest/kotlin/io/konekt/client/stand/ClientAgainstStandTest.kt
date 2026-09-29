@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.v2.runComposeUiTest
+import io.github.youndie.kompot.KompotDegradationOutcome
 import io.github.youndie.kompot.auth.UpdateSessionAction
 import io.github.youndie.kompot.decodeKompotAction
 import io.konekt.client.app.BuyPlan
@@ -171,7 +172,7 @@ class ClientAgainstStandTest {
         )
 
         assertTrue(
-            recorded.none { it.drawnAsFallback },
+            recorded.all { it.outcome == KompotDegradationOutcome.PLACEHOLDER },
             "a placeholder was reported as a fallback — a hole and a substitution are different facts",
         )
     }
