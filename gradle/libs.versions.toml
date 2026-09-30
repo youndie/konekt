@@ -103,7 +103,16 @@ ktlint = "1.8.0"
 # through a CI run, naming an artefact rather than the mistake. Both .75 and .76 were incomplete for
 # the whole time .77 was being published; the check is one loop over the coordinates below. All 28
 # answered 200 on repo1.maven.org at 0.38.0.
-kompot = "0.38.0"
+#
+# A SNAPSHOT AGAIN, for `B-116`: the confirmation as a sheet needs three things kompot made after
+# 0.38.0 and has not released — the presentation header (its `B-70`), the layer state a design system
+# of its own can read (`B-66`) and a `navigate` that closes the layer (`B-67`). 0.39.0.193 is the
+# publication of the commit that added the last of them. The Compose line did not move (kompot's own
+# catalogue still names 1.12.1 and material3 1.12.0-alpha03), so nothing above moved with it. The
+# snapshot repository comes from sborka's settings plugin with a `io\.github\.youndie.*` filter,
+# which covers the `io.github.youndie.kompot` group — read in the plugin and proved by the resolution.
+# All 28 coordinates answered 200 on the snapshot repository at 0.39.0.193 before this line moved.
+kompot = "0.39.0.193"
 
 # A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
 # `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
