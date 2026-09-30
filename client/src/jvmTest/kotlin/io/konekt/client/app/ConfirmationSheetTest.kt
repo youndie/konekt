@@ -120,7 +120,13 @@ class ConfirmationSheetTest {
                     }
                 }
             }.start(wait = false)
-        port = runBlocking { server.engine.resolvedConnectors().first().port }
+        port =
+            runBlocking {
+                server.engine
+                    .resolvedConnectors()
+                    .first()
+                    .port
+            }
     }
 
     @AfterTest
@@ -180,8 +186,7 @@ class ConfirmationSheetTest {
     private fun ComposeUiTest.sheetIsOpen(): Boolean =
         onAllNodesWithTag(KonektSheetHost.SHEET_TAG).fetchSemanticsNodes().isNotEmpty()
 
-    private fun ComposeUiTest.waitForTheSheetToClose() =
-        waitUntil(timeoutMillis = 10_000) { !sheetIsOpen() }
+    private fun ComposeUiTest.waitForTheSheetToClose() = waitUntil(timeoutMillis = 10_000) { !sheetIsOpen() }
 
     @Test
     fun `the source reads the answer's presentation and only one it can draw`() =
@@ -287,7 +292,9 @@ class ConfirmationSheetTest {
             buy()
 
             onNodeWithText("Not now").performClick()
-            waitUntil(timeoutMillis = 10_000) { onAllNodesWithText("the home screen").fetchSemanticsNodes().isNotEmpty() }
+            waitUntil(
+                timeoutMillis = 10_000,
+            ) { onAllNodesWithText("the home screen").fetchSemanticsNodes().isNotEmpty() }
 
             assertTrue(!sheetIsOpen(), "the sheet is still open over the screen `Not now` went to")
             assertTrue(!confirmed.get())

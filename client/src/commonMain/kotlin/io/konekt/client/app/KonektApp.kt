@@ -247,7 +247,7 @@ fun KonektApp(
     // AN ANSWER FETCHED BEFORE THE STACK MOVED, and handed to the fetch below so it is not asked for
     // twice. The action path has to read an answer before it knows whether to move at all (`B-116`,
     // below); this is what keeps that from costing a second request for every one that does move.
-    var prefetched by remember { mutableStateOf<Pair<String, Screen>?>(null) }
+    var prefetched by remember { mutableStateOf<Prefetched?>(null) }
 
     // WHICH DEEPLINKS ARE TABS, taken from the bar the SERVER sent rather than from a list here.
     // The tab set is a product decision that travels on the wire (`bottom_nav`), so a second copy in
@@ -300,9 +300,12 @@ fun KonektApp(
         loading = true
         failure = null
         try {
-            val ready = prefetched?.takeIf { (at, _) -> at == current }?.second
+            val ready = prefetched?.takeIf { it.address == current }
             prefetched = null
-            screen = ready ?: screens.fetch(current)
+            // A prefetch that FAILED is this fetch failing, and it is thrown here so the catch below
+            // reports it exactly as it reports its own — with the retry — rather than asking again.
+            ready?.failure?.let { throw it }
+            screen = ready?.screen ?: screens.fetch(current)
         } catch (cancellation: kotlinx.coroutines.CancellationException) {
             // Not a failure: a destination that changed again while this one was in flight cancels
             // this effect, and the effect that replaced it owns the state now.
@@ -389,12 +392,13 @@ fun KonektApp(
             // definition, and an answer at the address already shown is that screen, newer.
             if (destination.arrival == Destination.Arrival.NEXT && destination.address != current) {
                 val arrived = prefetch(destination.address, screens) { loading = it }
-                if (arrived is Screen.Tree && arrived.presentation != ScreenRoutePresentation.SCREEN) {
+                val tree = arrived.screen as? Screen.Tree
+                if (tree != null && tree.presentation != ScreenRoutePresentation.SCREEN) {
                     // Through the chain, so the layer is kompot's state and the host only draws it.
-                    top.handle(PresentAction(content = arrived.component, kind = arrived.presentation))
+                    top.handle(PresentAction(content = tree.component, kind = tree.presentation))
                     return@let
                 }
-                arrived?.let { prefetched = destination.address to it }
+                prefetched = arrived
             }
 
             // AND A MOVE CLOSES THE LAYER, deliberately. `Pay` inside the sheet is konekt's own
@@ -635,24 +639,30 @@ fun KonektApp(
     }
 }
 
-// THE ANSWER TO A PRESS, fetched ahead of the move. `null` when it could not be read: the move then
-// goes ahead as it did before `B-116` and the frame's own fetch says what went wrong, with its retry —
-// a second place that reports a failed fetch would be a second way of reporting it.
-//
+// THE ANSWER TO A PRESS, fetched ahead of the move — or the failure to fetch it. A failure is not a
+// sheet, so the move goes ahead as it did before `B-116`, and the failure travels with it to the
+// frame's fetch, which reports it the one way this holder reports a failed fetch: the screen that
+// says so, with its retry. Nothing is asked for twice either way.
+private class Prefetched(
+    val address: String,
+    val screen: Screen?,
+    val failure: Exception?,
+)
+
 // `loading` for the duration, so the screen being left stops taking presses exactly as it does while
 // the frame fetches (`B-111`): a second `Buy` during the round trip would be a second order.
 private suspend fun prefetch(
     address: String,
     screens: ScreenSource,
     loading: (Boolean) -> Unit,
-): Screen? {
+): Prefetched {
     loading(true)
     return try {
-        screens.fetch(address)
+        Prefetched(address, screens.fetch(address), failure = null)
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (thrown: Exception) {
-        null
+        Prefetched(address, screen = null, failure = thrown)
     } finally {
         loading(false)
     }
@@ -661,7 +671,9 @@ private suspend fun prefetch(
 // Closes the question and the tree, in that order, with the one public call that closes a layer. The
 // toolkit's own close-everything is internal to it; `dismiss()` is what every host is given.
 private fun KompotOverlays.closeEverything() {
-    while (dismiss()) Unit
+    while (dismiss()) {
+        // Each pass closes one layer; the loop ends when there is nothing left to close.
+    }
 }
 
 // WHAT THE HOLDER NEEDS, AS AN INTERFACE, so that a test can drive the sequence this application

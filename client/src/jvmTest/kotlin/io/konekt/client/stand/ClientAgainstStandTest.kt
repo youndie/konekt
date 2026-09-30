@@ -456,7 +456,9 @@ class ClientAgainstStandTest {
             waitUntil(timeoutMillis = 15_000) { onAllNodesWithText("Buy for \$12").fetchSemanticsNodes().isNotEmpty() }
             onNodeWithText("Buy for \$12").performClick()
 
-            waitUntil(timeoutMillis = 20_000) { onAllNodesWithText("Confirm purchase").fetchSemanticsNodes().isNotEmpty() }
+            waitUntil(
+                timeoutMillis = 20_000,
+            ) { onAllNodesWithText("Confirm purchase").fetchSemanticsNodes().isNotEmpty() }
             assertTrue(
                 onAllNodesWithTag(KonektSheetHost.SHEET_TAG).fetchSemanticsNodes().isNotEmpty(),
                 "the deployed order screen was drawn as a screen, not as a sheet",

@@ -137,8 +137,9 @@ internal fun KonektSheetHost(
                     )
                     // The sheet reaches the bottom edge of the window and its content stays clear of
                     // the gesture bar — the same split the frame makes for the page.
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                    .padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 12.dp),
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(
