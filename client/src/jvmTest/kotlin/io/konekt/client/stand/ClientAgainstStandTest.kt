@@ -2,6 +2,7 @@ package io.konekt.client.stand
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -18,6 +19,7 @@ import io.konekt.client.app.KonektApp
 import io.konekt.client.app.KonektDegradation
 import io.konekt.client.app.KonektRoutes
 import io.konekt.client.app.KonektScreenSource
+import io.konekt.client.app.KonektSheetHost
 import io.konekt.client.net.konektClientJson
 import io.konekt.client.net.konektHttpClient
 import io.konekt.client.realtime.SseRealtimeSource
@@ -31,7 +33,9 @@ import io.konekt.feature.auth.shared.api.DevOtpResponse
 import io.konekt.feature.auth.shared.api.RequestOtpRequest
 import io.konekt.feature.auth.shared.api.VerifyOtpRequest
 import io.konekt.feature.esim.shared.api.ESIM_INSTALL_DEEPLINK
+import io.konekt.feature.purchase.shared.api.CreateTopUpRequest
 import io.konekt.feature.purchase.shared.api.PLANS_DEEPLINK
+import io.konekt.feature.purchase.shared.api.TopUps
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -424,6 +428,52 @@ class ClientAgainstStandTest {
                 0,
                 onAllNodesWithText(UnknownBlockRenderer.LINE_TEXT).fetchSemanticsNodes().size,
                 "the order screen drew degradation blocks",
+            )
+        }
+    }
+
+    @Test
+    fun `with money on the line the confirmation is a sheet over the plan page and paying leaves none`() {
+        // `B-116` ON THE RUNNING SERVER. The unit test beside the holder serves its own header; this
+        // is the header the deployed order route sends, read by the real source, for an order that
+        // really waits — which needs money, so this subscriber tops up first (the flow above lands on
+        // the refusal precisely because it does not).
+        val http = signedInClient()
+        runBlocking { http.post(TopUps()) { setBody(CreateTopUpRequest(amountMinor = 5_000)) } }
+        val buy = BuyPlan(http)
+
+        runComposeUiTest {
+            setContent {
+                KonektApp(
+                    screens = sourceOver(http),
+                    address = "/api/v1/screens/plans/tr-10gb-30d",
+                    topic = "stand",
+                    darkMode = false,
+                    onAction = { action -> buy.addressFor(action)?.let(Destination::next) },
+                )
+            }
+
+            waitUntil(timeoutMillis = 15_000) { onAllNodesWithText("Buy for \$12").fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithText("Buy for \$12").performClick()
+
+            waitUntil(
+                timeoutMillis = 20_000,
+            ) { onAllNodesWithText("Confirm purchase").fetchSemanticsNodes().isNotEmpty() }
+            assertTrue(
+                onAllNodesWithTag(KonektSheetHost.SHEET_TAG).fetchSemanticsNodes().isNotEmpty(),
+                "the deployed order screen was drawn as a screen, not as a sheet",
+            )
+            // The plan page is still under it — its pinned buy button is still in the tree.
+            assertTrue(onAllNodesWithText("Buy for \$12").fetchSemanticsNodes().isNotEmpty(), "the plan page left")
+
+            onNodeWithText("Pay \$12").performClick()
+            waitUntil(timeoutMillis = 20_000) {
+                onAllNodesWithText("Paid", substring = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            assertEquals(
+                0,
+                onAllNodesWithTag(KonektSheetHost.SHEET_TAG).fetchSemanticsNodes().size,
+                "the sheet is still open over the paid result",
             )
         }
     }

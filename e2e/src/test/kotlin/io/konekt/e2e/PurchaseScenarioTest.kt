@@ -2,6 +2,8 @@ package io.konekt.e2e
 
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.decodeKompotComponent
+import io.github.youndie.kompot.navigation.PresentationHeader
+import io.github.youndie.kompot.navigation.ScreenRoutePresentation
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.PaginatedListComponent
 import io.github.youndie.kompot.standard.RowComponent
@@ -12,6 +14,7 @@ import io.konekt.components.SurfaceComponent
 import io.konekt.components.UsageCounterCardComponent
 import io.konekt.components.konektWalk
 import io.konekt.feature.purchase.shared.api.CreatePurchaseRequest
+import io.konekt.feature.purchase.shared.api.OrderScreen
 import io.konekt.feature.purchase.shared.api.PurchaseOrderResponse
 import io.konekt.feature.purchase.shared.api.Purchases
 import io.konekt.feature.usage.shared.api.HomeScreenResource
@@ -68,6 +71,16 @@ class PurchaseScenarioTest {
                 assertEquals(OrderStatuses.AWAITING_CONFIRMATION, started.status)
                 assertEquals("CONFIRM", started.requiredAction)
 
+                // THE CONFIRMATION ASKS TO BE A SHEET, beside its body, on the deployed server
+                // (`B-116`). Asserted here rather than only on `PurchaseResultScreen.presentation`,
+                // because the header is set by the ROUTE — a decision nobody passes on is a sheet
+                // no client is ever asked to draw.
+                assertEquals(
+                    ScreenRoutePresentation.SHEET,
+                    client.orderScreenPresentation(session.accessToken, started.orderId),
+                    "the order awaiting confirmation did not ask to be shown as a sheet",
+                )
+
                 val confirmed =
                     client
                         .post(Purchases.ById.Confirm(Purchases.ById(orderId = started.orderId))) {
@@ -75,6 +88,15 @@ class PurchaseScenarioTest {
                         }.body<PurchaseOrderResponse>()
 
                 assertEquals(OrderStatuses.COMPLETED, confirmed.status)
+
+                // AND THE SAME ADDRESS, NOW A RESULT, ASKS FOR NOTHING. The state moved and the
+                // presentation moved with it; a header that outlived the confirmation would lay the
+                // result over the plan page the subscriber has just paid for.
+                assertEquals(
+                    null,
+                    client.orderScreenPresentation(session.accessToken, started.orderId),
+                    "the completed order still asks to be a sheet",
+                )
 
                 // AND THE ALLOWANCE LANDED, which is the half that crosses features: the saga's
                 // provisioning step grants what the plan is made of, and the home screen is built by
@@ -177,6 +199,18 @@ class PurchaseScenarioTest {
         Stand.json.decodeKompotComponent(
             get(HomeScreenResource()) { bearerAuth(token) }.bodyAsText(),
         )
+
+    // The header as it arrives, raw: null when the response carries none. Read raw rather than
+    // through `PresentationHeader.presentedAs`, which would answer `screen` for a missing header and
+    // for a misspelt one alike — and those are two different servers.
+    private suspend fun io.ktor.client.HttpClient.orderScreenPresentation(
+        token: String,
+        orderId: String,
+    ): String? =
+        get(OrderScreen(orderId = orderId)) { bearerAuth(token) }.let { response ->
+            assertEquals(HttpStatusCode.OK, response.status)
+            response.headers[PresentationHeader.HEADER_NAME]
+        }
 }
 
 // THE WALK IS `konektWalk`, beside the dictionary, and this file used to keep its own copy.

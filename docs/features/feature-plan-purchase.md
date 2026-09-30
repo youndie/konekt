@@ -128,6 +128,24 @@ keyed by order id.
 * **Then:** the home screen shows a data counter that did not exist before
 * **Automated:** `PurchaseScenarioTest` — the case `a purchase that is confirmed completes, and the allowance lands`
 
+### Scenario: the confirmation opens as a sheet over the plan page, and closing it confirms nothing
+* **Given:** a subscriber on a plan's page
+* **When:** they press `Buy`, and then close the sheet with a tap outside it or a drag down
+* **Then:** the confirmation is drawn over the plan page, which stays where it was; closing it uncovers that page, sends nothing, and leaves the order to its deadline
+* **Automated:** `ConfirmationSheetTest` (client), and on the stand `PurchaseScenarioTest` — the order screen asks for a sheet while it waits and for nothing once paid
+
+### Scenario: paying from the sheet leaves no sheet behind
+* **Given:** the confirmation open as a sheet over the plan page
+* **When:** the subscriber presses `Pay`
+* **Then:** the sheet closes and the result replaces the plan page
+* **Automated:** `ConfirmationSheetTest` — the case `pay leaves no sheet behind`
+
+### Scenario: a client that draws no sheet shows the confirmation as a screen
+* **Given:** a client that does not read the presentation header, or cannot draw a sheet
+* **When:** the subscriber presses `Buy`
+* **Then:** the confirmation replaces the plan page as a screen of its own, as it did before `B-116`
+* **Automated:** `ConfirmationSheetTest` — the case `a client without a sheet shows the confirmation as a screen`
+
 ### Scenario: a purchase nobody confirms is rolled back and the balance returns
 * **Given:** a purchase suspended at its confirmation
 * **When:** five minutes pass and the sweeper runs

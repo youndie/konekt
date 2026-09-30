@@ -1,0 +1,165 @@
+{
+  "type": "column",
+  "id": "purchase-result",
+  "children": [
+    {
+      "type": "text",
+      "id": "purchase-confirm-title",
+      "text": "Confirm purchase",
+      "style": "headline_small",
+      "color": "on_surface"
+    },
+    {
+      "type": "surface",
+      "id": "purchase-facts",
+      "children": [
+        {
+          "type": "row",
+          "id": "purchase-facts-plan",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-facts-plan-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Plan",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-facts-plan-value",
+              "text": "Turkey · 10 GB · 30 days",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        },
+        {
+          "type": "row",
+          "id": "purchase-facts-price",
+          "children": [
+            {
+              "type": "text",
+              "id": "purchase-facts-price-label",
+              "modifiers": [
+                {
+                  "type": "weight",
+                  "value": 1.0
+                }
+              ],
+              "text": "Price",
+              "style": "body_medium",
+              "color": "on_surface_variant"
+            },
+            {
+              "type": "text",
+              "id": "purchase-facts-price-value",
+              "text": "$12",
+              "style": "title_small",
+              "color": "on_surface"
+            }
+          ],
+          "spacing": 12
+        }
+      ],
+      "dividers": true
+    },
+    {
+      "type": "text",
+      "id": "purchase-source-label",
+      "text": "Pay from",
+      "style": "label_medium",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "surface",
+      "id": "purchase-source",
+      "children": [
+        {
+          "type": "row",
+          "id": "purchase-source-row",
+          "children": [
+            {
+              "type": "icon",
+              "id": "purchase-source-mark",
+              "icon": {
+                "paths": [
+                  "M5 12l5 5L20 7"
+                ]
+              },
+              "size": 28
+            },
+            {
+              "type": "column",
+              "id": "purchase-source-text",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "purchase-source-title",
+                  "text": "Balance — $38 left after this",
+                  "style": "title_small",
+                  "color": "on_primary_container"
+                },
+                {
+                  "type": "text",
+                  "id": "purchase-source-note",
+                  "text": "Instant, no fee",
+                  "style": "body_small",
+                  "color": "on_primary_container"
+                }
+              ],
+              "spacing": 2
+            }
+          ],
+          "spacing": 12
+        }
+      ],
+      "tone": "accent"
+    },
+    {
+      "type": "button",
+      "id": "purchase-confirm",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Pay $12",
+      "action": {
+        "type": "confirm_purchase",
+        "orderId": "1891b231-7819-4cf5-8cc7-28137fb5933b"
+      }
+    },
+    {
+      "type": "text",
+      "id": "purchase-awaiting",
+      "text": "$12 is on hold and has not been charged. Let the window pass and it is released.",
+      "style": "body_small",
+      "color": "on_surface_variant"
+    },
+    {
+      "type": "button",
+      "id": "purchase-not-now",
+      "modifiers": [
+        {
+          "type": "size",
+          "width": "Fill"
+        }
+      ],
+      "text": "Not now",
+      "action": {
+        "type": "navigate",
+        "deeplink": "app://home"
+      },
+      "variant": "link"
+    }
+  ],
+  "spacing": 16
+}

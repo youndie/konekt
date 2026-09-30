@@ -1,17 +1,22 @@
 package io.konekt.screenshots
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import io.github.youndie.kompot.KompotAction
 import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.KompotScreen
 import io.github.youndie.kompot.decodeKompotComponent
+import io.github.youndie.kompot.ds.material.KompotOverlays
+import io.github.youndie.kompot.ds.material.withOverlays
 import io.github.youndie.kompot.form.FormController
 import io.github.youndie.kompot.form.FormSchema
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
+import io.github.youndie.kompot.standard.PresentAction
+import io.github.youndie.kompot.standard.PresentKind
 import io.github.youndie.kompot.theme.KompotTheme
 import io.github.youndie.viddik.LocalViddikDarkTheme
 import io.github.youndie.viddik.annotations.ViddikScreenshot
@@ -146,6 +151,7 @@ internal class Recorded(
 private fun App(
     name: String,
     brand: String = DEFAULT_BRAND,
+    overlays: KompotOverlays = remember(name) { KompotOverlays() },
 ) {
     // `BrandFrame` supplies the kit and the dark switch viddik asks for; `KonektApp` is handed the
     // same kit so it paints its ground from the brand rather than from Material's default.
@@ -159,6 +165,7 @@ private fun App(
             // The product's scale on viddik's family — `BrandFrame` says why, and this frame has to
             // say it again because `KonektApp` builds its own theme inside it.
             typography = viddikTypography(KonektTypography.material),
+            overlays = overlays,
         )
     }
 }
@@ -214,6 +221,39 @@ fun AppPlanDetail() = App("plan-detail-screen")
 )
 @Composable
 fun AppConfirm() = App("confirm-screen")
+
+// THE CONFIRMATION AS THE CANVAS DRAWS IT (`B-116`): a sheet over the plan page, the page dimmed
+// under it and still there. The frame above is the same content as a screen, and it stays — that is
+// what a client that draws no sheet shows, and it is still a thing this build can draw.
+//
+// OPENED BEFORE THE FIRST FRAME, through kompot's own chain, because a still frame has no press to
+// open it with. `withOverlays` is the only writer of the layer, so the fixture goes through it
+// exactly as the holder does rather than setting a state the holder never would.
+//
+// Its own recording rather than `confirm-screen`: that one confirms a different plan from the one on
+// `plan-detail-screen`, and a sheet whose plan disagrees with the page under it is a frame that
+// photographs a state no subscriber can reach. Both were captured from one stand, one purchase apart.
+@ViddikScreenshot(
+    name = "App confirm sheet",
+    group = "AppFrame",
+    width = APP_WIDTH,
+    height = APP_HEIGHT,
+    darkVariant = true,
+)
+@Composable
+fun AppConfirmSheet() {
+    val overlays =
+        remember {
+            KompotOverlays().also { layer ->
+                val tree = konektClientJson.decodeKompotComponent(body("confirm-sheet-screen"))
+                KompotActionHandler { }
+                    .withOverlays(
+                        layer,
+                    ).handle(PresentAction(content = tree, kind = PresentKind.SHEET))
+            }
+        }
+    App("plan-detail-screen", overlays = overlays)
+}
 
 // THE REFUSAL, WHICH NOTHING PHOTOGRAPHED while it was one sentence for five different reasons.
 //

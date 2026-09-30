@@ -34,6 +34,10 @@ dependencies {
     // already uses for usage and roaming.
     implementation(project(":feature:esim-server-domain"))
     implementation(libs.kompot.ktor)
+    // THE PRESENTATION WORDS (`B-116`): the order screen asks to be a sheet in one state, and the
+    // word it sends is `ScreenRoutePresentation.SHEET`. `kompot-ktor` sets the header but keeps the
+    // module that names its values to itself (`implementation`), so it is asked for here by name.
+    implementation(libs.kompot.navigation)
 
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.resources)

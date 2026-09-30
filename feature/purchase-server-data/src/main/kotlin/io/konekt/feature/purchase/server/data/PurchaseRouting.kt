@@ -1,6 +1,7 @@
 package io.konekt.feature.purchase.server.data
 
 import io.github.youndie.kompot.ktor.respondKompotComponent
+import io.github.youndie.kompot.ktor.setPresentationHeader
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.konekt.feature.esim.server.domain.EsimRepository
 import io.konekt.feature.purchase.server.domain.ConfirmPurchaseUseCase
@@ -155,6 +156,11 @@ fun Route.purchaseRoutes() {
             loadOrderScreen(
                 FindOrderUseCase.Params(orderId = params.orderId, subscriberId = call.subscriberId()),
             ).getOrThrow()
+
+        // THE SHEET IS ASKED FOR BESIDE THE BODY, and BEFORE it: Ktor refuses a header once the body
+        // has started going out. Only the confirmation asks (`PurchaseResultScreen.presentation`);
+        // every other state answers with no header, which a client reads as "a screen".
+        PurchaseResultScreen.presentation(screen.order.status)?.let(call::setPresentationHeader)
 
         // respondKompotComponent, never call.respond. A plain respond resolves the serialiser from
         // the concrete runtime class and drops the "type" discriminator on the ROOT of the tree —

@@ -155,6 +155,16 @@ private fun parameters(entry: RouteEntry): List<JsonObject> =
 private fun successResponse(facts: EndpointFacts): JsonObject =
     buildJsonObject {
         put("description", facts.summary)
+        if (facts.successHeaders.isNotEmpty()) {
+            putJsonObject("headers") {
+                facts.successHeaders.forEach { (name, meaning) ->
+                    putJsonObject(name) {
+                        put("description", meaning)
+                        putJsonObject("schema") { put("type", "string") }
+                    }
+                }
+            }
+        }
         val contentType = facts.successContentType
         if (contentType != null) {
             putJsonObject("content") {

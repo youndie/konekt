@@ -5,6 +5,7 @@ import io.github.youndie.kompot.KompotModifierNode
 import io.github.youndie.kompot.SizeType
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.navigation.ScreenRoutePresentation
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
@@ -80,6 +81,31 @@ object PurchaseResultScreen {
                     OrderStatus.PENDING, OrderStatus.COMPENSATING -> inFlight(order)
                 },
         )
+
+    // HOW THIS ANSWER ASKS TO BE SHOWN (`B-116`), and it is a question about the STATE and not about
+    // the address. One address answers all five states, and the canvas draws exactly one of them as a
+    // sheet over the plan page: the confirmation. The completed order, the rollback, the refusal and
+    // the saga still running are screens of their own — a result is somewhere a subscriber arrives,
+    // not something laid over the plan they have just bought.
+    //
+    // So it travels as `X-Kompot-Presentation` on this one response rather than as `presentation` on a
+    // graph route (kompot SPEC §12.1: the route speaks for the address, the response for the state),
+    // and it is null — no header at all — for every other state. A client that does not read the
+    // header draws the confirmation as the screen it has always been, which is the degradation the
+    // header was chosen for.
+    //
+    // NO `else`, for the reason `build` gives: the next state is a compile error here too.
+    fun presentation(status: OrderStatus): String? =
+        when (status) {
+            OrderStatus.AWAITING_CONFIRMATION -> ScreenRoutePresentation.SHEET
+
+            OrderStatus.COMPENSATED,
+            OrderStatus.COMPLETED,
+            OrderStatus.REJECTED,
+            OrderStatus.PENDING,
+            OrderStatus.COMPENSATING,
+            -> null
+        }
 
     private fun reversed(
         order: OrderView,
@@ -407,7 +433,8 @@ object PurchaseResultScreen {
             // two-row table, `Pay from` over the one source there is drawn as a chosen option, the
             // pay button with the amount on it, and the hold sentence UNDER the button rather than as
             // the first thing on the screen. The canvas presents all of this as a sheet over the plan
-            // page; that is the client's presentation, and this is the content either way.
+            // page; `presentation` above asks for that beside the body (`B-116`), and this is the
+            // content either way — a client that draws no sheet draws it as a screen.
             add(
                 TextComponent(
                     id = "purchase-confirm-title",

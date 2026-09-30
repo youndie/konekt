@@ -1204,6 +1204,14 @@
                 "responses": {
                     "200": {
                         "description": "The result screen of one order, rollback included",
+                        "headers": {
+                            "X-Kompot-Presentation": {
+                                "description": "`sheet` while the order awaits confirmation, absent in every other state: how this ANSWER asks to be shown (kompot SPEC §12.1, §16.7). A client that cannot draw a sheet shows the screen.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -27,7 +27,7 @@ parent_feature: feature-plan-purchase
 | `POST /api/v1/purchases` | **user token** | `202` + `PurchaseOrderResponse` | start a purchase saga for a plan |
 | `POST /api/v1/purchases/{orderId}/confirm` | **user token** | `200` + `PurchaseOrderResponse` | answer the confirmation the saga is waiting for |
 | `GET /api/v1/purchases/{orderId}` | **user token** | `200` + `PurchaseOrderResponse` | the order as data |
-| `GET /api/v1/screens/orders/{orderId}` | **user token** | `200` + a **component tree** | the order as a screen — see [screen-purchase-result](../screens/screen-purchase-result.md) |
+| `GET /api/v1/screens/orders/{orderId}` | **user token** | `200` + a **component tree**, and `X-Kompot-Presentation: sheet` while the order awaits confirmation (`B-116`) | the order as a screen — see [screen-purchase-result](../screens/screen-purchase-result.md) |
 | `GET /api/v1/screens/history` | **user token** | `200` + a **component tree** | see [screen-order-history](../screens/screen-order-history.md) |
 | `GET /api/v1/screens/history/page?cursor=…` | **user token** | `200` + `KompotPageResponse` | the next page of rows to append |
 

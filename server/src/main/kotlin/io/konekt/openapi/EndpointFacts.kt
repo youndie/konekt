@@ -1,5 +1,6 @@
 package io.konekt.openapi
 
+import io.github.youndie.kompot.navigation.PresentationHeader
 import io.github.youndie.kore.ktor.KoreRoutes
 import io.konekt.feature.auth.shared.api.AuthOtp
 import io.konekt.feature.auth.shared.api.AuthSession
@@ -60,6 +61,10 @@ data class EndpointFacts(
     // it. 401 for a secured route and 500 for everything are added by the generator, because those
     // two are properties of the composition rather than of any handler.
     val refusals: Set<Int> = emptySet(),
+    // Headers a success MAY carry, by name, with what each one means. A header is wire as much as a
+    // body is, and one that is sent in some states and not others is exactly the kind a reader of
+    // this document would never guess (`B-116`).
+    val successHeaders: Map<String, String> = emptyMap(),
 )
 
 // The refs, spelled by file name and JSON pointer the way `kompot-tck` resolves them. The screen ref
@@ -441,6 +446,13 @@ val konektEndpointFacts: Map<String, EndpointFacts> =
                 kind = EndpointKind.SCREEN,
                 successBodyRef = WireSchema.PROFILE_COMPONENT,
                 refusals = setOf(404),
+                successHeaders =
+                    mapOf(
+                        PresentationHeader.HEADER_NAME to
+                            "`sheet` while the order awaits confirmation, absent in every other state: " +
+                            "how this ANSWER asks to be shown (kompot SPEC §12.1, §16.7). A client that " +
+                            "cannot draw a sheet shows the screen.",
+                    ),
             ),
         endpointKey<EsimWizardResource>("POST") to
             EndpointFacts(

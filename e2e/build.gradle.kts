@@ -26,6 +26,8 @@ dependencies {
     testImplementation(libs.kompot.standard)
     testImplementation(libs.kompot.auth)
     testImplementation(libs.kompot.realtime)
+    // The presentation header's name, read off the order screen as a client reads it (`B-116`).
+    testImplementation(libs.kompot.navigation)
     // The form half, so the schema and the patch can be decoded here as a client would.
     testImplementation(libs.kompot.formCore)
     testImplementation(libs.kompot.formStandard)

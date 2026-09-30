@@ -7,6 +7,7 @@ import io.github.youndie.kompot.generated.generatedKonektSerializersModule
 import io.github.youndie.kompot.generated.generatedStandardSerializersModule
 import io.github.youndie.kompot.kompotCoreSerializersModule
 import io.github.youndie.kompot.material3.M3Typography
+import io.github.youndie.kompot.navigation.ScreenRoutePresentation
 import io.github.youndie.kompot.standard.ButtonComponent
 import io.github.youndie.kompot.standard.ColumnComponent
 import io.github.youndie.kompot.standard.NavigateAction
@@ -595,6 +596,20 @@ class PurchaseResultScreenTest {
             )
 
         assertEquals(screen, json.decodeKompotComponent(json.encodeKompotComponent(screen)))
+    }
+
+    // ONE STATE IS A SHEET AND FOUR ARE NOT (`B-116`), and the set is the assertion rather than the
+    // one case: a presentation that answered `sheet` for everything would pass a test of the
+    // confirmation alone, and would lay the rollback over the plan page it had just refunded.
+    @Test
+    fun `only the confirmation asks to be a sheet`() {
+        val asking = OrderStatus.entries.filter { PurchaseResultScreen.presentation(it) != null }
+
+        assertEquals(listOf(OrderStatus.AWAITING_CONFIRMATION), asking)
+        assertEquals(
+            ScreenRoutePresentation.SHEET,
+            PurchaseResultScreen.presentation(OrderStatus.AWAITING_CONFIRMATION),
+        )
     }
 
     // THE REFUSAL SENTENCE is the paragraph under the headline (`B-114`), not a banner: a banner is

@@ -40,18 +40,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import io.github.youndie.kompot.KompotAction
+import io.github.youndie.kompot.KompotActionHandler
 import io.github.youndie.kompot.KompotComponent
 import io.github.youndie.kompot.LocalKompotDegradationSink
 import io.github.youndie.kompot.LocalKompotDesignSystem
 import io.github.youndie.kompot.LocalKompotPageLoader
 import io.github.youndie.kompot.LocalKompotRealtimeUpdates
+import io.github.youndie.kompot.ds.material.KompotOverlays
+import io.github.youndie.kompot.ds.material.withOverlays
 import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.material3.M3Colors
 import io.github.youndie.kompot.material3.M3Typography
 import io.github.youndie.kompot.navigation.NavigationBackStack
+import io.github.youndie.kompot.navigation.ScreenRoutePresentation
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.NavigateAction
+import io.github.youndie.kompot.standard.PresentAction
 import io.github.youndie.kompot.theme.KompotTheme
 import io.konekt.client.render.ScreenHeaderRow
 import io.konekt.client.render.VectorIconGlyph
@@ -184,6 +189,11 @@ fun KonektApp(
     // silently did nothing would make a button with no handler indistinguishable from one whose
     // handler is missing.
     onAction: suspend (KompotAction) -> Destination? = KonektApp.HANDLES_NOTHING,
+    // WHAT IS SHOWN OVER THE SCREEN (`B-116`): kompot's layer state, one per holder, reset with the
+    // address like everything else here. A parameter for the caller `theme` is one for — a screenshot
+    // fixture that has to photograph a sheet that is already open, which no press can arrange in a
+    // still frame. Everything else takes the default and never sees it.
+    overlays: KompotOverlays = remember(address) { KompotOverlays() },
 ) {
     // THE ADDRESS IS STATE NOW, seeded from the parameter. `remember(address)` on the seed rather
     // than `remember { }`: a caller that changes the address it passes still moves the holder, which
@@ -233,6 +243,11 @@ fun KonektApp(
     var presses by remember { mutableStateOf(0) }
     var pending by remember { mutableStateOf<KompotAction?>(null) }
     var reloads by remember { mutableStateOf(0) }
+
+    // AN ANSWER FETCHED BEFORE THE STACK MOVED, and handed to the fetch below so it is not asked for
+    // twice. The action path has to read an answer before it knows whether to move at all (`B-116`,
+    // below); this is what keeps that from costing a second request for every one that does move.
+    var prefetched by remember { mutableStateOf<Prefetched?>(null) }
 
     // WHICH DEEPLINKS ARE TABS, taken from the bar the SERVER sent rather than from a list here.
     // The tab set is a product decision that travels on the wire (`bottom_nav`), so a second copy in
@@ -285,7 +300,12 @@ fun KonektApp(
         loading = true
         failure = null
         try {
-            screen = screens.fetch(current)
+            val ready = prefetched?.takeIf { it.address == current }
+            prefetched = null
+            // A prefetch that FAILED is this fetch failing, and it is thrown here so the catch below
+            // reports it exactly as it reports its own — with the retry — rather than asking again.
+            ready?.failure?.let { throw it }
+            screen = ready?.screen ?: screens.fetch(current)
         } catch (cancellation: kotlinx.coroutines.CancellationException) {
             // Not a failure: a destination that changed again while this one was in flight cancels
             // this effect, and the effect that replaced it owns the state now.
@@ -297,9 +317,96 @@ fun KonektApp(
         }
     }
 
+    // THE HANDLER IS THE HOLDER'S, because navigation is. A source constructed with its own
+    // handler could not move the screen it is a source for — which is why `render` takes one
+    // rather than the source keeping it.
+    // The deprecated manager rather than `LocalClipboard`: the replacement's entry type is
+    // built per platform, and a copy of a string is not worth an expect/actual pair.
+    @Suppress("DEPRECATION")
+    val clipboard = LocalClipboardManager.current
+    val handle: (KompotAction) -> Unit = handle@{ action ->
+        // A COPY IS ANSWERED HERE AND GOES NO FURTHER (`B-115`): the text lands on the
+        // clipboard and nothing about it reaches the host or the server.
+        if (action is CopyAction) {
+            clipboard.setText(AnnotatedString(action.text))
+            return@handle
+        }
+        // A LAYER IS OPENED BY THE CHAIN, before this is reached (`withOverlays` below), and there
+        // is nothing further to do with it: handing it on to `onAction` would be a round through
+        // the runner for an action no runner answers.
+        if (action is PresentAction) return@handle
+        // The deeplink AND the address it resolved to, as one value: the stack needs the
+        // first to decide whether this was a tab, and the screen needs the second.
+        val move =
+            (action as? NavigateAction)?.let { nav ->
+                resolve(nav.deeplink, routeTable)?.let { nav.deeplink to it }
+            }
+        if (move != null) {
+            val (deeplink, destination) = move
+            // Clearing the overlay is not optional. It is keyed by component id and the ids
+            // of two different screens can collide — `counter-data` on one and on another —
+            // so an update recorded before a move would shadow a node on the screen after it.
+            updates.clear()
+            // A TAB IS A DESTINATION, NOT A STEP. Pressing one returns to the root of the
+            // stack instead of growing it: four tabs pressed in turn must not become four
+            // presses of back, which is the first thing a bottom bar gets wrong.
+            //
+            // MATCHED BEFORE THE QUERY, and that is not cosmetic. The orders screen grew
+            // filter chips, and each of them is a `navigate` to `app://orders?filter=…` — the
+            // same tab, narrower. Compared whole, none of them is a tab, so three chips
+            // pressed in turn became three presses of back before leaving the screen. A
+            // filtered tab is still the tab.
+            stack =
+                if (deeplink.substringBefore('?') in tabs) {
+                    NavigationBackStack(destination)
+                } else {
+                    stack.push(destination)
+                }
+        } else {
+            // HANDED TO AN EFFECT RATHER THAN LAUNCHED HERE. `onAction` suspends — buying is a
+            // request — and a renderer's click handler does not. Routing it through state
+            // means the work is cancelled with the composition rather than outliving it, and
+            // it needs no scope of its own to be cancelled with.
+            pending = action
+            presses += 1
+        }
+    }
+
+    // THE TOP OF THE CHAIN, and every press on every tree goes in here rather than to `handle`
+    // (`B-116`). `withOverlays` is kompot's: it opens the layer on `present`, closes it on `close`, and
+    // closes it on `navigate` BEFORE the move (kompot `B-67`) — so `Not now` inside the sheet leaves no
+    // sheet over the screen it goes to. What it cannot close is a press answered by the RUNNER with an
+    // address, because that never passes through the chain as a `navigate`; the action path below
+    // closes those itself.
+    val top = KompotActionHandler { action -> handle(action) }.withOverlays(overlays)
+    val raise: (KompotAction) -> Unit = { action -> top.handle(action) }
+
     LaunchedEffect(presses) {
         val action = pending ?: return@LaunchedEffect
         onAction(action)?.let { destination ->
+            // THE ANSWER IS READ BEFORE THE STACK MOVES, because the answer may ask not to be a
+            // screen at all (`B-116`). Buying answers with the order's address, and while the order
+            // waits for a confirmation the server asks for a SHEET over the plan page — the page
+            // stays mounted underneath, exactly where it was, and dismissing the sheet returns to it.
+            // Only a step can be a layer: a finished flow and a session boundary clear the stack by
+            // definition, and an answer at the address already shown is that screen, newer.
+            if (destination.arrival == Destination.Arrival.NEXT && destination.address != current) {
+                val arrived = prefetch(destination.address, screens) { loading = it }
+                val tree = arrived.screen as? Screen.Tree
+                if (tree != null && tree.presentation != ScreenRoutePresentation.SCREEN) {
+                    // Through the chain, so the layer is kompot's state and the host only draws it.
+                    top.handle(PresentAction(content = tree.component, kind = tree.presentation))
+                    return@let
+                }
+                prefetched = arrived
+            }
+
+            // AND A MOVE CLOSES THE LAYER, deliberately. `Pay` inside the sheet is konekt's own
+            // action and the runner answers it with the order's address — not a `navigate`, so
+            // `withOverlays` never sees a move and would leave the sheet open over the result. The
+            // result replaces the plan page (it is a `next`), and a sheet over it would be a
+            // confirmation of a purchase that has already happened.
+            overlays.closeEverything()
             updates.clear()
             stack =
                 when {
@@ -380,57 +487,6 @@ fun KonektApp(
             LocalKompotDegradationSink provides sink,
             LocalKompotPageLoader provides screens.pages(),
         ) {
-            // THE HANDLER IS THE HOLDER'S, because navigation is. A source constructed with its own
-            // handler could not move the screen it is a source for — which is why `render` takes one
-            // rather than the source keeping it.
-            // The deprecated manager rather than `LocalClipboard`: the replacement's entry type is
-            // built per platform, and a copy of a string is not worth an expect/actual pair.
-            @Suppress("DEPRECATION")
-            val clipboard = LocalClipboardManager.current
-            val handle: (KompotAction) -> Unit = handle@{ action ->
-                // A COPY IS ANSWERED HERE AND GOES NO FURTHER (`B-115`): the text lands on the
-                // clipboard and nothing about it reaches the host or the server.
-                if (action is CopyAction) {
-                    clipboard.setText(AnnotatedString(action.text))
-                    return@handle
-                }
-                // The deeplink AND the address it resolved to, as one value: the stack needs the
-                // first to decide whether this was a tab, and the screen needs the second.
-                val move =
-                    (action as? NavigateAction)?.let { nav ->
-                        resolve(nav.deeplink, routeTable)?.let { nav.deeplink to it }
-                    }
-                if (move != null) {
-                    val (deeplink, destination) = move
-                    // Clearing the overlay is not optional. It is keyed by component id and the ids
-                    // of two different screens can collide — `counter-data` on one and on another —
-                    // so an update recorded before a move would shadow a node on the screen after it.
-                    updates.clear()
-                    // A TAB IS A DESTINATION, NOT A STEP. Pressing one returns to the root of the
-                    // stack instead of growing it: four tabs pressed in turn must not become four
-                    // presses of back, which is the first thing a bottom bar gets wrong.
-                    //
-                    // MATCHED BEFORE THE QUERY, and that is not cosmetic. The orders screen grew
-                    // filter chips, and each of them is a `navigate` to `app://orders?filter=…` — the
-                    // same tab, narrower. Compared whole, none of them is a tab, so three chips
-                    // pressed in turn became three presses of back before leaving the screen. A
-                    // filtered tab is still the tab.
-                    stack =
-                        if (deeplink.substringBefore('?') in tabs) {
-                            NavigationBackStack(destination)
-                        } else {
-                            stack.push(destination)
-                        }
-                } else {
-                    // HANDED TO AN EFFECT RATHER THAN LAUNCHED HERE. `onAction` suspends — buying is a
-                    // request — and a renderer's click handler does not. Routing it through state
-                    // means the work is cancelled with the composition rather than outliving it, and
-                    // it needs no scope of its own to be cancelled with.
-                    pending = action
-                    presses += 1
-                }
-            }
-
             // THE FRAME EVERY SCREEN IS DRAWN IN, and it belongs here rather than in a tree.
             //
             // Two things the canvas draws on all nine of its frames and no screen response carries:
@@ -514,7 +570,7 @@ fun KonektApp(
                         closes = header?.closes == true,
                         onPress =
                             when {
-                                headerPress != null -> ({ handle(headerPress) })
+                                headerPress != null -> ({ raise(headerPress) })
                                 stack.canGoBack -> ({ stack = stack.pop() })
                                 else -> null
                             },
@@ -552,11 +608,11 @@ fun KonektApp(
                         shell?.nav != null || shell?.footer != null -> {
                             Stale(
                                 loading,
-                            ) { screens.render(Screen.Tree(shell.content), handle) }
+                            ) { screens.render(Screen.Tree(shell.content), raise) }
                         }
 
                         else -> {
-                            screen?.let { shown -> Stale(loading) { screens.render(shown, handle) } }
+                            screen?.let { shown -> Stale(loading) { screens.render(shown, raise) } }
                         }
                     }
                 }
@@ -567,15 +623,56 @@ fun KonektApp(
                 // held still rather than as a card that stopped moving.
                 shell?.footer?.let { footer ->
                     Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
-                        screens.renderNode(footer.copy(pinned = false), handle)
+                        screens.renderNode(footer.copy(pinned = false), raise)
                     }
                 }
 
                 // Outside the padded box on purpose: the bar runs edge to edge, which is what makes
                 // it read as the window's furniture rather than as the last thing on the screen.
-                shell?.nav?.let { screens.renderNode(it, handle) }
+                shell?.nav?.let { screens.renderNode(it, raise) }
             }
+
+            // OVER EVERYTHING, the bar included, and outside the frame's insets: the canvas dims the
+            // whole window, and the sheet reaches its bottom edge.
+            KonektSheetHost(overlays = overlays, darkMode = darkMode) { tree -> screens.renderNode(tree, raise) }
         }
+    }
+}
+
+// THE ANSWER TO A PRESS, fetched ahead of the move — or the failure to fetch it. A failure is not a
+// sheet, so the move goes ahead as it did before `B-116`, and the failure travels with it to the
+// frame's fetch, which reports it the one way this holder reports a failed fetch: the screen that
+// says so, with its retry. Nothing is asked for twice either way.
+private class Prefetched(
+    val address: String,
+    val screen: Screen?,
+    val failure: Exception?,
+)
+
+// `loading` for the duration, so the screen being left stops taking presses exactly as it does while
+// the frame fetches (`B-111`): a second `Buy` during the round trip would be a second order.
+private suspend fun prefetch(
+    address: String,
+    screens: ScreenSource,
+    loading: (Boolean) -> Unit,
+): Prefetched {
+    loading(true)
+    return try {
+        Prefetched(address, screens.fetch(address), failure = null)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (thrown: Exception) {
+        Prefetched(address, screen = null, failure = thrown)
+    } finally {
+        loading(false)
+    }
+}
+
+// Closes the question and the tree, in that order, with the one public call that closes a layer. The
+// toolkit's own close-everything is internal to it; `dismiss()` is what every host is given.
+private fun KompotOverlays.closeEverything() {
+    while (dismiss()) {
+        // Each pass closes one layer; the loop ends when there is nothing left to close.
     }
 }
 
@@ -596,6 +693,12 @@ fun KonektApp(
 sealed interface Screen {
     data class Tree(
         val component: KompotComponent,
+        // HOW THE ANSWER ASKED TO BE SHOWN, already resolved against what this client draws
+        // (`B-116`): `sheet` only when the response said so AND the client can draw one, `screen`
+        // otherwise — a missing header, a word from a newer server, a client built without a layer.
+        // Resolved at the source, where the headers are, so the holder never sees a raw header and
+        // cannot read it differently from the source that fetched it.
+        val presentation: String = ScreenRoutePresentation.SCREEN,
     ) : Screen
 
     data class Form(
