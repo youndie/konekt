@@ -18,6 +18,7 @@ import io.github.youndie.kompot.form.PatchFetcher
 import io.github.youndie.kompot.forms.FormPatchRequest
 import io.github.youndie.kompot.forms.KompotFormResponse
 import io.github.youndie.kompot.navigation.NavigationGraph
+import io.github.youndie.kompot.navigation.PresentationHeader
 import io.github.youndie.kompot.standard.KompotPageLoader
 import io.github.youndie.kompot.standard.KompotPageResponse
 import io.github.youndie.kompot.theme.KompotTheme
@@ -56,13 +57,18 @@ class KonektScreenSource(
     // WHERE A FORM ASKS FOR A RECOMPUTE. Empty by default like `submits`, and a form that is not in
     // it is drawn without a fetcher — see `KonektRoutes.patches`.
     private val patches: Map<String, String> = emptyMap(),
+    // WHAT THIS CLIENT CAN DRAW OVER A SCREEN, handed to `PresentationHeader.presentedAs`. A sheet,
+    // and nothing else: `KonektSheetHost` is the one layer konekt draws. A parameter so that a test
+    // can be the client that predates it — `setOf(SCREEN)` — against the same server.
+    private val presentations: Set<String> = KonektSheetHost.DRAWS,
 ) : ScreenSource {
     // ONE REQUEST, AND THE BODY DECIDES THE SHAPE. A form response is an object with `schema` and
     // `screen`; a screen is a component with a `type`. Choosing on the presence of `schema` rather
     // than on the address means the client needs no second copy of which routes are forms — the
     // server already said so by what it sent.
     override suspend fun fetch(address: String): Screen {
-        val body = http.get(address).bodyAsText()
+        val response = http.get(address)
+        val body = response.bodyAsText()
 
         // THE ADDRESS AND THE BODY IN THE MESSAGE, because a decoder's own is neither. "Unexpected
         // JSON token at offset 13" names no route and shows nothing, and the first thing anybody does
@@ -77,7 +83,19 @@ class KonektScreenSource(
         return if (root.containsKey("schema")) {
             Screen.Form(json.decodeFromString(KompotFormResponse.serializer(), body))
         } else {
-            Screen.Tree(json.decodeKompotComponent(body))
+            // THE HEADER IS READ HERE, beside the body it describes (`B-116`, kompot SPEC §12.1). The
+            // order screen asks to be a sheet while it waits for a confirmation and asks for nothing
+            // once it is a result — one address, two answers, and only the answer knows which.
+            // No route is passed: nothing this source fetches is looked up in the graph by the time
+            // it gets here, and without a route the rule is "a screen unless the answer says so".
+            Screen.Tree(
+                component = json.decodeKompotComponent(body),
+                presentation =
+                    PresentationHeader.presentedAs(
+                        header = response.headers[PresentationHeader.HEADER_NAME],
+                        supported = presentations,
+                    ),
+            )
         }
     }
 
