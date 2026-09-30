@@ -117,6 +117,9 @@ class ScreenshotCasesTest {
             "AppFrame - App esim install Dark",
             "AppFrame - App confirm",
             "AppFrame - App confirm Dark",
+            // The same confirmation as the canvas draws it — a sheet over the plan page (`B-116`).
+            "AppFrame - App confirm sheet",
+            "AppFrame - App confirm sheet Dark",
             // The state a first-time subscriber reaches by pressing the first thing they see, and the
             // one whose copy was rewritable by a green suite for as long as nothing photographed it.
             "AppFrame - App purchase refused",

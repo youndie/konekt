@@ -57,6 +57,7 @@ The same `@Resource` classes the server uses, through `ktor-client-resources`: t
 | `client/src/commonMain/kotlin/io/konekt/client/render/KonektRenderers.kt` | the registry: kompot's renderers plus konekt's three |
 | `client/src/commonMain/kotlin/io/konekt/client/render/UnknownBlockRenderer.kt` | what a component this build does not know draws |
 | `client/src/commonMain/kotlin/io/konekt/client/theme/KonektDesignSystem.kt` | shape, and surviving a server theme |
+| `client/src/commonMain/kotlin/io/konekt/client/app/KonektSheetHost.kt` | the one layer drawn over a screen — the confirmation's sheet (`B-116`), over kompot's `KompotOverlays` state |
 
 ## 3. How it is built
 

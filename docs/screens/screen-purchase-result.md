@@ -31,6 +31,7 @@ source: feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/
 | The wire type of a row | `shared/components/src/commonMain/kotlin/io/konekt/components/OrderRowComponent.kt` |
 | Money and dates | `shared/server-common/src/main/kotlin/io/konekt/money/MoneyFormat.kt`, `.../DayFormat.kt` |
 | Tests | `feature/purchase-server-data/src/test/kotlin/io/konekt/feature/purchase/server/data/PurchaseResultScreenTest.kt` |
+| The sheet the confirmation is drawn in (`B-116`) | `client/src/commonMain/kotlin/io/konekt/client/app/KonektSheetHost.kt`, `client/src/jvmTest/kotlin/io/konekt/client/app/ConfirmationSheetTest.kt` |
 
 ## 0. Entry point and visibility
 
@@ -60,7 +61,15 @@ The root is a `column` with id `purchase-result`, and the branch is `order.statu
   (`purchase-facts`), `Pay from` over the one source drawn as the chosen option — a `surface` in the
   `accent` tone with a filled check (`purchase-source`, present only when the balance could be
   read) — the `Pay $X` button, the hold sentence under it as text (`purchase-awaiting`), and
-  `Not now` as a `link`.
+  `Not now` as a `link`. **The one state that asks to be a sheet** (`B-116`): the route answers it
+  with `X-Kompot-Presentation: sheet` (`PurchaseResultScreen.presentation`), every other state with
+  no header. Reached by `Buy` on the plan page, the client lays it over that page — still mounted,
+  dimmed — in `KonektSheetHost`: a tap on the scrim or a drag down closes it and uncovers the page
+  where it was, and nothing is sent, so the order keeps its deadline and rolls itself back. `Pay`
+  closes it and the result replaces the plan page; `Not now` closes it and goes home. A client that
+  does not read the header, or cannot draw a sheet, shows this state as a screen of its own. Reached
+  any OTHER way — a history row, the custom package's submit — it is a screen too: only an answer to
+  a press is read before the stack moves (see `KonektApp`).
 - [x] **In flight** (`pending`, `compensating`) — a `banner`
   (`purchase-in-flight`, tone `info`): "Confirming with the payment provider. Keep the app open —
   this usually takes under 15 seconds."
