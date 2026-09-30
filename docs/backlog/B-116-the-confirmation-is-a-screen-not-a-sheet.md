@@ -1,7 +1,7 @@
 ---
 id: B-116
 title: "The purchase confirmation is a screen of its own, not a sheet over the plan page"
-status: wip
+status: done
 priority: P3
 size: M
 stage: stage-m7-completeness
@@ -104,18 +104,24 @@ sheet (`presentations = setOf(screen)`), or meets a word it does not know, does 
 | The canvas frame | `docs/design/audit-2026-09-02/design/07.png` |
 | The parent | [B-114](B-114-the-client-does-not-look-like-the-canvas.md) |
 
-## Iteration 1 — 2026-09-30
+## Where it was verified — 2026-09-30
 
-Server, client, sheet host and documents are done and verified on the Mac: `ConfirmationSheetTest`
-8/8, `PurchaseResultScreenTest` 18/18, the iOS simulator suites and link, `make check`, six mutations
-each caught. Stopped because the Linux box (192.168.1.102) stopped answering at 08:10 — neither WSL
-nor the Windows host on port 22. Left for the next iteration, in this order:
-
-1. `wsl-run ./gradlew build`.
-2. `make stand-up`, record `confirm-sheet-screen.json` (Turkey, $12 — the plan page the frame shows)
-   into `client/src/jvmTest/resources/recorded/`; the `App confirm sheet` fixture in
-   `AppFrameScreenshots.kt` and its two lines in `ScreenshotCasesTest.kt` are committed and wait for it.
-3. `LOCAL=1 ./gradlew :client:viddikRecord`, look at the new frame in both themes, `viddikVerify`.
-4. `make e2e` — including the new header check in `PurchaseScenarioTest` and the new stand test in
-   `ClientAgainstStandTest`.
-5. Status `done`, push, open the pull request.
+- **Linux box:** `./gradlew build` green — `viddikVerify compared 77 screenshot case(s)`, the server
+  suite and the conformance gate included. Then `make stand-up && make e2e` green: 34 `:e2e` cases and
+  17 `:client:standTest` cases, among them the header check in `PurchaseScenarioTest` (the deployed
+  route answers `X-Kompot-Presentation: sheet` while the order waits and no header once it is paid)
+  and `with money on the line the confirmation is a sheet over the plan page and paying leaves none`
+  in `ClientAgainstStandTest`. The stand was taken down after.
+- **Mac:** `ConfirmationSheetTest` 8/8, `PurchaseResultScreenTest` 18/18, the iOS simulator suites
+  (`:client` 5, `:shared:components` 7) and the simulator link, `make check`, `viddikVerify` 77 cases.
+- **Mutations, each caught:** no close on a move (`pay leaves no sheet behind`), the source ignoring
+  the header (five cases), a dead scrim, a sheet any drag closes, a holder that draws every answer as
+  a screen (four cases), every order state asking for a sheet (`only the confirmation asks to be a
+  sheet`).
+- **The new frame:** `App confirm sheet`, light and dark — the plan page for `tr-10gb-30d` under the
+  confirmation for the same plan, both captured from one stand; the plan page recording came back
+  byte-for-byte equal to the committed one. `viddikRecord` wrote exactly those two goldens and kept the
+  other 75. Against canvas frame 07: the dimmed page, the 36-point top corners, the handle, the table,
+  the chosen source and `Pay $12` match; the canvas's second source (a card) and its terms checkbox
+  are not drawn — the content is `B-114`'s and did not change here, and there is one source (`B-40`)
+  — and the frame has no back chevron because the fixture's plan page is the root of its stack.
