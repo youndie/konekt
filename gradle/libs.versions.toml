@@ -50,10 +50,18 @@ composeMultiplatform = "1.12.1"
 # requirement.
 composeMaterial3 = "1.12.0-alpha03"
 
-# 3.6.0, with the rest of the portfolio. It was held at 3.5.2 because 3.6.0 resolves okhttp 5.5.0,
-# whose Android artefact refuses to be compiled against anything below API 37 while
-# `androidCompileSdk` was 36; it is 37 since B-129, so that obstacle is gone.
-ktor = "3.6.0"
+# NOT 3.6.0 — yet, and the reason changed. The first one is gone: 3.6.0 resolves okhttp 5.5.0, whose
+# Android artefact refuses anything below API 37, and `androidCompileSdk` is 37 since B-129.
+#
+# The second is the test host. Tried on 2026-10-01 (youndie/konekt#56, both CI runs): the two
+# `RealtimeStreamTest` cases that open a stream under `testApplication` never get their first frame
+# and die at runTest's one-minute limit with UncompletedCoroutinesError — every other test, the e2e
+# job included, passes. 3.6.0 changed `TestApplicationResponse.respondWriteChannelContent` to launch
+# the writer in the CALL's coroutine context (KTOR-8705, ktorio/ktor@0ad7c7f), so a response that
+# never ends — which is what an SSE stream is — now holds the call open; ktorio/ktor#5880, open at the
+# time of writing, removes that job again. Moving this line waits for that fix, or for this test to
+# run on a real engine the way the client's stream tests already do.
+ktor = "3.5.2"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
