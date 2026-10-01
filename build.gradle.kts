@@ -7,10 +7,10 @@
 // tests AND its ktlint, so the gate is one command in both places.
 
 plugins {
-    alias(libs.plugins.kotlinJvm) apply false
-    alias(libs.plugins.kotlinMultiplatform) apply false
-    alias(libs.plugins.kotlinSerialization) apply false
-    alias(libs.plugins.ksp) apply false
+    alias(wip.plugins.kotlinJvm) apply false
+    alias(wip.plugins.kotlinMultiplatform) apply false
+    alias(wip.plugins.kotlinSerialization) apply false
+    alias(wip.plugins.ksp) apply false
     alias(libs.plugins.ktlint) apply false
     // AGP, DECLARED HERE THOUGH ONLY `build-logic` AND `:androidApp` APPLY IT.
     //
@@ -19,6 +19,6 @@ plugins {
     // applied anywhere. With AGP only on `build-logic`'s classpath the two are loaded by different
     // classloaders, and configuring ANY task failed with `ClassNotFoundException` naming an AGP class
     // — a message that reads like a corrupt cache and is a classpath split.
-    alias(libs.plugins.androidKotlinMultiplatformLibrary) apply false
-    alias(libs.plugins.androidApplication) apply false
+    alias(wip.plugins.androidKotlinMultiplatformLibrary) apply false
+    alias(wip.plugins.androidApplication) apply false
 }

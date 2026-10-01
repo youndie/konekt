@@ -3,9 +3,9 @@ plugins {
     // NO `org.jetbrains.kotlin.android`. AGP 9 carries Kotlin support itself and REFUSES the plugin
     // outright — "no longer required since AGP 9.0" — which is a good failure and worth recording,
     // because every Android sample written before AGP 9 lists it.
-    alias(libs.plugins.androidApplication)
+    alias(wip.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+    alias(wip.plugins.composeCompiler)
 }
 
 // THE ANDROID APPLICATION, and it is deliberately the thinnest thing that can be honest.
@@ -47,6 +47,8 @@ android {
 }
 
 kotlin {
+    // Named here because the conventions cannot: `sborka.base` sets the toolchain on modules with a
+    // Kotlin jvm or multiplatform plugin, and this one has AGP's built-in Kotlin instead.
     jvmToolchain(
         libs.versions.jvmToolchain
             .get()

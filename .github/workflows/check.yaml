@@ -85,11 +85,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Java and Gradle in one step and at one version for the portfolio. Java 25 is mandatory
-      # rather than chosen: kompot and petich publish variants tagged `org.gradle.jvm.version = 25`,
-      # and Gradle refuses to build a module on anything lower against them — with a message that
-      # names the dependency, not the rule. The shared action installs 21 and 25 and leaves 25 the
-      # default.
+      # Java and Gradle in one step and at one version for the portfolio. Java 25 is the toolchain
+      # (sborka's default, and `jvmToolchain` in the catalogue for `:androidApp`), and this build
+      # applies no toolchain resolver, so it has to be installed. The shared action installs 21 and
+      # 25 and leaves 25 the default.
       - uses: youndie/sborka/.github/actions/setup-kotlin@main
 
       # DECLARED RATHER THAN DISCOVERED. Half the test suite runs against a real Postgres 18 in a

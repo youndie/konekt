@@ -6,19 +6,20 @@ plugins {
 // build's compile classpath. Hence the markers below: they are how a plugin id becomes a
 // dependency coordinate.
 dependencies {
-    implementation(libs.plugins.kotlinJvm.marker())
-    implementation(libs.plugins.kotlinMultiplatform.marker())
-    implementation(libs.plugins.kotlinSerialization.marker())
+    implementation(wip.plugins.kotlinJvm.marker())
+    implementation(wip.plugins.kotlinMultiplatform.marker())
+    implementation(wip.plugins.kotlinSerialization.marker())
     implementation(libs.plugins.ktlint.marker())
     // AGP's multiplatform LIBRARY plugin, because `konekt.multiplatform` applies it: every module
     // both sides speak now has an Android target, and a precompiled script plugin can only name a
     // plugin whose implementation is on this build's compile classpath.
-    implementation(libs.plugins.androidKotlinMultiplatformLibrary.marker())
+    implementation(wip.plugins.androidKotlinMultiplatformLibrary.marker())
     // AND AGP ITSELF, which the marker does not bring. The marker POM carries the plugin id's
     // implementation and not the Variant API: applying the plugin succeeded and the first task
     // configuration failed with `ClassNotFoundException: AndroidComponentsExtension`, which reads
-    // like a corrupt cache rather than a missing dependency.
-    implementation(libs.androidGradlePlugin)
+    // like a corrupt cache rather than a missing dependency. Spelled against `wip.versions.agp`: the
+    // shared catalogue carries the plugin ids, not AGP as a library.
+    implementation(wip.versions.agp.map { "com.android.tools.build:gradle:$it" })
     // THE SHARED CONVENTIONS, named the same way. What used to be `konekt.base` — the coordinate,
     // the style, the JUnit platform and the guard that every declared @Test ran — lives in
     // `io.github.youndie.sborka` now, and the three plugins below are what the conventions in this

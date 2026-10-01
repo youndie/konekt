@@ -8,13 +8,12 @@
 
 # --- the language and its plugins -------------------------------------------------------------
 
-kotlin = "2.4.10"
-# Matched to the Kotlin version, not chosen: KSP is the compiler's symbol API and a mismatch fails
-# at the processor rather than at the plugin.
-ksp = "2.3.11"
-# The Kotlin Multiplatform Android plugin (com.android.kotlin.multiplatform.library), not the old
-# `com.android.library`. See docs/research/research-stack.md §1.1.
-agp = "9.3.1"
+# NOT HERE: kotlin, ksp and agp come from `wip`, the catalogue the sborka release pinned below
+# publishes (`wip.plugins.*`, and `wip.versions.*` where build-logic needs a bare number). Moving the
+# compiler is moving `sborka`, so KSP — the compiler's symbol API, which fails at the processor when
+# it does not match — and the compose COMPILER plugin can no longer drift from it. AGP is the Kotlin
+# Multiplatform Android plugin (com.android.kotlin.multiplatform.library), not the old
+# `com.android.library`; see docs/research/research-stack.md §1.1.
 
 # WHAT THE ANDROID HALF COMPILES AND RUNS AGAINST. `compileSdk` is the API the code is compiled
 # against and `minSdk` the floor a device must meet; they are separate numbers because raising the
@@ -42,7 +41,7 @@ androidxActivity = "1.12.0"
 # below, `viddik` and kompot move in ONE commit or not at all (B-129).
 #
 # Its COMPILER is not this version either: `org.jetbrains.kotlin.plugin.compose` ships with Kotlin
-# and is versioned with it, which is why the two plugin aliases below point at different refs.
+# and is versioned with it, which is why it comes from `wip` while this line stays here.
 composeMultiplatform = "1.12.1"
 
 # Material3 moves on its OWN line, exactly as it does in the toolkit's catalogue: it has no stable
@@ -51,12 +50,10 @@ composeMultiplatform = "1.12.1"
 # requirement.
 composeMaterial3 = "1.12.0-alpha03"
 
-# NOT 3.6.0 — yet. 3.6.0 resolves okhttp 5.5.0, whose Android artefact refuses to be compiled against
-# anything below API 37, and that was the reason this line stayed: `androidCompileSdk` was 36. It is
-# 37 since B-129 (kompot 0.38 requires it), so the obstacle is gone and what is left is an ordinary
-# bump that the kompot move deliberately did not carry — the rest of the portfolio has been on 3.6.0
-# since 2026-09-17, and kompot 0.38.0 itself is still compiled against 3.5.2.
-ktor = "3.5.2"
+# 3.6.0, with the rest of the portfolio. It was held at 3.5.2 because 3.6.0 resolves okhttp 5.5.0,
+# whose Android artefact refuses to be compiled against anything below API 37 while
+# `androidCompileSdk` was 36; it is 37 since B-129, so that obstacle is gone.
+ktor = "3.6.0"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
@@ -67,11 +64,16 @@ datetime = "0.8.0"
 # `org.gradle.jvm.version = 25`, and Gradle refuses to build a module on anything lower against
 # them. That is no longer true of either — kompot 0.38.0 declares 17 and petich 0.4.0.112 declares
 # 21, read from their `.module` files (B-129) — so 25 is now this build's choice rather than the
-# toolkits' demand. It lives here so the convention plugin reads it rather than repeating the literal.
+# toolkits' demand, and the same number as sborka's default toolchain.
+#
+# ONE READER: `:androidApp`. Every module with a Kotlin jvm or multiplatform plugin gets its toolchain
+# from `sborka.base` (through `konekt.base`); the application module has neither — AGP 9 carries
+# Kotlin itself — so the conventions never reach it, and it names the number here.
 jvmToolchain = "25"
 # The shared build conventions: the coordinate, the toolchain, the style, the test platform and the
-# guard that every declared @Test ran. Bumping this changes how every module is built.
-sborka = "0.4.0.54"
+# guard that every declared @Test ran — and, through the `wip` catalogue the release publishes, the
+# compiler. Bumping this changes how every module is built.
+sborka = "0.4.0.111"
 
 # --- style -------------------------------------------------------------------------------------
 
@@ -389,32 +391,22 @@ testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.
 
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
-# AGP as a LIBRARY, for `build-logic`'s compile classpath. A convention plugin that configures an
-# Android target names the Variant API by type, and the plugin marker does not carry it.
-androidGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
-
 [plugins]
 
-kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+# The Kotlin plugins, KSP, AGP's two and the compose COMPILER are `wip.plugins.*`: see the top of
+# [versions].
 # Compiles the commit, the build time and the version into a Kotlin object, which is what `/version`
 # serves. A generated source rather than a resource or a manifest entry, because Kotlin/Native has
 # neither — the plugin is shaped for the portfolio's native servers and the JVM gets the same answer.
 koreBuild = { id = "io.github.youndie.kore.build", version.ref = "kore" }
-androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
-# The APPLICATION plugin, for the one module that produces an APK. A different id from the line
-# above and the same AGP: the library plugin cannot build an application and vice versa.
-androidApplication = { id = "com.android.application", version.ref = "agp" }
 
 
 # TWO plugins and they are versioned apart. `org.jetbrains.compose` is the Compose Multiplatform
-# distribution; `org.jetbrains.kotlin.plugin.compose` is the compiler plugin, which ships with Kotlin
-# and therefore follows `kotlin`. Pointing both at one ref is how a build ends up asking for a
+# distribution, matched to the toolkit and kept here (B-129); `org.jetbrains.kotlin.plugin.compose` is
+# the compiler plugin, which ships with Kotlin and therefore comes from `wip` with it
+# (`wip.plugins.composeCompiler`). Pointing both at one ref is how a build ends up asking for a
 # compiler version that was never released.
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
-composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 # The screenshot tester's plugin. It exists because the wiring it replaces is silently wrong when
 # hand-written: the right KSP configuration and snapshot directory depend on how the target is

@@ -5,7 +5,7 @@ import org.gradle.jvm.application.tasks.CreateStartScripts
 
 plugins {
     id("konekt.jvm")
-    alias(libs.plugins.kotlinSerialization)
+    alias(wip.plugins.kotlinSerialization)
     alias(libs.plugins.exposedMigrations)
     // Generates `KoreBuildIdentity` — the commit, the build time and the version, compiled in rather
     // than read at runtime. A value read from a file or an environment variable is a value the
