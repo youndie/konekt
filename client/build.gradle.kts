@@ -5,12 +5,12 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     // The Android LIBRARY half of AGP. This module names its own targets rather than taking
     // `konekt.multiplatform`, so it names this plugin too.
-    alias(libs.plugins.androidKotlinMultiplatformLibrary)
+    alias(wip.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+    alias(wip.plugins.composeCompiler)
     // KSP is viddik's requirement rather than a choice of ours: the screenshot cases are GENERATED
     // from `@ViddikScreenshot` and the plugin fails the build outright if the processor is absent.
-    alias(libs.plugins.ksp)
+    alias(wip.plugins.ksp)
     alias(libs.plugins.viddik)
 }
 
@@ -29,12 +29,8 @@ plugins {
 // pair, while its protocol half (`kompot-core`, `kompot-realtime`, `kompot-auth`) still ships all
 // three. So this module names its targets, and `iosX64()` is not among them.
 kotlin {
-    jvmToolchain(
-        libs.versions.jvmToolchain
-            .get()
-            .toInt(),
-    )
-
+    // No `jvmToolchain(...)` here: `konekt.base` applies `sborka.base`, which sets it on every
+    // multiplatform module from the shared default.
     jvm()
 
     // ANDROID, AND THE CLAIM IT MAKES TRUE. This module used to say "Android joins with the item that

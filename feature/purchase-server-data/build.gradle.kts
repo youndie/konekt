@@ -1,6 +1,6 @@
 plugins {
     id("konekt.jvm")
-    alias(libs.plugins.kotlinSerialization)
+    alias(wip.plugins.kotlinSerialization)
 }
 
 dependencies {

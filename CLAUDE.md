@@ -7,7 +7,7 @@ not a product an operator deploys and sells service on; the telecom is the fixtu
 stack. What is deliberately absent, and why, is
 [docs/services/reference-scope.md](docs/services/reference-scope.md).
 
-Gradle 9.7.1, Kotlin 2.4.10, Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 was mandatory
+Gradle 9.7.1, Kotlin 2.4.20 (from sborka's `wip` catalogue), Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 was mandatory
 when this was written — kompot and petich published variants tagged `org.gradle.jvm.version = 25`,
 and Gradle refuses to build a module on anything lower against them. Neither does any more (kompot
 0.38.0 declares 17, petich 0.4.0.112 declares 21, `B-129`), so 25 is now this build's choice. The full version table, each row read

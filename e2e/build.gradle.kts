@@ -1,6 +1,6 @@
 plugins {
     id("konekt.jvm")
-    alias(libs.plugins.kotlinSerialization)
+    alias(wip.plugins.kotlinSerialization)
 }
 
 // THE STAND'S SUITE, and it has no `main`. Everything here is a test that drives a running deployment

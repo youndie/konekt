@@ -30,5 +30,21 @@ dependencyResolutionManagement {
         create("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
+        // The shared catalogue, which is where the compiler and AGP come from now. This build does
+        // not get it the way the main build does — it has its own settings and does not apply
+        // `sborka.settings` — so it takes it as what it is, a published catalogue.
+        //
+        // The pin is READ out of the main catalogue rather than written again: a second copy of the
+        // number would let the conventions on this classpath come from one release and the compiler
+        // from another, and both would build.
+        create("wip") {
+            val pin =
+                file("../gradle/libs.versions.toml")
+                    .readLines()
+                    .first { it.trimStart().startsWith("sborka = ") }
+                    .substringAfter('"')
+                    .substringBefore('"')
+            from("io.github.youndie.sborka:catalog:$pin")
+        }
     }
 }

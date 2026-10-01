@@ -1,6 +1,6 @@
 plugins {
     id("konekt.multiplatform")
-    alias(libs.plugins.kotlinSerialization)
+    alias(wip.plugins.kotlinSerialization)
 }
 
 kotlin {
