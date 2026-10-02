@@ -107,7 +107,9 @@ the process at that write and has a second engine's sweeper finish the purchase.
   re-driven, and the second `hold` hits the same unique index `capture` did. The member throws, the
   hold is released by the order, and the purchase ends `compensated`: the money is right and the
   purchase did not happen. It is the safe direction of the same contract, and it is its own item:
-  [B-131](B-131-a-stranded-first-pass-is-rolled-back.md).
+  [B-131](B-131-a-stranded-first-pass-is-rolled-back.md). (Wrong about the money on a balance that
+  covers the price once: there the re-run refused, and the hold stayed under a rejected order —
+  found and fixed in B-131.)
 - **The provider is asked to settle twice on a re-run.** The mock keeps nothing; a real provider would
   be handed the order id as its idempotency key, which `settle` already receives.
 

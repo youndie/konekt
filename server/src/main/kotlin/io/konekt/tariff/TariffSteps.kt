@@ -63,9 +63,10 @@ class ValidateTariffChange(
 // `authorize`: petich withdrew that overload (its B-39), because a phase meaning "before effects"
 // that accepts members with effects tells a reader nothing. Writing the promise down IS an effect —
 // the row exists afterwards and the compensation below cancels it. The record happens, and then the
-// member suspends. A member that
-// suspended is NOT re-executed on resume — the engine stores the index past it — so the row is
-// written once.
+// member suspends. A member that suspended is NOT re-executed on resume — the engine stores the index
+// past it. One that died before it could suspend IS: the stranded queue re-drives it on another
+// replica, so `record` keeps a row already under the change's id and the row is written once
+// (B-131, `StrandedTariffChangeTest`).
 class RecordTariffChange(
     private val changes: TariffChanges,
     private val ttl: Duration,

@@ -27,7 +27,8 @@ interface AccountBalances {
 
     // Refuses rather than going negative, and refuses in the database rather than after a read: two
     // purchases started together both pass a read-then-check, and what they would overspend is real
-    // money.
+    // money. `true` for an order already held, which takes nothing more: the member that holds is run
+    // again when its process died before the saga parked (B-131).
     suspend fun hold(
         accountId: String,
         orderId: String,
@@ -55,7 +56,8 @@ interface AccountBalances {
 
     // A zero-sum ledger entry that exists to carry a sentence: why the provider refused. The screen
     // that states a rollback in money reads this, and without it the only honest wording is "the
-    // operation did not go through", which is what a subscriber rings support about.
+    // operation did not go through", which is what a subscriber rings support about. Once per order:
+    // a second refusal of the same order is the same one, run again (B-131).
     suspend fun recordDecline(
         accountId: String,
         orderId: String,
@@ -108,6 +110,7 @@ data class AccountSnapshot(
 )
 
 interface Entitlements {
+    // One per order; a second call for the same order keeps the first (B-131).
     suspend fun createPending(
         orderId: String,
         subscriberId: String,

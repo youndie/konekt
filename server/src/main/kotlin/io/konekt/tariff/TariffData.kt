@@ -9,7 +9,7 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.lessEq
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -100,7 +100,12 @@ class ExposedTariffChanges(
         effectiveAt: Instant,
     ) {
         dbQuery {
-            TariffChangeTable.insert {
+            // `insertIgnore` under the unique `change_id` (B-131). `RecordTariffChange` is run again
+            // when its process died before the saga parked at the confirmation — the stranded queue
+            // re-drives it on another replica — and a plain insert threw there, so the change the
+            // subscriber asked for was cancelled. The row is keyed by the saga, so the one already
+            // there is this change.
+            TariffChangeTable.insertIgnore {
                 it[id] = Uuid.random().toString()
                 it[TariffChangeTable.changeId] = changeId
                 it[TariffChangeTable.subscriberId] = subscriberId

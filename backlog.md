@@ -43,16 +43,15 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (4)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
-| [B-131](docs/backlog/B-131-a-stranded-first-pass-is-rolled-back.md) `[ ]` | A stranded first pass is rolled back rather than carried forward | P3 | S | - |
 | [B-133](docs/backlog/B-133-drop-the-saga-sweep-claim-table.md) `[ ]` | saga_sweep_claim is written by nothing and still in the schema | P3 | S | - |
 
-## Closed (129)
+## Closed (130)
 
 **The wire and the shell**
 
@@ -191,6 +190,7 @@ so re-prioritising must never move a file.
 - [B-128](docs/backlog/B-128-a-saga-is-traced-nowhere.md) `[x]` - What one saga did is written nowhere this server can read it
 - [B-129](docs/backlog/B-129-kompot-0-38-moves-the-group-and-the-compose-line.md) `[x]` - kompot 0.38.0 moves its group and its Compose line, and konekt is its first consumer
 - [B-130](docs/backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md) `[x]` - An allowance has no name to be taken back by, so a grant whose answer was lost stays granted
+- [B-131](docs/backlog/B-131-a-stranded-first-pass-is-rolled-back.md) `[x]` - A stranded first pass is rolled back rather than carried forward
 - [B-132](docs/backlog/B-132-claimed-sweep-is-a-second-claim.md) `[x]` - ClaimedSweep is a second claim on top of the one petich already makes
 - [B-85](docs/backlog/B-85-the-client-has-no-android-target.md) `[x]` - The client claims Compose Multiplatform on two platforms and declares no Android target at all
 - [B-86](docs/backlog/B-86-changing-tariff-has-no-screen.md) `[x]` - Changing tariff has a saga, a table, a confirmation and no screen: only an e2e test can reach it

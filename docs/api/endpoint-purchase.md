@@ -119,6 +119,14 @@ to `409`, and **nothing in the product throws it today** — it is constructed o
   `compensated` from `POST /api/v1/purchases` itself, the balance is back, and its history row has no
   plan to name — it shows the reference — and reads `compensated` from the reversal beside it
   (`ExposedHistoryRepository`, `HoldRollbackTest`).
+- **A start that never answered may still become an order to confirm.** When the process dies
+  inside `POST /api/v1/purchases` after the hold — before the saga is parked at its confirmation — the
+  caller gets no answer and so no order id, and the order exists all the same: its saga is PROCESSING,
+  which this API states as `pending`. Two minutes on (`MockPaymentGateway.STRANDED_AFTER`) another
+  replica's stranded queue runs the hold again, which takes nothing more, and the order reads
+  `awaiting_confirmation` with its five-minute window counted from then; a start that was refused
+  reads `rejected` the same way
+  ([B-131](../backlog/B-131-a-stranded-first-pass-is-rolled-back.md), `StrandedFirstPassTest`).
 - **`/api/v1/screens/history/page` is written as a string in the server's own code**, in
   `HistoryScreen.pageUrl`, as well as being a `@Resource`. This repository's rule is that no endpoint
   path exists as a string outside a `*-shared-api` module (D13), and this is the one production source

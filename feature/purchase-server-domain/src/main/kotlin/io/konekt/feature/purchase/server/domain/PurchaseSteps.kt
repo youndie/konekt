@@ -128,8 +128,14 @@ class ValidatePurchase(
 // order it should always have had. The hold happens, and then the member suspends: the saga stops,
 // holding neither a
 // thread nor a database connection, and continues on a later HTTP request. A member that suspended is
-// deliberately NOT re-executed on resume — the engine stores the index PAST it — so the money is held
-// exactly once.
+// deliberately NOT re-executed on resume — the engine stores the index PAST it.
+//
+// IT IS RE-EXECUTED WHEN IT NEVER GOT TO SUSPEND. A process that dies after the hold and before the
+// write that parks the saga leaves it PROCESSING, and the stranded queue runs this member again on
+// another replica. So both writes are keyed by the order and land once however often they are asked:
+// `hold` answers `true` for an order already held, and `createPending` keeps the entitlement already
+// there (B-131, `StrandedFirstPassTest`). Before that the re-run threw on the first and refused on the
+// second, and a purchase that only lost its process was rolled back — or, refused, kept its money held.
 class HoldFunds(
     private val balances: AccountBalances,
     private val entitlements: Entitlements,

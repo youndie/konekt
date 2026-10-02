@@ -179,6 +179,23 @@ keyed by order id.
   `purchase.completed` is in the outbox
 * **Automated:** `ProvisionByOrderTest`, and below the saga `UsageGrantByOrderTest`
 
+### Scenario: a hold whose process died before the confirmation is carried to it
+* **Given:** a purchase whose hold and pending entitlement have committed, and whose process died
+  before the write that parks the saga at its confirmation
+* **When:** the stranded queue re-drives `HoldFunds` on another engine, two minutes on
+* **Then:** the order is `awaiting_confirmation` with one `HOLD`, one pending entitlement and the
+  balance down by the price once, and confirming it completes the purchase with one `CAPTURE`
+* **And:** on a balance that covers the price only once, the re-run is not refused
+* **Automated:** `StrandedFirstPassTest`
+
+### Scenario: a refusal whose process died is still a refusal
+* **Given:** a purchase refused for its balance, whose process died after the refusal was recorded
+  and before the saga ended
+* **When:** the stranded queue re-drives it
+* **Then:** the order is `rejected` with `insufficient_funds` as its reason, one `DECLINE` is in the
+  ledger, and the balance has not moved
+* **Automated:** `StrandedFirstPassTest`
+
 ### Scenario: an allowance whose answer was lost is taken back, and one that never landed takes nothing
 * **Given:** a subscriber who already bought the home bundle, buying it again
 * **When:** the second grant commits and its answer is lost — or never reaches the database — and
@@ -367,6 +384,15 @@ Then both answer 422 rather than rounding it
   `CAPTURE` as done, the grant adds only when its `usage_grant` row is new, and the roaming grant was
   already `insertIgnore` on the order. The provider is asked to settle twice; the mock keeps nothing,
   and a real one would be handed the order id as its key.
+- **So are the members before the confirmation, and they land once too**
+  ([B-131](../backlog/B-131-a-stranded-first-pass-is-rolled-back.md)). A process that dies inside
+  `HoldFunds`, or inside a refusal before the saga ends, leaves the saga PROCESSING for the stranded
+  queue. Before `B-131` the second `HOLD` and the second entitlement hit their unique indexes and the
+  purchase was rolled back; on a balance that covered the price once the re-run `hold` was refused by
+  its own WHERE clause instead, `HoldFunds` refused the order, and — petich not undoing a member that
+  refuses — the first pass's money stayed held under a `rejected` order. A refusal re-run hit the
+  `DECLINE` it had already written and ended `compensated`. Now `hold` answers `true` for an order
+  already held, and `createPending` and `recordDecline` keep the row already under the order.
 - **The engine is petich `0.4.0.120`, and the reason is this member.** On `0.4.0.112` the first member
   after a confirmation was outside its own rollback (petich B-66): `Provision` throwing compensated the
   hold and never `Provision`, so no undo written here could take a lost grant back. Since B-66 a
