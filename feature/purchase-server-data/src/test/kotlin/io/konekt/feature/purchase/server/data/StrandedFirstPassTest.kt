@@ -186,7 +186,11 @@ class StrandedFirstPassTest {
 
             val orderId = dieAfterTheEntitlementAndSweep()
 
-            assertEquals(0, ledgerEntries(orderId, LedgerEntryTable.DECLINE), "the re-run refused the hold it had already taken")
+            assertEquals(
+                0,
+                ledgerEntries(orderId, LedgerEntryTable.DECLINE),
+                "the re-run refused the hold it had already taken",
+            )
             assertWaitsOnceForItsConfirmation(orderId, opening)
             assertCompletesOnce(orderId, opening)
         }
@@ -230,7 +234,11 @@ class StrandedFirstPassTest {
         }
         val orderId = assertNotNull(dying.died, "the process never died — nothing was tested")
         assertEquals(PetichStatus.PROCESSING, repository.findById(orderId)?.status)
-        assertEquals(1, ledgerEntries(orderId, LedgerEntryTable.HOLD), "the first pass did not hold — nothing was tested")
+        assertEquals(
+            1,
+            ledgerEntries(orderId, LedgerEntryTable.HOLD),
+            "the first pass did not hold — nothing was tested",
+        )
 
         sweepStranded(holds)
 

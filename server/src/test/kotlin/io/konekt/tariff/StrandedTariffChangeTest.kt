@@ -100,11 +100,9 @@ class StrandedTariffChangeTest {
             val dying = ProcessDiesAtTheNextWrite(repository)
             val recording = ChangesThatArm(changes, dying)
 
-            assertFailsWith<ProcessDied> {
-                StartTariffChangeUseCase(engine(repository = dying, changes = recording), repository, catalogue, changes, clock)(
-                    StartTariffChangeUseCase.Params(subscriberId, "tr-max"),
-                ).getOrThrow()
-            }
+            val dyingEngine = engine(repository = dying, changes = recording)
+            val start = StartTariffChangeUseCase(dyingEngine, repository, catalogue, changes, clock)
+            assertFailsWith<ProcessDied> { start(StartTariffChangeUseCase.Params(subscriberId, "tr-max")).getOrThrow() }
             val changeId = assertNotNull(dying.died, "the process never died — nothing was tested")
             assertEquals(PetichStatus.PROCESSING, repository.findById(changeId)?.status)
 
