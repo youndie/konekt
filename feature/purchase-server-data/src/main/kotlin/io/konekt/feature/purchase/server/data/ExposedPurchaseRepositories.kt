@@ -19,6 +19,7 @@ import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -52,26 +53,46 @@ class ExposedAccountBalances(
                 }
         }
 
+    // HOLDING AN ORDER THAT IS ALREADY HELD IS NOT A SECOND HOLD, AND NOT A REFUSAL EITHER (B-131).
+    //
+    // petich re-runs a member whose process died before its next write — the stranded queue picks the
+    // saga up on another replica — so `HoldFunds` can arrive here for an order whose hold committed on
+    // the first pass. Two answers were wrong. With room on the balance for the price twice, the second
+    // HOLD entry hit `(order_id, kind)`, the member threw, and the purchase was rolled back. With room
+    // for it once, the WHERE clause refused, the member read that as a balance too low and REFUSED the
+    // order — and petich does not undo a member that refuses, so the first pass's money stayed held
+    // under a rejected order for good. Both are answered by the ledger: a HOLD under this order is
+    // this hold, so the answer is `true` and nothing moves.
     override suspend fun hold(
         accountId: String,
         orderId: String,
         amount: Money,
     ): Boolean =
-        dbQuery {
-            // THE REFUSAL IS THE WHERE CLAUSE. Two purchases started together both pass a read
-            // followed by a check in Kotlin, and what they overspend is real money. Only one can
-            // satisfy `balance_minor >= amount` inside the UPDATE, and the row count is the answer.
-            val moved =
-                AccountTable.update({
-                    (AccountTable.id eq accountId) and (AccountTable.balanceMinor greaterEq amount.minorUnits)
-                }) {
-                    it[balanceMinor] = AccountTable.balanceMinor minus amount.minorUnits
-                }
+        try {
+            dbQuery {
+                // THE REFUSAL IS THE WHERE CLAUSE. Two purchases started together both pass a read
+                // followed by a check in Kotlin, and what they overspend is real money. Only one can
+                // satisfy `balance_minor >= amount` inside the UPDATE, and the row count is the answer.
+                val moved =
+                    AccountTable.update({
+                        (AccountTable.id eq accountId) and (AccountTable.balanceMinor greaterEq amount.minorUnits)
+                    }) {
+                        it[balanceMinor] = AccountTable.balanceMinor minus amount.minorUnits
+                    }
 
-            if (moved == 1) {
-                entry(accountId, orderId, LedgerEntryTable.HOLD, -amount.minorUnits, amount.currency)
+                // A SECOND HOLD OF THE SAME ORDER fails here, on the unique index, and the exception
+                // rolls the UPDATE above back with it — one transaction, so the balance moves once.
+                if (moved == 1) {
+                    entry(accountId, orderId, LedgerEntryTable.HOLD, -amount.minorUnits, amount.currency)
+                }
+                // A REFUSAL FOR AN ORDER THAT IS ALREADY HELD is the first hold having taken the room.
+                // Asked after the UPDATE, so a hold of this order committing meanwhile is seen: the
+                // UPDATE waited on its row lock, and this statement reads what it committed.
+                moved == 1 || recorded(orderId, LedgerEntryTable.HOLD)
             }
-            moved == 1
+        } catch (violation: ExposedSQLException) {
+            if (violation.sqlState != UNIQUE_VIOLATION) throw violation
+            true
         }
 
     // RETURNING A HOLD, AT MOST ONCE, and it used to be once per caller.
@@ -216,8 +237,15 @@ class ExposedAccountBalances(
         amount: Money,
         reason: String,
     ) {
-        dbQuery {
-            entry(accountId, orderId, LedgerEntryTable.DECLINE, 0, amount.currency, reason)
+        // A REFUSAL RECORDED TWICE IS ONE REFUSAL (B-131). A member that refuses records why and then
+        // ends the saga; a process that dies between the two leaves the saga to the stranded queue,
+        // which runs the member again and refuses again — and a second DECLINE under
+        // `(order_id, kind)` made the refusal throw, so a purchase refused for its balance ended
+        // `compensated`. The first reason stays: it is the same refusal.
+        alreadyDoneIsNotAFailure {
+            dbQuery {
+                entry(accountId, orderId, LedgerEntryTable.DECLINE, 0, amount.currency, reason)
+            }
         }
     }
 
@@ -331,7 +359,11 @@ class ExposedEntitlements(
         price: Money,
     ) {
         dbQuery {
-            EntitlementTable.insert {
+            // `insertIgnore` under `uq_entitlement_order_id` (B-131): a `HoldFunds` re-run by the
+            // stranded queue finds the first pass's entitlement here, and a plain insert threw and
+            // rolled back a purchase that only lost its process. The row is keyed by the order, so
+            // the one already there is this one.
+            EntitlementTable.insertIgnore {
                 it[id] = Uuid.random().toString()
                 it[EntitlementTable.orderId] = orderId
                 it[EntitlementTable.subscriberId] = subscriberId

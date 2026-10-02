@@ -21,6 +21,7 @@ interface TariffChanges {
 
     suspend fun pendingOf(subscriberId: String): TariffChangeRecord?
 
+    // One row per change; a second call for the same change keeps the first (B-131).
     suspend fun record(
         changeId: String,
         subscriberId: String,
