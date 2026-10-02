@@ -111,7 +111,14 @@ to `409`, and **nothing in the product throws it today** — it is constructed o
 - **The reversal is announced by the member being undone**, the hold — not by the announcement.
   Compensation walks back only through the steps that ran (and the one whose outcome petich never
   learned), and a purchase abandoned at the confirmation never reaches `POST_PROCESSING`; an
-  announcement hanging off that member would never fire for the one case it exists for.
+  announcement hanging off that member would never fire for the one case it exists for. It is
+  announced when `release` reports that money came back, and not otherwise: the hold is released by
+  the order's name, so its undo also runs for a hold that never landed, and that one moved nothing.
+- **A purchase can be rolled back before it has an entitlement.** The hold and the pending
+  entitlement are two transactions, hold first; when the second fails, the order answers
+  `compensated` from `POST /api/v1/purchases` itself, the balance is back, and its history row has no
+  plan to name — it shows the reference — and reads `compensated` from the reversal beside it
+  (`ExposedHistoryRepository`, `HoldRollbackTest`).
 - **`/api/v1/screens/history/page` is written as a string in the server's own code**, in
   `HistoryScreen.pageUrl`, as well as being a `@Resource`. This repository's rule is that no endpoint
   path exists as a string outside a `*-shared-api` module (D13), and this is the one production source

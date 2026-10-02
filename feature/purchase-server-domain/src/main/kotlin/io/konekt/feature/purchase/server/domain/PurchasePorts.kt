@@ -34,11 +34,16 @@ interface AccountBalances {
         amount: Money,
     ): Boolean
 
+    // RETURNS THE HOLD BY THE ORDER'S NAME, and answers whether there was one. The order id is the
+    // name `hold` was given before it acted, so a caller that cannot know whether its hold landed —
+    // the compensation of a member that threw — asks for the release anyway and lets the ledger
+    // decide: `false` is an order with nothing held under it, and nothing moved. `true` means the
+    // order's hold is back, by this call or by an earlier one.
     suspend fun release(
         accountId: String,
         orderId: String,
         amount: Money,
-    )
+    ): Boolean
 
     // The hold becomes a spend. No balance movement — the money left at hold time — so this is the
     // ledger entry that turns a reservation into a purchase.

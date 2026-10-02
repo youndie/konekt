@@ -32,14 +32,22 @@ import kotlin.time.Duration.Companion.minutes
 // The order is now written at the bottom of this file, where it can be read, rather than
 // reconstructed from four `phase` fields and four priorities.
 
-// WHAT EACH ACTING MEMBER DID, beside that member's key in the saga's own row. These exist because
-// petich compensates the member whose outcome it never learned — a throw, a lost connection, a
-// process that died between an effect and the write that says so — and without a record the undo
-// cannot tell "it did not happen" from "it happened and said nothing". That question used to be
-// answered by reading our own ledger (youndie/konekt#48); it is asked where it arises now.
+// WHAT AN ACTING MEMBER DID, beside that member's key in the saga's own row — and what such a record
+// can and cannot say. petich compensates the member whose outcome it never learned: a throw, a lost
+// connection, a deadline that fired after the far side committed. The record is written by the
+// member after its calls return, so in exactly that case it is absent while the effect may well have
+// landed. It is evidence of what the member reached, never of what did not happen
+// (youndie/petich B-43). An undo that can name its effect undoes by the name; the record is for an
+// undo that has nothing else to go on.
 //
 // Both are registered in the serializers module beside the payloads. A record whose class is not
-// registered fails to deserialize, and the member it belongs to then compensates blind.
+// registered fails to deserialize, and so does the saga row that carries it.
+
+// NOT WRITTEN ANY MORE, and still registered. `HoldFunds` recorded this until its undo was found to
+// return quietly without it — a hold whose entitlement write threw, or whose own answer was lost, kept
+// the subscriber's money for good. The hold is released by the order's name now and asks for no
+// record. The class stays because rows written before that change carry it, and one of those that
+// cannot be decoded is an order that can no longer be confirmed, swept or shown.
 @Serializable
 @SerialName("purchase_held")
 data class Held(
@@ -143,14 +151,10 @@ class HoldFunds(
             return ctx.reject(PurchaseRefusals.INSUFFICIENT_FUNDS)
         }
 
+        // A SECOND WRITE IN A SECOND TRANSACTION, and the reason the undo below asks the ledger rather
+        // than this member. If it throws, the hold above has committed and nothing this member could
+        // have written after it exists.
         entitlements.createPending(ctx.petich.id, payload.subscriberId, payload.planId, payload.price)
-
-        // THE EVIDENCE THAT THE MONEY IS HELD, recorded in the same write as the hold itself. The
-        // undo below reads it instead of assuming: petich compensates the member whose outcome it
-        // never learned, and this member is the one that can be interrupted between holding the money
-        // and saying so — a `createPending` that throws, a connection lost at the suspend boundary.
-        // Without the record, that rollback releases a hold that may not exist.
-        ctx.record(Held(payload.price.minorUnits))
 
         // THE TTL IS THIS MEMBER'S, not the engine's, and five minutes is the number. It is the same
         // order as the one-time code the confirmation usually involves, and it bounds how long the
@@ -164,12 +168,17 @@ class HoldFunds(
         ctx: PetichStepContext,
         payload: PurchasePayload,
     ) {
-        // Nothing to release if nothing was held. See the record above.
-        ctx.recorded<Held>() ?: return
-
-        // The rollback the canvas draws in money. Both halves, and in this order: the balance first,
-        // because that is the number the subscriber is looking at.
-        balances.release(payload.accountId, ctx.petich.id, payload.price)
+        // BY THE ORDER'S NAME, AND UNCONDITIONALLY. This is called for a member that threw as well as
+        // for one that suspended, and the first is where the hold may have committed while nothing
+        // here learned it: an entitlement write that failed, a hold whose answer was lost. konekt#49
+        // asked a step record first and returned quietly without one, and in exactly those cases the
+        // record was absent and the money stayed held (`HoldRollbackTest`). The order id is the name
+        // `hold` was given before it acted, so the release asks for it and the ledger answers —
+        // a no-op when nothing was held, which is the other half of the same case.
+        //
+        // The balance first, because that is the number the subscriber is looking at.
+        val returned = balances.release(payload.accountId, ctx.petich.id, payload.price)
+        // Keyed by the order too: an UPDATE that finds no row cancels nothing.
         entitlements.cancel(ctx.petich.id)
 
         // THE REVERSAL IS ANNOUNCED HERE, and putting it on the announcing member instead was a
@@ -178,10 +187,10 @@ class HoldFunds(
         // announcement hanging off that member is one that never happens for the single case it
         // exists for.
         //
-        // The member being undone is this one: the hold. So this is where saying so belongs. It is
-        // now `ctx.emit` rather than an overridden `compensateWithEvents`, which is the same fact
-        // stated in the member's own vocabulary.
-        ctx.emit(events.reversed(ctx.petich.id, payload))
+        // The member being undone is this one: the hold. So this is where saying so belongs — and
+        // only when the ledger says money came back. A hold that never landed moved nothing, and a
+        // reversal announced for it would be news about a purchase nobody paid for.
+        if (returned) ctx.emit(events.reversed(ctx.petich.id, payload))
     }
 }
 
@@ -236,6 +245,12 @@ class Provision(
         // Between the capture and here the member can be interrupted, and an unconditional revoke
         // then takes away an allowance nobody added — the same shape as youndie/konekt#48, at a
         // different member.
+        //
+        // AND THE SIDE IT CANNOT SEE, which the hold had until it was given a name to undo by. A grant
+        // that commits and loses its answer leaves no record here, so its allowance is not revoked.
+        // The money and the entitlement still come back — `HoldFunds` undoes both by the order's
+        // name — but the home allowance has no name to undo by: `UsageGrants` adds to a counter and
+        // keys nothing by order. Until it does, this record is the most this member can go on (B-130).
         ctx.record(Provisioned(payload.zone))
     }
 
