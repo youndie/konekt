@@ -54,6 +54,14 @@ are what a glance reads; the two clauses `B-60` chose are still there behind it)
 lives in the *usage* domain and is named from the purchase one, because what an allowance is made of
 is this feature's business and a purchase only knows it bought a plan.
 
+**By the order, both ways (`B-130`).** A counter is a running total and cannot say which purchase added
+what, so each grant is also a `usage_grant` row under `(order_id, kind)` (`V15`), written in the
+transaction that adds to the counter — and the counter moves only when that row is new. A second run
+of the same purchase therefore adds nothing. `revokePlanAllowance(orderId)` takes back exactly what
+the rows under the order say, marks them, and does nothing when there are none: a rollback of a grant
+that never landed leaves an earlier plan alone, and a second rollback takes nothing twice. The
+subtraction is clamped at zero, because some of it may already be spent.
+
 **Spending, today:** nothing real produces traffic, so `TrafficChain` does — and it publishes to the
 broker rather than writing counters directly, because the path exercised has to be the one a real
 integration would use: broker → consumer → counter → realtime → screen. A simulator that wrote the
@@ -140,6 +148,14 @@ subscribers' allowances.
 * **Then:** the counter goes down and a frame carrying the rebuilt card is broadcast for that
   subscriber
 * **Automated:** `TrafficChainTest`
+
+### Scenario: an order adds its allowance once and is taken back once
+* **Given:** a subscriber's counters, granted under orders
+* **When:** one order is granted twice — in sequence or racing — or revoked twice, or an order with
+  nothing under it is revoked, or a revoked order is granted again
+* **Then:** the counters move by that order's amounts exactly once, and not at all for an order with
+  nothing under it or one already taken back
+* **Automated:** `UsageGrantByOrderTest`
 
 ### Scenario: a counter is floored at zero rather than going negative
 * **Given:** a counter with less left than one tick spends

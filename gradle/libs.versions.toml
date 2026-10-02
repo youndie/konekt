@@ -130,7 +130,13 @@ kompot = "0.39.0.193"
 #
 # `0.4.0.112` (B-128): the per-saga trace this server logs (petich B-58/B-60), and petich B-49..B-65
 # on the way. Two columns come with it, from petich B-54 — `V14__petich_0_4_0_112.sql`.
-petich = "0.4.0.112"
+#
+# `0.4.0.120` (B-130): petich B-66, a resume writes its start before it runs a member. On .112 the
+# first member after a confirmation was outside its own rollback — `Provision` throwing was never
+# compensated, so a grant whose answer was lost could not be taken back by any undo konekt wrote
+# (`ProvisionByOrderTest`). The other change on the way is B-64, a metrics callback nothing here
+# implements. No schema change.
+petich = "0.4.0.120"
 booblik = "0.3.4"
 
 # kore, the portfolio's process lifecycle. ALL FOUR MODULES ARE PORTFOLIO-ONLY — a comment here used

@@ -5,6 +5,7 @@ import io.konekt.feature.purchase.server.domain.PaymentGateway
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 // The payment provider this system does not have.
@@ -66,5 +67,15 @@ class MockPaymentGateway(
         // network can take, and a timeout that fires before the provider has answered turns a slow
         // approval into a rollback the subscriber never asked for.
         val EXECUTION_PHASE_TIMEOUT: Duration = 30.seconds
+
+        // HOW LONG A MOVING SAGA MAY GO UNWRITTEN BEFORE THE STRANDED QUEUE TAKES IT, and it lives
+        // beside the number it is bounded by. petich has no lease on that queue, so nothing tells a
+        // dead process from a slow one: this must exceed the longest a healthy member may take, which
+        // is the bound above (petich's README, `stuckAfter > max(phase and compensation timeouts)`).
+        // Four times it, so a provider at its slowest is never taken for a dead replica.
+        //
+        // Needed since petich B-66 (`0.4.0.120`): a confirmation writes PROCESSING before it runs
+        // `Provision`, so a process that dies there leaves a row no expiry looks at (B-130).
+        val STRANDED_AFTER: Duration = 2.minutes
     }
 }
