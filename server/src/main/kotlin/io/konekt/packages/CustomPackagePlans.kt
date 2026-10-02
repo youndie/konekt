@@ -10,7 +10,7 @@ import io.konekt.feature.roaming.server.domain.Zones
 // `B-87` needed the builder's three quantities to become an order, and the purchase saga takes a plan
 // id and re-resolves it from the catalogue at every step. Two ways to do that: teach the saga about a
 // second kind of thing to sell, or make the catalogue able to answer for a package it never listed.
-// The second is smaller and truer — the interceptors do not need to know the difference, and every
+// The second is smaller and truer — the saga's members do not need to know the difference, and every
 // refusal, compensation and screen the purchase already has works unchanged.
 //
 // THE ID CARRIES THE QUANTITIES and nothing else — `custom-10-300-50`. No row is written, because

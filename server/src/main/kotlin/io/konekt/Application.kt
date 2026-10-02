@@ -613,7 +613,7 @@ fun Application.module(
                 authModule(database, config.jwt, revealCodes = config.revealOtpCodes),
                 // THE CATALOGUE, WRAPPED. `CustomPackagePlans` answers for the ids the builder composes
                 // and delegates everything else, so the purchase saga sells a package nobody listed
-                // through exactly the interceptors it sells a listed plan through (`B-87`).
+                // through exactly the members it sells a listed plan through (`B-87`).
                 purchaseModule(
                     database,
                     CustomPackagePlans(StaticPlanCatalog()),
@@ -726,16 +726,17 @@ fun serverModule(
         // AND THE MOCK, which is a different thing and now starts separately. The last argument is
         // how long a roaming package stays dormant before the simulation starts it: explicit rather
         // than `get()`, because it is a `Duration` and so is `paymentDelay` — two bindings of one
-        // type resolve to whichever Koin saw last, which is the failure the qualified engines above
-        // exist to avoid.
+        // type resolve to whichever Koin saw last, which is the failure the saga engines needed a
+        // qualifier against while there was one per saga type.
         single { TrafficChain(get(), get(), get(), get(), get(), simulatedArrivalAfter) }
     }
 
 // The saga engine and its storage.
 //
-// ONE ENGINE PER SAGA TYPE, sharing one table. The sweeper resolves the owning engine per saga rather
-// than taking one, because rolling a purchase back with another type's interceptor list would run the
-// wrong compensations — or none.
+// ONE ENGINE FOR EVERY SAGA TYPE, over one table. It holds the three definitions and finds each
+// row's by the row's type, so the sweeper takes the engine itself rather than choosing one per saga.
+// A purchase rolled back by another type's definition would run the wrong compensations — or none;
+// a row whose type has no definition is skipped instead (youndie/petich B-31).
 //
 // requireOutbox is on. petich degrades quietly to a plain update when handed a repository that cannot
 // store events, and the saga still completes with correct state while nobody downstream is ever told.
@@ -835,9 +836,6 @@ fun petichModule(
         )
     }
 
-    // THE THIRD SAGA TYPE, and the third engine. petich resolves nothing by type — an engine is a
-    // fixed interceptor list — so the qualifier is what keeps a tariff change from being handed to the
-    // purchase engine, which supports none of its steps and would complete having done nothing.
     // THE SHELL, bound in the composition root because that is the one place that can see both the
     // tab set and every feature that needs one. A feature asks for chrome by its own deeplink and
     // never learns what a bar is — see `ScreenChrome`.
@@ -848,6 +846,8 @@ fun petichModule(
                 ?.let(Shell::bottomNav)
         }
     }
+    // THE THIRD SAGA TYPE, and no third engine: the tariff change is the last definition the one
+    // engine above holds (`tariffPetich`). What is bound here is what its members and use cases need.
     single<TariffCatalogue> { StaticTariffCatalogue() }
     single<TariffChanges> { ExposedTariffChanges(database, get()) }
 

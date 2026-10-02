@@ -37,9 +37,9 @@ import kotlin.time.Duration.Companion.minutes
 // claimed quota, money on hold. The deadline that ends that wait is enforced by a background sweeper
 // reading a clock, so testing it against the real one means a test that sleeps for the TTL. Here the
 // TTL is five minutes and the test takes milliseconds: the clock moves, nothing waits.
-// `runBlocking` and not `runTest`: the engine wraps each interceptor in `withTimeout`, and under
+// `runBlocking` and not `runTest`: the engine wraps each member in `withTimeout`, and under
 // `runTest`'s virtual clock the first real suspension inside one skips past that timeout and
-// cancels the step. This test's interceptor does no I/O and would survive it — which is exactly why
+// cancels the step. This test's step does no I/O and would survive it — which is exactly why
 // it is written the safe way rather than the way that happens to work.
 class SuspendedSagaExpiryTest {
     @Serializable

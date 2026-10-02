@@ -21,16 +21,18 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Duration
 
-// The engine is NOT built here. It is built by the composition root, because an application usually
-// keeps several — one per saga type, sharing one saga table — and only the root knows the set. A
-// feature that built its own would be a feature deciding how many there are.
+// The engine is NOT built here. It is built by the composition root, because there is one engine
+// for every saga type — it holds this feature's two definitions and the tariff change from `:server`
+// — and only the root can see them all. A feature that built its own would be a second engine over
+// the same saga table.
 fun purchaseModule(
     database: Database,
     // THE CATALOGUE AS A PARAMETER, defaulted to the static one. `B-87` needed the composition root
     // to wrap it — a custom package is a plan the catalogue did not write down, and resolving one
     // needs a tariff function that lives in `:server` — and the alternative was a second
     // `single<PlanCatalog>` in the root overriding this one. Two bindings for one type resolve to
-    // whichever Koin saw last, which is the failure the qualifier on the engines below exists for.
+    // whichever Koin saw last, which is the failure the saga engines needed a qualifier against while
+    // there was one per saga type.
     catalogue: PlanCatalog = StaticPlanCatalog(),
     paymentMode: MockPaymentGateway.Mode = MockPaymentGateway.Mode.APPROVE,
     paymentDelay: Duration = Duration.ZERO,
@@ -41,8 +43,8 @@ fun purchaseModule(
     single<PaymentGateway> { MockPaymentGateway(mode = paymentMode, delay = paymentDelay) }
 
     // Explicit lambdas rather than singleOf/factoryOf: the reflective form resolves every
-    // constructor parameter through the container, including defaulted ones, and both the
-    // interceptor list and the use cases have those.
+    // constructor parameter through the container, including defaulted ones, and the gateway above
+    // has three.
     // ONE ENGINE, asked for plainly. The qualifier here was not tidiness: there were two engines over
     // one saga table, and an unqualified `get()` would resolve whichever binding Koin saw last — a
     // purchase driven by the top-up list finds no step that supports its payload, completes having
@@ -53,7 +55,7 @@ fun purchaseModule(
     factory { ConfirmPurchaseUseCase(get(), get(), get()) }
     factory { FindOrderUseCase(get(), get()) }
 
-    // Putting money in. The engine is the top-up one for the same reason.
+    // Putting money in, through the same engine: the top-up is one of its definitions.
     factory { StartTopUpUseCase(get(), get(), get()) }
     factory { FindTopUpUseCase(get(), get()) }
     // Both were injected by `purchaseRoutes` and bound by nothing, so the history screen and the

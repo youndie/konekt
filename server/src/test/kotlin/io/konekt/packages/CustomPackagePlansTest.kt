@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 // A custom package has no row: the id carries the three quantities, so anything that can reach
 // `POST /api/v1/purchases` can name one. If the catalogue parsed three numbers and priced them, a
 // caller could order 9999 GB at whatever `priceOf` returns for it — the purchase saga would take the
-// plan, hold the money and grant the entitlement, and every interceptor would be behaving correctly
+// plan, hold the money and grant the entitlement, and every member would be behaving correctly
 // over a package nobody was ever offered.
 class CustomPackagePlansTest {
     private val plans = CustomPackagePlans(StaticPlanCatalog())

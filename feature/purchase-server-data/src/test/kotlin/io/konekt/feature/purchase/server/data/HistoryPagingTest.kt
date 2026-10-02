@@ -363,7 +363,7 @@ class HistoryPagingTest {
     // THE HOLD IS NOT OPTIONAL HERE, and it used to be absent.
     //
     // This fixture wrote an entitlement and no ledger row, which was a half-real order: the product
-    // writes both in one interceptor (`HoldFundsInterceptor`), because a purchase that reserved
+    // writes both in one step (`HoldFunds`), because a purchase that reserved
     // nothing is not a purchase. The list is driven by the ledger now, so the omission stopped being
     // harmless — and a fixture that cannot be built the way the product builds it was never testing
     // the product.

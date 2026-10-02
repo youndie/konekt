@@ -57,7 +57,7 @@ class ValidateTariffChange(
     }
 }
 
-// 2. AUTHORIZATION — write the promise down, then wait for the subscriber.
+// 2. EXECUTION — write the promise down, then wait for the subscriber.
 //
 // One member rather than two, exactly as the purchase saga does it, and a STEP rather than an
 // `authorize`: petich withdrew that overload (its B-39), because a phase meaning "before effects"

@@ -13,9 +13,9 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class StartTopUpUseCase(
-    // The TOP-UP engine, and the qualifier matters. An engine built with the purchase interceptor
-    // list would find no step that supports a TopUpPayload, complete a saga that did nothing, and
-    // answer COMPLETED for a top-up that never took a penny.
+    // THE ONE ENGINE, the same one the purchase use cases take. It finds this saga's definition,
+    // `topUpPetich`, by the `TOP_UP_SAGA_TYPE` written on the row below; there is no top-up engine of
+    // its own to ask for, and so no qualifier (youndie/petich B-31).
     private val engine: PetichEngine,
     private val topUps: PetichRepository,
     private val balances: AccountBalances,

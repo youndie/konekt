@@ -154,8 +154,10 @@ class OneRefundPerHoldTest {
     //
     // `hold` writes its entry only when the UPDATE moved a row, so an order with no `HOLD` is one
     // where the money was never taken. petich `0.3.0` compensates the step that THREW as well as the
-    // steps below it (youndie/petich#59), and `HoldFundsInterceptor.compensate` calls `release` — so
-    // a gateway or a database that fails inside `hold` arrives here as a refund of nothing.
+    // steps below it (youndie/petich#59), and the hold's undo called `release` unconditionally — so a
+    // gateway or a database that failed inside `hold` arrived here as a refund of nothing.
+    // `HoldFunds.compensate` asks its own step record (`Held`) first now; this holds the ledger to
+    // the same answer for any caller.
     // `konekt#48` found it on the top-up side; this is the same question asked of the purchase side,
     // and it costs more, because inventing money is worse than losing track of it.
     @Test

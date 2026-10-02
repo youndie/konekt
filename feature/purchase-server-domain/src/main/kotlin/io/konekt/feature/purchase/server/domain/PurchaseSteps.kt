@@ -110,7 +110,7 @@ class ValidatePurchase(
     }
 }
 
-// 2. AUTHORIZATION — hold the money, then wait for the subscriber.
+// 2. EXECUTION — hold the money, then wait for the subscriber.
 //
 // ONE MEMBER RATHER THAN TWO, per D5 — and a STEP, which is the correction petich made to D3 on our
 // account. That decision existed because this member holds money and then waits, and `authorize` was

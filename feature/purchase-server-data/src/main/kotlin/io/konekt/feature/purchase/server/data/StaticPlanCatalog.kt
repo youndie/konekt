@@ -12,8 +12,8 @@ import io.konekt.feature.purchase.server.domain.PlanCatalog
 // would have to be maintained by the first person who wanted a fourth plan. The real catalogue, with
 // prices that move and a zone per plan, is B-19's.
 //
-// The sold-out plan is not padding: the canvas draws that row, and a purchase interceptor refuses on
-// it, so it is the fixture that makes the refusal path testable at all.
+// The sold-out plan is not padding: the canvas draws that row, and the purchase saga's validation
+// (`ValidatePurchase`) refuses on it, so it is the fixture that makes the refusal path testable at all.
 class StaticPlanCatalog(
     private val plans: List<Plan> = DEFAULT,
 ) : PlanCatalog {

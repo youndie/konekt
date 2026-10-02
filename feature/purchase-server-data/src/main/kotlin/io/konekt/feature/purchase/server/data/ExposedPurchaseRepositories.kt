@@ -98,10 +98,11 @@ class ExposedAccountBalances(
         alreadyDoneIsNotAFailure {
             dbQuery {
                 // THE SAME QUESTION AS `debit`, and the answer matters here for the same reason.
-                // `hold` writes its entry only when the UPDATE moved a row, and
-                // `HoldFundsInterceptor.compensate` is reached under petich `0.3.0` when `hold`
-                // itself threw — so a RELEASE without a HOLD would ADD money that was never taken,
-                // which is the mirror of `konekt#48` and the more expensive direction of it.
+                // `hold` writes its entry only when the UPDATE moved a row, and petich (since `0.3.0`)
+                // compensates a member whose `hold` itself threw — so a RELEASE without a HOLD would
+                // ADD money that was never taken, which is the mirror of `konekt#48` and the more
+                // expensive direction of it. `HoldFunds.compensate` asks its own step record (`Held`)
+                // before it calls this; the ledger asks again, for any caller.
                 if (!recorded(orderId, LedgerEntryTable.HOLD)) return@dbQuery
                 entry(accountId, orderId, LedgerEntryTable.RELEASE, amount.minorUnits, amount.currency)
                 AccountTable.update({ AccountTable.id eq accountId }) {
@@ -145,13 +146,14 @@ class ExposedAccountBalances(
             dbQuery {
                 // NOTHING TO TAKE BACK IF NOTHING WAS GIVEN, and this guard is not defensive
                 // programming — it is the difference between two compensations that look identical
-                // from here. `CollectFundsInterceptor.intercept` settles at the provider BEFORE it
-                // credits, so a settle that throws — a gateway timeout, a reset connection, a 502 —
-                // leaves no `TOP_UP` behind. petich `0.3.0` compensates the step that threw as well
-                // as the steps below it (youndie/petich#59), because the engine cannot tell an
-                // effect that reached the far side from a call that never landed; without this
-                // guard that arrives here as a `TOP_UP_REVERSAL` against a top-up with no `TOP_UP`,
-                // and a balance dropping by an amount nobody ever added (`konekt#48`).
+                // from here. `CollectFunds.execute` settles at the provider BEFORE it credits, so a
+                // settle that throws — a gateway timeout, a reset connection, a 502 — leaves no
+                // `TOP_UP` behind. petich `0.3.0` compensates the step that threw as well as the steps
+                // below it (youndie/petich#59), because the engine cannot tell an effect that reached
+                // the far side from a call that never landed; without a guard that arrives here as a
+                // `TOP_UP_REVERSAL` against a top-up with no `TOP_UP`, and a balance dropping by an
+                // amount nobody ever added (`konekt#48`). `CollectFunds.compensate` now asks its own
+                // step record (`Credited`) first; this is the ledger asking again, for any caller.
                 //
                 // `alreadyDoneIsNotAFailure` does not cover it: that makes a SECOND reversal
                 // harmless, and this is a first one that should not happen.
