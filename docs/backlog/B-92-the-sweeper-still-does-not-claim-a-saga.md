@@ -9,6 +9,10 @@ stage: stage-m7-completeness
 
 # B-92 — The outcome is correct and the work is still done twice
 
+> **Removed by [B-132](B-132-claimed-sweep-is-a-second-claim.md).** petich claims both of its sweep
+> queues on the saga's own row since its B-26, so `ClaimedSweep` became a second claim on top of one
+> already closed. The anchors below name where it was, at the last commit that had it.
+
 [B-64](B-64-a-rollback-refunds-once-per-replica.md) found a purchase abandoned at its confirmation
 being refunded once per running replica, and closed it at the invariant: a unique index on
 `ledger_entry (order_id, kind)`, the entry written before the balance moves, and `23505` swallowed
@@ -107,8 +111,8 @@ one, that is a finding for
 
 | What | Where |
 |---|---|
-| The claim | `server/src/main/kotlin/io/konekt/petich/ClaimedSweep.kt` |
+| The claim | `youndie/konekt@396d761!/server/src/main/kotlin/io/konekt/petich/ClaimedSweep.kt` |
 | Where it is wired in | `server/src/main/kotlin/io/konekt/Application.kt` (`SuspendedPetichSweeper`) |
 | The table | `shared/db/src/main/resources/db/migration/V12__saga_sweep_claim.sql`, `shared/db/.../CoreTables.kt` |
-| The race, against a real database | `server/src/test/kotlin/io/konekt/petich/ClaimedSweepTest.kt` |
+| The race, against a real database | `youndie/konekt@396d761!/server/src/test/kotlin/io/konekt/petich/ClaimedSweepTest.kt` |
 | The invariant it does not replace | `docs/backlog/B-64-a-rollback-refunds-once-per-replica.md` |
