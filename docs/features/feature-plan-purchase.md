@@ -31,13 +31,13 @@ saga that already records every step it took.
 
 ## 2. Business rules
 
-* **Four interceptors, not six**, and the number is measured rather than aesthetic: petich writes the
-  saga row at every step boundary, about 9 writes for four steps against about 17 for six (petich's
+* **Four members, not six**, and the number is measured rather than aesthetic: petich writes the
+  saga row at every member boundary, about 9 writes for four against about 17 for six (petich's
   own figure, through `pg_stat_user_tables`; **not re-measured here**). This is the most frequent
   operation in the product.
 * A purchase is refused **before anything happens** when the plan is unknown, off sale, priced
-  differently from what the subscriber was shown, or beyond their balance. That refusal is a
-  `Reject`: the saga ends `rejected` and there is nothing to undo.
+  differently from what the subscriber was shown, or beyond their balance. That refusal is
+  `ctx.reject` in a check: the saga ends `rejected` and there is nothing to undo.
 * **A hold debits the visible balance.** This product shows one number, not an available-versus-total
   pair.
 * The hold refuses **in the database**, not after a read: two purchases started together both pass a
@@ -81,23 +81,28 @@ messages — and a price that changes as they move.
 
 ## 3. Flow
 
-The four interceptors, in petich's phase order
-(`feature/purchase-server-domain/.../PurchaseInterceptors.kt`):
+One petich definition, `purchasePetich`, with its four members written in the order they run
+(`feature/purchase-server-domain/.../PurchaseSteps.kt`):
 
-1. **VALIDATION** — `ValidatePurchaseInterceptor`. Catalogue, sale state, price and balance. A refusal
-   here is a `Reject`.
-2. **AUTHORIZATION** — `HoldFundsInterceptor`. Holds the money, creates a pending entitlement, and
-   returns `Suspend(requiredAction = "CONFIRM", ttl = 5 minutes)`. The saga stops, holding nothing.
-   **An interceptor that returned `Suspend` is not re-executed on resume**, so the money is held once.
+1. **VALIDATION** — `ValidatePurchase`, a check. Account, catalogue, sale state, price and balance. A
+   refusal here is `ctx.reject`, written first into the ledger with its reason whenever there is an
+   account to write it to (`B-68`); a check has nothing to undo.
+2. **EXECUTION** — `HoldFunds`, a step. Holds the money (refusing the same way when the database
+   says the balance does not cover it), creates a pending entitlement, records `Held`, and suspends
+   with `ctx.suspendFor("CONFIRM", 5 minutes)`. The saga stops, holding nothing. **A member that
+   suspended is not re-executed on resume**, so the money is held once.
 3. *(the subscriber confirms — `POST /api/v1/purchases/{orderId}/confirm`)*
-4. **EXECUTION** — `ProvisionInterceptor`. Settles with the provider; on a decline it records the
-   reason in the ledger and returns `Compensate`. On approval it captures the hold, activates the
-   entitlement and **grants the allowance** through the usage feature's port.
-5. **POST_PROCESSING** — `AnnouncePurchaseInterceptor`. Emits `purchase.completed` into the outbox.
+4. **EXECUTION** — `Provision`, a step. Settles with the provider; on a decline it records the reason
+   in the ledger and calls `ctx.fail`. On approval it captures the hold, activates the entitlement,
+   **grants the allowance** through the usage feature's port — or a dormant roaming package, by zone —
+   and records `Provisioned`.
+5. **POST_PROCESSING** — `AnnouncePurchase`, an announcement. Emits `purchase.completed` into the
+   outbox.
 
-Compensation walks back only through steps that **actually ran forward**, which is why the reversal
-event is announced by the hold step and not by the announcing step: a purchase abandoned at the
-confirmation never reaches POST_PROCESSING.
+Compensation walks back only through the steps that **ran forward** — and the one whose outcome petich
+never learned, see the quirks — which is why the reversal event is announced by the hold's
+compensation and not by the announcement: a purchase abandoned at the confirmation never reaches
+POST_PROCESSING.
 
 The outbox relay then publishes to [konekt-broker](../services/konekt-broker.md), topic `orders`,
 keyed by order id.
@@ -106,7 +111,7 @@ keyed by order id.
 
 | Service | Code |
 |---|---|
-| konekt-server | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/` — the four interceptors, the use cases, the ports, the history |
+| konekt-server | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/` — the saga and its four members (`PurchaseSteps.kt`), the top-up's (`TopUpSteps.kt`), the use cases, the ports, the history |
 | konekt-server | `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/` — the routes, the two screens, the ledger, the payment mock, the catalogue |
 | konekt-server | `feature/purchase-shared-api/src/commonMain/kotlin/io/konekt/feature/purchase/shared/api/PurchaseApi.kt` — the contract |
 | konekt-server | `server/src/main/kotlin/io/konekt/Application.kt` — `petichModule`: the engine, the phase timeout, `requireOutbox = true` |
@@ -176,7 +181,7 @@ keyed by order id.
 * **Given:** a purchase that was declined
 * **When:** the order is fetched later
 * **Then:** the reason is still there — it is written into the ledger by the step that learned it,
-  because petich carries a `Compensate` reason to its metrics and does not persist one
+  because petich carries a `ctx.fail` reason to its metrics and does not persist one
 * **Automated:** `PaymentDeclineTest`
 
 ### Scenario: a slow provider still completes
@@ -279,10 +284,11 @@ Then both answer 422 rather than rounding it
 
 - **petich's `FAILED` is the product's `compensated`.** A cleanly rolled-back saga ends in `FAILED`,
   and showing a subscriber "failed" would be wrong twice over. A compensation that itself failed does
-  not reach `FAILED` — it stays `COMPENSATING`.
+  not reach `FAILED` — it stays `COMPENSATING`, and once petich stops retrying it is
+  `COMPENSATION_FAILED`, which `OrderStatus.of` still shows as `compensating`.
 - **`202`, not `201`.** The usual answer is a saga waiting for a confirmation.
 - **A saga test uses `runBlocking`, never `runTest`.** The virtual clock skips time forward for a
-  suspended coroutine and the engine wraps every interceptor in `withTimeout`, so the first real
+  suspended coroutine and the engine wraps every step in `withTimeout`, so the first real
   database call inside a step jumps past the phase timeout, the step is cancelled and the saga
   compensates. petich swallows the cancellation into the compensation, so nothing is logged and what
   you see is a saga that rolled itself back for no reason.
@@ -290,22 +296,24 @@ Then both answer 422 rather than rounding it
   petich degrades quietly to a plain update when handed a repository that cannot store events: the
   saga completes with correct state, every natural assertion passes, and nobody downstream is ever
   told.
-- **The reversal is announced by the step being undone.** Putting it on the announcing step was a
+- **The reversal is announced by the step being undone.** Putting it on the announcing member was a
   mistake a test caught: compensation only walks back through steps that ran, and the abandoned-
   confirmation case never reaches POST_PROCESSING — so the announcement would never fire for the one
   case it exists for.
 - **The compensating step releases only what it took.** Every step can see everything, which makes
   "return the money twice" an easy mistake; the hold is the previous step's to release.
-- **And it undoes only what the ledger says happened.** The sentence above — compensation walks back
+- **And it undoes only what was recorded as done.** The sentence above — compensation walks back
   through the steps that RAN — is petich `0.1.0`'s contract and stops being true in `0.3.0`, which
-  also compensates the step whose `intercept` threw
+  also compensates the step whose `execute` threw
   ([petich#59](https://github.com/youndie/petich/issues/59)): the engine cannot tell an effect that
   reached the far side from a call that never landed, it only learns that the step did not report
-  success. So `release` and `debit` ask the ledger whether the movement they are undoing is
-  recorded — a `HOLD` for a release, a `TOP_UP` for a reversal — and return quietly when it is not.
-  Without that, a gateway timeout inside `CollectFundsInterceptor` becomes a `TOP_UP_REVERSAL`
-  against a top-up with no `TOP_UP` and a balance below where it started, and a failure inside
-  `hold` becomes a refund of money that was never taken ([konekt#48](https://github.com/youndie/konekt/issues/48)).
+  success. So each acting step records what it did, in the saga's own row — `Held`, `Provisioned`,
+  the top-up's `Credited` — and its compensation returns quietly when the record is not there. Behind
+  that, `release` and `debit` still ask the ledger whether the movement they are undoing happened — a
+  `HOLD` for a release, a `TOP_UP` for a reversal. Without either, a gateway timeout inside
+  `CollectFunds` becomes a `TOP_UP_REVERSAL` against a top-up with no `TOP_UP` and a balance below
+  where it started, and a failure inside `hold` becomes a refund of money that was never taken
+  ([konekt#48](https://github.com/youndie/konekt/issues/48)).
 - **The event id is `<orderId>:<type>`, and the partition key is the order id read out of the
   payload.** The outbox row is `(id, type, payload)` and nothing else, so the key has to come from
   what is already there; a payload without an `orderId` is published unkeyed and round-robins.
@@ -313,5 +321,5 @@ Then both answer 422 rather than rounding it
   load-bearing: without it the discriminator is the fully qualified class name, and moving a module
   would make already-persisted sagas unreadable.
 - **`InsufficientFunds` exists in the error hierarchy and this feature never throws it.** The balance
-  check is a saga `Reject`, not an exception, so the `409` that type maps to is unreachable on this
-  path.
+  check is a refusal inside the saga (`ctx.reject`), not an exception, so the `409` that type maps
+  to is unreachable on this path.

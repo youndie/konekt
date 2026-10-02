@@ -48,7 +48,8 @@ compensation. Exactly one step differs.
 * **A package never goes below zero**, and the clamp is written before the subtraction — the lesson
   `usage_counter` paid for.
 * **A rollback removes a dormant package and leaves a started one.** Spent bytes are not something a
-  compensation may erase.
+  compensation may erase. And it removes only what was granted: `Provision` records `Provisioned`
+  after the grant, and its compensation revokes nothing without that record.
 * **One package per order.** `roaming_package.order_id` is unique, so a retried saga step grants one.
 
 ## 3. Code anchors
@@ -58,7 +59,7 @@ compensation. Exactly one step differs.
 | The package, the zones, the ports | `feature/roaming-server-domain/src/main/kotlin/io/konekt/feature/roaming/server/domain/RoamingDomain.kt` |
 | The repository, including the activation | `feature/roaming-server-data/src/main/kotlin/io/konekt/feature/roaming/server/data/ExposedRoamingPackages.kt` |
 | The table | `shared/db/src/main/resources/db/migration/V10__roaming_package.sql` |
-| The one step that differs | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseInterceptors.kt` (`grantAllowance` / `revokeAllowance`) |
+| The one step that differs | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseSteps.kt` (`Provision`: `grantAllowance`, and `revokeAllowance` on the zone the step recorded in `Provisioned`) |
 | The card and the zone names | `server/src/main/kotlin/io/konekt/roaming/` |
 | Arriving in the zone | `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficSimulator.kt` (`awaitingArrival`) |
 | The travel screen and its ordering | `server/src/main/kotlin/io/konekt/roaming/RoamingUseCases.kt`, `RoamingScreen.kt` |

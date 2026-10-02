@@ -28,8 +28,8 @@ saga** as anything else.
 Two things make it worth more than its size. It is the only place in this build where **kompot's form
 patching does real work** — the top-up form validates locally, and this one asks the server what a
 combination costs and redraws nothing. And a custom package is **a plan the catalogue did not write
-down**: the id carries the three quantities, the catalogue answers for it, and the interceptors do not
-know the difference.
+down**: the id carries the three quantities, the catalogue answers for it, and the saga's members do
+not know the difference.
 
 `B-20` built the form and left it unable to sell anything: no submit endpoint, no place in the route
 graph, and `:client` without the contract. Its only callers were two tests until `B-87`.
@@ -42,7 +42,7 @@ graph, and `:client` without the contract. Its only callers were two tests until
 | A quantity outside the steps is **refused, not rounded** | rounding would charge for a package nobody chose; the form, the patch and the plan lookup all check |
 | The price is the server's, always | `CustomPackageTariff.priceOf`, evaluated on open, on every patch, and **again at submit**. Nothing in a request names a price |
 | A package of nothing cannot be ordered | `CustomPackagePlans.requireSomethingChosen` → 422. It is still a valid state to *open* on |
-| An unaffordable package is refused by the saga, on a screen | the balance check is a purchase interceptor; the submit does not pre-check, so the refusal arrives with a reason and a `Top up` control |
+| An unaffordable package is refused by the saga, on a screen | the balance check is the purchase saga's (`ValidatePurchase`); the submit does not pre-check, so the refusal arrives with a reason and a `Top up` control |
 | The id is untrusted input | `CustomPackagePlans.find` re-validates all three quantities rather than parsing three numbers — `custom-9999-0-0` resolves to nothing and is a 404 |
 
 ## 3. Code anchors
