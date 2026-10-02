@@ -30,7 +30,7 @@ Portal.
 | Gradle | `9.7.1` | `services.gradle.org/versions/all` — 9.7.1 is the head of the 9.7 line; 9.7.0 exists and is one patch behind |
 | JVM toolchain | `25` | required, not chosen: kompot and petich tag variants `org.gradle.jvm.version = 25` and Gradle refuses to build against them from a lower toolchain |
 | Kotlin | `2.4.10` | the version kompot `0.30.0` and petich `0.1.0` are built with |
-| Ktor | `3.5.2` | `kompot/gradle/libs.versions.toml`; `io/ktor/ktor-server-resources-jvm` is published at the same version |
+| Ktor | `3.5.2` | `youndie/kompot@b461b90!/gradle/libs.versions.toml`; `io/ktor/ktor-server-resources-jvm` is published at the same version |
 | ktlint Gradle plugin | `14.2.0` | `plugins.gradle.org/m2/org/jlleitschuh/gradle/ktlint/…` |
 | ktlint CLI | `1.8.0` | `com/pinterest/ktlint/ktlint-cli` |
 | Koin BOM | `4.2.2` | `io/insert-koin/koin-bom`; `koin-ktor` and `koin-logger-slf4j` at the same version |
@@ -307,7 +307,7 @@ unsatisfiable*, and the discovery cost was one failed run each way.
 
 | Fact | Where verified |
 |---|---|
-| the toolkit's Compose modules are built against Compose Multiplatform `1.11.1` and material3 `1.11.0-alpha07` | `kompot-forms-client-desktop-0.31.0.74.pom`, and `kompot/gradle/libs.versions.toml` |
+| the toolkit's Compose modules are built against Compose Multiplatform `1.11.1` and material3 `1.11.0-alpha07` | `kompot-forms-client-desktop-0.31.0.74.pom`, and `youndie/kompot@97e47a9!/gradle/libs.versions.toml` |
 | `org.jetbrains.compose:compose-gradle-plugin` released `1.12.0`, so a fresh module picks it up by default | `repo1.maven.org` maven-metadata, 2026-08-25 |
 | `org.jetbrains.compose.material3:material3` has **no stable release in either line** — `<latest>1.12.0-alpha03` | same |
 | with the plugin at `1.12.0`, `foundation` and `runtime` resolve to `1.12.0` while material3 resolves to the toolkit's `1.11.0-alpha07` | `:client:dependencies --configuration jvmTestRuntimeClasspath` |

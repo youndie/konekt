@@ -19,6 +19,12 @@ This document records **verified facts** (read in source, in a published artefac
 listing), **decisions taken**, and **risks**. Anything unverified is called a hypothesis and says
 where it will be checked.
 
+*Added 2026-10-02:* a file in one of the toolkits' own repositories is cited as
+`youndie/<repo>@<commit>!/<path>`, the commit being the one that repository's `main` was at when the
+row was written. The rows first named bare paths into those repositories, which only resolved
+with the sibling clones checked out alongside konekt; the facts are unchanged, and each was re-read
+at its commit when the address was written.
+
 **This document was written before the first commit, and the sentence that follows is preserved as
 it was written rather than corrected in place** — amending research at the point of divergence is
 this format's rule, and rewriting the premise would hide what the facts below were checked against.
@@ -53,8 +59,8 @@ read on 2026-08-25 — and against `gradle.properties` in each repository at `HE
 | booblik client is at `0.3.0`; `booblik-protocol` exists only from `0.3.0` | `io/github/youndie/booblik/*/maven-metadata.xml` |
 | katcher runs **three** version lines: server `0.6.2`, `client` `0.5.1`, `client-android` and `android-gradle-plugin` `0.4.92` | `katcher/gradle.properties` + `ru/workinprogress/katcher/*/maven-metadata.xml` |
 | metrik agent `0.1.13`, tracy agent `0.1.12`, viddik `0.1.2.13` | `ru/workinprogress/{metrik,tracy}/agent`, `ru/workinprogress/viddik-*` |
-| every consumer of kompot or petich needs **Java 25** | `kompot/README.md` §Building, `petich/README.md` §Building |
-| kompot builds on Kotlin `2.4.10`, Compose Multiplatform `1.11.1`, Ktor `3.5.2` | `kompot/gradle/libs.versions.toml` |
+| every consumer of kompot or petich needs **Java 25** | `youndie/kompot@b461b90!/README.md` §Building, `youndie/petich@4650265!/README.md` §Building |
+| kompot builds on Kotlin `2.4.10`, Compose Multiplatform `1.11.1`, Ktor `3.5.2` | `youndie/kompot@b461b90!/gradle/libs.versions.toml` |
 
 **Consequence 1.** kompot must be taken through `kompot-bom` and the version named once. Two
 coordinates one CI run apart — `kompot-core:0.30.0.71` beside `kompot-client:0.30.0.72` — resolve
@@ -194,8 +200,8 @@ are all konekt's. Recorded as a deviation in D4.
 |---|---|
 | `kompot-realtime` is three declarations: `KompotRealtimeSource`, `UpdateComponentMessage`, `KompotScreenResponse` | `kompot-realtime/src/commonMain/` |
 | `kompot-realtime-server` is a broadcaster plus a bus contract; the default bus is in-memory | `kompot-realtime-server/src/commonMain/`, README §Modules |
-| *"it does not choose a transport — the SSE or WebSocket implementation is yours"* | `kompot/README.md` §What it does not do |
-| `kompot-ktor`, `kompot-realtime-server` and `kompot-forms-standard` publish for JVM only | `kompot/README.md` §Targets |
+| *"it does not choose a transport — the SSE or WebSocket implementation is yours"* | `youndie/kompot@b461b90!/README.md` §What it does not do |
+| `kompot-ktor`, `kompot-realtime-server` and `kompot-forms-standard` publish for JVM only | `youndie/kompot@b461b90!/README.md` §Targets |
 
 **Consequence.** The live counters and the live order status in the canvas are konekt code on both
 ends: an endpoint on the server and a `KompotRealtimeSource` on the client. One server process means
@@ -206,7 +212,7 @@ before it is asked — the server-side form DSL cannot live in a module shared w
 
 | Fact | Where verified |
 |---|---|
-| the phase order is fixed: `ENRICHMENT → VALIDATION → AUTHORIZATION → EXECUTION → POST_PROCESSING`, priority-ordered within a phase | `petich/README.md` §What it solves |
+| the phase order is fixed: `ENRICHMENT → VALIDATION → AUTHORIZATION → EXECUTION → POST_PROCESSING`, priority-ordered within a phase | `youndie/petich@4650265!/README.md` §What it solves |
 | a step may return `InterceptorResult.Suspend(requiredAction, ttl)`; a sweeper rolls back a wait nobody returned to | same, §What it looks like |
 | with a repository that is not outbox-aware **the engine falls back to a plain update and drops the events** | same, §What it solves, final bullet |
 | petich delivers nothing itself: the transport is the application's | same, §What it does not do |
@@ -230,10 +236,10 @@ why (D5).
 
 | Fact | Where verified |
 |---|---|
-| *"Topic creation is not coming: the set of partitions is fixed at startup on purpose"* | `booblik/README.md` §Overview |
+| *"Topic creation is not coming: the set of partitions is fixed at startup on purpose"* | `youndie/booblik@ef58254!/README.md` §Overview |
 | neither TLS nor compression is coming — both are incompatible with the zero-copy path | same |
-| `booblik-client` is a JVM source set (`src/main/kotlin`), published as `io.github.youndie.booblik:booblik-client` under package `ru.workinprogress.booblik` | `booblik/booblik-client/src/main/kotlin/`, registry listing |
-| a subscription is a `Flow<RecordBatch>`; a caught-up consumer waits on the broker rather than polling | `booblik/README.md` §Overview |
+| `booblik-client` is a JVM source set (`src/main/kotlin`), published as `io.github.youndie.booblik:booblik-client` under package `ru.workinprogress.booblik` | `youndie/booblik@ef58254!/booblik-client/src/main/kotlin/`, registry listing |
+| a subscription is a `Flow<RecordBatch>`; a caught-up consumer waits on the broker rather than polling | `youndie/booblik@ef58254!/README.md` §Overview |
 
 **Consequence 1.** `orders`, `usage` and `notifications` are declared in the broker's configuration
 and shipped in the compose file. A new topic is a broker restart, which makes topic naming an
@@ -256,12 +262,12 @@ reference build and is stated rather than assumed.
 
 | Fact | Where verified |
 |---|---|
-| metrik is a Ktor plugin: `install(Metrik) { service, apiKey, endpoint, release }`, ingest over UDP `:9999` | `metrik/README.md` |
-| tracy is an agent plus two plugins (`Tracy` on the server, `TracyClient` on the outgoing `HttpClient`); logging is `suspend` because Kotlin/Native has no MDC | `tracy/README.md` §Quick start |
+| metrik is a Ktor plugin: `install(Metrik) { service, apiKey, endpoint, release }`, ingest over UDP `:9999` | `youndie/metrik@0dc4780!/README.md` |
+| tracy is an agent plus two plugins (`Tracy` on the server, `TracyClient` on the outgoing `HttpClient`); logging is `suspend` because Kotlin/Native has no MDC | `youndie/tracy@898d63b!/README.md` §Quick start |
 | tracy fields carry `indexed = true` to become entity keys | same |
 | katcher `client:0.5.1` publishes **`jvm` and `linux_x64` only** — the Gradle module metadata names those two variants and no others | `ru/workinprogress/katcher/client/0.5.1/client-0.5.1.module` |
-| Android is a separate coordinate, `client-android:0.4.92`, plus `android-gradle-plugin:0.4.92` which uploads the R8 mapping | registry listing, `katcher/README.md` §Android integration |
-| the `client` module declares `jvm()` and one host-dependent native target; no Apple target is declared | `katcher/client/build.gradle.kts:21-41` |
+| Android is a separate coordinate, `client-android:0.4.92`, plus `android-gradle-plugin:0.4.92` which uploads the R8 mapping | registry listing, `youndie/katcher@e7b8d8f!/README.md` §Android integration |
+| the `client` module declares `jvm()` and one host-dependent native target; no Apple target is declared | `youndie/katcher@e7b8d8f!/client/build.gradle.kts:21-41` |
 
 **Consequence, as of `client:0.5.1`.** konekt's iOS build had no crash reporting from this stack, and
 that was named as a gap in D8 rather than papered over with a third-party SDK.
@@ -284,7 +290,7 @@ Android client is what showed why — three facts, all measured on this build an
 | Fact | Where verified |
 |---|---|
 | `kompot-client` resolves its ANDROID variant, `androidApiElements-published` with `libraryelements = aar` and `platform.type = androidJvm` | `./gradlew :client:dependencyInsight --configuration androidCompileClasspath --dependency kompot-client` |
-| katcher's multiplatform `client` still declares no android target, so an Android consumer resolves `client-jvm` — silently, since nothing fails to resolve or compile | `katcher/client/build.gradle.kts`, and the resolved artefact |
+| katcher's multiplatform `client` still declares no android target, so an Android consumer resolves `client-jvm` — silently, since nothing fails to resolve or compile | `youndie/katcher@049d498!/client/build.gradle.kts`, and the resolved artefact |
 | `client-android:0.4.92` declares `object Katcher` in the SAME package as `client`, so the two fail `checkDebugDuplicateClasses` on one classpath | the AGP failure, quoted in `androidApp/.../CrashActivity.kt` |
 | `JvmKatcherFileSystem` caches at `File(System.getProperty("user.dir"), ".katcher_cache")`; on Android that is `/`, and Android **refuses** an application's attempt to change the property | device log: `Ignoring attempt to set property "user.dir"`, then `Failed to save crash report: /.katcher_cache/…: ENOENT` |
 
@@ -328,7 +334,7 @@ check, and the `.aar` arrives. That is a gap closed and confirmed rather than as
 
 | Fact | Where verified |
 |---|---|
-| `kompot-tck` walks a **running** server: `TckRunner(RemoteTckTransport(url), TckConfig(schemas, openApi))` | `kompot/README.md` §The wire specification |
+| `kompot-tck` walks a **running** server: `TckRunner(RemoteTckTransport(url), TckConfig(schemas, openApi))` | `youndie/kompot@b461b90!/README.md` §The wire specification |
 | it reads endpoint kinds out of the deployment's OpenAPI document and assumes no addresses | same |
 | *"a check that found nothing to apply to passes silently, and that is the commonest way to end up with a conformance kit that proves nothing"* — the report prints how many targets each check visited | same |
 | an application assembles its own spec: `KompotSpec.generateAll(KompotToolkitSpec.modules + myComponentsSpecModule())` | same |
@@ -342,7 +348,7 @@ exact failure the toolkit's own author warns about.
 
 | Fact | Where verified |
 |---|---|
-| a plain `call.respond(component)` resolves the serialiser from the concrete runtime class and omits `"type"` on the **root**; nested children are unaffected | `kompot/README.md` §What it looks like |
+| a plain `call.respond(component)` resolves the serialiser from the concrete runtime class and omits `"type"` on the **root**; nested children are unaffected | `youndie/kompot@b461b90!/README.md` §What it looks like |
 | the supported call is `call.respondKompotComponent(...)` | same |
 
 **Consequence.** The client receives an unknown component for the whole screen, and by §1.4 draws
@@ -395,7 +401,7 @@ the whole wizard by posting back the buttons the server drew rather than by comp
 | `kompot-client`, `kompot-theme-client`, `kompot-ds-material-compose`, `kompot-forms-client`, `kompot-wizard-client` and `kompot-images-client-coil` publish `-android`, `-desktop` and `-wasm-js` and **no iOS artefact** | the published artefact names under `io/github/youndie` at `0.31.0.74` |
 | the same six declare `jvm("desktop")`, `androidLibrary { }`, `wasmJs { browser() }` and no Apple target | each module's `build.gradle.kts` |
 | every protocol module — `kompot-core`, `kompot-standard`, `kompot-forms`, `kompot-wizard`, `wizard-core`, `kompot-theme`, `kompot-navigation`, `kompot-client-cache` — does publish the three iOS targets | same listing |
-| the README states that "every protocol and client module publishes for JVM, Android, the three iOS targets and `wasmJs`" and names three deliberate exceptions, none of which is one of the six | `kompot/README.md` §Targets |
+| the README states that "every protocol and client module publishes for JVM, Android, the three iOS targets and `wasmJs`" and names three deliberate exceptions, none of which is one of the six | `youndie/kompot@97e47a9!/README.md` §Targets |
 | `org.jetbrains.compose.runtime:runtime-iosx64` was last published at `1.11.0-alpha01`; `runtime-iosarm64` and `runtime-iossimulatorarm64` are current at `1.12.0` | `repo1.maven.org` maven-metadata, 2026-08-25 |
 
 **Consequence, and it reaches the product rather than the build.** konekt's brief says the client is

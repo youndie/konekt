@@ -487,11 +487,24 @@ make docs-against BASE=origin/main   # backlog numbers against main, before a pu
 documentation checks are docs-bootstrap's, at the version the `uses: youndie/docs-bootstrap@<tag>`
 line in `.github/workflows/check.yaml` pins: CI runs them there, and the Makefile reads the same line
 and fetches that version into `.docs-bootstrap/` (which ignores itself) for a local run. Renovate
-bumps the line. This repository's own checks — `stale_citations`, `chart_version`,
-`stated_versions`, `upstream_state` — stay in `scripts/` and run under `gate:` and `report:`.
-`make report` is the two non-blocking reports. Measured on 2026-08-25, after `B-39`: `bdd_report`
-counts 52 scenarios across the four features, 47 of them naming a test that exists; `code_anchors`
-resolves 158 of 233 paths, skips 63 as patterns, and calls 12 rotten — **all twelve in the research
-documents**, where the "anchors" are coordinates and artefacts in other repositories rather than code
-in this one. A rotten anchor in `features/`, `screens/`, `api/` or `services/` means a real rename and
-is worth chasing.
+bumps the line. Only `check`, `gate`, `report`, `fix` and the `docs-` targets load those checks
+(`DOCS_BOOTSTRAP_GOALS`, template revision 2): `make chart`, the stand and the release targets read
+no pin and need no network. A target of this repository's own that leads to `docs-gate` goes into
+that list, or it stops with a message naming it. This repository's own checks — `stale_citations`,
+`chart_version`, `stated_versions`, `upstream_state` — stay in `scripts/` and run under `gate:` and
+`report:`. `make report` is the two non-blocking reports. Measured on 2026-08-25, after `B-39`:
+`bdd_report` counts 52 scenarios across the four features, 47 of them naming a test that exists;
+`code_anchors` resolves 158 of 233 paths, skips 63 as patterns, and calls 12 rotten — **all twelve in
+the research documents**, where the "anchors" are coordinates and artefacts in other repositories
+rather than code in this one. A rotten anchor in `features/`, `screens/`, `api/` or `services/` means
+a real rename and is worth chasing.
+
+**A file in another repository is cited as an address, `youndie/<repo>@<commit>!/<path>`** — the
+commit that repository was at when the fact was read, never a branch. Since docs-bootstrap 0.3.4 an
+anchor is looked for in its own repository only, and CI clones konekt alone, so a bare
+`kompot/README.md` is rot even though a laptop with kompot beside it would find it (before 0.3.4 it
+was counted found by a suffix match against konekt's own `README.md`). Measured on 2026-10-02 at
+0.3.5, the way CI runs it: 344 anchors, 227 found, 19 addresses, 78 patterns, 20 not found — 15 of
+them coordinates and artefact paths in the research documents; outside them, `lib/app.aot` and `lib/`
+in `konekt-server` are paths inside the image, and three anchors still name the `*Interceptors.kt`
+files that #49 replaced with `*Steps.kt` — a real rename, not yet chased.
