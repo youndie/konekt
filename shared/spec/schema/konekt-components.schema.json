@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kompot.workinprogress.ru/schema/konekt-components.schema.json",
+  "$id": "https://kompot.kotlin.website/schema/konekt-components.schema.json",
   "title": "konekt-components",
   "description": "The twelve component types konekt adds to the kompot wire: counters, plans, eSIM, orders and feedback.",
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",

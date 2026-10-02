@@ -33,6 +33,13 @@ tasks.withType<Test>().configureEach {
     // would move the goldens somewhere nobody looks and the test would happily record a new set.
     workingDir = projectDir
 
+    // The committed schemas are an input just as the classes are. Without this, editing one of them
+    // leaves the test UP-TO-DATE, and a file that no longer matches its generator passes unseen.
+    inputs
+        .files(fileTree("schema"))
+        .withPropertyName("schemaGoldens")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
     // Recording is opt-in through the environment, and it must run on the Mac: this repository is a
     // one-way mutagen replica, so a file written on the Linux side is reverted on the next sync and
     // the run looks like it did nothing.
