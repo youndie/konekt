@@ -38,7 +38,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: youndie/docs-bootstrap@v0.3.2
+      - uses: youndie/docs-bootstrap@v0.3.3
 
   # The BUILD, and it is a separate job from the documentation gate on purpose: the two fail for
   # unrelated reasons and a contributor who broke a link should not be reading a Gradle log.
@@ -168,7 +168,7 @@ jobs:
       # this repository — which is exactly what REPOS (`..` in the Makefile) expects. `report` is
       # the Makefile's target: docs-bootstrap's two reports and `upstream_state.py`, which says
       # so and exits 0 when it has no authenticated `gh`.
-      - uses: youndie/docs-bootstrap@v0.3.2
+      - uses: youndie/docs-bootstrap@v0.3.3
         with:
           target: report
 
@@ -191,6 +191,6 @@ jobs:
       #       done
       #     env:
       #       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   - uses: youndie/docs-bootstrap@v0.3.2
+      #   - uses: youndie/docs-bootstrap@v0.3.3
       #     with:
       #       target: report REPOS=repos
