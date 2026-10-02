@@ -89,7 +89,6 @@ import io.konekt.observability.KonektTrace
 import io.konekt.observability.configureObservability
 import io.konekt.packages.CustomPackagePlans
 import io.konekt.packages.customPackageRoutes
-import io.konekt.petich.ClaimedSweep
 import io.konekt.realtime.ComponentBroadcaster
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
@@ -858,11 +857,13 @@ fun petichModule(
 
     single {
         SuspendedPetichSweeper(
-            // WRAPPED, so that one replica compensates each abandoned saga rather than all of them
-            // (`B-92`). The claim lives in `findExpired`, which is the one call that decides what
-            // this replica is about to work on — and `SuspendedPetichSweeper` is petich's, so what
-            // konekt owns is which repository it is handed.
-            repository = ClaimedSweep(get<OutboxAwarePetichRepository>() as ExpiringPetichRepository, database, get()),
+            // petich's own store, unwrapped. Each replica's sweeper claims a saga with one write on the
+            // saga's row before touching it — on the expiry queue the claim IS the move to
+            // COMPENSATING, on the stranded queue a version bump — and the one whose write loses skips
+            // the saga instead of retrying (youndie/petich#70, its B-26). `ClaimedSweep` was a second,
+            // coarser claim around `findExpired` from before that existed (`B-92`), and is gone
+            // (`B-132`); `TwoReplicasSweepTest` races two replicas into the window it closed.
+            repository = get<OutboxAwarePetichRepository>() as ExpiringPetichRepository,
             // THE ENGINE, not a dispatch lambda. `engineFor = { saga -> get(named(saga.type)) }`
             // existed because there were three engines and only this application knew which owned
             // which; one engine holding every definition answers that itself, and a saga whose type
