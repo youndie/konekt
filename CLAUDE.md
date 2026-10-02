@@ -10,7 +10,7 @@ stack. What is deliberately absent, and why, is
 Gradle 9.8.0, Kotlin 2.4.20 (from sborka's `wip` catalogue), Ktor 3.5.2 on the **CIO** engine, Koin 4.2.2, Exposed 1.4.0, Postgres. Java 25 was mandatory
 when this was written — kompot and petich published variants tagged `org.gradle.jvm.version = 25`,
 and Gradle refuses to build a module on anything lower against them. Neither does any more (kompot
-0.38.0 declares 17, petich 0.4.0.112 declares 21, `B-129`), so 25 is now this build's choice. The full version table, each row read
+0.38.0 declares 17, petich 0.4.0.120 declares 21 — read off its Gradle module metadata, `B-129`, `B-130`), so 25 is now this build's choice. The full version table, each row read
 from a registry rather than recalled, is [docs/research/research-stack.md](docs/research/research-stack.md) §1.1.
 
 ## How to start a session

@@ -103,21 +103,25 @@ class UsageCounterClampTest {
             // Two purchases, then one of them rolled back. The interval is the same one: 1000 revoked
             // from a limit of 1800 left 800, and 800 < 1000 zeroed it — so a compensated purchase took
             // away the allowance the OTHER purchase had paid for.
-            counters.grant(subscriberId, UsageCounter.Kind.DATA, 800)
-            counters.grant(subscriberId, UsageCounter.Kind.DATA, 1_000)
+            counters.grantPlanAllowance("order-1", subscriberId, dataMb = 800)
+            counters.grantPlanAllowance("order-2", subscriberId, dataMb = 1_000)
 
-            counters.revokePlanAllowance(subscriberId, dataMb = 1_000)
+            counters.revokePlanAllowance("order-2")
 
             assertEquals(800, limit())
             assertEquals(800, remaining())
         }
 
     @Test
-    fun `revoking more than was ever granted is floored at zero`(): Unit =
+    fun `revoking more than is left is floored at zero`(): Unit =
         runBlocking {
-            counters.grant(subscriberId, UsageCounter.Kind.DATA, 100)
+            // A revoke takes back what the ORDER granted (B-130), so the only way for it to exceed
+            // the counter is for the subscriber to have spent some of it first. The remainder then
+            // falls to zero rather than below it, and the limit falls by exactly the grant.
+            counters.grantPlanAllowance("order-1", subscriberId, dataMb = 1_000)
+            counters.consume(subscriberId, UsageCounter.Kind.DATA, 900)
 
-            counters.revokePlanAllowance(subscriberId, dataMb = 500)
+            counters.revokePlanAllowance("order-1")
 
             assertEquals(0, limit())
             assertEquals(0, remaining())

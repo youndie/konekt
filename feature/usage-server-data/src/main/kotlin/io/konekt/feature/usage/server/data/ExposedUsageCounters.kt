@@ -10,9 +10,11 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.update
@@ -70,25 +72,32 @@ class ExposedUsageCounters(
         kind: UsageCounter.Kind,
         units: Long,
     ) {
-        dbQuery {
-            // An upsert that ADDS on conflict rather than replacing. A second purchase of the same
-            // plan tops the allowance up; replacing would silently throw away whatever was left of
-            // the first, which is the subscriber's money.
-            UsageCounterTable.upsert(
-                UsageCounterTable.subscriberId,
-                UsageCounterTable.kind,
-                onUpdate = {
-                    it[UsageCounterTable.limitUnits] = UsageCounterTable.limitUnits plus units
-                    it[UsageCounterTable.remainingUnits] = UsageCounterTable.remainingUnits plus units
-                },
-            ) {
-                it[id] = Uuid.random().toString()
-                it[UsageCounterTable.subscriberId] = subscriberId
-                it[UsageCounterTable.kind] = kind.wireName
-                it[limitUnits] = units
-                it[remainingUnits] = units
-                it[createdAt] = clock.now().toEpochMilliseconds()
-            }
+        dbQuery { addTo(subscriberId, kind, units) }
+    }
+
+    // Inside the caller's transaction, so a grant by order can make it one with the row that names it.
+    private fun addTo(
+        subscriberId: String,
+        kind: UsageCounter.Kind,
+        units: Long,
+    ) {
+        // An upsert that ADDS on conflict rather than replacing. A second purchase of the same plan
+        // tops the allowance up; replacing would silently throw away whatever was left of the first,
+        // which is the subscriber's money.
+        UsageCounterTable.upsert(
+            UsageCounterTable.subscriberId,
+            UsageCounterTable.kind,
+            onUpdate = {
+                it[UsageCounterTable.limitUnits] = UsageCounterTable.limitUnits plus units
+                it[UsageCounterTable.remainingUnits] = UsageCounterTable.remainingUnits plus units
+            },
+        ) {
+            it[id] = Uuid.random().toString()
+            it[UsageCounterTable.subscriberId] = subscriberId
+            it[UsageCounterTable.kind] = kind.wireName
+            it[limitUnits] = units
+            it[remainingUnits] = units
+            it[createdAt] = clock.now().toEpochMilliseconds()
         }
     }
 
@@ -139,6 +148,7 @@ class ExposedUsageCounters(
         }
 
     override suspend fun grantPlanAllowance(
+        orderId: String,
         subscriberId: String,
         dataMb: Long,
         minutes: Long,
@@ -148,60 +158,99 @@ class ExposedUsageCounters(
         // zero minutes would CREATE a minutes counter reading "0 of 0" — a subscriber who bought a
         // data package would find an empty allowance for calls on their home screen, which reads as
         // a plan that took their minutes away.
-        if (dataMb > 0) grant(subscriberId, UsageCounter.Kind.DATA, dataMb)
-        if (minutes > 0) grant(subscriberId, UsageCounter.Kind.MINUTES, minutes)
-        if (messages > 0) grant(subscriberId, UsageCounter.Kind.MESSAGES, messages)
+        val amounts =
+            listOf(
+                UsageCounter.Kind.DATA to dataMb,
+                UsageCounter.Kind.MINUTES to minutes,
+                UsageCounter.Kind.MESSAGES to messages,
+            ).filter { (_, amount) -> amount > 0 }
+        if (amounts.isEmpty()) return
+
+        dbQuery {
+            amounts.forEach { (kind, amount) ->
+                // THE NAME FIRST, AND ITS ROW COUNT IS THE ANSWER (B-130). The order's row goes in
+                // under `(order_id, kind)`, and the counter moves only when that row is new — in the
+                // same transaction, so the two cannot disagree. A second run of the purchase member
+                // finds the name taken and adds nothing; written the other way round, or as a read
+                // followed by a write, a re-run added the plan a second time.
+                val named =
+                    UsageGrantTable
+                        .insertIgnore {
+                            it[UsageGrantTable.orderId] = orderId
+                            it[UsageGrantTable.kind] = kind.wireName
+                            it[UsageGrantTable.subscriberId] = subscriberId
+                            it[units] = amount
+                            it[grantedAt] = clock.now().toEpochMilliseconds()
+                        }.insertedCount > 0
+                if (named) addTo(subscriberId, kind, amount)
+            }
+        }
     }
 
-    override suspend fun revokePlanAllowance(
-        subscriberId: String,
-        dataMb: Long,
-        minutes: Long,
-        messages: Long,
-    ) {
-        revokeOne(subscriberId, UsageCounter.Kind.DATA, dataMb)
-        revokeOne(subscriberId, UsageCounter.Kind.MINUTES, minutes)
-        revokeOne(subscriberId, UsageCounter.Kind.MESSAGES, messages)
+    override suspend fun revokePlanAllowance(orderId: String) {
+        dbQuery {
+            val granted =
+                UsageGrantTable
+                    .selectAll()
+                    .where { (UsageGrantTable.orderId eq orderId) and UsageGrantTable.revokedAt.isNull() }
+                    .map { row ->
+                        Triple(
+                            row[UsageGrantTable.subscriberId],
+                            UsageCounter.Kind.entries.first { it.wireName == row[UsageGrantTable.kind] },
+                            row[UsageGrantTable.units],
+                        )
+                    }
+
+            granted.forEach { (subscriberId, kind, amount) ->
+                // THE MARK IS THE ARBITER, the way `hold`'s WHERE clause is. Two compensations of one
+                // order both read the row above; only one of them moves it from unrevoked to revoked,
+                // because Postgres re-evaluates the predicate once the first commits — and only that
+                // one takes the allowance back.
+                val marked =
+                    UsageGrantTable.update({
+                        (UsageGrantTable.orderId eq orderId) and
+                            (UsageGrantTable.kind eq kind.wireName) and
+                            UsageGrantTable.revokedAt.isNull()
+                    }) {
+                        it[revokedAt] = clock.now().toEpochMilliseconds()
+                    }
+                if (marked == 1) takeFrom(subscriberId, kind, amount)
+            }
+        }
     }
 
-    // One kind's worth of taking back, so the three read identically rather than the first being
-    // spelled out and the others bolted on beside it.
-    private suspend fun revokeOne(
+    // One kind's worth of taking back, inside the caller's transaction.
+    private fun takeFrom(
         subscriberId: String,
         kind: UsageCounter.Kind,
         units: Long,
     ) {
-        if (units <= 0) return
+        // Both columns, and both clamped in SQL. The limit falls because the allowance is gone; the
+        // remainder falls because what is left of it is gone too — and it may already be smaller than
+        // what was granted, which is why this is a `greatest(x, 0)` rather than a subtraction.
+        val row =
+            (UsageCounterTable.subscriberId eq subscriberId) and
+                (UsageCounterTable.kind eq kind.wireName)
 
-        dbQuery {
-            // Both columns, and both clamped in SQL. The limit falls because the allowance is gone;
-            // the remainder falls because what is left of it is gone too — and it may already be
-            // smaller than what was granted, which is why this is a `greatest(x, 0)` rather than a
-            // subtraction.
-            val row =
-                (UsageCounterTable.subscriberId eq subscriberId) and
-                    (UsageCounterTable.kind eq kind.wireName)
-
-            // CLAMP FIRST, both columns, for the reason `consume` above spells out at length: written
-            // subtract-then-clamp the pair is not exclusive, because the subtract changes the row the
-            // clamp then reads. Revoking 1000 of a 1800 limit left 800 and the clamp zeroed it, since
-            // 800 < 1000 — so a rolled-back purchase took away the subscriber's OTHER allowance too.
-            //
-            // Two columns and therefore four statements. They are not one pair repeated: the limit and
-            // the remainder move independently, because the remainder may already be smaller than what
-            // was granted.
-            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less units) }) {
-                it[limitUnits] = 0
-            }
-            UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq units) }) {
-                it[limitUnits] = UsageCounterTable.limitUnits plus (-units)
-            }
-            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less units) }) {
-                it[remainingUnits] = 0
-            }
-            UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq units) }) {
-                it[remainingUnits] = UsageCounterTable.remainingUnits plus (-units)
-            }
+        // CLAMP FIRST, both columns, for the reason `consume` above spells out at length: written
+        // subtract-then-clamp the pair is not exclusive, because the subtract changes the row the
+        // clamp then reads. Revoking 1000 of a 1800 limit left 800 and the clamp zeroed it, since
+        // 800 < 1000 — so a rolled-back purchase took away the subscriber's OTHER allowance too.
+        //
+        // Two columns and therefore four statements. They are not one pair repeated: the limit and
+        // the remainder move independently, because the remainder may already be smaller than what
+        // was granted.
+        UsageCounterTable.update({ row and (UsageCounterTable.limitUnits less units) }) {
+            it[limitUnits] = 0
+        }
+        UsageCounterTable.update({ row and (UsageCounterTable.limitUnits greaterEq units) }) {
+            it[limitUnits] = UsageCounterTable.limitUnits plus (-units)
+        }
+        UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits less units) }) {
+            it[remainingUnits] = 0
+        }
+        UsageCounterTable.update({ row and (UsageCounterTable.remainingUnits greaterEq units) }) {
+            it[remainingUnits] = UsageCounterTable.remainingUnits plus (-units)
         }
     }
 

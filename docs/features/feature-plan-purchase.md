@@ -94,8 +94,9 @@ One petich definition, `purchasePetich`, with its four members written in the or
 3. *(the subscriber confirms — `POST /api/v1/purchases/{orderId}/confirm`)*
 4. **EXECUTION** — `Provision`, a step. Settles with the provider; on a decline it records the reason
    in the ledger and calls `ctx.fail`. On approval it captures the hold, activates the entitlement,
-   **grants the allowance** through the usage feature's port — or a dormant roaming package, by zone —
-   and records `Provisioned`.
+   and **grants the allowance** through the usage feature's port — or a dormant roaming package, by
+   zone — under the order's id. Every one of those writes is keyed by the order, so the member can run
+   twice and land once, and its undo takes back by the same name (`B-130`).
 5. **POST_PROCESSING** — `AnnouncePurchase`, an announcement. Emits `purchase.completed` into the
    outbox.
 
@@ -114,7 +115,8 @@ keyed by order id.
 | konekt-server | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/` — the saga and its four members (`PurchaseSteps.kt`), the top-up's (`TopUpSteps.kt`), the use cases, the ports, the history |
 | konekt-server | `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/` — the routes, the two screens, the ledger, the payment mock, the catalogue |
 | konekt-server | `feature/purchase-shared-api/src/commonMain/kotlin/io/konekt/feature/purchase/shared/api/PurchaseApi.kt` — the contract |
-| konekt-server | `server/src/main/kotlin/io/konekt/Application.kt` — `petichModule`: the engine, the phase timeout, `requireOutbox = true` |
+| konekt-server | `server/src/main/kotlin/io/konekt/Application.kt` — `petichModule`: the engine, the phase timeout, `requireOutbox = true`, the sweeper and its stranded queue |
+| konekt-server | `feature/usage-server-data/src/main/kotlin/io/konekt/feature/usage/server/data/ExposedUsageCounters.kt` — the home allowance granted and taken back by order (`usage_grant`, `V15`) |
 | konekt-broker | `server/src/main/kotlin/io/konekt/events/BooblikOutboxPublisher.kt` — the transport petich does not provide |
 | konekt-server | `server/src/main/kotlin/io/konekt/packages/` — the custom package builder: the tariff, the form, the patch route |
 | konekt-client | `client/src/commonMain/kotlin/io/konekt/client/app/KonektFormScreen.kt` — the one screen shape that needs a `FormController` |
@@ -165,6 +167,25 @@ keyed by order id.
   event is in the outbox, and the history row says `compensated` with the reversal beside it
 * **And:** when the hold itself never landed, nothing is returned and nothing is announced
 * **Automated:** `HoldRollbackTest`
+
+### Scenario: a provision that runs twice charges once and grants once
+* **Given:** a confirmed purchase of the home bundle whose `Provision` has settled, captured and
+  granted, and whose position was not written — a conflict on that write, or a process that died
+  before it
+* **When:** petich runs `Provision` again — on the same pass after the conflict, or from the stranded
+  queue after the death
+* **Then:** the order is `completed`, the balance is down by the price once, the ledger holds one
+  `CAPTURE` and no `RELEASE`, the entitlement is active, the counters hold the plan once, and only
+  `purchase.completed` is in the outbox
+* **Automated:** `ProvisionByOrderTest`, and below the saga `UsageGrantByOrderTest`
+
+### Scenario: an allowance whose answer was lost is taken back, and one that never landed takes nothing
+* **Given:** a subscriber who already bought the home bundle, buying it again
+* **When:** the second grant commits and its answer is lost — or never reaches the database — and
+  petich compensates `Provision`
+* **Then:** the order is `compensated` and the counters read what the first purchase left: the lost
+  grant is taken back by its order, and an order with nothing under it takes nothing from the first
+* **Automated:** `ProvisionByOrderTest`
 
 ### Scenario: a plan that is not on sale is refused with nothing to undo
 * **Given:** the sold-out plan in the catalogue
@@ -330,10 +351,28 @@ Then both answer 422 rather than rounding it
   cannot take a balance below where it started (#48). The top-up's `Credited` stays the guard on
   purpose: a credit that committed and lost its answer is left standing, because a credit exists only
   once the provider has settled and nothing here can refund a settlement
-  ([reference-scope](../services/reference-scope.md)) — `TopUpSagaTest` pins it. `Provisioned` stays
-  for a reason that is a gap rather than a decision: the home allowance is a counter that keys
-  nothing by order, so a grant that committed and lost its answer is not revoked; the money and the
-  entitlement still come back through the hold. That is [B-130](../backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md).
+  ([reference-scope](../services/reference-scope.md)) — `TopUpSagaTest` pins it. `Provision` was the
+  third, and it went the way of the hold ([B-130](../backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md)):
+  its undo cancels the entitlement and revokes the home allowance and the roaming package by the order,
+  unconditionally, and each is a no-op when nothing is under that name. The home allowance needed a
+  name first — the counters are running totals — so each grant is a `usage_grant` row under
+  `(order_id, kind)`, written in the transaction that adds to the counter. `Provisioned`, like `Held`,
+  is no longer written and stays registered for rows that carry it.
+- **`Provision` is run again, and lands once.** petich writes a member's position after its body
+  returns, so a conflict on that write re-reads the row and runs the member again, and a process that
+  dies before it leaves the member to the stranded queue. Before `B-130` the second `capture` hit the
+  ledger's unique index and the member threw, so the engine rolled back a purchase the first run had
+  completed — balance returned, entitlement cancelled, the allowance left with the subscriber; with
+  `capture` made idempotent the second grant added the plan again. Now `capture` treats an existing
+  `CAPTURE` as done, the grant adds only when its `usage_grant` row is new, and the roaming grant was
+  already `insertIgnore` on the order. The provider is asked to settle twice; the mock keeps nothing,
+  and a real one would be handed the order id as its key.
+- **The engine is petich `0.4.0.120`, and the reason is this member.** On `0.4.0.112` the first member
+  after a confirmation was outside its own rollback (petich B-66): `Provision` throwing compensated the
+  hold and never `Provision`, so no undo written here could take a lost grant back. Since B-66 a
+  confirmation writes PROCESSING before it runs a member, so a process that dies inside `Provision`
+  leaves a row no expiry looks at — which is why the sweeper's stranded queue is on
+  (`MockPaymentGateway.STRANDED_AFTER`, two minutes, above the longest a healthy member may take).
 - **The event id is `<orderId>:<type>`, and the partition key is the order id read out of the
   payload.** The outbox row is `(id, type, payload)` and nothing else, so the key has to come from
   what is already there; a payload without an `orderId` is published unkeyed and round-robins.

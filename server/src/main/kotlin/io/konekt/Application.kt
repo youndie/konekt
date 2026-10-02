@@ -870,6 +870,12 @@ fun petichModule(
             // (youndie/petich B-31).
             engine = get(),
             clock = get<KonektClock>().asPetichClock(),
+            // THE STRANDED QUEUE, ON (B-130). A saga whose process died between two of its writes
+            // stays PROCESSING with nothing moving it, and only this queue looks for it — off until
+            // a number is chosen, and it was off here. Since petich B-66 that includes a purchase
+            // that died inside `Provision` after its confirmation, which an expiry used to take; it
+            // is carried forward, and `Provision` is safe to run again (`ProvisionByOrderTest`).
+            stuckAfter = MockPaymentGateway.STRANDED_AFTER,
         )
     }
 }

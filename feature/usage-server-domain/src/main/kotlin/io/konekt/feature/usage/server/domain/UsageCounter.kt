@@ -119,8 +119,16 @@ interface UsageCounters {
 
 // What a purchase hands over. In the USAGE domain rather than the purchase one because the shape of
 // an allowance is this feature's business — the purchase only knows it bought a plan.
+//
+// BOTH HALVES GO BY THE ORDER (B-130). The counters are running totals and cannot say which purchase
+// put what there, so a grant without a name could neither tell a second run of the same purchase
+// from a second purchase nor be taken back when its answer was lost. The order is the name the
+// purchase saga gives the grant before it acts.
 interface UsageGrants {
+    // ONCE PER ORDER, however many times it is called. petich runs a member again after a conflict on
+    // its position write, and a second call under the same order adds nothing.
     suspend fun grantPlanAllowance(
+        orderId: String,
         subscriberId: String,
         dataMb: Long,
         // THE OTHER TWO, defaulted to nothing so a caller that grants only data says so by saying
@@ -137,14 +145,13 @@ interface UsageGrants {
     // did not pay for — the money returns and the gigabytes stay, which is the asymmetry a
     // compensation exists to prevent.
     //
+    // WHAT WAS GRANTED UNDER THE ORDER, and nothing when nothing was. The amounts come from the grant
+    // and not from the caller, so a revoke of a grant that never landed cannot take them out of an
+    // earlier plan's allowance, and a second revoke takes nothing twice.
+    //
     // Clamped at zero like every other decrement here: some of it may already have been spent, and a
     // negative allowance is a screen that says minus four hundred megabytes.
-    suspend fun revokePlanAllowance(
-        subscriberId: String,
-        dataMb: Long,
-        minutes: Long = 0,
-        messages: Long = 0,
-    )
+    suspend fun revokePlanAllowance(orderId: String)
 }
 
 class ConsumeUsageUseCase(

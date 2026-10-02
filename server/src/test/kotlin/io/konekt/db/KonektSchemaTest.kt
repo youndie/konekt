@@ -12,6 +12,7 @@ import io.konekt.feature.esim.server.data.EsimWizardSessionTable
 import io.konekt.feature.purchase.server.data.EntitlementTable
 import io.konekt.feature.purchase.server.data.LedgerEntryTable
 import io.konekt.feature.usage.server.data.UsageCounterTable
+import io.konekt.feature.usage.server.data.UsageGrantTable
 import io.konekt.testing.PostgresHarness
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.Table
@@ -81,6 +82,7 @@ class KonektSchemaTest {
                 EntitlementTable,
                 LedgerEntryTable,
                 UsageCounterTable,
+                UsageGrantTable,
                 EsimWizardSessionTable,
             )
 
@@ -88,10 +90,10 @@ class KonektSchemaTest {
     fun `the schema test is looking at something`() {
         // The guard on the guard. statementsRequiredForDatabaseMigration returns an empty list both
         // when everything matches and when it was handed no tables, and the first assertion cannot
-        // tell those apart. Fourteen is petich's four, konekt's three core tables, the auth feature's
-        // three, the purchase feature's two, usage's one and the eSIM wizard's one; the number is
+        // tell those apart. Fifteen is petich's four, konekt's three core tables, the auth feature's
+        // three, the purchase feature's two, usage's two and the eSIM wizard's one; the number is
         // asserted here so that a table dropped from any list fails loudly rather than shrinking the
         // check.
-        assertEquals(14, allTables.size)
+        assertEquals(15, allTables.size)
     }
 }

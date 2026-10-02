@@ -194,11 +194,19 @@ class ExposedAccountBalances(
         orderId: String,
         amount: Money,
     ) {
-        dbQuery {
-            // No balance movement: the money left at hold time. This entry is what turns a
-            // reservation into a purchase, and it is zero-sum against the hold so that a sum over the
-            // ledger still equals the balance.
-            entry(accountId, orderId, LedgerEntryTable.CAPTURE, 0, amount.currency)
+        // A SECOND CAPTURE OF THE SAME ORDER IS ONE THAT ALREADY HAPPENED, and swallowed for the reason
+        // `release` swallows its own. petich writes a member's position after its body returns, so a
+        // conflict on that write runs `Provision` again; a plain insert here then hit the unique index,
+        // the member threw, and the engine rolled back a purchase the first run had completed — money
+        // returned, entitlement cancelled, the allowance left with the subscriber (`B-130`,
+        // `ProvisionByOrderTest`).
+        alreadyDoneIsNotAFailure {
+            dbQuery {
+                // No balance movement: the money left at hold time. This entry is what turns a
+                // reservation into a purchase, and it is zero-sum against the hold so that a sum over
+                // the ledger still equals the balance.
+                entry(accountId, orderId, LedgerEntryTable.CAPTURE, 0, amount.currency)
+            }
         }
     }
 

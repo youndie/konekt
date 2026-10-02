@@ -10,7 +10,6 @@ import io.github.youndie.petich.PetichStep
 import io.github.youndie.petich.PetichStepContext
 import io.github.youndie.petich.PetichStepRecord
 import io.github.youndie.petich.petichDefinition
-import io.github.youndie.petich.recorded
 import io.konekt.feature.roaming.server.domain.RoamingPackages
 import io.konekt.feature.roaming.server.domain.Zones
 import io.konekt.feature.usage.server.domain.UsageGrants
@@ -43,11 +42,12 @@ import kotlin.time.Duration.Companion.minutes
 // Both are registered in the serializers module beside the payloads. A record whose class is not
 // registered fails to deserialize, and so does the saga row that carries it.
 
-// NOT WRITTEN ANY MORE, and still registered. `HoldFunds` recorded this until its undo was found to
-// return quietly without it — a hold whose entitlement write threw, or whose own answer was lost, kept
-// the subscriber's money for good. The hold is released by the order's name now and asks for no
-// record. The class stays because rows written before that change carry it, and one of those that
-// cannot be decoded is an order that can no longer be confirmed, swept or shown.
+// NEITHER IS WRITTEN ANY MORE, and both are still registered. `HoldFunds` recorded `Held` and
+// `Provision` recorded `Provisioned` until each undo was found to return quietly without its record —
+// a hold whose entitlement write threw, or a hold or a grant whose own answer was lost, kept the
+// subscriber's money or allowance for good. Both members undo by the order's name now and ask for no
+// record. The classes stay because rows written before those changes carry them, and one of those
+// that cannot be decoded is an order that can no longer be confirmed, swept or shown.
 @Serializable
 @SerialName("purchase_held")
 data class Held(
@@ -240,26 +240,20 @@ class Provision(
         // the two is identical and only the provisioning differs. That is D-19's claim, and it is
         // four lines of it.
         grantAllowance(ctx, payload)
-
-        // WHAT WAS GRANTED, so the undo below revokes what happened rather than what was intended.
-        // Between the capture and here the member can be interrupted, and an unconditional revoke
-        // then takes away an allowance nobody added — the same shape as youndie/konekt#48, at a
-        // different member.
-        //
-        // AND THE SIDE IT CANNOT SEE, which the hold had until it was given a name to undo by. A grant
-        // that commits and loses its answer leaves no record here, so its allowance is not revoked.
-        // The money and the entitlement still come back — `HoldFunds` undoes both by the order's
-        // name — but the home allowance has no name to undo by: `UsageGrants` adds to a counter and
-        // keys nothing by order. Until it does, this record is the most this member can go on (B-130).
-        ctx.record(Provisioned(payload.zone))
     }
 
     override suspend fun compensate(
         ctx: PetichStepContext,
         payload: PurchasePayload,
     ) {
-        val provisioned = ctx.recorded<Provisioned>() ?: return
-
+        // BY THE ORDER'S NAME, AND UNCONDITIONALLY — the hold's rule, for the same reason (B-130).
+        // This is called for a member that threw as well as for one that finished, and a grant that
+        // committed and lost its answer is a member that threw having reached nothing it could have
+        // recorded: the step record asked first here was absent in exactly that case, and the
+        // allowance stayed. Every write below is keyed by the order the grant was given before it
+        // acted, and each is a no-op when nothing is under it — which is the other half of the same
+        // case: a grant that never landed must not take an earlier plan's allowance with it.
+        //
         // Only what this member did. The hold is the previous member's to release, and compensating
         // it here as well would return the money twice — which is the shape of mistake a saga makes
         // easy, because every member can see everything.
@@ -267,10 +261,11 @@ class Provision(
         // Including the allowance, which is the half that is easy to forget: money that comes back
         // while the gigabytes stay is a rollback that costs the operator rather than nobody.
         //
-        // Branching on the RECORDED zone rather than re-reading the payload's. They are the same
-        // value today; taking it from the record is what keeps them the same value after somebody
-        // makes the grant depend on something the payload does not carry.
-        revokeAllowance(ctx, payload, provisioned.zone)
+        // BOTH BRANCHES, rather than the one the zone picks. An order granted one or the other, and
+        // taking back by its name from the branch it never touched finds nothing — so the undo does
+        // not have to agree with the grant about which branch ran.
+        grants.revokePlanAllowance(ctx.petich.id)
+        roaming.revoke(ctx.petich.id)
     }
 
     private suspend fun grantAllowance(
@@ -279,7 +274,11 @@ class Provision(
     ) {
         if (payload.dataMb <= 0 && payload.minutes <= 0 && payload.messages <= 0) return
         if (payload.zone == Zones.HOME) {
+            // Under the order's name, which is what makes this safe to run twice and possible to
+            // take back: petich runs a member again after a conflict on its position write, and a
+            // second grant under the same order adds nothing.
             grants.grantPlanAllowance(
+                ctx.petich.id,
                 payload.subscriberId,
                 payload.dataMb,
                 payload.minutes,
@@ -297,26 +296,6 @@ class Provision(
                 validForDays = payload.validForDays,
                 purchasedAt = clock.now(),
             )
-        }
-    }
-
-    private suspend fun revokeAllowance(
-        ctx: PetichStepContext,
-        payload: PurchasePayload,
-        zone: String,
-    ) {
-        if (payload.dataMb <= 0 && payload.minutes <= 0 && payload.messages <= 0) return
-        if (zone == Zones.HOME) {
-            grants.revokePlanAllowance(
-                payload.subscriberId,
-                payload.dataMb,
-                payload.minutes,
-                payload.messages,
-            )
-        } else {
-            // The same key the grant used. The order IS the saga, so a compensation can always name
-            // exactly what it granted rather than searching for something that looks like it.
-            roaming.revoke(ctx.petich.id)
         }
     }
 }
