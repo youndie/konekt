@@ -89,6 +89,22 @@ Then the saga completes and the change is recorded against the boundary
 
 **Automated:** `e2e TariffChangeScenarioTest`, `server TariffChangeSagaTest`
 
+### Scenario: a change whose process died before the confirmation is carried to it
+
+```gherkin
+Given a requested tariff change whose row is written
+And the process dies before the write that parks the saga at the confirmation
+When the stranded queue re-drives RecordTariffChange on another engine
+Then the saga is PENDING_SIGNATURE and the change is the one pending
+And confirming it applies that change
+```
+
+Before `B-131` the second `record` hit the unique `change_id`, the member threw and petich undid it:
+the change ended cancelled and the saga `compensated` — the tariff right, the request lost. `record`
+now keeps the row already under the change's id.
+
+**Automated:** `server StrandedTariffChangeTest`
+
 ## 5. Wire format
 
 **DTOs, and no kompot actions.** `POST /api/v1/tariff-changes` requests a change and answers a
