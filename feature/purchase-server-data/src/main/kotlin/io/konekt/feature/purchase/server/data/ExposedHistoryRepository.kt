@@ -43,7 +43,7 @@ class ExposedHistoryRepository(
     //
     // ONE DRIVING ROW PER MOVEMENT, which is what makes a keyset over one table honest here. A
     // purchase writes a `hold` and a top-up writes a `top_up`, each exactly once —
-    // `HoldFundsInterceptor` writes the hold and the pending entitlement together, so a hold without
+    // `HoldFunds` writes the hold and the pending entitlement in one step, so a hold without
     // an entitlement cannot exist and the purchase rows are the same set as before. `capture` and
     // `release` are consequences of a movement rather than movements, so they are joined to rather
     // than selected; `decline` is zero-sum and carries a sentence, and nothing was moved to

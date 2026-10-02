@@ -31,11 +31,12 @@ import kotlinx.serialization.json.JsonPrimitive
 
 // What the collecting member did, so that its own undo can tell that it did it.
 //
-// THIS REPLACES A LOOKUP INTO OUR OWN LEDGER. `AccountBalances.debit` used to ask whether a `TOP_UP`
-// entry existed before reversing anything, because a compensation could not otherwise tell a credit
-// that happened from one that never did — petich compensates the member whose outcome it never
-// learned, and `settle` throwing is exactly that. The engine now carries the evidence beside the
-// member that wrote it, so the question is asked where it arises.
+// THIS ASKS FIRST WHAT A LOOKUP INTO OUR OWN LEDGER USED TO ASK ALONE. `AccountBalances.debit` asks
+// whether a `TOP_UP` entry exists before reversing anything — and still does, behind this record —
+// because a compensation could not otherwise tell a credit that happened from one that never did:
+// petich compensates the member whose outcome it never learned, and `settle` throwing is exactly
+// that. The engine now carries the evidence beside the member that wrote it, so the question is
+// asked where it arises.
 @Serializable
 @SerialName("topup_credited")
 data class Credited(

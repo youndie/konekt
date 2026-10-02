@@ -186,8 +186,8 @@ class TopUpSagaTest {
 
     // THE BRANCH NOTHING ELSE CAN REACH, and it is driven directly for exactly that reason.
     //
-    // `CollectFundsInterceptor.compensate` takes the money back when a step AFTER the credit fails.
-    // Today the only step after it announces and cannot fail, so no scenario — not the stand, not the
+    // `CollectFunds.compensate` takes the money back when a member AFTER the credit fails.
+    // Today the only member after it announces and cannot fail, so no scenario — not the stand, not the
     // saga tests above — ever runs this. It is written because the day a step is added between them,
     // the failure is a subscriber holding money the operator was never paid for, and nothing would
     // have objected.
@@ -222,13 +222,13 @@ class TopUpSagaTest {
 
     // THE OTHER EXIT FROM THE SAME STEP, and the one no test reached until `konekt#48`.
     //
-    // `intercept` settles at the provider BEFORE it credits. A decline comes back as a value and
-    // returns `Compensate`; a gateway that does not answer at all — a timeout, a reset connection,
+    // `execute` settles at the provider BEFORE it credits. A decline comes back as a value and
+    // ends in `ctx.fail`; a gateway that does not answer at all — a timeout, a reset connection,
     // a 502 — comes back as a THROW, and then the credit never happened. petich `0.3.0` compensates
     // the step that threw as well as the steps below it (youndie/petich#59), because the engine
     // cannot tell an effect that reached the far side from a call that never landed.
     //
-    // So this asks the interceptor the question the engine is about to ask it, directly: take back
+    // So this asks the member the question the engine is about to ask it, directly: take back
     // a top-up that was never given. The answer must be nothing at all — not a reversal against a
     // top-up with no `TOP_UP`, and not a balance dropping by an amount nobody added. Written against
     // petich `0.1.0`, where the engine does not yet make this call, so that the upgrade finds the

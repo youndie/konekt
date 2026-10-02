@@ -263,7 +263,7 @@ class CustomPackageScenarioTest {
 
     // THE REFUSED BRANCH, and it is the one the item names: an insufficient balance has to be a
     // SCREEN with a reason and the control that acts on it, not a status code (`B-68`). It works
-    // because the order goes through the purchase saga unchanged — the interceptors do not know a
+    // because the order goes through the purchase saga unchanged — its members do not know a
     // built package from a listed one.
     // `: Unit` and it is load-bearing: this case ends in `assertNotNull`, which RETURNS the value it
     // checked, so an expression body takes its return type from it and JUnit stops seeing a test. The

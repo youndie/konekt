@@ -70,7 +70,7 @@ fun Route.customPackageRoutes() {
         CustomPackagePlans.requireSomethingChosen(quantities)
 
         // INTO THE SAME SAGA AS ANY OTHER PURCHASE. The id encodes the quantities and the catalogue
-        // resolves it, so the interceptors — the balance check, the hold, the settlement, the
+        // resolves it, so the saga's members — the balance check, the hold, the settlement, the
         // entitlement, the compensation — do not know a custom package from a listed one. Every
         // refusal and every screen the purchase already has works here unchanged, including the
         // insufficient-balance one, which is why this route does not check the balance itself.

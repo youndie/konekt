@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
 
 // BEING REFUSED, AND BEING TOLD WHY — over the whole chain, on the tree a subscriber's client draws.
 //
-// The reason travels a long way for a short sentence: an interceptor composes a code, writes it into
+// The reason travels a long way for a short sentence: a saga member composes a code, writes it into
 // a zero-sum ledger row, the use case reads it back onto the order view, and the screen turns it into
 // copy and into a control. Every one of those seams has its own test, and for a long time the chain
 // still delivered nothing: the code was never written, so the screen printed one constant for all

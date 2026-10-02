@@ -59,7 +59,7 @@ import kotlin.uuid.Uuid
 // NOT `runTest`, and this cost an hour.
 //
 // `runTest` runs on a virtual clock: a coroutine that suspends has time skipped forward for it. The
-// engine wraps every interceptor in `withTimeout(phaseTimeout)`, so the moment an interceptor
+// engine wraps every member in `withTimeout` for its phase, so the moment a member
 // suspends on real I/O — a database call — the virtual clock jumps past the phase timeout and the
 // step is cancelled. The saga then compensates, and what a test sees is a purchase that rolled itself
 // back for no reason it can name: no exception in the log, because petich swallows it into a

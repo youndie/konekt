@@ -101,7 +101,7 @@ include(":feature:auth-server-domain")
 include(":feature:auth-server-data")
 
 // The second feature vertical: buying a package, which is where petich earns its place. Four
-// interceptors, one of them a wait for a human, and a compensated branch the canvas draws.
+// members, one of them a wait for a human, and a compensated branch the canvas draws.
 include(":feature:purchase-shared-api")
 include(":feature:purchase-server-domain")
 include(":feature:purchase-server-data")
