@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kompot.workinprogress.ru/schema/konekt-esim.schema.json",
+  "$id": "https://kompot.kotlin.website/schema/konekt-esim.schema.json",
   "title": "konekt-esim",
   "description": "The eSIM install wizard's one action: which run to move, and which way.",
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",

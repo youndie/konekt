@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kompot.workinprogress.ru/schema/konekt-shell.schema.json",
+  "$id": "https://kompot.kotlin.website/schema/konekt-shell.schema.json",
   "title": "konekt-shell",
   "description": "Leaving: the verb that ends a session on both sides at once.",
   "x-kompot-generated-by": "KompotSchemaGenerator — this file is generated, do not edit by hand",
