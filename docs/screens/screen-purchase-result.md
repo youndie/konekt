@@ -101,7 +101,7 @@ screen to want the same thing would decide it again, slightly differently.
 
 - **Text:** the provider's own decline reason when there is one — the mock's is "The provider declined
   the operation." — otherwise "The confirmation window passed, so the purchase was not completed."
-- **Why the reason is stored at all:** petich carries a `Compensate` reason to its metrics and does
+- **Why the reason is stored at all:** petich carries a `ctx.fail` reason to its metrics and does
   not persist one, and the compensating step (the hold) has no way to know why it is being undone. So
   the settling step writes it into the ledger where the screen can read it back.
 
@@ -142,5 +142,6 @@ support".
 - **The only ways to reach the compensated branch** are the second stand server, whose payment mock
   refuses, and abandoning a confirmation for five minutes. That is why the compose file runs two
   servers rather than offering a switch: the mode is read once at startup.
-- **The rejected branch says "nothing was charged" and means it** — a validation `Reject` runs before
-  the hold, so there is nothing to reverse and nothing to state in money.
+- **The rejected branch says "nothing was charged" and means it** — a refusal comes from the
+  validation check, before the hold, or from the hold step when the database refused the hold, so
+  there is nothing to reverse and nothing to state in money.

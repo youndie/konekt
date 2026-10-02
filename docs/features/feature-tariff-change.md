@@ -49,8 +49,8 @@ and it needs no screen to demonstrate it. Recurring billing is a non-goal, state
 | Rule | Where it is enforced |
 |---|---|
 | The change takes effect at the first of the next month, UTC | `BillingBoundary.nextAfter`, and the date is decided when the change is **requested** rather than when it is applied — a subscriber told "from the first" and confirming on the thirty-first gets the date they were shown |
-| One change at a time | the saga refuses a second while one is pending (409) |
-| The current tariff cannot be chosen | the server refuses it |
+| One change at a time | the saga's validation check, `ValidateTariffChange`, refuses a second while one is pending. A refusal inside the saga is not an HTTP error: the request still answers `202` and the change comes back `rejected` (`TariffChangeSagaTest`) |
+| The current tariff cannot be chosen | the same check refuses it, the same way |
 | A subscriber who has never changed is on the catalogue's default | `TariffCatalogue.default`, a property of the catalogue rather than a column with a default — renaming a deployment's base tariff must not need a migration |
 | The current tariff is the newest **applied** row whose boundary has passed | `ExposedTariffChanges.currentTariffId`; without the date filter a confirmed change becomes current the moment it is confirmed, which is exactly what "at the next boundary" is not |
 | Any tariff may be chosen from any tariff | there are no downgrade rules; `B-21` recorded that as out of scope and it stands |
@@ -62,7 +62,7 @@ and it needs no screen to demonstrate it. Recurring billing is a non-goal, state
 | The saga's payload, the boundary, the tariff type | `server/src/main/kotlin/io/konekt/tariff/TariffDomain.kt` |
 | The catalogue and the change log | `server/src/main/kotlin/io/konekt/tariff/TariffData.kt`, `TariffPorts.kt` |
 | Start, confirm, and **one** view builder for all three callers | `server/src/main/kotlin/io/konekt/tariff/TariffUseCases.kt` |
-| The interceptors | `server/src/main/kotlin/io/konekt/tariff/TariffInterceptors.kt` |
+| The saga — `tariffPetich`: a check, the promise written down and suspended on, the apply | `server/src/main/kotlin/io/konekt/tariff/TariffSteps.kt` |
 | The two routes that answer DTOs | `server/src/main/kotlin/io/konekt/tariff/TariffRouting.kt` |
 | The wire: the DTO resources and the payloads | `feature/tariff-shared-api/src/commonMain/kotlin/io/konekt/feature/tariff/shared/api/TariffApi.kt` |
 | Why there is no screen, at the place a reader meets the tariff | `server/src/main/kotlin/io/konekt/screens/ProfileScreen.kt` |

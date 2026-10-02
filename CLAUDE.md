@@ -250,7 +250,7 @@ circular dependency inside `:server` naming neither module.
 - **The broker publishes no host port, and a test enforces it.** It has neither TLS nor
   authentication — both deliberately absent — so reachability is the whole of its security model.
 - **A saga test uses `runBlocking`, never `runTest`.** `runTest`'s virtual clock skips time forward
-  for a suspended coroutine, and the engine wraps every interceptor in `withTimeout` — so the first
+  for a suspended coroutine, and the engine wraps every step in `withTimeout` — so the first
   real database call inside a step jumps past the phase timeout, the step is cancelled and the saga
   compensates. petich swallows the cancellation into the compensation, so nothing is logged and what
   you see is a saga that rolled itself back for no reason.
@@ -289,7 +289,7 @@ circular dependency inside `:server` naming neither module.
   it rather than reuse it — and give the new state a frame, because a state nobody photographs is one
   whose copy a green suite can rewrite.
 - **A refusal travels as a code and becomes a sentence on the screen.** petich keeps no reason of its
-  own — the message on a `Reject` is for a log — so a refusal not written into the `decline` ledger
+  own — the message on a `ctx.reject` is for a log — so a refusal not written into the `decline` ledger
   row is one no screen can ever state; that is why five distinct purchase refusals read as one
   sentence naming none of them for as long as the screen existed (`B-68`). The note column then means
   two things and the ORDER'S STATUS decides which: our code on REJECTED, the provider's own words on
@@ -504,7 +504,7 @@ commit that repository was at when the fact was read, never a branch. Since docs
 anchor is looked for in its own repository only, and CI clones konekt alone, so a bare
 `kompot/README.md` is rot even though a laptop with kompot beside it would find it (before 0.3.4 it
 was counted found by a suffix match against konekt's own `README.md`). Measured on 2026-10-02 at
-0.3.5, the way CI runs it: 344 anchors, 227 found, 19 addresses, 78 patterns, 20 not found — 15 of
-them coordinates and artefact paths in the research documents; outside them, `lib/app.aot` and `lib/`
-in `konekt-server` are paths inside the image, and three anchors still name the `*Interceptors.kt`
-files that #49 replaced with `*Steps.kt` — a real rename, not yet chased.
+0.3.5, the way CI runs it: 344 anchors, 230 found, 19 addresses, 78 patterns, 17 not found — 15 of
+them coordinates and artefact paths in the research documents, and `lib/app.aot` and `lib/` in
+`konekt-server`, which are paths inside the image. The three that named the `*Interceptors.kt` files
+#49 replaced with `*Steps.kt` were chased the same day, with the saga prose around them.

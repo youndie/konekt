@@ -17,8 +17,10 @@ parent_feature: feature-plan-purchase
 > The generated schema is [`openapi.json`](openapi.json), built from the routes and compared by the
 > build (`B-23`).
 >
-> Read out of the source on 2026-08-25. Two of the six routes answer a **component tree** rather than
-> a DTO, and that is stated per route below rather than left to be discovered.
+> Read out of the source on 2026-08-25; the saga's anchor and its vocabulary re-read on 2026-10-02,
+> after [#49](https://github.com/youndie/konekt/pull/49) moved the sagas from interceptors to petich
+> definitions. Two of the six routes answer a **component tree** rather than a DTO, and that is stated
+> per route below rather than left to be discovered.
 
 ## Routes — all of them, no exceptions
 
@@ -49,7 +51,7 @@ appends items to a list it already has, and sending it a screen would replace on
 | Route | Handler |
 |---|---|
 | all six | `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/PurchaseRouting.kt` |
-| the saga's four steps | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseInterceptors.kt` |
+| the saga — `purchasePetich`, its four members in the order they run | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseSteps.kt` |
 | the use cases | `feature/purchase-server-domain/src/main/kotlin/io/konekt/feature/purchase/server/domain/PurchaseUseCases.kt` |
 | the order screen | `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/PurchaseResultScreen.kt` |
 | the history screen and its rows | `feature/purchase-server-data/src/main/kotlin/io/konekt/feature/purchase/server/data/HistoryScreen.kt` |
@@ -84,10 +86,12 @@ serialises perfectly, and the client then draws nothing for the whole screen.
 | no token, or a token whose family was revoked | `401` | Ktor's challenge, not an `ApiError` |
 
 **A refusal by a saga rule is not an HTTP error.** A plan that is off sale, a price that moved, or a
-balance that does not cover the purchase produce a `Reject` inside the validation step: the request
-still answers `202`, and the order comes back with `status = "rejected"`. The reason is on the
-screen, not in the status code. `KonektException.InsufficientFunds` exists and maps to `409`, and
-**nothing in the product throws it today** — it is constructed only in `ErrorContractTest` — the balance check is a `Reject`.
+balance that does not cover the purchase are refused with `ctx.reject` — by the validation check,
+`ValidatePurchase`, and for the balance once more by `HoldFunds`, where the database makes the
+check. The request still answers `202`, and the order comes back with `status = "rejected"`. The
+reason is on the screen, not in the status code. `KonektException.InsufficientFunds` exists and maps
+to `409`, and **nothing in the product throws it today** — it is constructed only in
+`ErrorContractTest` — the balance check is a refusal inside the saga.
 
 ## Quirks
 
@@ -95,17 +99,19 @@ screen, not in the status code. `KonektException.InsufficientFunds` exists and m
   purchase and gets it back if they never confirm. The alternative — a held amount separate from an
   available one — is more honest and is a second number on every screen that shows a balance. This
   product has one number.
-- **The confirmation has a five-minute deadline**, set on the step and not by the engine
-  (`DEFAULT_CONFIRMATION_TTL`). It bounds how long a subscriber's own money sits held on a purchase
+- **The confirmation has a five-minute deadline**, set on the member that suspends, `HoldFunds`, and
+  not by the engine (`DEFAULT_CONFIRMATION_TTL`). It bounds how long a subscriber's own money sits held on a purchase
   they walked away from. When it passes, petich's sweeper compensates and the order becomes
   `compensated`.
 - **The EXECUTION phase timeout is 30 seconds and not petich's default 10.** The canvas tells the
   subscriber a settlement "usually takes under 15 seconds", so the default would cancel a provider
   the screen describes. Raised in `Application.kt` from `MockPaymentGateway.EXECUTION_PHASE_TIMEOUT`.
-- **The reversal is announced by the step being undone**, the hold — not by the announcing step.
-  Compensation only walks back through steps that actually ran, and a purchase abandoned at the
-  confirmation never reaches `POST_PROCESSING`; an announcement hanging off that step would never
-  fire for the one case it exists for.
+  One engine runs all three sagas and petich's timeouts are per engine, so the top-up and the tariff
+  change get the same bound.
+- **The reversal is announced by the member being undone**, the hold — not by the announcement.
+  Compensation walks back only through the steps that ran (and the one whose outcome petich never
+  learned), and a purchase abandoned at the confirmation never reaches `POST_PROCESSING`; an
+  announcement hanging off that member would never fire for the one case it exists for.
 - **`/api/v1/screens/history/page` is written as a string in the server's own code**, in
   `HistoryScreen.pageUrl`, as well as being a `@Resource`. This repository's rule is that no endpoint
   path exists as a string outside a `*-shared-api` module (D13), and this is the one production source

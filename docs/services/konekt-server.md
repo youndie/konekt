@@ -79,9 +79,12 @@ the servers wait on with `condition: service_completed_successfully`; in a rolli
 that finishes before new pods roll. Two processes racing to migrate is the failure this removes, and
 with Flyway's lock the race is a hang rather than an error.
 
-**One petich engine per saga type, sharing one table.** The sweeper resolves the owning engine per
-saga rather than taking one, because rolling a purchase back with another type's interceptor list
-would run the wrong compensations or none. `requireOutbox = true` is set explicitly: petich degrades
+**One petich engine for all three sagas, over one table.** Each saga is a definition keyed by its
+type — `purchasePetich`, `topUpPetich`, `tariffPetich` — and the engine answers which definition owns
+a row, so the sweeper is handed the one engine and a saga whose type has no definition is skipped
+rather than rolled back by the wrong one. Until [#49](https://github.com/youndie/konekt/pull/49)
+there were three engines and the sweeper picked one per saga. petich's phase timeouts are per engine,
+so the raised `EXECUTION` bound applies to all three. `requireOutbox = true` is set explicitly: petich degrades
 to a plain update when handed a repository that cannot store events, and the saga still completes
 with correct state while nobody downstream is told.
 
