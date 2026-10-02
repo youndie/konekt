@@ -94,22 +94,33 @@ class ExposedAccountBalances(
         accountId: String,
         orderId: String,
         amount: Money,
-    ) {
+    ): Boolean {
+        // Set inside the transaction, before the entry that may collide: a second release of the
+        // same order reaches the unique index and is swallowed below, and the answer it owes is
+        // still "this order's hold is back" — an earlier pass returned it.
+        var held = false
         alreadyDoneIsNotAFailure {
             dbQuery {
-                // THE SAME QUESTION AS `debit`, and the answer matters here for the same reason.
-                // `hold` writes its entry only when the UPDATE moved a row, and petich (since `0.3.0`)
-                // compensates a member whose `hold` itself threw — so a RELEASE without a HOLD would
-                // ADD money that was never taken, which is the mirror of `konekt#48` and the more
-                // expensive direction of it. `HoldFunds.compensate` asks its own step record (`Held`)
-                // before it calls this; the ledger asks again, for any caller.
+                // THE LEDGER IS THE ONLY GUARD, AND THE ONLY ONE THAT CAN SEE. `hold` writes its entry
+                // only when the UPDATE moved a row, and petich compensates a member whose `hold` itself
+                // threw — so a RELEASE without a HOLD would ADD money that was never taken, which is
+                // the mirror of `konekt#48` and the more expensive direction of it.
+                //
+                // `HoldFunds.compensate` calls this unconditionally, and that is the point. Its own
+                // step record cannot answer "did the hold land": the record is written by the member
+                // after the call returns, and a hold that committed and lost its answer — or whose
+                // entitlement write threw — never reached it (youndie/petich B-43). This row is
+                // written by the hold, in the hold's own transaction, so it exists exactly when the
+                // money moved.
                 if (!recorded(orderId, LedgerEntryTable.HOLD)) return@dbQuery
+                held = true
                 entry(accountId, orderId, LedgerEntryTable.RELEASE, amount.minorUnits, amount.currency)
                 AccountTable.update({ AccountTable.id eq accountId }) {
                     it[balanceMinor] = AccountTable.balanceMinor plus amount.minorUnits
                 }
             }
         }
+        return held
     }
 
     override suspend fun credit(

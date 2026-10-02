@@ -88,8 +88,8 @@ One petich definition, `purchasePetich`, with its four members written in the or
    refusal here is `ctx.reject`, written first into the ledger with its reason whenever there is an
    account to write it to (`B-68`); a check has nothing to undo.
 2. **EXECUTION** — `HoldFunds`, a step. Holds the money (refusing the same way when the database
-   says the balance does not cover it), creates a pending entitlement, records `Held`, and suspends
-   with `ctx.suspendFor("CONFIRM", 5 minutes)`. The saga stops, holding nothing. **A member that
+   says the balance does not cover it), creates a pending entitlement — a second write in a second
+   transaction — and suspends with `ctx.suspendFor("CONFIRM", 5 minutes)`. The saga stops, holding nothing. **A member that
    suspended is not re-executed on resume**, so the money is held once.
 3. *(the subscriber confirms — `POST /api/v1/purchases/{orderId}/confirm`)*
 4. **EXECUTION** — `Provision`, a step. Settles with the provider; on a decline it records the reason
@@ -156,6 +156,15 @@ keyed by order id.
 * **When:** five minutes pass and the sweeper runs
 * **Then:** the order is `compensated` and the balance is exactly what it was
 * **Automated:** `PurchaseSagaTest`, and against a moved clock `SuspendedSagaExpiryTest`
+
+### Scenario: a hold whose member failed after taking it is returned
+* **Given:** a purchase whose hold commits and whose member then fails — the pending entitlement
+  cannot be written, or the hold's own answer is lost after the commit
+* **When:** petich compensates the member that threw
+* **Then:** the order is `compensated`, the balance is exactly what it was, a `purchase.reversed`
+  event is in the outbox, and the history row says `compensated` with the reversal beside it
+* **And:** when the hold itself never landed, nothing is returned and nothing is announced
+* **Automated:** `HoldRollbackTest`
 
 ### Scenario: a plan that is not on sale is refused with nothing to undo
 * **Given:** the sold-out plan in the catalogue
@@ -302,18 +311,29 @@ Then both answer 422 rather than rounding it
   case it exists for.
 - **The compensating step releases only what it took.** Every step can see everything, which makes
   "return the money twice" an easy mistake; the hold is the previous step's to release.
-- **And it undoes only what was recorded as done.** The sentence above — compensation walks back
-  through the steps that RAN — is petich `0.1.0`'s contract and stops being true in `0.3.0`, which
-  also compensates the step whose `execute` threw
+- **And the hold is undone by the order's name, never by a step record.** The sentence above —
+  compensation walks back through the steps that RAN — is petich `0.1.0`'s contract and stops being
+  true in `0.3.0`, which also compensates the step whose `execute` threw
   ([petich#59](https://github.com/youndie/petich/issues/59)): the engine cannot tell an effect that
-  reached the far side from a call that never landed, it only learns that the step did not report
-  success. So each acting step records what it did, in the saga's own row — `Held`, `Provisioned`,
-  the top-up's `Credited` — and its compensation returns quietly when the record is not there. Behind
-  that, `release` and `debit` still ask the ledger whether the movement they are undoing happened — a
-  `HOLD` for a release, a `TOP_UP` for a reversal. Without either, a gateway timeout inside
-  `CollectFunds` becomes a `TOP_UP_REVERSAL` against a top-up with no `TOP_UP` and a balance below
-  where it started, and a failure inside `hold` becomes a refund of money that was never taken
+  reached the far side from a call that never landed. A step record cannot tell either. It is written
+  by the member after its calls return, so a hold that committed and lost its answer — or whose
+  entitlement write threw — has none, and an undo that returned quietly without one kept the
+  subscriber's money for good; that is what #49 shipped, and youndie/petich B-43 is the rule it
+  broke. So `HoldFunds.compensate` calls `release` unconditionally with the order id `hold` was given
+  before it acted, and the ledger answers: `release` returns the hold only when a `HOLD` entry exists
+  under that order — written by `hold` in its own transaction, so it exists exactly when the money
+  moved — and says whether it did, which is what decides whether `purchase.reversed` is announced.
+  Without that guard a failure inside `hold` would become a refund of money that was never taken
   ([konekt#48](https://github.com/youndie/konekt/issues/48)).
+- **The other two acting members still undo by their records, and each for a stated reason.**
+  `debit` asks the ledger for a `TOP_UP` before reversing, so a gateway timeout inside `CollectFunds`
+  cannot take a balance below where it started (#48). The top-up's `Credited` stays the guard on
+  purpose: a credit that committed and lost its answer is left standing, because a credit exists only
+  once the provider has settled and nothing here can refund a settlement
+  ([reference-scope](../services/reference-scope.md)) — `TopUpSagaTest` pins it. `Provisioned` stays
+  for a reason that is a gap rather than a decision: the home allowance is a counter that keys
+  nothing by order, so a grant that committed and lost its answer is not revoked; the money and the
+  entitlement still come back through the hold. That is [B-130](../backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md).
 - **The event id is `<orderId>:<type>`, and the partition key is the order id read out of the
   payload.** The outbox row is `(id, type, payload)` and nothing else, so the key has to come from
   what is already there; a payload without an `orderId` is published unkeyed and round-robins.

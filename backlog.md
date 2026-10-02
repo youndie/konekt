@@ -43,12 +43,13 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (2)
+## Open (3)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
+| [B-130](docs/backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md) `[ ]` | An allowance has no name to be taken back by, so a grant whose answer was lost stays granted | P2 | M | - |
 
 ## Closed (127)
 

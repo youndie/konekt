@@ -42,12 +42,17 @@ class ExposedHistoryRepository(
     // top-up in this very list.
     //
     // ONE DRIVING ROW PER MOVEMENT, which is what makes a keyset over one table honest here. A
-    // purchase writes a `hold` and a top-up writes a `top_up`, each exactly once —
-    // `HoldFunds` writes the hold and the pending entitlement in one step, so a hold without
-    // an entitlement cannot exist and the purchase rows are the same set as before. `capture` and
+    // purchase writes a `hold` and a top-up writes a `top_up`, each exactly once. `capture` and
     // `release` are consequences of a movement rather than movements, so they are joined to rather
     // than selected; `decline` is zero-sum and carries a sentence, and nothing was moved to
     // reconcile.
+    //
+    // A HOLD WITHOUT AN ENTITLEMENT EXISTS, and this used to say it could not. `HoldFunds` writes the
+    // two in one member but in two transactions, hold first: between them the purchase has a row
+    // and no entitlement, and when the entitlement write fails it never gets one — the rollback
+    // returns the hold by the order's name and the row carries a `release` beside it
+    // (`HoldRollbackTest`). So the entitlement join is LEFT for purchases too, and a row without one
+    // reads its state from the reversal below rather than from a status it does not have.
     //
     // The alternative — two queries unioned — gets the cursor wrong by construction: two tables
     // interleave, and a page boundary that falls between them either repeats a row or drops one.
@@ -186,9 +191,26 @@ class ExposedHistoryRepository(
                                 if (reversed != null) OrderStatus.COMPENSATED else OrderStatus.COMPLETED
                             } else {
                                 when (row.getOrNull(EntitlementTable.status)) {
-                                    Entitlement.ACTIVE -> OrderStatus.COMPLETED
-                                    Entitlement.CANCELLED -> OrderStatus.COMPENSATED
-                                    else -> OrderStatus.AWAITING_CONFIRMATION
+                                    Entitlement.ACTIVE -> {
+                                        OrderStatus.COMPLETED
+                                    }
+
+                                    Entitlement.CANCELLED -> {
+                                        OrderStatus.COMPENSATED
+                                    }
+
+                                    // No entitlement was ever written. Money that came back says the
+                                    // purchase was rolled back; otherwise it is between its two writes.
+                                    null -> {
+                                        when {
+                                            reversed != null -> OrderStatus.COMPENSATED
+                                            else -> OrderStatus.AWAITING_CONFIRMATION
+                                        }
+                                    }
+
+                                    else -> {
+                                        OrderStatus.AWAITING_CONFIRMATION
+                                    }
                                 }
                             },
                         reversal =

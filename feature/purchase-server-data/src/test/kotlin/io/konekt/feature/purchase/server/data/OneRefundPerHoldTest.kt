@@ -18,6 +18,8 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -86,8 +88,10 @@ class OneRefundPerHoldTest {
             // TWICE, IN SEQUENCE — which is what two sweepers a moment apart actually do, and what the
             // stand produced. The second call must be a no-op rather than an error: a compensation
             // that runs again has nothing to do, and that is not a failure to report.
-            balances.release(accountId, orderId, price)
-            balances.release(accountId, orderId, price)
+            assertTrue(balances.release(accountId, orderId, price))
+            // Still `true`: the order's hold IS back, by the call before. A caller deciding whether to
+            // announce a reversal must not read a second compensation as "nothing was held".
+            assertTrue(balances.release(accountId, orderId, price), "a returned hold was reported as never held")
 
             assertEquals(1, releasesFor(orderId), "the ledger recorded the refund twice")
             assertEquals(5_000, balanceNow(), "the subscriber was refunded more than was held")
@@ -125,8 +129,8 @@ class OneRefundPerHoldTest {
         runBlocking {
             val orderId = Uuid.random().toString()
             balances.hold(accountId, orderId, price)
-            balances.release(accountId, orderId, price)
 
+            assertTrue(balances.release(accountId, orderId, price), "a hold that was returned was reported as absent")
             assertEquals(1, releasesFor(orderId))
             assertEquals(5_000, balanceNow(), "the refund did not happen at all")
         }
@@ -154,10 +158,11 @@ class OneRefundPerHoldTest {
     //
     // `hold` writes its entry only when the UPDATE moved a row, so an order with no `HOLD` is one
     // where the money was never taken. petich `0.3.0` compensates the step that THREW as well as the
-    // steps below it (youndie/petich#59), and the hold's undo called `release` unconditionally — so a
-    // gateway or a database that failed inside `hold` arrived here as a refund of nothing.
-    // `HoldFunds.compensate` asks its own step record (`Held`) first now; this holds the ledger to
-    // the same answer for any caller.
+    // steps below it (youndie/petich#59), and the hold's undo calls `release` unconditionally — it
+    // undoes by the order's name, because its own step record cannot see a hold that committed and
+    // lost its answer (`HoldRollbackTest`). So this guard is the only thing between a database that
+    // failed inside `hold` and a refund of nothing, and `false` is how the undo learns there is no
+    // reversal to announce.
     // `konekt#48` found it on the top-up side; this is the same question asked of the purchase side,
     // and it costs more, because inventing money is worse than losing track of it.
     @Test
@@ -165,7 +170,7 @@ class OneRefundPerHoldTest {
         runBlocking {
             val orderId = Uuid.random().toString()
 
-            balances.release(accountId, orderId, price)
+            assertFalse(balances.release(accountId, orderId, price), "a release with no hold claimed to return one")
 
             assertEquals(0, releasesFor(orderId), "a release was recorded for an order with no hold")
             assertEquals(5_000, balanceNow(), "the balance moved for a hold that never happened")

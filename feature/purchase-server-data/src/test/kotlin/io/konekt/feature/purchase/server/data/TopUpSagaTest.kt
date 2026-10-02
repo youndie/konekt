@@ -19,6 +19,7 @@ import io.konekt.db.tables.AccountTable
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.domain.Currency
 import io.konekt.domain.Money
+import io.konekt.feature.purchase.server.domain.AccountBalances
 import io.konekt.feature.purchase.server.domain.CollectFunds
 import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.FindTopUpUseCase
@@ -83,11 +84,15 @@ class TopUpSagaTest {
     private lateinit var subscriberId: String
     private lateinit var accountId: String
 
-    private fun sagaWith(payments: MockPaymentGateway): StartTopUpUseCase =
+    private fun sagaWith(
+        payments: MockPaymentGateway,
+        // What the saga's members move money through. The use case around them keeps the real port.
+        members: AccountBalances = balances,
+    ): StartTopUpUseCase =
         StartTopUpUseCase(
             engine =
                 PetichEngine(
-                    definitions = listOf(topUpPetich(balances, payments, json)),
+                    definitions = listOf(topUpPetich(members, payments, json)),
                     repository = repository,
                     config = PetichEngineConfig(requireOutbox = true),
                     clock = clock.asPetichClock(),
@@ -261,6 +266,38 @@ class TopUpSagaTest {
             )
         }
 
+    // THE OTHER SIDE OF THE HOLD'S FIX, PINNED BECAUSE IT IS A DECISION. A credit that committed and
+    // lost its answer leaves no `Credited`, so the undo leaves it standing — the blind spot petich B-43
+    // describes, the one `HoldRollbackTest` closes for the purchase. Here it stays: a credit exists
+    // only once the provider has settled, nothing in this saga can refund that, and taking the credit
+    // back by name would charge the subscriber for nothing. Whoever makes this undo by name has to
+    // bring the refund with it, and this test is where they find out.
+    @Test
+    fun `a credit whose answer was lost stays where the provider was paid for it`(): Unit =
+        runBlocking {
+            val start =
+                sagaWith(
+                    MockPaymentGateway(mode = MockPaymentGateway.Mode.APPROVE),
+                    members = CreditWhoseAnswerIsLost(balances),
+                )
+
+            val view = start(StartTopUpUseCase.Params(subscriberId, TopUpAmount.minor(amount.minorUnits))).getOrThrow()
+
+            // The saga says it failed, which is what petich saw.
+            assertEquals(OrderStatus.COMPENSATED, view.status)
+            assertEquals(
+                1,
+                ledgerEntries(view.id, LedgerEntryTable.TOP_UP),
+                "the credit never happened — nothing was tested",
+            )
+            assertEquals(
+                opening + amount,
+                balances.balanceOf(accountId),
+                "a credit the provider was paid for was taken back",
+            )
+            assertEquals(0, ledgerEntries(view.id, LedgerEntryTable.TOP_UP_REVERSAL))
+        }
+
     private fun ledgerEntries(
         orderId: String,
         kind: String,
@@ -272,6 +309,20 @@ class TopUpSagaTest {
                 .count()
                 .toInt()
         }
+
+    // The credit commits, and the caller hears a failure instead of the answer.
+    private class CreditWhoseAnswerIsLost(
+        private val real: AccountBalances,
+    ) : AccountBalances by real {
+        override suspend fun credit(
+            accountId: String,
+            topUpId: String,
+            amount: Money,
+        ) {
+            real.credit(accountId, topUpId, amount)
+            error("the connection dropped after the credit committed")
+        }
+    }
 
     // A provider that does not answer. Not a `MockPaymentGateway.Mode`, because that class is
     // PRODUCTION code — it is what a demonstration runs against — and a mode whose only job is to

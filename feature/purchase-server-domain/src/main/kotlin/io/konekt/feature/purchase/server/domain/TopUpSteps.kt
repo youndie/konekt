@@ -29,14 +29,20 @@ import kotlinx.serialization.json.JsonPrimitive
 // There is no confirmation member and so no suspension. A purchase waits because the subscriber is
 // agreeing to spend money they already have; a top-up IS the agreement. See TopUpView.
 
-// What the collecting member did, so that its own undo can tell that it did it.
+// What the collecting member did, so that its own undo can tell that it did it — as far as a record
+// can, which is not as far as it looks.
 //
-// THIS ASKS FIRST WHAT A LOOKUP INTO OUR OWN LEDGER USED TO ASK ALONE. `AccountBalances.debit` asks
-// whether a `TOP_UP` entry exists before reversing anything — and still does, behind this record —
-// because a compensation could not otherwise tell a credit that happened from one that never did:
-// petich compensates the member whose outcome it never learned, and `settle` throwing is exactly
-// that. The engine now carries the evidence beside the member that wrote it, so the question is
-// asked where it arises.
+// THE BLIND SPOT THE HOLD HAD, KEPT HERE ON PURPOSE. The record is written after `credit` returns, so
+// a credit that committed and lost its answer has none, and the undo below then leaves it standing
+// (youndie/petich B-43). For the purchase's hold that was the subscriber's money kept for good, and
+// the hold is undone by the order's name now. Here the same blindness falls on the other side: a
+// credit only exists once the provider has settled, nothing in this saga can refund a settlement —
+// one synchronous `settle` with no refund is a deliberate absence (docs/services/reference-scope.md)
+// — and a credit taken back by name would be a subscriber charged by the provider with nothing to
+// show for it. Left standing, the money is where it was paid for.
+//
+// `AccountBalances.debit` asks the ledger for a `TOP_UP` before reversing anything, for any caller —
+// that is the guard that cannot be fooled, and it answers konekt#48 on its own.
 @Serializable
 @SerialName("topup_credited")
 data class Credited(
@@ -83,7 +89,8 @@ class CollectFunds(
         }
 
         balances.credit(payload.accountId, ctx.petich.id, payload.amount)
-        // The evidence, written in the same breath as the effect and committed with it.
+        // Written right after the effect, and committed with the saga's row rather than with the
+        // credit — which is the whole of what `Credited` says about it.
         ctx.record(Credited(payload.amount.minorUnits))
     }
 
@@ -91,11 +98,11 @@ class CollectFunds(
         ctx: PetichStepContext,
         payload: TopUpPayload,
     ) {
-        // NOTHING TO TAKE BACK IF NOTHING WAS GIVEN, and this is now one line rather than a lookup
-        // into the ledger. petich calls this for the member whose outcome it never learned — a
-        // `settle` that threw, a gateway timeout — and without the record that arrives as a
-        // reversal against a top-up with no credit, taking a balance down by an amount nobody added
-        // (youndie/konekt#48).
+        // NOTHING TO TAKE BACK UNLESS THIS MEMBER SAW IT GIVEN. petich calls this for the member whose
+        // outcome it never learned — a `settle` that threw, a gateway timeout — and there the credit
+        // never happened and there is no record. `debit` would refuse that reversal anyway, since the
+        // ledger has no `TOP_UP` (youndie/konekt#48). What the record cannot see is a credit that
+        // committed and lost its answer, and `Credited` says why that one is left standing.
         ctx.recorded<Credited>() ?: return
 
         balances.debit(payload.accountId, ctx.petich.id, payload.amount)
