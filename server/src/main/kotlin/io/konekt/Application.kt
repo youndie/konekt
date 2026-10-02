@@ -68,11 +68,9 @@ import io.konekt.feature.purchase.server.data.topUpRoutes
 import io.konekt.feature.purchase.server.domain.Credited
 import io.konekt.feature.purchase.server.domain.DEFAULT_CONFIRMATION_TTL
 import io.konekt.feature.purchase.server.domain.Held
-import io.konekt.feature.purchase.server.domain.PURCHASE_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.Provisioned
 import io.konekt.feature.purchase.server.domain.PurchaseConfirmation
 import io.konekt.feature.purchase.server.domain.PurchasePayload
-import io.konekt.feature.purchase.server.domain.TOP_UP_SAGA_TYPE
 import io.konekt.feature.purchase.server.domain.TopUpPayload
 import io.konekt.feature.purchase.server.domain.purchasePetich
 import io.konekt.feature.purchase.server.domain.topUpPetich
@@ -113,7 +111,6 @@ import io.konekt.tariff.ConfirmTariffChangeUseCase
 import io.konekt.tariff.ExposedTariffChanges
 import io.konekt.tariff.StartTariffChangeUseCase
 import io.konekt.tariff.StaticTariffCatalogue
-import io.konekt.tariff.TARIFF_CHANGE_SAGA_TYPE
 import io.konekt.tariff.TariffCatalogue
 import io.konekt.tariff.TariffChangePayload
 import io.konekt.tariff.TariffChanges
@@ -131,7 +128,6 @@ import io.konekt.topup.topUpScreenRoutes
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
-import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.cio.CIO
@@ -139,7 +135,6 @@ import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.resources.Resources
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
@@ -156,7 +151,6 @@ import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.ext.getKoin
 import org.koin.ktor.plugin.Koin
@@ -856,7 +850,6 @@ fun petichModule(
     // READING one change, which is what the screen does. No engine: it decides nothing and runs no
     // saga, and a use case that took one would be able to.
     factory { ViewTariffChangeUseCase(get(), get(), get()) }
-    // The catalogue screen's two answers that are not the catalogue (`B-96`).
 
     // THE PROFILE SCREEN'S ANSWERS, assembled off the route (`B-96`). Four repositories and a
     // catalogue lookup used to live in `ProfileRouting`, which is the layer that should know only who
