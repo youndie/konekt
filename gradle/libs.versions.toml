@@ -130,7 +130,19 @@ ktlint = "1.8.0"
 #
 # 0.39.0 FROM CENTRAL: kompot released 0.39.0 from v0.39.0 (4d860b8), two commits past 0.39.0.200 —
 # both build and CI configuration. All 190 BOM coordinates answered 200 on repo1.maven.org first.
-kompot = "0.39.0"
+#
+# A SNAPSHOT AGAIN, and this time for no feature: kompot opened the 0.40 STABILIZATION LINE (its
+# `stabilize-0.40`), where consumers live on `0.40.0.<run>` and whatever they find becomes a kompot
+# issue before 0.40.0 is cut — so the release is tested by the builds that will take it, not after.
+# 0.40.0.208 is the publication of a659e6c. What it brings, read off its UPGRADING.md and SPEC §4.10:
+# the DSL gains parameters (a binary break; konekt builds every tree through constructors and calls
+# no DSL function, so nothing here recompiles differently), a divider and a table take their rule
+# from the design system's `divider` and `table_header` roles (konekt sends neither component; its
+# own hairlines are `surface.dividers`, drawn in the outline variant of the scheme the brand already
+# repaints), `kompot-spec` ships `kompot.d.ts` in its jar, and the redis bus fails on a refused
+# PSUBSCRIBE (konekt runs the in-memory bus). The Compose line did not move. All 190 BOM coordinates
+# answered 200 on the snapshot repository at 0.40.0.208 before this line moved.
+kompot = "0.40.0.208"
 
 # A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
 # `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
