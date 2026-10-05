@@ -56,7 +56,7 @@ jobs:
       # (sborka's default, and `jvmToolchain` in the catalogue for `:androidApp`), and this build
       # applies no toolchain resolver, so it has to be installed. The shared action installs 21 and
       # 25 and leaves 25 the default.
-      - uses: youndie/sborka/.github/actions/setup-kotlin@main
+      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.130
 
       # DECLARED RATHER THAN DISCOVERED. Half the test suite runs against a real Postgres 18 in a
       # Testcontainer — not H2, because the defects those tests exist for live in the SQL — and a
@@ -125,7 +125,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: youndie/sborka/.github/actions/setup-kotlin@main
+      - uses: youndie/sborka/.github/actions/setup-kotlin@v0.5.0.130
 
       # Declared rather than discovered, like the build job: this one runs five containers.
       - name: Docker is required by the stand
