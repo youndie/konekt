@@ -257,6 +257,16 @@ above one replica and, since [B-91](../backlog/B-91-a-second-replica-loses-live-
 replica at all; B-134, B-135 and B-136 removed those reasons one by one. `scripts/chart-check.sh`
 renders both sides of the remaining refusal.
 
+**Two replicas are proved on a cluster, not only in one test JVM** (`B-138`):
+`scripts/rolling-check.sh two-replicas` installs this chart in a kind cluster on the build machine —
+two server replicas, kesh, the simulator off — and `:e2e:twoReplicasCheck` publishes usage a megabyte
+at a time while it kills the leader pod (`--grace-period=0 --force`, no drain) and then rolls the
+deployment. The verdicts are exact: every event applied once and none lost (45 events, 45 MB), at most
+one `vojak <pod>` session at every 200 ms sample, and a client on each pod hearing the updates the
+other applied. Its control is the same release with the bus in memory — one replica scaled to two past
+the chart's refusal — where the client on the follower hears nothing and the check fails. More than
+one replica is rolled (`maxSurge: 1`, `maxUnavailable: 0`); one is still recreated.
+
 ## 6. Local setup
 
 ```bash

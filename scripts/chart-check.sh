@@ -118,4 +118,20 @@ ceilings_reach_both
 refuses "a limit below the JVM's own ceilings" "already promises the JVM" \
   "${VALID[@]}" --set server.resources.limits.memory=128Mi
 
+# ONE REPLICA IS RECREATED, MORE ARE ROLLED (`B-138`), read off the render like every number above.
+# Two replicas under Recreate would take both down at once on every upgrade — every SSE stream cut and
+# nobody serving — and nothing else in this file would notice.
+strategy_of() {
+  helm template konekt "$CHART" "${VALID[@]}" "$@" --show-only templates/server.yaml \
+    | awk '/^  strategy:/{getline; print $2; exit}'
+}
+one=$(strategy_of)
+two=$(strategy_of --set server.replicas=2 --set kesh.enabled=true)
+if [ "$one" = "Recreate" ] && [ "$two" = "RollingUpdate" ]; then
+  echo "ok    one replica is recreated and two are rolled"
+else
+  echo "FAIL  the server's strategy is '$one' for one replica and '$two' for two; it must be Recreate and RollingUpdate"
+  fail=1
+fi
+
 exit $fail

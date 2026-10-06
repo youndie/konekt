@@ -19,6 +19,79 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# ---------------------------------------------------------------------------------------------------
+# THE TWO-REPLICA CASE (`B-138`): `scripts/rolling-check.sh two-replicas`.
+#
+# What B-134…B-137 claim — a usage event applied once whoever reads it, the singletons on one leader,
+# live updates reaching every pod's clients — is proved there by two instances in one test JVM. This
+# runs the CHART instead: two server replicas and kesh in a kind cluster on the build machine, a leader
+# pod killed under traffic, then a rolling restart, and `:e2e:twoReplicasCheck` reading the verdicts
+# off the database, the broker and the streams. kind and not the cluster the product is deployed to:
+# killing pods on purpose belongs on a stand nobody else is using.
+#
+# The cluster is kept between runs (`KONEKT_KIND_CLUSTER`, default `konekt-replicas`); the release in
+# it is replaced every run. `kind delete cluster --name konekt-replicas` removes it.
+if [ "${1:-}" = "two-replicas" ]; then
+  if [ "${2:-}" != "--here" ]; then
+    exec ~/.claude/bin/wsl-run 'scripts/rolling-check.sh two-replicas --here'
+  fi
+  CLUSTER=${KONEKT_KIND_CLUSTER:-konekt-replicas}
+  CTX=kind-$CLUSTER
+  NS=konekt
+  KUBECTL=(kubectl --context "$CTX" -n "$NS")
+
+  kind get clusters 2>/dev/null | grep -qx "$CLUSTER" || kind create cluster --name "$CLUSTER" --wait 180s
+  kubectl --context "$CTX" create namespace "$NS" --dry-run=client -o yaml | kubectl --context "$CTX" apply -f - >/dev/null
+
+  # THE IMAGES THE CHART NAMES, loaded rather than pulled by the cluster: the server is this tree's,
+  # built the way the stand builds it, and the rest are the chart's own pins.
+  echo "two-replicas: building this tree's server image"
+  ./gradlew :server:installDist -q
+  docker compose -f deploy/compose.yaml build server >/dev/null
+  kind load docker-image konekt-server:local --name "$CLUSTER" >/dev/null
+  # The published ones are loaded when kind can and pulled by the node when it cannot: loading a
+  # multi-platform image fails on a digest kind cannot find (a kind quirk, met first on kesh's stand),
+  # and the node then pulls it from the registry like any cluster would.
+  for value in postgres.image broker.image kesh.image; do
+    image=$(helm show values charts/konekt | python3 -c "import sys,yaml; v=yaml.safe_load(sys.stdin); k='$value'.split('.'); print(v[k[0]][k[1]])")
+    docker image inspect "$image" >/dev/null 2>&1 || docker pull -q "$image" >/dev/null
+    kind load docker-image "$image" --name "$CLUSTER" >/dev/null 2>&1 || echo "two-replicas: $image will be pulled by the node"
+  done
+
+  # The ingress is Traefik's CRDs; a kind cluster has none, and the chart cannot install without them.
+  kubectl --context "$CTX" apply --server-side -f \
+    https://raw.githubusercontent.com/traefik/traefik/v3.4/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml >/dev/null
+
+  # A FRESH RELEASE, volumes included: a counter or a stored position from the last run is a verdict
+  # measured against somebody else's numbers.
+  helm uninstall konekt --kube-context "$CTX" -n "$NS" --wait >/dev/null 2>&1 || true
+  "${KUBECTL[@]}" delete pvc --all --wait >/dev/null 2>&1 || true
+  echo "two-replicas: installing the chart with two server replicas and kesh"
+  helm upgrade --install konekt charts/konekt --kube-context "$CTX" -n "$NS" --wait --timeout 10m \
+    --set server.image=konekt-server --set server.version=local \
+    --set server.replicas=2 --set kesh.enabled=true \
+    --set simulateTraffic=false --set dev.revealOtp=true \
+    --set jwtSecret=kind --set postgres.password=konekt --set hostname=konekt.kind \
+    --set postgres.class=standard --set broker.class=standard >/dev/null
+
+  # The two stateful pods, forwarded once: neither is killed by the check. The server pods are
+  # forwarded by the check itself, because it kills and replaces them.
+  "${KUBECTL[@]}" port-forward svc/konekt-postgres 15432:5432 >/dev/null 2>&1 &
+  PG=$!
+  "${KUBECTL[@]}" port-forward svc/konekt-broker 19092:9092 >/dev/null 2>&1 &
+  BROKER=$!
+  trap 'kill $PG $BROKER 2>/dev/null || true' EXIT
+  sleep 3
+
+  echo "two-replicas: driving it"
+  KONEKT_STAND_JDBC=jdbc:postgresql://127.0.0.1:15432/konekt \
+    KONEKT_REPLICAS_BROKER=127.0.0.1:19092 \
+    KONEKT_REPLICAS_CONTEXT="$CTX" KONEKT_REPLICAS_NAMESPACE="$NS" \
+    ./gradlew :e2e:twoReplicasCheck
+  exit 0
+fi
+# ---------------------------------------------------------------------------------------------------
+
 PREVIOUS="${1:-}"
 if [ -z "$PREVIOUS" ]; then
   PREVIOUS=$(git describe --tags --abbrev=0 2>/dev/null || true)

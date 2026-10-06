@@ -56,6 +56,8 @@ dependencies {
     // honest for a stand — the alternative is inventing a development-only top-up endpoint so that a
     // test has something to call, which is a production surface added for a test.
     testImplementation(libs.postgresql)
+    // The two-replica check publishes usage straight to the broker (B-138).
+    testImplementation(libs.booblik.client)
     testRuntimeOnly(libs.logback.classic)
 }
 
@@ -124,4 +126,29 @@ val rollingCheck by tasks.registering(Test::class) {
 tasks.named<Test>("test") {
     // The ordinary test task runs nothing here. Everything in this module needs the stand.
     enabled = false
+}
+
+// THE CHART WITH TWO SERVER REPLICAS, in a kind cluster, through a leader kill and a rolling restart
+// (`B-138`). Like `rollingCheck`, a task of its own because it needs a stand the ordinary run does not
+// have: `scripts/rolling-check.sh two-replicas` installs it and forwards the database and the broker.
+val twoReplicasCheck by tasks.registering(Test::class) {
+    group = "verification"
+    description =
+        "Drives two server replicas in kind through a kill and a rollout. Use scripts/rolling-check.sh two-replicas"
+    testClassesDirs =
+        sourceSets.test
+            .get()
+            .output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    outputs.upToDateWhen { false }
+    filter { includeTestsMatching("io.konekt.e2e.TwoReplicasCheck") }
+    testLogging { showStandardStreams = true }
+    systemProperty(
+        "konekt.stand.jdbc",
+        System.getenv("KONEKT_STAND_JDBC") ?: "jdbc:postgresql://127.0.0.1:15432/konekt",
+    )
+    systemProperty("konekt.replicas.broker", System.getenv("KONEKT_REPLICAS_BROKER") ?: "127.0.0.1:19092")
+    systemProperty("konekt.replicas.context", System.getenv("KONEKT_REPLICAS_CONTEXT") ?: "kind-konekt-replicas")
+    systemProperty("konekt.replicas.namespace", System.getenv("KONEKT_REPLICAS_NAMESPACE") ?: "konekt")
+    systemProperty("konekt.replicas.kubectl", System.getenv("KONEKT_REPLICAS_KUBECTL") ?: "kubectl")
 }

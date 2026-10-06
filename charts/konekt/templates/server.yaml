@@ -9,8 +9,23 @@ spec:
   {{- if and (gt (int .Values.server.replicas) 1) (not .Values.kesh.enabled) }}
   {{- fail "konekt: server.replicas is above 1 and kesh.enabled is off. Live updates would go through each pod's own memory, so an SSE subscriber attached to one pod never receives a push produced on another — the screen does not refresh and nothing is logged. Turn on kesh.enabled, the bus every replica shares (B-136). Usage and the singletons are safe on any count since B-134 and B-135; what runs per replica and what runs on the leader is docs/services/konekt-server.md section 5a" }}
   {{- end }}
+  {{- /*
+  ONE REPLICA IS RECREATED, MORE ARE ROLLED (`B-138`). With one pod a rolling update would run the new
+  pod beside the old for a moment, which the single-instance design never needed. With two, Recreate
+  would take both down at once — every SSE stream cut and nobody serving — for no reason left: the
+  usage position, the leader and the bus make an old and a new pod side by side safe, and the
+  migration is the init container's, expand-and-contract (B-36). One extra pod at a time, never one
+  fewer than asked for.
+  */}}
   strategy:
+    {{- if gt (int .Values.server.replicas) 1 }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    {{- else }}
     type: Recreate
+    {{- end }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}
