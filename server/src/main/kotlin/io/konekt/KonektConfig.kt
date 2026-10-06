@@ -68,6 +68,11 @@ object KonektSchema {
     val BROKER_HOST: ConfigKey<String> = ConfigKey.string("BROKER_HOST", default = "broker")
     val BROKER_PORT: ConfigKey<Int> = ConfigKey.int("BROKER_PORT", default = 9092)
 
+    // THE SHARED REALTIME BUS (`B-136`): a RESP URL — kesh, or any Redis — that every replica publishes
+    // its live updates through and subscribes to, so an SSE client attached to one pod sees an update
+    // produced on another. Empty is the in-memory bus, which is right for exactly one replica.
+    val REALTIME_URL: ConfigKey<String> = ConfigKey.string("REALTIME_URL", default = "")
+
     // APPROVE unless told otherwise, so a deployment that forgets to set it cannot be one that
     // declines everything.
     val PAYMENT_MOCK_MODE: ConfigKey<String> = ConfigKey.string("PAYMENT_MOCK_MODE", default = "approve")
@@ -141,6 +146,7 @@ object KonektSchema {
                     DEV_SCREENS,
                     BROKER_HOST,
                     BROKER_PORT,
+                    REALTIME_URL,
                     PAYMENT_MOCK_MODE,
                     PAYMENT_MOCK_DELAY_MS,
                     SIMULATE_TRAFFIC,
@@ -194,6 +200,9 @@ data class KonektConfig(
     // `/version` serves the release name alone. Off here: this is a public repository, a commit hash
     // in it is not a secret, and the route earns its keep in every deploy check.
     val versionReduced: Boolean,
+    // `null` is the in-memory bus — see `KonektSchema.REALTIME_URL`. Defaulted so that the configs the
+    // tests build by hand keep meaning one replica.
+    val realtimeUrl: String? = null,
 ) {
     companion object {
         // Long enough to look at a dormant card and say what it means; short enough that nobody
@@ -251,6 +260,7 @@ data class KonektConfig(
                     ),
                 release = releaseOf(KoreBuildIdentity, override = values[ObservabilityKeys.RELEASE]),
                 versionReduced = values[KoreKeys.VERSION_REDUCED],
+                realtimeUrl = values[KonektSchema.REALTIME_URL].takeIf { it.isNotBlank() },
             )
     }
 }

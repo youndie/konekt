@@ -321,6 +321,8 @@ kompot-auth = { module = "io.github.youndie.kompot:kompot-auth" }
 kompot-navigation = { module = "io.github.youndie.kompot:kompot-navigation" }
 kompot-realtime = { module = "io.github.youndie.kompot:kompot-realtime" }
 kompot-realtimeServer = { module = "io.github.youndie.kompot:kompot-realtime-server" }
+# The bus shared by every replica (B-136): PUBLISH plus one PSUBSCRIBE over Lettuce, pointed at kesh.
+kompot-realtimeRedis = { module = "io.github.youndie.kompot:kompot-realtime-redis" }
 kompot-analytics = { module = "io.github.youndie.kompot:kompot-analytics" }
 kompot-registryAnnotations = { module = "io.github.youndie.kompot:kompot-registry-annotations" }
 kompot-registryProcessor = { module = "io.github.youndie.kompot:kompot-registry-processor" }

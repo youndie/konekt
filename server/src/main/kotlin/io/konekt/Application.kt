@@ -90,6 +90,7 @@ import io.konekt.observability.configureObservability
 import io.konekt.packages.CustomPackagePlans
 import io.konekt.packages.customPackageRoutes
 import io.konekt.realtime.ComponentBroadcaster
+import io.konekt.realtime.SharedUpdateBus
 import io.konekt.realtime.realtimeRoutes
 import io.konekt.roaming.RoamingPackageCards
 import io.konekt.roaming.RoamingScreen
@@ -619,7 +620,7 @@ fun Application.module(
                 // beneath them.
                 usageModule(database),
                 roamingModule(database),
-                serverModule(KonektTrace(tracy), config.simulatedArrivalAfter),
+                serverModule(KonektTrace(tracy), config.simulatedArrivalAfter, config.realtimeUrl),
                 petichModule(database, config),
             ),
     )
@@ -691,6 +692,9 @@ fun serverModule(
     // graph test and every route test construct this module the way they always did, and passed
     // explicitly by the composition root.
     simulatedArrivalAfter: Duration = KonektConfig.DEFAULT_SIMULATED_ARRIVAL_AFTER,
+    // The shared realtime bus (`B-136`); `null` is the in-memory one, right for one replica — and the
+    // default, so the graph test and every route test build the module they always did.
+    realtimeUrl: String? = null,
 ) =
     module {
         // THE SERVER COULD NOT START WITHOUT THIS LINE, and nothing said so until a stand tried.
@@ -698,12 +702,12 @@ fun serverModule(
         // no module ever bound it — every route test and the smoke test build their own graph, so
         // each supplied its own and none asked whether the application does.
         //
-        // The in-memory bus is the default and is right for one instance; `kompot-realtime-redis` is
-        // the multi-instance backend and this product has one.
+        // The in-memory bus is the default and is right for one instance; with `KONEKT_REALTIME_URL`
+        // the bus is `kompot-realtime-redis` over kesh, shared by every replica (`B-136`).
         // Bound ALWAYS, holding whatever there is: a feature that logs must compile and run in a
         // deployment with no tracy, and Koin cannot bind a null.
         single { trace }
-        single { KompotUpdateBroadcaster() }
+        single { KompotUpdateBroadcaster(SharedUpdateBus.of(realtimeUrl)) }
         single { ComponentBroadcaster(get(), get()) }
         single { RoamingPackageCards() }
         single { RoamingScreen(get()) }
