@@ -1,7 +1,7 @@
 ---
 id: B-138
 title: "Two replicas are proved on the stand, through a kill, not only in tests"
-status: open
+status: wip
 priority: P2
 size: M
 stage: stage-m8-two-replicas

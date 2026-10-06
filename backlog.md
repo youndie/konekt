@@ -50,7 +50,7 @@ so re-prioritising must never move a file.
 |---|---|---|---|---|
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
-| [B-138](docs/backlog/B-138-two-replicas-on-the-stand.md) `[ ]` | Two replicas are proved on the stand, through a kill, not only in tests | P2 | M | B-137 |
+| [B-138](docs/backlog/B-138-two-replicas-on-the-stand.md) `[~]` | Two replicas are proved on the stand, through a kill, not only in tests | P2 | M | B-137 |
 | [B-133](docs/backlog/B-133-drop-the-saga-sweep-claim-table.md) `[ ]` | saga_sweep_claim is written by nothing and still in the schema | P3 | S | - |
 
 ## Closed (134)
