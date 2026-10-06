@@ -1,7 +1,7 @@
 ---
 id: B-133
 title: "saga_sweep_claim is written by nothing and still in the schema"
-status: open
+status: wip
 priority: P3
 size: S
 stage: stage-m7-completeness
