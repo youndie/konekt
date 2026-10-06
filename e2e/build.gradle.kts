@@ -76,6 +76,8 @@ val e2e by tasks.registering(Test::class) {
     classpath = sourceSets.test.get().runtimeClasspath
     // Never up to date: the stand is the input and Gradle cannot see it.
     outputs.upToDateWhen { false }
+    // NOT the two-replica check: it drives a kind cluster this stand is not (`B-138`, `twoReplicasCheck`).
+    filter { excludeTestsMatching("io.konekt.e2e.TwoReplicasCheck") }
     systemProperty("konekt.stand.server", System.getenv("KONEKT_STAND_SERVER") ?: "http://127.0.0.1:8080")
     systemProperty("konekt.stand.declining", System.getenv("KONEKT_STAND_DECLINING") ?: "http://127.0.0.1:8081")
     // THE THREE COLLECTORS. Read back rather than trusted: an agent that is switched off produces
