@@ -233,8 +233,11 @@ second pod would do rather than a sentence saying not to. `charts/konekt/values.
 [reference-scope](reference-scope.md).
 
 **The leader** is chosen by vojak — an advisory lock on konekt's own Postgres through `vojak-jdbc`
-over the server's `DataSource` (`io.konekt.leader.Singletons`, B-135). One election for all three
-singletons; the pool is eleven, one of them held by a leadership for as long as it lasts. A replica
+over the server's `DataSource` (`io.konekt.leader.Singletons`, B-135). Two elections: `singletons` for
+the outbox relay and the usage consumer, which every replica joins, and `simulator`, which only a
+replica with `KONEKT_SIMULATE_TRAFFIC` joins — the stand runs a second server with it off, and with one
+election that server won it and nothing published usage. The pool is eleven; a held leadership keeps
+one connection for as long as it lasts. A replica
 that does not lead runs none of them and serves every route. A stopped pod closes the election in the
 `workers` shutdown participant, so the next leader takes over within a poll; a killed one costs
 vojak's `localLease` (7.5 s) of nobody leading — the price of never having two (vojak's D12). The
