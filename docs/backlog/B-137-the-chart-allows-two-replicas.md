@@ -1,7 +1,7 @@
 ---
 id: B-137
 title: "The chart refuses replicas > 1 for reasons B-134, B-135 and B-136 remove"
-status: open
+status: wip
 priority: P1
 size: S
 stage: stage-m8-two-replicas
