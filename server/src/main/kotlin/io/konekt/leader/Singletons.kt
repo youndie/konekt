@@ -77,6 +77,8 @@ class Singletons(
         // three different replicas for no benefit.
         val NAME: LockName = LockName.of("singletons")
 
+        private val NOT_A_CANDIDATE_CHARACTER = Regex("[^A-Za-z0-9._-]")
+
         fun on(
             dataSource: DataSource,
             timing: ElectionTiming = ElectionTiming(),
@@ -88,7 +90,7 @@ class Singletons(
         // not ours to choose.
         fun candidate(hostname: String? = System.getenv("HOSTNAME")): String =
             hostname
-                ?.replace(Regex("[^A-Za-z0-9._-]"), "-")
+                ?.replace(NOT_A_CANDIDATE_CHARACTER, "-")
                 ?.take(63)
                 ?.takeIf { it.isNotEmpty() }
                 ?: "konekt-${ProcessHandle.current().pid()}"
