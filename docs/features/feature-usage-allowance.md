@@ -169,6 +169,33 @@ subscribers' allowances.
 * **Then:** nothing happens and nothing throws
 * **Automated:** `TrafficChainTest`
 
+### Scenario: usage published while the consumer is down is applied when it comes back
+* **Given:** a consumer that applied usage and stopped, and usage published while nothing was reading
+* **When:** a consumer starts again
+* **Then:** it carries on from the position stored with its last committed batch, and every event
+  published while it was down is applied once
+* **Automated:** `UsagePositionTest`
+
+### Scenario: two consumers of one partition apply each event once
+* **Given:** two consumers reading the same partition from the same stored position
+* **When:** usage is published
+* **Then:** each event moves the counter once — the consumer whose position update finds the row
+  already moved rolls its transaction back without applying anything
+* **Automated:** `UsagePositionTest`, `ConsumerPositionsTest`
+
+### Scenario: a batch whose transaction does not commit leaves neither its position nor its effects
+* **Given:** a batch whose position has moved and whose effects are written, through the repositories
+* **When:** the process dies before the commit
+* **Then:** the stored position and the effects are both as they were, and the batch is applied once
+  when it is read again
+* **Automated:** `ConsumerPositionsTest`
+
+### Scenario: a stored position past the end of the log stops the consumer from starting
+* **Given:** a stored position beyond the broker's high watermark — a log younger than the consumer
+* **When:** the consumer starts
+* **Then:** it refuses, naming both numbers, and the stored position is left where it was
+* **Automated:** `UsagePositionTest`
+
 ### Scenario: a component pushed for one subscriber reaches that subscriber and nobody else
 * **Given:** two subscribers with open streams
 * **When:** a card is pushed for one
@@ -221,8 +248,12 @@ subscribers' allowances.
 - **`TrafficChain` exists because neither half was ever started.** The simulator and the consumer were
   written and covered end to end against a real broker and constructed by nothing outside that test.
   A chain that is tested and never started passes every acceptance criterion about being tested.
-- **The chain resumes from where the broker is now, not from zero.** booblik keeps no consumer
-  offsets, so a starting point has to be chosen; replaying a day of simulated usage on every restart
-  would empty every counter in the product. Right here, wrong for anything real.
+- **The chain resumes from its own stored position, kept with the decrements** (`B-134`). booblik keeps
+  no consumer offsets, so the position is a row in `consumer_position`, moved first and only from the
+  offset a batch was read at, in the transaction of that batch's decrements — booblik's
+  `feature-consumer-position` recipe. The first start of a deployment begins at the end of the log
+  (replaying the log's history would empty every counter, `B-108`); every start after that carries
+  on. Until `B-134` every start began at the end, so usage published during a restart was never
+  applied. The pushes wait for the commit: a card announcing a decrement that rolled back would lie.
 - **The SSE channel is unbounded.** The broadcaster drops on a full channel, so a bound would silently
   lose updates for a client that is merely slow.
