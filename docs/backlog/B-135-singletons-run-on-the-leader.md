@@ -1,11 +1,11 @@
 ---
 id: B-135
 title: "The traffic simulator and the outbox relay run once per replica"
-status: done
+status: wip
 priority: P1
 size: M
 stage: stage-m8-two-replicas
-blocked_by: [B-134]
+blocked_by: [B-134, B-136]
 ---
 
 # B-135 — the singletons run on the leader, elected by vojak on konekt's own Postgres
@@ -55,3 +55,18 @@ as it is: its claim is an optimistic `PENDING_SIGNATURE -> COMPENSATING` update.
 - **Not exercised here:** two whole server processes. The tests run two elections against one database
   with the real relay and the real store; the chart and a pod kill on the stand are
   [B-138](B-138-two-replicas-on-the-stand.md).
+
+## Iteration 2 — 2026-10-06: the stand, and why this waits for B-136
+
+- **One election for all three was wrong, and CI's e2e said so.** The stand runs two servers on one
+  database — `server` with the simulator on and `server-declining` with it off. `server-declining` won
+  the election in CI and nothing published usage. The simulator is a singleton among the replicas that
+  have it switched on, so it now has an election of its own (`Singletons.SIMULATOR`) that only such a
+  replica joins; the relay and the consumer keep `singletons`. Test: `a replica with the simulator off
+  leading the singletons does not stop the one with it on`.
+- **Then `LiveUpdateScenarioTest` failed for the reason B-136 exists.** With the consumer on one replica
+  — `server-declining` on the stand — the decrement is pushed through that replica's in-memory
+  broadcaster, and the scenario's SSE client is attached to `server`. Before this item every server
+  consumed every event, so each pushed to its own clients: the stand's double decrement (B-134) was
+  what kept its live updates working. Running the consumer on the leader needs the shared bus first, so
+  this item is blocked by [B-136](B-136-the-realtime-bus-goes-through-kesh.md) and stays on its branch.

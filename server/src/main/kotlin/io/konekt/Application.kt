@@ -272,7 +272,7 @@ fun main(args: Array<String>) {
                         // mark — so the next leader takes over within a poll instead of waiting out
                         // vojak's `localLease` (its D12). Cancelling the scope first would end the
                         // lease the way a crash does.
-                        lifecycle.election?.close()
+                        lifecycle.elections.forEach { it.close() }
                         lifecycle.workers.cancel()
                     },
                 )
@@ -321,10 +321,10 @@ class KonektLifecycle {
     lateinit var broker: BrokerConnection
     lateinit var dataSource: DataSource
 
-    // The singletons' election (`B-135`). Nullable rather than `lateinit`: it is assigned from a
-    // coroutine once the application has started, and a process stopped before that has none to close.
-    @Volatile
-    var election: Election? = null
+    // The singletons' elections (`B-135`): one, or two with the simulator on. A thread-safe list rather
+    // than `lateinit`: they are added from coroutines once the application has started, and a process
+    // stopped before that has none to close.
+    val elections: MutableList<Election> = java.util.concurrent.CopyOnWriteArrayList()
 
     // kore's own participant: it cancels tracy's delivery loop and makes one last bounded flush, and
     // it calls katcher's `flush(grace)`. `lateinit` like the rest, so forgetting to assign it is an
@@ -655,11 +655,10 @@ fun Application.module(
 
         // ON THE LEADER ONLY (`B-135`): what is wrong twice. The outbox relay has no claim, so two
         // would publish each row; the usage consumer would read every batch twice (correct since
-        // `B-134`, and wasted); the simulator would spend allowances at a multiple of its rate.
-        // Started inside the election's block, so losing the leadership cancels exactly these — and
-        // a replica that is not leading runs none of them, and still serves every route.
+        // `B-134`, and wasted). Started inside the election's block, so losing the leadership cancels
+        // exactly these — and a replica that is not leading runs neither, and still serves every route.
         workers.launch {
-            lifecycle.election =
+            lifecycle.elections +=
                 Singletons.on(dataSource).elect(workers) {
                     koin.get<OutboxRelayWorker>().start(this)
 
@@ -668,17 +667,24 @@ fun Application.module(
                     // usage required also inventing some. A deployment with the simulator off is the
                     // ordinary one, and it must still apply what it is sent.
                     launch { koin.get<UsageChain>().start(this) }
+                }
+        }
 
-                    // AND THE SIMULATOR, off unless asked for. It publishes fictional usage against
-                    // real counters, so a deployment that forgot the switch must not be one that
-                    // quietly spends its subscribers' allowances.
-                    //
-                    // Started HERE and nowhere else, which is the point: both halves of this chain
-                    // existed and were covered end to end for a week while nothing constructed either.
-                    if (config.simulateTraffic) {
+        // AND THE SIMULATOR, off unless asked for, and in an election of its own among the replicas
+        // that asked: it publishes fictional usage against real counters, so a deployment that forgot
+        // the switch must not be one that quietly spends its subscribers' allowances, and two that
+        // set it must not spend twice. Its own election because the switch is per replica — see
+        // `Singletons.SIMULATOR`.
+        //
+        // Started HERE and nowhere else, which is the point: both halves of this chain existed and
+        // were covered end to end for a week while nothing constructed either of them.
+        if (config.simulateTraffic) {
+            workers.launch {
+                lifecycle.elections +=
+                    Singletons.on(dataSource, Singletons.SIMULATOR).elect(workers) {
                         launch { koin.get<TrafficChain>().start(this) }
                     }
-                }
+            }
         }
 
         // THE LATCH OPENS HERE AND NOWHERE ELSE, after every worker above is running. Before this the

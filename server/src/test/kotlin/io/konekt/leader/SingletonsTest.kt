@@ -155,6 +155,40 @@ class SingletonsTest {
             assertEquals(2, worker.starts.get(), "nobody took the singletons over after the kill")
         }
 
+    // THE STAND'S SHAPE: two servers on one database, only one with the simulator switched on. With a
+    // single election the other one won it in CI, and nothing published usage at all. The simulator
+    // is a singleton among the replicas that HAVE it, so the one without must not hold it hostage.
+    @Test
+    fun `a replica with the simulator off leading the singletons does not stop the one with it on`() =
+        runBlocking {
+            val shared = Counting()
+            val simulator = Counting()
+
+            fun replica(
+                name: String,
+                election: io.github.youndie.vojak.LockName,
+            ) = Singletons(
+                Vojak(JdbcLockStore(PostgresHarness.dataSource), namespace),
+                "$name-${namespace.value}",
+                timing,
+                election,
+            )
+
+            // The declining server first, so it is the one that leads the shared election.
+            val declining = replica("declining", Singletons.NAME).elect(scope) { with(shared) { run() } }
+            elections += declining
+            assertNotNull(awaitLeader(listOf(declining), 10.seconds))
+
+            elections += replica("server", Singletons.NAME).elect(scope) { with(shared) { run() } }
+            val ownSimulator = replica("server", Singletons.SIMULATOR).elect(scope) { with(simulator) { run() } }
+            elections += ownSimulator
+
+            assertNotNull(awaitLeader(listOf(ownSimulator), 10.seconds), "the simulator never started anywhere")
+            delay(1.seconds)
+            assertEquals(1, simulator.running.get(), "the simulator is not running")
+            assertEquals(1, shared.running.get(), "the shared singletons are not running exactly once")
+        }
+
     // The relay with no claim, on two replicas: every row reaches the broker once.
     @Test
     fun `with two replicas each outbox row reaches the broker once`() =
