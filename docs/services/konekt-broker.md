@@ -168,10 +168,9 @@ The server's half is `KONEKT_BROKER_HOST` (default `broker`) and `KONEKT_BROKER_
   consumer — a lost volume, a tail acknowledged as `WRITTEN` and lost — and it refuses to start,
   naming both numbers. What it cannot see is a recreated log that has already grown past the stored
   number; booblik M-171 (a log identity in METADATA) is what would show it.
-- **Two consumers of one partition apply each event once, and still do the work twice.** The
-  compare-and-set on the stored position makes the second reader of a batch roll back without
-  applying anything; it does not stop it reading. Running the consumer on one replica only is
-  [B-135](../backlog/B-135-singletons-run-on-the-leader.md).
+- **The consumer runs on the leader only**, elected by vojak ([B-135](../backlog/B-135-singletons-run-on-the-leader.md));
+  the compare-and-set on the stored position is what keeps a second reader harmless anyway — a
+  stalled leader finishing a batch after it was replaced rolls back without applying anything.
 - **`UsageChain` and `TrafficChain` are separate starters, and the split is load-bearing.** The
   consumer is the product's own worker and starts whenever the application does; the simulator is a
   mock and starts behind `KONEKT_SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with

@@ -1,7 +1,7 @@
 ---
 id: B-135
 title: "The traffic simulator and the outbox relay run once per replica"
-status: wip
+status: done
 priority: P1
 size: M
 stage: stage-m8-two-replicas
@@ -34,3 +34,24 @@ as it is: its claim is an optimistic `PENDING_SIGNATURE -> COMPENSATING` update.
   `localLease`.
 - Anchors: `server/src/main/kotlin/io/konekt/Application.kt`,
   `server/src/main/kotlin/io/konekt/mocks/traffic/TrafficSimulator.kt`, `server/build.gradle.kts`.
+
+## Findings — 2026-10-06
+
+- **Done.** `io.konekt.leader.Singletons` campaigns through `vojak-jdbc` 0.1.0.6 (reposilite) on the
+  server's own `DataSource`; the outbox relay, the usage consumer and the simulator are started inside
+  its block in `Application.kt`, in a supervisor scope so one failing worker does not take the others
+  or the leadership with it. The sweeper and the update broadcaster stay on every replica. The pool
+  default is 11. The `workers` shutdown participant closes the election before cancelling the scope.
+- **`vojak-kore` was not used, deliberately.** It pins kore 0.1.15 through `api` and kore pins Ktor the
+  same way — konekt is on kore 0.1.4 and Ktor 3.5.2, so it would have moved Ktor under the server: a
+  green build and an `IrLinkageError` at run time. The participant konekt already has does the same job.
+- **The outbox duplicate was real, not theoretical.** With the election removed from `Singletons`, two
+  relays published 20 rows as 40 records — every one twice. With it, 20.
+- **AC, walked:** exactly one replica runs the singletons and a clean stop hands them over inside
+  `localLease` (`of two replicas exactly one runs…`); the leader's session ended by the server, sampled
+  every 5 ms for `localLease` + 3 s, never two copies (`when the leader's session is ended…`); each
+  outbox row reaches the broker once with two replicas (`with two replicas each outbox row…`). The
+  mutant above turns all three red.
+- **Not exercised here:** two whole server processes. The tests run two elections against one database
+  with the real relay and the real store; the chart and a pod kill on the stand are
+  [B-138](B-138-two-replicas-on-the-stand.md).
