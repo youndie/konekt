@@ -124,8 +124,10 @@ other way — `B-100` cut the capacity from booblik's 512 MiB default to 32 MiB 
 predating that change is precisely that shape, and the honest fix is an empty volume rather than a
 larger number, since what the old segments hold is usage nobody replays.
 
-**Retention costs this product nothing**, and that is what makes six hours safe: the usage consumer
-starts from the END of the log, so no record here is ever read a second time. See §8.
+**Retention bounds how long the usage consumer may be down without losing usage** (`B-134`): it
+carries on from its stored position, so a consumer down for longer than retention keeps records finds its
+position below the log's start. It then says how many events were never applied, stores the jump,
+and carries on from the start of what is left. Six hours is far longer than any restart. See §8.
 
 That sentence was **false when it was written**, and it was the reason six hours looked safe. Until
 [B-108](../backlog/B-108-the-usage-consumer-starts-a-megabyte-from-the-beginning.md) the consumer
@@ -148,29 +150,28 @@ The server's half is `KONEKT_BROKER_HOST` (default `broker`) and `KONEKT_BROKER_
   knowing before trusting the guard with a change to the broker's own port.
 - **Adding a fourth topic is a broker restart**, which makes topic naming an architectural decision
   rather than a runtime one.
-- **There are no consumer offsets.** That absence is what removes the group coordinator and the
-  cluster consensus behind it, and it moves the problem into konekt: `UsageChain` resumes from
-  wherever the broker is **now** rather than from zero, because replaying a day of simulated usage on
-  every restart would empty every counter in the product.
+- **There are no consumer offsets on the broker, so the usage consumer keeps its own** (`B-134`): a
+  row in `consumer_position`, moved in the same transaction as the decrements it covers, first, and
+  only from the offset the batch was read at — booblik's `feature-consumer-position` recipe. A restart
+  carries on from the last committed batch; a crash mid-batch leaves position and decrements as they
+  were. The first start of a deployment begins at the high watermark, asked of METADATA.
 
-  **"Now" is asked of METADATA, and asking it any other way is how `B-108` happened.** A fetch cannot
-  answer it: one poll from offset zero lands one `maxBytes` in from the start, which equals the end
-  only while the log is shorter than a single poll — true of every test in this build and of no
-  deployment that has been running a day. It also stops working outright once retention moves the
-  log's start above zero, because a fetch below the start is `OFFSET_OUT_OF_RANGE`.
+  **"Where the log ends" is asked of METADATA, and asking it any other way is how `B-108` happened.** A
+  fetch cannot answer it: one poll from offset zero lands one `maxBytes` in from the start, which
+  equals the end only while the log is shorter than a single poll. It also stops working outright once
+  retention moves the log's start above zero, because a fetch below the start is
+  `OFFSET_OUT_OF_RANGE`.
 
-  Which means **usage published while the server is down is not applied when it comes back.** For a
-  simulated feed that is the right answer; for a real one it is the first thing that would have to
-  change, and what it would take is a position this application stores itself — a table, updated per
-  batch, with the redelivery questions that opens. Stated so the next consumer does not inherit the
-  choice by copying it.
-- **The consumer runs on every replica, and that is not the same problem the simulator has.** Each pod
-  polls the same partition from wherever the broker is when it starts, so N pods apply each event N
-  times: a 25 MB decrement becomes 50 MB with two of them. There is no guard in the chart for it, and
-  the honest statement is that **this build is a single-instance deployment** — `konekt-server.md`
-  carries what is per-replica, `reference-scope.md` carries horizontal scale as a non-goal, and the
-  chart refuses only the simulator above one replica because that one drains allowances on a timer
-  rather than on traffic.
+  On start the stored position is checked against METADATA. **Below `logStartOffset`**, retention
+  passed the consumer while it was down: the loss is logged with its size, the jump is stored, and it
+  carries on from the start of the log. **Above the high watermark**, the log is younger than the
+  consumer — a lost volume, a tail acknowledged as `WRITTEN` and lost — and it refuses to start,
+  naming both numbers. What it cannot see is a recreated log that has already grown past the stored
+  number; booblik M-171 (a log identity in METADATA) is what would show it.
+- **Two consumers of one partition apply each event once, and still do the work twice.** The
+  compare-and-set on the stored position makes the second reader of a batch roll back without
+  applying anything; it does not stop it reading. Running the consumer on one replica only is
+  [B-135](../backlog/B-135-singletons-run-on-the-leader.md).
 - **`UsageChain` and `TrafficChain` are separate starters, and the split is load-bearing.** The
   consumer is the product's own worker and starts whenever the application does; the simulator is a
   mock and starts behind `KONEKT_SIMULATE_TRAFFIC`. They were one starter until `B-89`, which meant that with

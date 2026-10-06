@@ -44,11 +44,10 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (8)
+## Open (7)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-134](docs/backlog/B-134-usage-position-lives-in-the-decrement.md) `[ ]` | The usage consumer loses every event that arrives while it is down, and applies each one once per replica | P1 | M | - |
 | [B-135](docs/backlog/B-135-singletons-run-on-the-leader.md) `[ ]` | The traffic simulator and the outbox relay run once per replica | P1 | M | B-134 |
 | [B-136](docs/backlog/B-136-the-realtime-bus-goes-through-kesh.md) `[ ]` | An SSE subscriber on one pod never sees an update produced on another | P1 | M | - |
 | [B-137](docs/backlog/B-137-the-chart-allows-two-replicas.md) `[ ]` | The chart refuses replicas > 1 for reasons B-134, B-135 and B-136 remove | P1 | S | B-134, B-135, B-136 |
@@ -57,7 +56,7 @@ so re-prioritising must never move a file.
 | [B-138](docs/backlog/B-138-two-replicas-on-the-stand.md) `[ ]` | Two replicas are proved on the stand, through a kill, not only in tests | P2 | M | B-137 |
 | [B-133](docs/backlog/B-133-drop-the-saga-sweep-claim-table.md) `[ ]` | saga_sweep_claim is written by nothing and still in the schema | P3 | S | - |
 
-## Closed (130)
+## Closed (131)
 
 **The wire and the shell**
 
@@ -212,6 +211,10 @@ so re-prioritising must never move a file.
 - [B-96](docs/backlog/B-96-screens-are-drawn-from-repositories.md) `[x]` - Screens are drawn from repositories, so every presentation decision is testable only through a tree
 - [B-97](docs/backlog/B-97-the-rolling-check-can-run-a-stale-binary.md) `[x]` - The rolling check builds the previous release and can run a binary from a week ago, reporting success either way
 - [B-99](docs/backlog/B-99-the-chart-version-never-moves.md) `[x]` - The chart states a versioning rule in its own comment and has never followed it, so nothing downstream can pin a render
+
+**Two replicas**
+
+- [B-134](docs/backlog/B-134-usage-position-lives-in-the-decrement.md) `[x]` - The usage consumer loses every event that arrives while it is down, and applies each one once per replica
 
 <!-- END INDEX -->
 

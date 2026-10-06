@@ -715,7 +715,7 @@ fun serverModule(
         // THE PRODUCT'S OWN WORKER, started whenever the application starts. It reads whatever
         // arrives on a topic this deployment owns, and it used to exist only inside the simulator's
         // starter — so with the simulator off, nothing in this build read the topic at all (`B-89`).
-        single { UsageChain(get(), get(), get(), get(), get(), get(), get(), get()) }
+        single { UsageChain(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
         // AND THE MOCK, which is a different thing and now starts separately. The last argument is
         // how long a roaming package stays dormant before the simulation starts it: explicit rather
         // than `get()`, because it is a `Duration` and so is `paymentDelay` — two bindings of one

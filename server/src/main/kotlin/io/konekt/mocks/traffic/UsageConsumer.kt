@@ -6,6 +6,7 @@ import io.github.youndie.booblik.TopicName
 import io.github.youndie.booblik.net.client.Consumer
 import io.github.youndie.booblik.net.client.FetchFailedException
 import io.github.youndie.booblik.net.wire.ErrorCode
+import io.konekt.db.ConsumerPositions
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.RoamingConsumption
@@ -31,11 +32,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 // The other end of the chain: read `usage`, decrement the counter, push the new card.
 //
-// THE POSITION LIVES HERE. booblik stores no consumer offsets — that absence is what removes the
-// group coordinator and the cluster consensus behind it — so a restarting consumer must be told where
-// to resume. This one starts from wherever the broker is now rather than from zero, which is right
-// for simulated traffic and wrong for anything real: replaying a day of usage on a restart would
-// empty every counter in the product.
+// THE POSITION LIVES IN THE DATABASE, BESIDE THE DECREMENTS (`B-134`). booblik stores no consumer
+// offsets — that absence is what removes the group coordinator — so this consumer keeps its own, in
+// `consumer_position`, and moves it in the SAME transaction as the decrements of the batch it covers:
+// first, and only from the offset the batch was read at (booblik's `feature-consumer-position`). A
+// restart carries on where the last committed batch ended, a crash mid-batch leaves both untouched,
+// and two consumers of one partition apply each event once.
+//
+// Until `B-134` the position lived here, in memory, and every process started at the end of the log:
+// usage published while a pod was down was never applied at all.
 class UsageConsumer(
     // THE HOLDER, NOT THE SOCKET (`B-107`). A `BooblikConnection` taken once is a socket held for
     // the life of the process, and a broker pod being replaced then wedges this loop for ever.
@@ -52,6 +57,9 @@ class UsageConsumer(
     private val roamingCards: RoamingPackageCards,
     private val clock: KonektClock,
     private val json: Json = Json,
+    // Where this consumer has got to (`B-134`). Required, not defaulted: a consumer with nowhere to
+    // keep its position is the one that loses a restart's worth of usage.
+    private val positions: ConsumerPositions,
     private val pollInterval: Duration = 200.milliseconds,
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.mocks.traffic.consumer")
@@ -68,10 +76,13 @@ class UsageConsumer(
         scope.launch {
             val topic = TopicName(EventTopics.USAGE)
             brokerGeneration = broker.generation
-            var consumer = Consumer(broker.connection, topic, partition, from)
+            // [from] is the first position only when none is stored; a stored one wins, so a caller
+            // that passes a stale number cannot move a consumer backwards or forwards.
+            val start = Offset(positions.seed(keyOf(partition), from.value))
+            var consumer = Consumer(broker.connection, topic, partition, start)
             while (isActive) {
                 try {
-                    drain(consumer)
+                    drain(consumer, partition)
                 } catch (cancellation: kotlinx.coroutines.CancellationException) {
                     throw cancellation
                 } catch (failure: Exception) {
@@ -112,22 +123,25 @@ class UsageConsumer(
         when {
             BrokerConnection.isFinished(failure) -> {
                 // THE SOCKET, NOT THE OFFSET. The position is fine and the connection is not, so
-                // resume exactly where this consumer had got to: a poll that failed consumed nothing.
-                val resumeAt = consumer.position
+                // resume exactly where this consumer had got to — the STORED position, which is the
+                // last batch that committed, not the reader's, which may be past a batch that did not.
+                val resumeAt = stored(partition) ?: consumer.position
                 logger.warn("the broker connection broke at offset {}", resumeAt.value, failure)
                 reconnected(broker.reconnect(brokerGeneration))
                 Consumer(broker.connection, topic, partition, resumeAt)
             }
 
             failure is FetchFailedException && failure.code == ErrorCode.OFFSET_OUT_OF_RANGE -> {
-                // THE OTHER WAY, and `B-100` is what made it reachable: retention now deletes whole
-                // segments, so a consumer slower than the retention bound asks for an offset that no
-                // longer exists and is refused for ever. The recovery is the one this consumer
-                // already performs at boot — go to where the broker is now — and the loud part is
-                // not the seek, it is saying that records were SKIPPED. A consumer that silently
-                // reseeks is a counter that quietly disagrees with what was published.
-                val lost = consumer.position
-                val resumeAt = endOf(partition)
+                // RETENTION PASSED THIS CONSUMER (`B-100` made it reachable): the offset it asks for
+                // was deleted. It carries on from the start of what is left — not from the end, which
+                // would throw away everything retention kept — and the loud part is not the seek, it
+                // is saying how many records were SKIPPED. The jump is stored like any other move,
+                // from the position it replaces, so a consumer that lost the race reads the winner's.
+                val lost = stored(partition) ?: consumer.position
+                val resumeAt = startOf(partition)
+                if (!positions.advance(keyOf(partition), lost.value, resumeAt.value)) {
+                    return Consumer(broker.connection, topic, partition, stored(partition) ?: resumeAt)
+                }
                 logger.warn(
                     "the broker no longer has offset {} on partition {} — retention passed this " +
                         "consumer, so {} usage events were never applied. Resuming at {}",
@@ -145,63 +159,100 @@ class UsageConsumer(
             }
         }
 
-    // WHERE THE BROKER IS NOW, asked of METADATA rather than read out of a poll. A fetch cannot
-    // answer this once the log's start has moved past zero, which is exactly the state that brings
-    // a caller here.
-    private suspend fun endOf(partition: PartitionId): Offset {
+    // WHERE THE LIVE LOG STARTS, asked of METADATA rather than read out of a poll: a fetch below
+    // the start is exactly the refusal that brings a caller here.
+    private suspend fun startOf(partition: PartitionId): Offset {
         val answer = broker.connection.metadata(listOf(TopicName(EventTopics.USAGE)))
         return answer.topics
             .singleOrNull()
             ?.partitions
             ?.firstOrNull { it.partition == partition }
-            ?.highWatermark
+            ?.logStartOffset
             ?: Offset.ZERO
     }
 
-    suspend fun drain(consumer: Consumer): Int {
+    private suspend fun stored(partition: PartitionId): Offset? = positions.load(keyOf(partition))?.let(::Offset)
+
+    // ONE BATCH, ONE TRANSACTION: the position moves from where this batch was read to just past it,
+    // and every decrement of the batch commits with it or not at all. The pushes wait for the commit
+    // — a card announcing a decrement that rolled back would be a screen that lies.
+    //
+    // When the stored position is not where this batch was read, another consumer applied it (or
+    // this one is behind its own last commit): nothing is applied, and the reader is moved to the
+    // stored position. Returns how many records were applied.
+    suspend fun drain(
+        consumer: Consumer,
+        partition: PartitionId,
+    ): Int {
+        val base = consumer.position
         val records = consumer.poll().records
-        records.forEach { apply(String(it)) }
+        if (records.isEmpty()) return 0
+        val next = Offset(base.value + records.size)
+
+        val pushes = mutableListOf<suspend () -> Unit>()
+        val applied =
+            positions.advance(keyOf(partition), base.value, next.value) {
+                records.forEach { record -> effectOf(String(record))?.let(pushes::add) }
+            }
+        if (!applied) {
+            val at = stored(partition) ?: base
+            logger.info(
+                "usage records {}..{} were already applied; carrying on from the stored position {}",
+                base.value,
+                next.value - 1,
+                at.value,
+            )
+            consumer.seek(at)
+            return 0
+        }
+        pushes.forEach { it() }
         return records.size
     }
 
+    // One event outside any position: its effect, then its push. What [drain] does per record, minus
+    // the transaction — kept for the tests that are about what an event DOES, not where it was read.
     suspend fun apply(payload: String) {
-        val event = json.parseToJsonElement(payload) as? JsonObject ?: return
-        val subscriberId = event["subscriberId"]?.jsonPrimitive?.content ?: return
+        effectOf(payload)?.invoke()
+    }
+
+    // The event's effect, performed now — inside [drain]'s transaction when called from there — and
+    // the push that announces it, returned rather than sent, so it can wait for the commit.
+    private suspend fun effectOf(payload: String): (suspend () -> Unit)? {
+        val event = json.parseToJsonElement(payload) as? JsonObject ?: return null
+        val subscriberId = event["subscriberId"]?.jsonPrimitive?.content ?: return null
 
         // WHERE THE DATA WAS USED, and absent means home. Defaulted rather than required because
         // every event written before roaming existed omits it, and they all meant home — the same
         // reason the payload's zone is defaulted.
         val zone = event["zone"]?.jsonPrimitive?.content ?: Zones.HOME
-        if (zone != Zones.HOME) {
-            applyRoaming(subscriberId, zone, event)
-            return
-        }
+        if (zone != Zones.HOME) return roamingEffectOf(subscriberId, zone, event)
 
         val kind =
-            UsageCounter.Kind.entries.firstOrNull { it.wireName == event["kind"]?.jsonPrimitive?.content } ?: return
-        val units = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return
+            UsageCounter.Kind.entries.firstOrNull { it.wireName == event["kind"]?.jsonPrimitive?.content }
+                ?: return null
+        val units = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return null
 
         val updated =
             consume(ConsumeUsageUseCase.Params(subscriberId, kind, units)).getOrNull()
                 // No counter for this subscriber and kind. Not an error: a subscriber who has bought
                 // nothing has nothing to spend, and the simulator does not know that.
-                ?: return
+                ?: return null
 
         // Pushed by the component id the screen already has, so the client replaces a node rather
         // than reloading a screen. That is the whole difference a live update makes.
-        push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated, clock.now()))
+        return { push.push(subscriberId, UsageCounterCards.idOf(updated), cards.of(updated, clock.now())) }
     }
 
     // FIRST USE ABROAD, which is where a dormant package stops being dormant. The activation is not a
     // separate call this method makes first — `consume` does both, because "starts on first
     // connection" means they are one event and an API that separates them permits one without the
     // other.
-    private suspend fun applyRoaming(
+    private suspend fun roamingEffectOf(
         subscriberId: String,
         zone: String,
         event: JsonObject,
-    ) {
-        val megabytes = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return
+    ): (suspend () -> Unit)? {
+        val megabytes = event["units"]?.jsonPrimitive?.content?.toLongOrNull() ?: return null
 
         // ONE READING FOR BOTH the consumption and the card that announces it: an update captioned
         // against a later instant than the one it was counted at would say a package expired between
@@ -210,7 +261,7 @@ class UsageConsumer(
         val result = roaming.consume(subscriberId, zone, megabytes, at)
         // Nothing bought for this zone. Not an error, and not silent either: it is what being abroad
         // without a package looks like, and the simulator has no way to know.
-        if (result !is RoamingConsumption.Counted) return
+        if (result !is RoamingConsumption.Counted) return null
 
         if (result.started) {
             logger.info(
@@ -221,6 +272,15 @@ class UsageConsumer(
             )
         }
 
-        push.push(subscriberId, RoamingPackageCards.idOf(result.pkg), roamingCards.of(result.pkg, at))
+        return { push.push(subscriberId, RoamingPackageCards.idOf(result.pkg), roamingCards.of(result.pkg, at)) }
+    }
+
+    companion object {
+        // The name this consumer's position is stored under. Renaming it starts a new consumer — at
+        // the end of the log, with everything the old name had not applied left unapplied.
+        const val NAME = "konekt-usage"
+
+        fun keyOf(partition: PartitionId): ConsumerPositions.Key =
+            ConsumerPositions.Key(NAME, EventTopics.USAGE, partition.value)
     }
 }

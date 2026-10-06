@@ -1,7 +1,7 @@
 ---
 id: B-134
 title: "The usage consumer loses every event that arrives while it is down, and applies each one once per replica"
-status: open
+status: done
 priority: P1
 size: M
 stage: stage-m8-two-replicas
@@ -42,3 +42,28 @@ is a blocker for two.
 - Anchors: `server/src/main/kotlin/io/konekt/mocks/traffic/UsageConsumer.kt`,
   `server/src/main/kotlin/io/konekt/mocks/traffic/UsageChain.kt`,
   `feature/usage-server-data/src/main/kotlin/`, `shared/db/src/main/resources/db/migration/`.
+
+## Findings — 2026-10-06
+
+- **Done.** `consumer_position` (V16) and `ConsumerPositions` in `:shared:db`; `UsageConsumer.drain`
+  moves the position first and applies the batch inside `advance`, pushes after the commit;
+  `UsageChain.start` seeds the end of the log on a first start, refuses a position above the high
+  watermark, and stores a jump to `logStartOffset` with the loss logged. The runtime
+  `OFFSET_OUT_OF_RANGE` recovery now resumes at the log's START and stores the jump; it used to go to
+  the end, throwing away everything retention had kept.
+- **Joining is proved, not assumed:** a repository's own `suspendTransaction` inside `advance` joins it —
+  `ConsumerPositionsTest` writes through one, fails before the commit, and finds neither the write nor
+  the move afterwards (values read outside the transaction).
+- **Every AC has a test, and each test was shown to fail:** effects moved outside the transaction →
+  `an effect written through a repository rolls back with the position` red; the position never moving
+  → the restart test red (9 300 instead of 9 400: the first batch applied twice); the compare-and-set
+  removed → both "once" tests red (9 800 with two consumers); the refusal removed → the refusal test red.
+- **A swallowed failure inside a batch rolls the batch back, not one event.** `ConsumeUsageUseCase`
+  wraps the repository in `suspendRunCatching`, so a database error is read as "no counter" — but the
+  Postgres transaction is then aborted, the commit fails, and the whole batch is read again. Correct for
+  a transient failure; a permanent one would stop the consumer on that batch instead of skipping one
+  event. Not reproduced, and no such failure is known — written down rather than designed for.
+- **Not exercised:** a stored position below `logStartOffset` at start (needs retention to delete a
+  segment under a stopped consumer). The branch logs and stores the jump; it has no test.
+- The chart's refusal of `replicas > 1` still gives the double decrement as a reason; that sentence is
+  rewritten with the refusal itself in [B-137](B-137-the-chart-allows-two-replicas.md).

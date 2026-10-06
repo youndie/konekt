@@ -1,5 +1,6 @@
 package io.konekt.feature.usage.server.data
 
+import io.konekt.db.ConsumerPositions
 import io.konekt.feature.usage.server.domain.ConsumeUsageUseCase
 import io.konekt.feature.usage.server.domain.LoadCountersUseCase
 import io.konekt.feature.usage.server.domain.UsageAddOns
@@ -29,4 +30,8 @@ fun usageModule(database: Database) =
 
         factory { LoadCountersUseCase(get()) }
         factory { ConsumeUsageUseCase(get()) }
+
+        // Where the usage consumer has got to (`B-134`). Bound here because this is the module that
+        // holds the database the decrements go to, and the position has to go to the same one.
+        single { ConsumerPositions(database) }
     }
