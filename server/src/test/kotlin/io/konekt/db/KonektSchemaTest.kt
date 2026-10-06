@@ -4,6 +4,7 @@ import io.github.youndie.petich.postgres.IdempotencyKeysTable
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
 import io.github.youndie.petich.postgres.ScheduledJobsTable
+import io.konekt.db.tables.ConsumerPositionTable
 import io.konekt.db.tables.konektCoreTables
 import io.konekt.feature.auth.server.data.OtpChallengeTable
 import io.konekt.feature.auth.server.data.RefreshTokenTable
@@ -84,16 +85,17 @@ class KonektSchemaTest {
                 UsageCounterTable,
                 UsageGrantTable,
                 EsimWizardSessionTable,
+                ConsumerPositionTable,
             )
 
     @Test
     fun `the schema test is looking at something`() {
         // The guard on the guard. statementsRequiredForDatabaseMigration returns an empty list both
         // when everything matches and when it was handed no tables, and the first assertion cannot
-        // tell those apart. Fifteen is petich's four, konekt's three core tables, the auth feature's
-        // three, the purchase feature's two, usage's two and the eSIM wizard's one; the number is
+        // tell those apart. Sixteen is petich's four, konekt's three core tables, the auth feature's
+        // three, the purchase feature's two, usage's two, the eSIM wizard's one and the consumer positions' one (B-134); the number is
         // asserted here so that a table dropped from any list fails loudly rather than shrinking the
         // check.
-        assertEquals(15, allTables.size)
+        assertEquals(16, allTables.size)
     }
 }

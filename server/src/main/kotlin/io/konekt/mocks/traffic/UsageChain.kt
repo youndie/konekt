@@ -1,6 +1,8 @@
 package io.konekt.mocks.traffic
 
+import io.github.youndie.booblik.Offset
 import io.github.youndie.booblik.TopicName
+import io.konekt.db.ConsumerPositions
 import io.konekt.events.BrokerConnection
 import io.konekt.events.EventTopics
 import io.konekt.feature.roaming.server.domain.RoamingPackages
@@ -36,6 +38,7 @@ class UsageChain(
     private val roamingCards: RoamingPackageCards,
     private val clock: KonektClock,
     private val json: Json,
+    private val positions: ConsumerPositions,
 ) {
     private val logger = LoggerFactory.getLogger("io.konekt.usage.chain")
 
@@ -52,40 +55,64 @@ class UsageChain(
                 ?: error("the broker has no partition for ${EventTopics.USAGE}")
         val partition = info.partition
 
-        // FROM WHERE THE BROKER IS NOW, and this is the decision the split forces into the open.
+        // WHERE THIS CONSUMER GOT TO, from its own table (`B-134`), checked against the log.
         //
-        // For a SIMULATED feed it is the only sensible answer: replaying a day of invented usage on
-        // every restart would empty every counter in the product. For a REAL one the correct default
-        // is the opposite — a deployment that restarts should apply what arrived while it was down.
+        // This used to be the end of the log on every start, with the reason written here: booblik
+        // keeps no consumer offsets, so "where we left off" would have to be "a position this
+        // application stored itself, in its own table, updated per batch". That is what it is now —
+        // and updated in the same transaction as the decrements, so it can neither run ahead of them
+        // nor fall behind.
         //
-        // It is the end for both, and the reason is not preference. booblik keeps **no consumer
-        // offsets** — that absence is what removes the group coordinator and the cluster consensus
-        // behind it — so "where we left off" is not something the broker can be asked. It would have
-        // to be a position this application stored itself, in its own table, updated per batch, with
-        // all the redelivery questions that opens.
-        //
-        // So the limitation is stated rather than hidden: **usage published while this process is
-        // down is not applied when it comes back.** For a reference build on a fictional feed that is
-        // an acceptable cost and it is written into `konekt-broker.md`; for a real integration it is
-        // the first thing that would have to change.
-        //
-        // AND FOR TWO SEASONS THIS LINE DID NOT GIVE THE END (`B-108`). It used to build a
-        // consumer at offset ZERO, poll once and take the position: one `maxBytes` of records in
-        // from the START of the log, which is a different number entirely. Measured on the stage
-        // deployment: it began at 11915 while the log ended at 374473, so every restart replayed
-        // 362,558 historical usage events against live counters — the exact thing the paragraph
-        // above says must not happen, written correctly and implemented backwards.
-        //
-        // It was also about to stop working at all. `B-100` turned retention on, so the log's start
-        // will move above zero, and a fetch below the start is `OFFSET_OUT_OF_RANGE` — a throw out
-        // of `start()` on the first boot after the first segment is deleted.
-        //
-        // METADATA answers both, cannot read a record, and cannot be out of range.
-        val from = info.highWatermark
+        // THE END OF THE LOG IS STILL THE FIRST POSITION, recorded as such: the first start of a
+        // deployment applies what arrives from now on, not a log's worth of history (`B-108`
+        // measured what replaying it does to live counters). Every start after that carries on.
+        val key = UsageConsumer.keyOf(partition)
+        val stored = positions.load(key)
+        val from =
+            when {
+                stored == null -> {
+                    val first = positions.seed(key, info.highWatermark.value)
+                    logger.info("usage consumer has no stored position; starting at the end of the log, {}", first)
+                    Offset(first)
+                }
+
+                // A LOG YOUNGER THAN THE POSITION: the broker lost its volume, or a tail it had
+                // acknowledged as written, or the topic was recreated. Carrying on at the end would
+                // hide that loss; carrying on at the stored number would read whatever lies there
+                // now. Neither is a decision this process can make, so it does not start.
+                stored > info.highWatermark.value -> {
+                    val refusal =
+                        "the stored usage position $stored is past the end of the log, " +
+                            "${info.highWatermark.value}: the broker's log is younger than this consumer. " +
+                            "Not starting — move or delete the row in consumer_position once the loss is understood"
+                    logger.error(refusal)
+                    error(refusal)
+                }
+
+                // RETENTION PASSED THE CONSUMER while it was down: a loss of known size, said out loud
+                // and stored, then the consumer carries on from the start of what is left.
+                stored < info.logStartOffset.value -> {
+                    if (positions.advance(key, stored, info.logStartOffset.value)) {
+                        logger.warn(
+                            "retention deleted usage records {}..{} before this consumer applied them: " +
+                                "{} usage events were never applied. Resuming at {}",
+                            stored,
+                            info.logStartOffset.value - 1,
+                            info.logStartOffset.value - stored,
+                            info.logStartOffset.value,
+                        )
+                    }
+                    Offset(positions.load(key) ?: info.logStartOffset.value)
+                }
+
+                else -> {
+                    Offset(stored)
+                }
+            }
 
         logger.info("usage consumer starting on partition {} from offset {}", partition, from)
 
-        return UsageConsumer(connection, consume, push, cards, roaming, roamingCards, clock, json)
+        return UsageConsumer(connection, consume, push, cards, roaming, roamingCards, clock, json, positions)
             .start(scope, partition, from)
     }
 }

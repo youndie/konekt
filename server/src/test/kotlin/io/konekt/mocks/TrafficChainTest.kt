@@ -9,6 +9,7 @@ import io.github.youndie.kompot.realtime.UpdateComponentMessage
 import io.github.youndie.kompot.realtime.server.KompotUpdateBroadcaster
 import io.konekt.components.CounterStates
 import io.konekt.components.UsageCounterCardComponent
+import io.konekt.db.ConsumerPositions
 import io.konekt.db.tables.SubscriberTable
 import io.konekt.events.BrokerConnection
 import io.konekt.events.BrokerHarness
@@ -65,6 +66,10 @@ class TrafficChainTest {
         }
 
     private val counters = ExposedUsageCounters(PostgresHarness.database, clock)
+
+    // Where the consumer keeps its position (`B-134`). `truncateAll` empties it between tests, so
+    // each test's consumer starts with nothing stored.
+    private val positions = ConsumerPositions(PostgresHarness.database)
 
     // One scope and one broadcaster per test — JUnit builds a new instance for each — started here
     // rather than inside a test. kompot refuses to broadcast through a broadcaster that was never
@@ -140,6 +145,7 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
+                        positions = positions,
                     ).start(scope, partition, io.github.youndie.booblik.Offset.ZERO)
 
                 // THE BROKER GOES AWAY AND STAYS AWAY. Not a replaced pod — a port that answers
@@ -251,6 +257,7 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
+                        positions = positions,
                     ).start(scope)
 
                 try {
@@ -321,6 +328,7 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
+                        positions = positions,
                     ).start(scope, partition, from)
 
                 handle.send(usageEvent(100).toByteArray()).await()
@@ -399,6 +407,9 @@ class TrafficChainTest {
                 simulator.tick(handle)
 
                 val consumer = Consumer(connection, TopicName(EventTopics.USAGE), handle.partitions.first(), start)
+                // The stored position the batch is applied from: `drain` moves it from where the batch
+                // was read, so a consumer with no row would apply nothing (`B-134`).
+                positions.seed(UsageConsumer.keyOf(handle.partitions.first()), start.value)
                 val applied =
                     UsageConsumer(
                         BrokerHarness.broker(),
@@ -409,7 +420,8 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
-                    ).drain(consumer)
+                        positions = positions,
+                    ).drain(consumer, handle.partitions.first())
 
                 // THREE, one per counter kind, and the number is asserted rather than left loose:
                 // the simulator publishes data, minutes and messages every tick, and a kind that
@@ -445,6 +457,7 @@ class TrafficChainTest {
                     roamingCards,
                     clock,
                     json,
+                    positions = positions,
                 )
 
             consumer.apply(event(units = 100))
@@ -471,6 +484,7 @@ class TrafficChainTest {
                     roamingCards,
                     clock,
                     json,
+                    positions = positions,
                 )
 
             consumer.apply(event(units = 400))
@@ -497,6 +511,7 @@ class TrafficChainTest {
                     roamingCards,
                     clock,
                     json,
+                    positions = positions,
                 )
 
             consumer.apply(event(units = 950))
@@ -523,6 +538,7 @@ class TrafficChainTest {
                     roamingCards,
                     clock,
                     json,
+                    positions = positions,
                 )
 
             // No counter exists. The simulator does not know who has bought what, and a consumer that
@@ -625,6 +641,7 @@ class TrafficChainTest {
                         roamingCards,
                         clock,
                         json,
+                        positions,
                     )
                 val job = chain.start(scope)
                 try {

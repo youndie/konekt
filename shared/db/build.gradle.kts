@@ -17,6 +17,8 @@ dependencies {
     // themselves are this module's resources — so any module that can open a database can also
     // migrate one, and a feature's tests do not have to depend on the thing that composes them.
     api(libs.hikari)
+    // `ConsumerPositions` (B-134) suspends like every repository in the build.
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.flyway.core)
     runtimeOnly(libs.flyway.postgresql)
     runtimeOnly(libs.postgresql)

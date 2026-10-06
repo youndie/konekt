@@ -141,6 +141,9 @@ class KoinGraphTest {
             io.konekt.feature.usage.server.data.UsageCounterCards::class,
             io.konekt.feature.roaming.server.domain.RoamingPackages::class,
             io.konekt.roaming.RoamingPackageCards::class,
+            // The usage consumer's stored position (`B-134`): bound by `usageModule`, which holds the
+            // database the decrements go to, and taken by `UsageChain` in the root's module.
+            io.konekt.db.ConsumerPositions::class,
             // THE SCREEN USE CASES REACH ACROSS TOO, and they are the composition root's own
             // definitions now rather than a route's injections (`B-96`). A route is not verified —
             // `by inject<T>()` is looked up at request time — so moving the assembly into a `factory`
