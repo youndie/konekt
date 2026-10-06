@@ -136,6 +136,23 @@ class SharedUpdateBusTest {
             assertEquals("back", received)
         }
 
+    // KESH GOING AWAY AFTER IT WAS THERE: the client queues a publish on a dropped connection and
+    // waits for the reconnect, for as long as that takes. The usage consumer pushes right after its
+    // commit, so a publish that waited would be a consumer that stopped.
+    @Test
+    fun `a publish while kesh is gone returns instead of waiting for it`() =
+        runBlocking {
+            val store = kesh()
+            val a = replica(store.url())
+            a.broadcast("home:subscriber-1", "while it is up")
+            store.stop()
+
+            val started = TimeSource.Monotonic.markNow()
+            val returned = withTimeoutOrNull(15.seconds) { a.broadcast("home:subscriber-1", "while it is gone") }
+            assertNotNull(returned, "a publish with kesh gone did not return within 15 s")
+            assertTrue(started.elapsedNow() < 5.seconds, "a publish with kesh gone took ${started.elapsedNow()}")
+        }
+
     private companion object {
         // Pinned to a commit, like every image this build runs: `main` moves (youndie/kesh B-32).
         const val IMAGE = "ghcr.io/youndie/kesh:sha-4ad497912a3e5e2f7b91273d18b657d0885d3f03"
