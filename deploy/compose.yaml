@@ -67,6 +67,19 @@ services:
     # reachable from outside this network. That is the whole of its security model, and it is one
     # line of YAML away from not being true.
 
+  # THE SHARED LIVE-UPDATE BUS (`B-136`). The stand runs two servers on one database, and since the
+  # singletons moved to a leader (`B-135`) only one of them consumes usage: its pushes have to reach
+  # SSE clients attached to the other, which is what kompot's Redis bus over kesh is for.
+  #
+  # Pinned to a commit — `sha-<commit>` is the only tag kesh publishes that names something immutable
+  # (youndie/kesh B-32). 64 MiB of data is a ceiling a bus never comes near: nothing is stored, every
+  # message goes straight to the subscribers. No snapshot either, for the same reason.
+  kesh:
+    image: ghcr.io/youndie/kesh:sha-4ad497912a3e5e2f7b91273d18b657d0885d3f03
+    environment:
+      KESH_MAXMEMORY: "67108864"
+    # NO PORTS, like the broker: a RESP store with no password is reachable from this network only.
+
   # MIGRATIONS RUN BEFORE ANY SERVER, from the same image with a switch, and the servers wait for it
   # to EXIT SUCCESSFULLY rather than to start. During a rolling deploy this is a job that finishes
   # before the new pods roll; here it is the same thing in one file. Two processes racing to migrate
@@ -141,6 +154,9 @@ services:
       KONEKT_SERVICE: konekt-server
       KONEKT_BROKER_HOST: broker
       KONEKT_BROKER_PORT: "9092"
+      # The bus every server on this stand shares (`B-136`). No `depends_on`: a server whose bus is
+      # late says so and catches up, and a stand that waited for kesh would hide that it can.
+      KONEKT_REALTIME_URL: redis://kesh:6379
       # Development only: the endpoint that reads back a one-time code. Absent means closed, which is
       # why the default is not "true".
       KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
@@ -346,6 +362,9 @@ services:
       KONEKT_SERVICE: konekt-server-declining
       KONEKT_BROKER_HOST: broker
       KONEKT_BROKER_PORT: "9092"
+      # The bus every server on this stand shares (`B-136`). No `depends_on`: a server whose bus is
+      # late says so and catches up, and a stand that waited for kesh would hide that it can.
+      KONEKT_REALTIME_URL: redis://kesh:6379
       KONEKT_DEV_REVEAL_OTP: ${DEV_REVEAL_OTP:-true}
       KONEKT_PAYMENT_MOCK_MODE: decline
       # No traffic from this one: two simulators against one set of counters would each be spending

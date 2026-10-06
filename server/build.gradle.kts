@@ -297,6 +297,8 @@ dependencies {
     implementation(libs.kompot.auth)
     implementation(libs.kompot.realtime)
     implementation(libs.kompot.realtimeServer)
+    // The shared bus over kesh (B-136); the in-memory one stays the default.
+    implementation(libs.kompot.realtimeRedis)
     // THE ROUTE GRAPH, and the first use this build has had of it. `NavigationGraph` is a
     // serialisable type rather than a server plug-in — the endpoint is an ordinary GET that
     // answers it — so the same coordinate is what the client resolves deeplinks with.

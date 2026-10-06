@@ -49,6 +49,7 @@ refuses() {
 }
 
 renders "the ordinary single-instance deployment" "${VALID[@]}"
+renders "the deployment with the shared live-update bus" "${VALID[@]}" --set kesh.enabled=true
 
 refuses "two replicas" "single-instance deployment" \
   "${VALID[@]}" --set server.replicas=2

@@ -1,0 +1,109 @@
+{{- if .Values.kesh.enabled }}
+{{/*
+The shared live-update bus (`B-136`): kesh, the portfolio's RESP2 store, carrying kompot's Redis bus —
+one PUBLISH per update and one PSUBSCRIBE per server. With it, an SSE client attached to one replica
+sees an update produced on another; without it every replica's bus is in its own memory.
+
+One pod and no volume, and both are the bus's nature rather than economy: nothing is stored — a message
+goes straight to the subscribers or nowhere — and kompot treats an update as losable, because the next
+fetch of the screen carries the current state. A restart of this pod drops the updates in flight and
+the servers reconnect on their own (`SharedUpdateBus`).
+
+The memory limit is kesh's own arithmetic (youndie/kesh `deploy/chart`, B-26): the resident peak it
+measured is 3.3 × maxmemory plus 64 MiB for the process, and kesh refuses to start when its maxmemory
+does not fit the container's limit at that ratio — so the two numbers below are checked by kesh itself.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-kesh
+  labels:
+    app: {{ .Release.Name }}-kesh
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-kesh
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-kesh
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: kesh
+          image: {{ .Values.kesh.image | quote }}
+          env:
+            - name: KESH_MAXMEMORY
+              value: {{ .Values.kesh.maxmemory | quote }}
+            # The ratio kesh checks its maxmemory against the container limit with, in tenths.
+            - name: KESH_RESIDENT_PEAK_RATIO_TENTHS
+              value: "33"
+          ports:
+            - name: resp
+              containerPort: 6379
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.kesh.resources | nindent 12 }}
+          volumeMounts:
+            # Where kesh would write a snapshot on its way down. Nothing here needs one; an emptyDir
+            # keeps the write from failing on a read-only image.
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kesh
+spec:
+  selector:
+    app: {{ .Release.Name }}-kesh
+  ports:
+    - name: resp
+      port: 6379
+      targetPort: resp
+{{- if .Values.kesh.networkPolicy }}
+---
+{{/*
+Only this release's servers may speak to the bus: RESP without a password, like the broker's protocol
+without TLS, is protected by reachability alone. Behind a value for the broker's reason — a policy on a
+CNI that ignores policies reads as protection and provides none.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-kesh
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Release.Name }}-kesh
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ .Release.Name }}
+      ports:
+        - protocol: TCP
+          port: 6379
+{{- end }}
+{{- end }}
