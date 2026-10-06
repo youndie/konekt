@@ -102,7 +102,8 @@ class KonektConfigSchemaTest {
         val config = KonektConfig.fromEnv(Environment.of(required()))
 
         assertEquals(8080, config.port)
-        assertEquals(10, config.database.maximumPoolSize)
+        // Ten, and one that a held leadership keeps for as long as it lasts (`B-135`).
+        assertEquals(11, config.database.maximumPoolSize)
         assertFalse(config.simulateTraffic, "an unset switch must be the closed position")
         assertEquals(90, config.simulatedArrivalAfter.inWholeSeconds)
         assertEquals(null, config.observability.metrikWindow, "unset leaves metrik's own default")
