@@ -1,7 +1,7 @@
 ---
 id: B-134
 title: "The usage consumer loses every event that arrives while it is down, and applies each one once per replica"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-m8-two-replicas

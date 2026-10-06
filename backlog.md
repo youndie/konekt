@@ -48,7 +48,7 @@ so re-prioritising must never move a file.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-134](docs/backlog/B-134-usage-position-lives-in-the-decrement.md) `[ ]` | The usage consumer loses every event that arrives while it is down, and applies each one once per replica | P1 | M | - |
+| [B-134](docs/backlog/B-134-usage-position-lives-in-the-decrement.md) `[~]` | The usage consumer loses every event that arrives while it is down, and applies each one once per replica | P1 | M | - |
 | [B-135](docs/backlog/B-135-singletons-run-on-the-leader.md) `[ ]` | The traffic simulator and the outbox relay run once per replica | P1 | M | B-134 |
 | [B-136](docs/backlog/B-136-the-realtime-bus-goes-through-kesh.md) `[ ]` | An SSE subscriber on one pod never sees an update produced on another | P1 | M | - |
 | [B-137](docs/backlog/B-137-the-chart-allows-two-replicas.md) `[ ]` | The chart refuses replicas > 1 for reasons B-134, B-135 and B-136 remove | P1 | S | B-134, B-135, B-136 |
