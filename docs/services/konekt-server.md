@@ -227,10 +227,10 @@ is the profile a coroutine-per-connection engine is shaped for. See
 
 ## 5a. What runs per replica
 
-**This build is a single-instance deployment**, and the honest way to say so is a table of what a
-second pod would do rather than a sentence saying not to. `charts/konekt/values.yaml` defaults
-`server.replicas: 1`; horizontal scale is a non-goal in
-[reference-scope](reference-scope.md).
+**One replica by default, more with the shared bus** ([B-137](../backlog/B-137-the-chart-allows-two-replicas.md)).
+`charts/konekt/values.yaml` defaults `server.replicas: 1`; the template renders more only with
+`kesh.enabled`, and refuses otherwise naming the bus — the one reason left that is a setting rather
+than code. The table says what each worker does on two pods.
 
 **The leader** is chosen by vojak — an advisory lock on konekt's own Postgres through `vojak-jdbc`
 over the server's `DataSource` (`io.konekt.leader.Singletons`, B-135). Two elections: `singletons` for
@@ -246,15 +246,16 @@ holder shows in `pg_stat_activity.application_name` as `vojak <pod name>`.
 | Worker | Started by | With two pods |
 |---|---|---|
 | `UsageChain` — applies whatever arrives on `usage` | on the **leader** ([B-135](../backlog/B-135-singletons-run-on-the-leader.md)) | only the leader reads. Were two to read anyway — a stalled leader finishing a batch after it was replaced — the position in `consumer_position` moves in the decrements' transaction, only from the offset the batch was read at, and the loser rolls back (`B-134`, `UsagePositionTest`) |
-| `TrafficChain` — the traffic simulator | `KONEKT_SIMULATE_TRAFFIC`, on the **leader** (B-135) | one publishes; the others run no simulator. Before B-135 each published its own fictional usage, so allowances drained at a multiple of the configured rate — **the chart still refuses this combination** until [B-137](../backlog/B-137-the-chart-allows-two-replicas.md) |
+| `TrafficChain` — the traffic simulator | `KONEKT_SIMULATE_TRAFFIC`, on the **leader** (B-135) | one publishes; the others run no simulator. Before B-135 each published its own fictional usage, so allowances drained at a multiple of the configured rate, and the chart refused the combination; since [B-137](../backlog/B-137-the-chart-allows-two-replicas.md) it renders |
 | `SuspendedPetichSweeper` — compensates abandoned sagas, and since [B-130](../backlog/B-130-an-allowance-has-no-name-to-be-taken-back-by.md) carries forward the stranded ones (a saga left PROCESSING for `MockPaymentGateway.STRANDED_AFTER`, two minutes, by a process that died) | always | both walk the same sagas; one of them does the work. petich claims a saga with one write on its own row before touching it — on the expiry queue the move to COMPENSATING, on the stranded queue a version bump — and the sweeper whose write loses skips the saga (`TwoReplicasSweepTest` forces both to read before either writes). konekt's own claim table, `ClaimedSweep` ([B-92](../backlog/B-92-the-sweeper-still-does-not-claim-a-saga.md)), predated that and was removed by [B-132](../backlog/B-132-claimed-sweep-is-a-second-claim.md). The money does not rest on the claim: a unique index on `ledger_entry (order_id, kind)` makes a second compensation a no-op (`B-64`), and every member a re-drive runs again lands once — `Provision` (`ProvisionByOrderTest`), and the members before a confirmation in the purchase and the tariff change ([B-131](../backlog/B-131-a-stranded-first-pass-is-rolled-back.md), `StrandedFirstPassTest`, `StrandedTariffChangeTest`) |
 | `OutboxRelayWorker` — publishes outbox rows | on the **leader** (B-135) | one publishes. petich's relay has no claim — no `FOR UPDATE`, no `SKIP LOCKED` — and two of them published every row twice: 40 records for 20 rows, measured by `SingletonsTest` with the election removed. Delivery stays at-least-once, and the event id is stable across redeliveries |
-| `KompotUpdateBroadcaster` — the realtime bus | always | each holds its own SSE connections. **With `KONEKT_REALTIME_URL`** (`kesh.enabled` in the chart, always on the stand) every replica publishes through kesh and hears every other's, so a push produced on one pod reaches a subscriber attached to another (`B-136`, `SharedUpdateBusTest`). Without it the bus is in memory and that push is lost silently — which is why [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md) made the chart refuse the second replica. A kesh that is down costs live updates and nothing else: the subscription retries every second, a publish gives up after two |
+| `KompotUpdateBroadcaster` — the realtime bus | always | each holds its own SSE connections. **With `KONEKT_REALTIME_URL`** (`kesh.enabled` in the chart, always on the stand) every replica publishes through kesh and hears every other's, so a push produced on one pod reaches a subscriber attached to another (`B-136`, `SharedUpdateBusTest`). Without it the bus is in memory and that push is lost silently — which is why the chart refuses a second replica with `kesh.enabled` off (B-137; [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md) refused it outright). A kesh that is down costs live updates and nothing else: the subscription retries every second, a publish gives up after two |
 
-Two of the five are refused by the chart: the traffic simulator, because it drains allowances on a
-timer rather than on traffic, and — since [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md)
-— a second replica outright. The rest are stated here because a default that is right and a failure
-mode that is silent is exactly the combination this repository fails builds over.
+One combination is refused by the chart: more than one replica with `kesh.enabled` off, because the
+failure it causes — a screen that does not refresh — is silent. Until B-137 it refused the simulator
+above one replica and, since [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md), any second
+replica at all; B-134, B-135 and B-136 removed those reasons one by one. `scripts/chart-check.sh`
+renders both sides of the remaining refusal.
 
 ## 6. Local setup
 

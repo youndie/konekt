@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # THE CHART'S GUARDS, EXERCISED — because until `B-91` nothing ran them.
 #
-# `charts/konekt/templates` refuses a render five ways: a missing database password, a missing image
-# version, a missing hostname, the simulator above one replica, and any replica count above one. Each
+# `charts/konekt/templates` refuses a render in several ways: a missing database password, a missing
+# image version, a missing hostname, and more than one replica without the shared bus (`B-137`; until
+# then any count above one, and the simulator above one on its own). Each
 # is a `fail` with a sentence explaining what would break, and each of them fired for the first time
 # in front of whoever was deploying — no CI job and no make target ever rendered this chart.
 #
@@ -51,10 +52,13 @@ refuses() {
 renders "the ordinary single-instance deployment" "${VALID[@]}"
 renders "the deployment with the shared live-update bus" "${VALID[@]}" --set kesh.enabled=true
 
-refuses "two replicas" "single-instance deployment" \
+refuses "two replicas without the shared bus" "kesh.enabled is off" \
   "${VALID[@]}" --set server.replicas=2
-refuses "the simulator above one replica" "simulateTraffic is on" \
-  "${VALID[@]}" --set server.replicas=2 --set simulateTraffic=true
+# AND WITH IT THEY RENDER — the half of the guard that says the boundary moved rather than vanished.
+# The simulator included: since `B-135` it runs on a leader, in an election of its own.
+renders "two replicas with the shared bus" "${VALID[@]}" --set server.replicas=2 --set kesh.enabled=true
+renders "the simulator on two replicas with the shared bus" \
+  "${VALID[@]}" --set server.replicas=2 --set kesh.enabled=true --set simulateTraffic=true
 refuses "a missing database password" "postgres.password is required" \
   --set jwtSecret=ci --set server.version=v0.0.0 --set hostname=ci.example
 refuses "a missing image version" "server.version is required" \

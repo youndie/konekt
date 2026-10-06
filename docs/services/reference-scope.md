@@ -49,11 +49,10 @@ Each non-goal carries two things, and a row missing either is not a boundary:
 | **Localisation** — no `stringResource`, no `Accept-Language`, no bundles. Every string is an English literal in the server's Kotlin | The server composes every screen, so language is a server-side concern and one audience per deployment is the stated assumption — `MoneyFormat` says so for currency and `DayFormat` pins `Locale.ENGLISH` and `ZoneId.of("UTC")` | A locale on the request, a bundle per language on the server, and formatting that stops being a constant. The client needs no change, which is the point of the wire |
 | **Presence in an app store** — no signing, no icon, no store metadata | Everything an app review needs exercises none of the six toolkits. Android *runs* — [B-85](../backlog/B-85-the-client-has-no-android-target.md) put a build on a physical Pixel — and shipping is a different job | Everything an app review needs. This is the row most likely to stay here permanently |
 | **Running the iOS build on a physical device** | **No Apple account, and there will not be one.** Installing on a phone needs a development team; the simulator needs none. So every Apple statement this build makes is true of a simulator: the screens are drawn there, and `B-27`'s katcher crash is a Mach-O process on macOS — which says the reporter links and posts, not that a crash from an arm64 phone arrives. [B-90](../backlog/B-90-the-ios-build-cannot-leave-the-simulator.md) is closed as this boundary rather than as work | An Apple ID with a development team, and an install through `xcrun devicectl`. The code is ready for it: `iosArm64` links `KonektHome` and `KonektCrash` as arm64 executables, and the bundle carries the launch screen and scene manifest a device needs |
-| **More than one server replica** — the realtime bus is in memory unless kesh is enabled (`B-136`), and the sweeper runs per replica | One instance is the honest configuration for a reference. A shared bus is a dependency and an operational surface; kompot's own reasoning applies, an update is losable because the next screen fetch carries current state | `kompot-realtime-redis` and a claim on the sweeper. The boundary is enforced rather than implicit: [B-91](../backlog/B-91-a-second-replica-loses-live-updates.md) made `charts/konekt/templates/server.yaml` refuse any `replicas > 1`, and `scripts/chart-check.sh` proves each refusal names its own reason |
 
 ## What is *not* on this list, and why
 
-Three things look like they belong here and do not:
+Four things look like they belong here and do not:
 
 - **Android.** It was work rather than a boundary, and it is done:
   [B-85](../backlog/B-85-the-client-has-no-android-target.md) put a build on a physical Pixel, signed
@@ -67,6 +66,15 @@ Three things look like they belong here and do not:
   something that is never charged, so [B-102](../backlog/B-102-the-profile-states-a-tariff-nothing-bills.md)
   removed them and the row above is the boundary that replaced them. The saga is still driven end to
   end — over its DTO routes, by `TariffChangeScenarioTest`.
+- **More than one server replica.** It was a row of this table until
+  [B-137](../backlog/B-137-the-chart-allows-two-replicas.md), and its reasons were code rather than a
+  decision: every pod applied every usage event ([B-134](../backlog/B-134-usage-position-lives-in-the-decrement.md)
+  stores the position with the decrements), every pod ran the simulator and the outbox relay
+  ([B-135](../backlog/B-135-singletons-run-on-the-leader.md) runs them on a leader elected by vojak),
+  and live updates stayed in each pod's memory ([B-136](../backlog/B-136-the-realtime-bus-goes-through-kesh.md)
+  sends them through kesh). The chart renders more than one with `kesh.enabled` and refuses it
+  without, naming the bus. Sizing a deployment for it is not this build's concern; the stand runs two
+  servers on one database and is where it is exercised.
 - **Alerting thresholds** ([B-26](../backlog/B-26-observability-wiring.md)). Not a decision: tuning
   them needs traffic this build does not have, which is a precondition rather than a boundary.
 
@@ -94,5 +102,4 @@ not a product boundary.
 | The mocked boundary ports | `feature/esim-server-domain/.../EsimPorts.kt`, `feature/purchase-server-domain/.../PaymentGateway.kt`, `feature/auth-server-domain/.../AuthPorts.kt` |
 | Every table there is | `shared/db/src/main/resources/db/migration/` |
 | One audience per deployment | `shared/server-common/src/main/kotlin/io/konekt/money/MoneyFormat.kt`, `shared/server-common/src/main/kotlin/io/konekt/money/DayFormat.kt` |
-| The realtime bus, in memory unless `KONEKT_REALTIME_URL` names kesh (`B-136`) | `server/src/main/kotlin/io/konekt/realtime/SharedUpdateBus.kt` |
 | What a rebrand *does* cost | [operator-boundaries](operator-boundaries.md) |
