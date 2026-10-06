@@ -16,9 +16,9 @@ RESP2 store — runs that exact bus in its conformance suite.
 
 - **The decision: `kompot-realtime-redis` against kesh**, switched on by a URL in the environment;
   without one the in-memory bus stays, and is right for one replica. No code in kompot.
-- kesh in the chart as its own deployment, sized from kesh's measured chart. **Blocked outside this
-  repository:** nothing publishes kesh's image — `deploy/` in youndie/kesh builds one, no workflow
-  pushes it.
+- kesh in the chart as its own deployment, sized from kesh's measured chart. The image is
+  `ghcr.io/youndie/kesh`, published on every push to kesh's `main` since youndie/kesh B-32; the chart
+  pins a `sha-<commit>` tag, never `main`.
 - The test starts the bus before broadcasting: kompot's own two-instance test does not, and fails on
   Redis too (found by kesh's conformance run).
 - Not covered: kesh replication or persistence — an update is losable by kompot's design, and the next
