@@ -49,7 +49,9 @@ object KonektSchema {
     // constructor and took the Kotlin default. So `scripts/measure/crac-restore.sh` phase h8, which
     // exists to restore a checkpoint with a pool of one, had been varying a number the process
     // ignored. Declared here, it is the process's pool size for the first time.
-    val DB_POOL_SIZE: ConfigKey<Int> = ConfigKey.int("DB_POOL_SIZE", default = 10)
+    // Ten for the routes and the workers, and one more that a held leadership keeps for as long as it
+    // lasts (B-135): vojak's lease is a transaction left open on its own connection.
+    val DB_POOL_SIZE: ConfigKey<Int> = ConfigKey.int("DB_POOL_SIZE", default = 11)
 
     val JWT_SECRET: ConfigKey<String> = ConfigKey.secret("JWT_SECRET")
     val JWT_ISSUER: ConfigKey<String> = ConfigKey.string("JWT_ISSUER", default = "konekt")

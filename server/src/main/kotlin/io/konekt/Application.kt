@@ -45,6 +45,7 @@ import io.github.youndie.petich.postgres.ExposedOutboxRepository
 import io.github.youndie.petich.postgres.ExposedPetichRepository
 import io.github.youndie.petich.postgres.OutboxEventsTable
 import io.github.youndie.petich.postgres.PetichTable
+import io.github.youndie.vojak.Election
 import io.konekt.db.DatabaseFactory
 import io.konekt.events.BooblikOutboxPublisher
 import io.konekt.events.BrokerConnection
@@ -82,6 +83,7 @@ import io.konekt.feature.theme.shared.api.BrandTheme
 import io.konekt.feature.usage.server.data.usageModule
 import io.konekt.health.DatabaseHealthCheck
 import io.konekt.http.configureStatusPages
+import io.konekt.leader.Singletons
 import io.konekt.login.loginRoutes
 import io.konekt.mocks.traffic.TrafficChain
 import io.konekt.mocks.traffic.UsageChain
@@ -265,6 +267,12 @@ fun main(args: Array<String>) {
                 // coroutines on it. After the drain, so nothing is cancelled underneath a request.
                 consumer(
                     participant("workers") {
+                        // THE ELECTION FIRST, while the workers are still alive: `close()` cancels the
+                        // leader's workers, waits for them, and releases the lease with its clean
+                        // mark — so the next leader takes over within a poll instead of waiting out
+                        // vojak's `localLease` (its D12). Cancelling the scope first would end the
+                        // lease the way a crash does.
+                        lifecycle.election?.close()
                         lifecycle.workers.cancel()
                     },
                 )
@@ -312,6 +320,11 @@ class KonektLifecycle {
     lateinit var workers: CoroutineScope
     lateinit var broker: BrokerConnection
     lateinit var dataSource: DataSource
+
+    // The singletons' election (`B-135`). Nullable rather than `lateinit`: it is assigned from a
+    // coroutine once the application has started, and a process stopped before that has none to close.
+    @Volatile
+    var election: Election? = null
 
     // kore's own participant: it cancels tracy's delivery loop and makes one last bounded flush, and
     // it calls katcher's `flush(grace)`. `lateinit` like the rest, so forgetting to assign it is an
@@ -635,24 +648,37 @@ fun Application.module(
         checks.start(workers)
 
         val koin = getKoin()
+        // ON EVERY REPLICA: the sweeper claims each saga with one optimistic write on its own row,
+        // so two of them do the work once; and each pod's broadcaster feeds its own SSE connections.
         koin.get<SuspendedPetichSweeper>().start(workers)
-        koin.get<OutboxRelayWorker>().start(workers)
         koin.get<KompotUpdateBroadcaster>().start(workers)
 
-        // THE USAGE CONSUMER, ALWAYS. It is the product's own worker — it applies whatever arrives on
-        // a topic this deployment owns — and it started only alongside the simulator until `B-89`,
-        // which meant reading real usage required also inventing some. A deployment with the
-        // simulator off is the ordinary one, and it must still apply what it is sent.
-        workers.launch { koin.get<UsageChain>().start(workers) }
+        // ON THE LEADER ONLY (`B-135`): what is wrong twice. The outbox relay has no claim, so two
+        // would publish each row; the usage consumer would read every batch twice (correct since
+        // `B-134`, and wasted); the simulator would spend allowances at a multiple of its rate.
+        // Started inside the election's block, so losing the leadership cancels exactly these — and
+        // a replica that is not leading runs none of them, and still serves every route.
+        workers.launch {
+            lifecycle.election =
+                Singletons.on(dataSource).elect(workers) {
+                    koin.get<OutboxRelayWorker>().start(this)
 
-        // AND THE SIMULATOR, off unless asked for. It publishes fictional usage against real
-        // counters, so a deployment that forgot the switch must not be one that quietly spends its
-        // subscribers' allowances.
-        //
-        // Started HERE and nowhere else, which is the point: both halves of this chain existed and
-        // were covered end to end for a week while nothing constructed either of them.
-        if (config.simulateTraffic) {
-            workers.launch { koin.get<TrafficChain>().start(workers) }
+                    // THE USAGE CONSUMER, ALWAYS — on the leader. It is the product's own worker, and
+                    // it started only alongside the simulator until `B-89`, which meant reading real
+                    // usage required also inventing some. A deployment with the simulator off is the
+                    // ordinary one, and it must still apply what it is sent.
+                    launch { koin.get<UsageChain>().start(this) }
+
+                    // AND THE SIMULATOR, off unless asked for. It publishes fictional usage against
+                    // real counters, so a deployment that forgot the switch must not be one that
+                    // quietly spends its subscribers' allowances.
+                    //
+                    // Started HERE and nowhere else, which is the point: both halves of this chain
+                    // existed and were covered end to end for a week while nothing constructed either.
+                    if (config.simulateTraffic) {
+                        launch { koin.get<TrafficChain>().start(this) }
+                    }
+                }
         }
 
         // THE LATCH OPENS HERE AND NOWHERE ELSE, after every worker above is running. Before this the

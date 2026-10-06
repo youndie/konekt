@@ -361,6 +361,8 @@ dependencies {
     // closes konekt#30. The agents themselves stay declared above: this module exposes none of them
     // as `api`, so a consumer that names a type of theirs still has to name the coordinate.
     implementation(libs.kore.observability)
+    // The replica that runs the singletons — the simulator, the outbox relay, the usage consumer (B-135).
+    implementation(libs.vojak.jdbc)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)

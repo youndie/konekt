@@ -181,6 +181,12 @@ booblik = "0.3.4"
 # Every module checked at this version before the bump, not just the first: this portfolio publishes
 # modules alphabetically and a version is real for one while absent for another for a while.
 kore = "0.1.4"
+# vojak, leader election on Postgres advisory locks (B-135). Portfolio-only, like kore: the snapshot
+# repository, `0.1.0.<run>` of vojak's main. Only `vojak-jdbc` — the store over the DataSource this
+# server already has (vojak research D13). NOT `vojak-kore`: it pins kore 0.1.15 through `api`, and
+# kore pins Ktor through `api` in turn, so it would move this server's Ktor under it; the election is
+# closed by konekt's own "workers" shutdown participant instead.
+vojak = "0.1.0.6"
 
 # katcher is TWO version lines that move independently. A single `katcher = ...` resolves nothing
 # for one of them and fails naming an artefact rather than the mistake.
@@ -385,6 +391,7 @@ booblik-client = { module = "io.github.youndie.booblik:booblik-client", version.
 
 # --- kore --------------------------------------------------------------------------------------
 kore-core = { module = "io.github.youndie:kore-core", version.ref = "kore" }
+vojak-jdbc = { module = "io.github.youndie.vojak:vojak-jdbc", version.ref = "vojak" }
 kore-ktor = { module = "io.github.youndie:kore-ktor", version.ref = "kore" }
 # The three agents in one call, plus the shutdown participant that flushes them. It does NOT put the
 # agents on a consumer's compile classpath — `jvmApiElements` declares no dependencies — so tracy,
