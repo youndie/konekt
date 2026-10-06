@@ -84,6 +84,11 @@ spec:
               value: {{ .Release.Name }}-broker
             - name: KONEKT_BROKER_PORT
               value: "9092"
+            {{- if .Values.kesh.enabled }}
+            # The live-update bus every replica shares (`B-136`); absent, each replica's is in memory.
+            - name: KONEKT_REALTIME_URL
+              value: "redis://{{ .Release.Name }}-kesh:6379"
+            {{- end }}
             - name: KONEKT_BRAND
               value: {{ .Values.brand | quote }}
             # Both switches are read as the exact string "true", so an unset or misspelled value
