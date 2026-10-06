@@ -1,7 +1,7 @@
 ---
 id: B-135
 title: "The traffic simulator and the outbox relay run once per replica"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-m8-two-replicas

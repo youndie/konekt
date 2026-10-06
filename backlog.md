@@ -48,7 +48,7 @@ so re-prioritising must never move a file.
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
-| [B-135](docs/backlog/B-135-singletons-run-on-the-leader.md) `[ ]` | The traffic simulator and the outbox relay run once per replica | P1 | M | B-134 |
+| [B-135](docs/backlog/B-135-singletons-run-on-the-leader.md) `[~]` | The traffic simulator and the outbox relay run once per replica | P1 | M | B-134 |
 | [B-137](docs/backlog/B-137-the-chart-allows-two-replicas.md) `[ ]` | The chart refuses replicas > 1 for reasons B-134, B-135 and B-136 remove | P1 | S | B-134, B-135, B-136 |
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
