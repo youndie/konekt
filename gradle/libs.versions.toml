@@ -142,7 +142,11 @@ ktlint = "1.8.0"
 # repaints), `kompot-spec` ships `kompot.d.ts` in its jar, and the redis bus fails on a refused
 # PSUBSCRIBE (konekt runs the in-memory bus). The Compose line did not move. All 190 BOM coordinates
 # answered 200 on the snapshot repository at 0.40.0.208 before this line moved.
-kompot = "0.40.0.208"
+#
+# 0.40.0.210 (d35ae36): the same line with SPEC section 6 saying what an unanswered surface role is
+# (KompotSurface.Unspecified, kompot#217) and the studio DSL export keeping every wire field; no wire
+# change. All BOM coordinates answered 200 at 0.40.0.210 first.
+kompot = "0.40.0.210"
 
 # A RELEASE NOW, AND FROM CENTRAL. petich moved to `io.github.youndie.petich` and published 0.1.0;
 # `0.1.0.18` was a snapshot of the bare group, which nothing publishes to any more -- a pin that
