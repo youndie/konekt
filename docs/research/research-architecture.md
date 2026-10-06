@@ -559,6 +559,11 @@ that mishandle upgrades, and reconnection with `Last-Event-ID` is in the protoco
 code. One server process means the in-memory bus is the whole requirement. The price: no client→server
 channel, which the product does not need — every subscriber action is already an HTTP action.
 
+*Amended 2026-10-06 (`B-136`):* the in-memory bus stays the default, and is still the whole
+requirement for one process. For more than one — the stand runs two servers on one database, and since
+`B-135` only one of them consumes usage — `KONEKT_REALTIME_URL` switches the broadcaster to
+`kompot-realtime-redis` over kesh (`io.konekt.realtime.SharedUpdateBus`). The transport is still SSE.
+
 ### D8. iOS crash reporting is a stated gap, not a third-party SDK *(withdrawn 2026-08-25)*
 
 Decision: v1 collects no crashes from the iOS build. It is written in the service document and in the
