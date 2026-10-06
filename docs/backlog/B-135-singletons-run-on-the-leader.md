@@ -1,7 +1,7 @@
 ---
 id: B-135
 title: "The traffic simulator and the outbox relay run once per replica"
-status: wip
+status: done
 priority: P1
 size: M
 stage: stage-m8-two-replicas
@@ -70,3 +70,10 @@ as it is: its claim is an optimistic `PENDING_SIGNATURE -> COMPENSATING` update.
   consumed every event, so each pushed to its own clients: the stand's double decrement (B-134) was
   what kept its live updates working. Running the consumer on the leader needs the shared bus first, so
   this item is blocked by [B-136](B-136-the-realtime-bus-goes-through-kesh.md) and stays on its branch.
+
+## Iteration 3 — 2026-10-06: on the shared bus
+
+- Rebased on [B-136](B-136-the-realtime-bus-goes-through-kesh.md). The stand came up in exactly the
+  arrangement that failed CI's e2e — `server-declining` leading `singletons` (relay and usage
+  consumer), `server` leading `simulator` — and `make e2e` passed: the consumer's push now reaches the
+  other server's SSE clients through kesh. `./gradlew build` green on the Linux box.
