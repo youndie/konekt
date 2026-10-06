@@ -36,6 +36,7 @@ so re-prioritising must never move a file.
 | `stage-m5-upstream` | Upstream and the boundaries | The findings filed where the next reader will look, and the price of a rebrand stated where it will be read. |
 | `stage-m6-reframe` | What this build claims to be | Every entry point described a product an operator buys, and what is here is a reference implementation on a telecom domain. The claim is the one thing no test checks, so it is corrected first — and the non-goals are written down beside it, because an absence with a reason and an absence without one look identical. |
 | `stage-m7-completeness` | The reference, complete | The gaps that are gaps *of a reference*: a platform the multiplatform claim was never compiled for, verticals whose only user is an e2e test, and a demonstration chain welded to its own mock. Not the gaps of a product for sale — those are non-goals now. |
+| `stage-m8-two-replicas` | Two replicas | The one-replica boundary lifted for the demonstration's sake: the usage position in the decrement's transaction (booblik's recipe), the singletons on a leader elected by vojak, the realtime bus through kesh — and a stand that proves it through a kill. |
 
 ## Marks
 
@@ -43,12 +44,17 @@ so re-prioritising must never move a file.
 
 <!-- BEGIN INDEX -->
 
-## Open (3)
+## Open (8)
 
 | Task | | Priority | Size | Blocked by |
 |---|---|---|---|---|
+| [B-134](docs/backlog/B-134-usage-position-lives-in-the-decrement.md) `[ ]` | The usage consumer loses every event that arrives while it is down, and applies each one once per replica | P1 | M | - |
+| [B-135](docs/backlog/B-135-singletons-run-on-the-leader.md) `[ ]` | The traffic simulator and the outbox relay run once per replica | P1 | M | B-134 |
+| [B-136](docs/backlog/B-136-the-realtime-bus-goes-through-kesh.md) `[ ]` | An SSE subscriber on one pod never sees an update produced on another | P1 | M | - |
+| [B-137](docs/backlog/B-137-the-chart-allows-two-replicas.md) `[ ]` | The chart refuses replicas > 1 for reasons B-134, B-135 and B-136 remove | P1 | S | B-134, B-135, B-136 |
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
+| [B-138](docs/backlog/B-138-two-replicas-on-the-stand.md) `[ ]` | Two replicas are proved on the stand, through a kill, not only in tests | P2 | M | B-137 |
 | [B-133](docs/backlog/B-133-drop-the-saga-sweep-claim-table.md) `[ ]` | saga_sweep_claim is written by nothing and still in the schema | P3 | S | - |
 
 ## Closed (130)
