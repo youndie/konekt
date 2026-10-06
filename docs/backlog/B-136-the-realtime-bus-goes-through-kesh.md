@@ -1,7 +1,7 @@
 ---
 id: B-136
 title: "An SSE subscriber on one pod never sees an update produced on another"
-status: open
+status: wip
 priority: P1
 size: M
 stage: stage-m8-two-replicas
