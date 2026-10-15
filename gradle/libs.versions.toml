@@ -31,7 +31,7 @@ androidMinSdk = "26"
 
 # `activity-compose`, and it moves on its own line because AndroidX does: it is not part of the
 # Compose Multiplatform distribution and is not versioned with it.
-androidxActivity = "1.12.0"
+androidxActivity = "1.13.0"
 
 # Compose Multiplatform, MATCHED TO THE TOOLKIT'S BINARIES rather than to the newest release. kompot
 # 0.38.0 is compiled against 1.12.1 (its UPGRADING.md, and `compose-multiplatform` in its catalogue),
