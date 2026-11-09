@@ -17,9 +17,9 @@ import io.github.youndie.kore.health.LivenessGate
 import io.github.youndie.kore.health.ReadinessGate
 import io.github.youndie.kore.health.StartupGate
 import io.github.youndie.kore.ktor.EngineDrain
-import io.github.youndie.kore.ktor.startForKore
 import io.github.youndie.kore.ktor.installKoreProbes
 import io.github.youndie.kore.ktor.installKoreVersion
+import io.github.youndie.kore.ktor.startForKore
 import io.github.youndie.kore.lifecycle.AnnounceNotReady
 import io.github.youndie.kore.lifecycle.DrainGate
 import io.github.youndie.kore.lifecycle.ShutdownDeadlines
