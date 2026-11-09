@@ -81,7 +81,7 @@ jvmToolchain = "25"
 # The shared build conventions: the coordinate, the toolchain, the style, the test platform and the
 # guard that every declared @Test ran — and, through the `wip` catalogue the release publishes, the
 # compiler. Bumping this changes how every module is built.
-sborka = "0.4.0.111"
+sborka = "0.5.0.135"
 
 # --- style -------------------------------------------------------------------------------------
 
