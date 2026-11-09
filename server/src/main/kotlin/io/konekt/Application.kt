@@ -19,7 +19,9 @@ import io.github.youndie.kore.health.StartupGate
 import io.github.youndie.kore.ktor.EngineDrain
 import io.github.youndie.kore.ktor.installKoreProbes
 import io.github.youndie.kore.ktor.installKoreVersion
+import io.github.youndie.kore.ktor.startForKore
 import io.github.youndie.kore.lifecycle.AnnounceNotReady
+import io.github.youndie.kore.lifecycle.DrainGate
 import io.github.youndie.kore.lifecycle.ShutdownDeadlines
 import io.github.youndie.kore.lifecycle.ShutdownParticipant
 import io.github.youndie.kore.lifecycle.runUntilSignal
@@ -245,7 +247,11 @@ fun main(args: Array<String>) {
 
     // NOT `wait = true`. The main thread has to be free to wait for the signal and then run the
     // sequence, which is the whole reason kore does not go through `addShutdownHook`.
-    server.start(wait = false)
+    //
+    // AND NOT `start()`: on the JVM that adds Ktor's own shutdown hook, the JVM runs it beside kore's,
+    // and it stops the engine at the signal while the announce is still running — kore's
+    // `EngineDrain` refuses to be built beside it since kore B-60.
+    server.startForKore()
 
     runBlocking {
         val run =
@@ -260,7 +266,9 @@ fun main(args: Array<String>) {
                 // Until it does, this pod is still in a service's endpoint list and still being sent
                 // work — which is why announcing and draining are two stages rather than one.
                 announce(AnnounceNotReady(lifecycle.probes.readiness))
-                drain(EngineDrain(server, deadlines.drain, deadlines.drain + 5.seconds))
+                // A gate nothing reads: konekt installs no shutdown refusal, so the latch kore B-61
+                // gives the drain to open has no reader here.
+                drain(EngineDrain(server, deadlines.drain, deadlines.drain + 5.seconds, DrainGate()))
 
                 // THE CONSUMERS, and cancelling their scope is what stopping them means here: the
                 // usage consumer, the outbox relay, the update broadcaster and the sweeper are all

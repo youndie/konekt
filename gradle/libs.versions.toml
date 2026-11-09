@@ -180,7 +180,13 @@ booblik = "0.3.4"
 #
 # Every module checked at this version before the bump, not just the first: this portfolio publishes
 # modules alphabetically and a version is real for one while absent for another for a while.
-kore = "0.1.4"
+#
+# 0.1.17 for kore B-71: `installKoreObservability` attaches tracy's log capture (from WARN), and
+# without it this server sent spans and not one log record for six weeks (youndie/tracy M-150).
+# The jump from 0.1.4 also moves two things this file's code had to follow: `startForKore()` instead
+# of `start()` on the JVM (B-60 — `EngineDrain` refuses to be built beside Ktor's own hook) and the
+# drain's latch (B-61) — read off kore's backlog between the two numbers.
+kore = "0.1.17"
 # vojak, leader election on Postgres advisory locks (B-135). Portfolio-only, like kore: the snapshot
 # repository, `0.1.0.<run>` of vojak's main. Only `vojak-jdbc` — the store over the DataSource this
 # server already has (vojak research D13). NOT `vojak-kore`: it pins kore 0.1.15 through `api`, and
