@@ -3,6 +3,7 @@ package io.konekt.observability
 import io.github.youndie.kore.observability.KoreObservability
 import io.github.youndie.kore.observability.ObservabilitySettings
 import io.github.youndie.kore.observability.installKoreObservability
+import io.github.youndie.tracy.wire.Level
 import io.konekt.time.KonektClock
 import io.ktor.server.application.Application
 
@@ -57,6 +58,12 @@ fun Application.configureObservability(
                 katcherCacheDir = settings.katcherCacheDir,
                 tracySampleRate = settings.tracySampleRate,
                 metrikWindow = settings.metrikWindow,
+                // INFO, NOT kore's WARN (B-140). kore's floor is right for a service at production
+                // rates, where a captured line — no trace, so no tail sampling — costs one line per
+                // request. This one is a reference build at stand traffic, and a healthy one warns
+                // only on failures: at WARN it sent tracy spans and, for its first half hour on the
+                // stand, still not one record, which is the defect B-139 was about.
+                tracyCaptureFrom = Level.INFO,
             ),
         // THE INJECTED CLOCK, not `Clock.System`. Every deadline in this build takes one (`B-33`) and
         // a guard reads the sources to keep it that way — an agent stamping every record off the wall
