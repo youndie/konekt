@@ -51,7 +51,7 @@ so re-prioritising must never move a file.
 | [B-119](docs/backlog/B-119-the-rolling-check-belongs-with-a-release-and-the-release-does-not-run-it.md) `[ ]` | The rolling check says it belongs with a release, and the release workflow is the one thing that never runs it | P2 | S | - |
 | [B-125](docs/backlog/B-125-a-crac-checkpoint-restores-in-a-tenth-of-the-time.md) `[?]` | Снимок CRaC поднимает сервис за десятую часть времени — что мешает выпустить это | P2 | M | - |
 
-## Closed (137)
+## Closed (138)
 
 **The wire and the shell**
 
@@ -114,6 +114,7 @@ so re-prioritising must never move a file.
 **Proof**
 
 - [B-139](docs/backlog/B-139-the-server-sends-spans-and-no-log-records.md) `[x]` - The server sends tracy spans and not one log record
+- [B-140](docs/backlog/B-140-capture-from-info.md) `[x]` - At kore's WARN floor a healthy server still sends tracy no records
 - [B-23](docs/backlog/B-23-openapi-document.md) `[x]` - Publish an OpenAPI document, because the conformance kit reads one
 - [B-24](docs/backlog/B-24-tck-in-ci-with-coverage-assertion.md) `[x]` - The TCK gate asserts what it visited, not that it was clean
 - [B-25](docs/backlog/B-25-forward-compatibility-fixture.md) `[x]` - A route that sends a component the client does not know, on purpose
